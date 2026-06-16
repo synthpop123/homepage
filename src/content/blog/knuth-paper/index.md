@@ -4,7 +4,6 @@ description: 'Reading notes on "Mathematical Analysis of Algorithms" by Donald K
 date: 2021-05-18
 authors:
   - lkw123
-# image: ./assets/banner-simple.png
 tags:
   - algorithm
   - math
