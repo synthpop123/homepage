@@ -2,19 +2,29 @@ import { glob } from "astro/loaders"
 import { defineCollection, reference } from "astro:content"
 import { z } from "astro/zod"
 
+const authorSchema = z.object({
+  name: z.string(),
+  pronouns: z.string().optional(),
+  avatar: z.url().or(z.string().startsWith("/")),
+  bio: z.string().optional(),
+  mail: z.email().optional(),
+  socials: z.record(z.string(), z.url()).optional(),
+})
+
 const authors = defineCollection({
   loader: glob({
     pattern: "**/[^_]*.md",
     base: "./src/content/authors",
   }),
-  schema: z.object({
-    name: z.string(),
-    pronouns: z.string().optional(),
-    avatar: z.url().or(z.string().startsWith("/")),
-    bio: z.string().optional(),
-    mail: z.email().optional(),
-    socials: z.record(z.string(), z.url()).optional(),
+  schema: authorSchema,
+})
+
+const friends = defineCollection({
+  loader: glob({
+    pattern: "**/[^_]*.md",
+    base: "./src/content/friends",
   }),
+  schema: authorSchema,
 })
 
 const blog = defineCollection({
@@ -35,4 +45,4 @@ const blog = defineCollection({
     }),
 })
 
-export const collections = { blog, authors }
+export const collections = { blog, authors, friends }

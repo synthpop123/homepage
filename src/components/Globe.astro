@@ -1,0 +1,56 @@
+---
+import { GLOBE_LOCATIONS } from "@/consts"
+---
+
+<canvas data-globe data-locations={JSON.stringify(GLOBE_LOCATIONS)}></canvas>
+
+<script>
+  import createGlobe from "cobe"
+
+  const canvas = document.querySelector<HTMLCanvasElement>("canvas[data-globe]")
+
+  if (canvas) {
+    const markers = JSON.parse(canvas.dataset.locations ?? "[]") as {
+      location: [number, number]
+      size: number
+    }[]
+    const size = 400
+    let phi = Math.PI - 0.3
+
+    const globe = createGlobe(canvas, {
+      devicePixelRatio: 2,
+      width: size * 2,
+      height: size * 2,
+      phi,
+      theta: 0.4,
+      dark: 0.1,
+      diffuse: 1.2,
+      mapSamples: 25000,
+      mapBrightness: 4,
+      baseColor: [0.6, 0.6, 0.6],
+      markerColor: [0.9, 0.1, 0.1],
+      glowColor: [0.5, 0.5, 0.5],
+      markerElevation: 0,
+      markers,
+    })
+
+    // cobe v2 has no built-in render loop; drive rotation via update()
+    // which also re-renders once the async map texture has loaded
+    const render = () => {
+      phi += 0.0006
+      globe.update({ phi })
+      requestAnimationFrame(render)
+    }
+    requestAnimationFrame(render)
+  }
+</script>
+
+<style>
+  canvas[data-globe] {
+    display: block;
+    inline-size: 400px;
+    max-inline-size: 100%;
+    aspect-ratio: 1 / 1;
+    margin-inline: auto;
+  }
+</style>

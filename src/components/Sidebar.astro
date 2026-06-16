@@ -22,7 +22,7 @@ const section = NAVIGATION.find(
     <nav>
       <ul>
         {NAVIGATION.map((item) => (
-            <li>
+            <li data-wide-only={item.wideOnly ? "" : undefined}>
               <a
                 href={item.href}
                 aria-current={pathname === item.href ? "page" : undefined}
@@ -158,6 +158,10 @@ const section = NAVIGATION.find(
       gap: var(--space-s);
 
       ul {
+        display: none;
+      }
+
+      li[data-wide-only] {
         display: none;
       }
     }

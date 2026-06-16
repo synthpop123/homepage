@@ -9,7 +9,10 @@ import { normalizePath } from "@/lib/utils"
 import type { SvgComponent } from "astro/types"
 import type { CollectionEntry } from "astro:content"
 
-type Props = { author: CollectionEntry<"authors">; standalone?: boolean }
+type Props = {
+  author: CollectionEntry<"authors"> | CollectionEntry<"friends">
+  standalone?: boolean
+}
 
 const { author, standalone = false } = Astro.props
 const { name, pronouns, avatar, bio, mail, socials } = author.data

@@ -1,0 +1,60 @@
+---
+import AuthorCard from "@/components/AuthorCard.astro"
+import Globe from "@/components/Globe.astro"
+import MetaPage from "@/components/MetaPage.astro"
+import Layout from "@/layouts/Layout.astro"
+import { getCollection } from "astro:content"
+
+const friends = (await getCollection("friends")).sort((a, b) =>
+  a.data.name.localeCompare(b.data.name),
+)
+---
+
+<Layout>
+  <MetaPage slot="head" title="Misc" />
+  <section>
+    <h2>Friends</h2>
+    <ul>
+      {friends.map((friend) => (
+        <AuthorCard author={friend} standalone />
+      ))}
+    </ul>
+  </section>
+  <section>
+    <h2>Footprint</h2>
+    <p>Generated with
+      <a href="https://cobe.vercel.app/" target="_blank" rel="noopener noreferrer"
+        >Cobe</a
+      >, a lightweight (5kB) WebGL globe library.</p>
+    <Globe />
+  </section>
+</Layout>
+
+<style>
+  section + section {
+    margin-block-start: var(--space-l);
+  }
+
+  h2 {
+    margin-block-end: var(--space-s);
+    font-size: var(--step-1);
+    line-height: calc(var(--leading-offset) + 1em);
+    font-weight: var(--font-weight-medium);
+  }
+
+  a {
+    color: var(--foreground);
+    text-decoration: underline;
+  }
+
+  section > p {
+    margin-block-end: var(--space-s);
+    color: var(--muted-foreground);
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+  }
+</style>
