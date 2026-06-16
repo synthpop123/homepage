@@ -1,6 +1,6 @@
 ---
-title: '论文阅读 Mathematical Analysis of Algorithms'
-description: 'Reading notes on 「Mathematical Analysis of Algorithms」 by Donald Knuth'
+title: 'Mathematical Analysis of Algorithms'
+description: 'Reading notes on "Mathematical Analysis of Algorithms" by Donald Knuth'
 date: 2021-05-18
 authors:
   - lkw123

@@ -49,14 +49,9 @@ const sections = rendered.map(({ entry, headings }, i) => ({
 }))
 const hasToc =
   sections.length > 1 || sections.some(({ headings }) => headings.length > 0)
-
-const crumbs = [{ label: parent.data.title, href: `/blog/${parent.id}` }]
-if (isSubpost(post.id)) {
-  crumbs.push({ label: post.data.title, href: `/blog/${post.id}` })
-}
 ---
 
-<Layout crumbs={crumbs}>
+<Layout>
   <MetaPost
     slot="head"
     post={post}
@@ -95,7 +90,7 @@ if (isSubpost(post.id)) {
                 </author-avatars>
                 <author-names>
                   {authors.map((author, j) => (
-                    <>{j > 0 && ", "}<a href={`/authors/${author.id}`}>{author.data.name}</a></>
+                    <>{j > 0 && ", "}<a href="/about">{author.data.name}</a></>
                   ))}
                 </author-names>
               </post-authors>
@@ -111,7 +106,6 @@ if (isSubpost(post.id)) {
               </post-tags>
             )}
           </post-meta>
-          <p>{entry.data.description}</p>
         </header>
         {entry.data.image && (
           <post-banner>
@@ -212,12 +206,6 @@ if (isSubpost(post.id)) {
       a {
         color: var(--foreground);
       }
-    }
-
-    > p {
-      margin-block-start: var(--space-2xs);
-      font-size: var(--step--1);
-      color: var(--muted-foreground);
     }
   }
 

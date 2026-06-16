@@ -1,0 +1,34 @@
+---
+import AuthorCard from "@/components/AuthorCard.astro"
+import MetaPage from "@/components/MetaPage.astro"
+import Layout from "@/layouts/Layout.astro"
+import { getEntry } from "astro:content"
+
+const author = await getEntry("authors", "lkw123")
+if (!author) throw new Error("Missing author: lkw123")
+---
+
+<Layout>
+  <MetaPage slot="head" title="About" />
+  <header>
+    <ul>
+      <AuthorCard author={author} standalone />
+    </ul>
+  </header>
+  <section>
+    <prose-content>
+      <h2>Who Am I</h2>
+      <ul>
+        <li>INTP-T (I Need To sleeP)</li>
+        <li>Male | Movie | Music | Minimalist</li>
+        <li>Keep Learning &amp; Be Creative</li>
+      </ul>
+    </prose-content>
+  </section>
+</Layout>
+
+<style>
+  header {
+    margin-block-end: var(--space-l);
+  }
+</style>

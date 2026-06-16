@@ -48,7 +48,7 @@ GitOps 这个词最早来自 Kubernetes 社区，但它的思想跟编排引擎�
 
 ![Komodo 架构：一个 Core（Web UI、API、数据库）通过网络连接到多台服务器上的 Periphery 代理，每个代理在本机执行 Docker 命令](./assets/komodo-architecture.png)
 
-_这张图把 Komodo 拆成两层：Core 是你登录的那个面板，Periphery 是真正在每台机器上动手的代理。理解这一层，后面「部署到哪台服务器」的配置就好懂了。_
+_Core 是控制平面，Periphery 是真正在每台机器上动手的代理_
 
 Komodo 真正适合 GitOps 的地方，是这些资源本身可以用代码声明。它提供一种叫 **Resource Sync** 的资源：你把所有 Stack 的定义写进一个 TOML 文件、提交进 Git，Komodo 读这个文件，把里面声明的资源在服务器上创建出来并保持一致。这意味着「有哪些服务、各自怎么配」这件事也进了 Git，跟代码一样有版本、有历史。
 
@@ -96,8 +96,6 @@ networks:
 Komodo 自身的安装是这套体系里唯一一处手动操作。它由 Core、Periphery 和一个数据库组成，没法部署自己，所以这部分按官方手册在主机上 `docker compose up` 拉起一次即可，之后所有业务服务都归 Git 管。把 Komodo 自己的 compose 和环境文件也以脱敏形式留一份在仓库里，当作版本记录和灾备依据，是个好习惯。
 
 ![Komodo 的 Stacks 列表界面，每个服务一行，显示运行状态、镜像版本和最近部署时间](./assets/komodo-stacks.png)
-
-_这张图是 Komodo 的 Stacks 页面，每个服务各占一行。`sync.toml` 里写的每个 `[[stack]]`，都会在这里变成一个可点开、可查看日志的资源。_
 
 ## 一次 git push 的完整旅程
 
