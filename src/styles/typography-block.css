@@ -46,6 +46,12 @@ prose-content {
     justify-content: safe center;
     overflow-x: auto;
     overflow-y: hidden;
+
+    .tml-right { text-align: right; text-align: -webkit-right; }
+    .tml-left  { text-align: left;  text-align: -webkit-left; }
+  
+    mtable.tml-jot   mtd { padding-block: 0.7ex; }
+    mtable.tml-small mtd { padding-block: 0.35ex; }
   }
 
   .expressive-code {
