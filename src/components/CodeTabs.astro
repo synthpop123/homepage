@@ -1,0 +1,116 @@
+---
+import { type CodeTab, renderCodeBlocks } from "@/lib/expressive-code/render"
+
+interface Props {
+  tabs: CodeTab[]
+  /** Accessible name for the tab list. */
+  label?: string
+}
+
+const { tabs, label = "Code format" } = Astro.props
+const panels = await renderCodeBlocks(tabs)
+const uid = `ct-${crypto.randomUUID().slice(0, 8)}`
+---
+
+<code-tabs>
+  <div role="tablist" aria-label={label}>
+    {tabs.map((tab, i) => (
+        <button
+          type="button"
+          role="tab"
+          id={`${uid}-tab-${i}`}
+          aria-controls={`${uid}-panel-${i}`}
+          aria-selected={i === 0 ? "true" : "false"}
+          tabindex={i === 0 ? 0 : -1}
+        >
+          {tab.label}
+        </button>
+      ))}
+  </div>
+  {panels.map((html, i) => (
+      <div
+        role="tabpanel"
+        id={`${uid}-panel-${i}`}
+        aria-labelledby={`${uid}-tab-${i}`}
+        hidden={i !== 0}
+        set:html={html}
+      />
+    ))}
+</code-tabs>
+
+<script>
+  class CodeTabs extends HTMLElement {
+    connectedCallback() {
+      if (this.dataset.ready) return
+      this.dataset.ready = "true"
+
+      const tabs = [...this.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+      const panels = [
+        ...this.querySelectorAll<HTMLElement>('[role="tabpanel"]'),
+      ]
+      if (!tabs.length) return
+
+      const select = (index: number) => {
+        tabs.forEach((tab, i) => {
+          const active = i === index
+          tab.setAttribute("aria-selected", String(active))
+          tab.tabIndex = active ? 0 : -1
+          panels[i].hidden = !active
+        })
+      }
+
+      tabs.forEach((tab, i) => {
+        tab.addEventListener("click", () => select(i))
+        tab.addEventListener("keydown", (event) => {
+          const dir =
+            event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0
+          if (!dir) return
+          event.preventDefault()
+          const next = (i + dir + tabs.length) % tabs.length
+          tabs[next].focus()
+          select(next)
+        })
+      })
+    }
+  }
+
+  if (!customElements.get("code-tabs")) {
+    customElements.define("code-tabs", CodeTabs)
+  }
+</script>
+
+<style>
+  code-tabs {
+    display: block;
+  }
+
+  [role="tablist"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s);
+    margin-block-end: var(--space-2xs);
+  }
+
+  [role="tab"] {
+    padding-block-end: var(--space-3xs);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    cursor: pointer;
+    border-block-end: 1.5px solid transparent;
+
+    &:hover {
+      color: var(--foreground);
+    }
+
+    &[aria-selected="true"] {
+      color: var(--foreground);
+      border-block-end-color: currentColor;
+    }
+  }
+
+  /* Match the blog's titled code frame: a separator under the header. */
+  code-tabs :global(.frame.has-title:not(.is-terminal) .header) {
+    border-block-end: var(--ec-brdWd) solid var(--border);
+  }
+</style>

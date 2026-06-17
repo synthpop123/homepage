@@ -1,0 +1,14 @@
+---
+import { renderCodeBlocks } from "@/lib/expressive-code/render"
+
+interface Props {
+  code: string
+  lang?: string
+  meta?: string
+}
+
+const { code, lang = "plaintext", meta = "" } = Astro.props
+const [html] = await renderCodeBlocks([{ code, lang, meta }])
+---
+
+<Fragment set:html={html} />
