@@ -15,7 +15,15 @@ import { GLOBE_LOCATIONS } from "@/consts"
       size: number
     }[]
     const size = 400
+
+    // `phi` accumulates the idle auto-rotation; `drag` accumulates rotation from
+    // pointer dragging. The rendered angle is their sum so the two never fight
+    // and motion stays continuous across separate drags.
     let phi = Math.PI - 0.3
+    let pointerStart: number | null = null
+    let dragOffset = 0
+    let dragTarget = 0
+    let dragCurrent = 0
 
     const globe = createGlobe(canvas, {
       devicePixelRatio: 2,
@@ -34,11 +42,33 @@ import { GLOBE_LOCATIONS } from "@/consts"
       markers,
     })
 
-    // cobe v2 has no built-in render loop; drive rotation via update()
-    // which also re-renders once the async map texture has loaded
+    canvas.addEventListener("pointerdown", (e) => {
+      // offset the anchor by the existing drag so this drag continues smoothly
+      pointerStart = e.clientX - dragOffset
+      canvas.setPointerCapture(e.pointerId)
+      canvas.style.cursor = "grabbing"
+    })
+
+    const stopDragging = () => {
+      pointerStart = null
+      canvas.style.cursor = "grab"
+    }
+    canvas.addEventListener("pointerup", stopDragging)
+    canvas.addEventListener("pointercancel", stopDragging)
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (pointerStart === null) return
+      dragOffset = e.clientX - pointerStart
+      dragTarget = dragOffset / 200
+    })
+
+    // cobe 2.0.1 ships no onRender hook / internal loop, so rotation is driven
+    // here via update(); this also re-renders once the map texture has loaded.
     const render = () => {
-      phi += 0.0006
-      globe.update({ phi })
+      if (pointerStart === null) phi += 0.0006
+      // ease the drag toward its target for a smooth, spring-like response
+      dragCurrent += (dragTarget - dragCurrent) * 0.15
+      globe.update({ phi: phi + dragCurrent })
       requestAnimationFrame(render)
     }
     requestAnimationFrame(render)
@@ -52,5 +82,9 @@ import { GLOBE_LOCATIONS } from "@/consts"
     max-inline-size: 100%;
     aspect-ratio: 1 / 1;
     margin-inline: auto;
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
   }
 </style>
