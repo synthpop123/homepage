@@ -86,12 +86,20 @@ const uid = `ct-${crypto.randomUUID().slice(0, 8)}`
 
   [role="tablist"] {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--space-s);
     margin-block-end: var(--space-2xs);
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   [role="tab"] {
+    flex-shrink: 0;
+    white-space: nowrap;
     padding-block-end: var(--space-3xs);
     font-family: var(--font-mono);
     font-size: var(--step--1);

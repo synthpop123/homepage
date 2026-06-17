@@ -52,6 +52,8 @@ prose-content {
   
     mtable.tml-jot   mtd { padding-block: 0.7ex; }
     mtable.tml-small mtd { padding-block: 0.35ex; }
+
+    mtd { padding-block: 0.5ex; }
   }
 
   .expressive-code {

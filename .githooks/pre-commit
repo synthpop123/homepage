@@ -13,4 +13,6 @@ staged_files="$(git diff --cached --name-only --diff-filter=ACMR)"
 bun run format:staged
 
 # Re-stage anything Biome rewrote so the formatting is part of this commit.
-printf '%s\n' "$staged_files" | xargs -r -d '\n' git add --
+# NUL-separate the list so paths with spaces survive, and feed `xargs -0`,
+# which works on both BSD/macOS and GNU (unlike GNU-only `xargs -d`/`-r`).
+printf '%s\n' "$staged_files" | tr '\n' '\0' | xargs -0 git add --
