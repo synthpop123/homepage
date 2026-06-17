@@ -20,7 +20,7 @@ tags:
 
 若是单靠手动管一台服务器，时间久了状态会散到四处。一个服务的真实配置同时存在于：SSH 进去敲过的命令、某个 `docker-compose.yml` 的当前版本、`.env` 里的密钥、挂载的配置文件、半年前临时改的一行参数。等到机器挂了要重建，或者只是想回忆当初为什么这么配，能依赖的只有记忆和零散的备份。
 
-而对于镜像版本，为了快速部署好服务，往往会选择 `image: app:latest`，于是每次 `docker compose pull` 都可能拉到一个不一样的镜像，哪次变更引入的。想稳一点就把版本写死，可写死之后升级又得靠人记着去官网翻 changelog，大多数人记不住，于是镜像一放就是两年，安全补丁和新功能也跟着一起落下。而每次的操作都让系统的混乱度增加，越来越难以维护。
+而对于镜像版本，为了快速部署好服务，往往会选择 `image: app:latest`，于是每次 `docker compose pull` 都可能拉到一个不一样的镜像，若是更新失败很难找到引发 breaking change 的小版本。而若是把版本 pin 到部署时的稳定版本，后续升级又得记着去官网翻 changelog，于是镜像一放就是两年，安全补丁和新功能也跟着一起落下。每次的操作都让系统的混乱度增加，越来越难以维护。
 
 这源于服务器的真实状态没有一个单一、可信、带历史的来源。GitOps 正是一个好的解决方案，将 Git 仓库作为服务器状态的唯一事实来源，机器自动与其对齐。
 
@@ -46,15 +46,18 @@ GitOps 这个词最早来自 Kubernetes 社区，但它的思想跟编排引擎�
 
 [Komodo](https://komo.do) 是一个开源的容器构建与部署平台，用来在一台或多台服务器上管理 Docker。很多人用过 Portainer 来管容器，Komodo 站在类似的位置上，提供 Web UI、API、告警和权限管理，把每个 Compose 项目当成一个叫 **Stack** 的资源来管理：查看状态、看日志、改配置、一键部署都在界面里完成。
 
-它的部署模型分成两部分。**Core** 是大脑，跑 Web UI、API 和一个数据库（默认 MongoDB），存放所有资源定义、变量、用户和审计日志。**Periphery** 是手脚，是装在每台被纳管服务器上的一个轻量代理，Core 通过它在那台机器上执行真正的 Docker 命令。一个 Core 可以连任意多台跑着 Periphery 的服务器，所以同一套控制平面能横跨好几台机器统一管理。
+它的部署模型分成两部分：
+
+- **Core** 是大脑，跑 Web UI、API 和一个数据库（默认 MongoDB），存放所有资源定义、变量、用户和审计日志。
+- **Periphery** 是手脚，是装在每台被纳管服务器上的一个轻量代理，Core 通过它在那台机器上执行真正的 Docker 命令。一个 Core 可以连任意多台跑着 Periphery 的服务器，所以同一套控制平面能横跨好几台机器统一管理。
 
 ![komodo-architecture](./assets/komodo-architecture.png)
 
 _Core 是控制平面，Periphery 是真正在每台机器上动手的代理_
 
-Komodo 真正适合 GitOps 的地方，是这些资源本身可以用代码声明。它提供一种叫 **Resource Sync** 的资源：把所有 Stack 的定义写进一个 TOML 文件、提交进 Git，Komodo 读这个文件，把里面声明的资源在服务器上创建出来并保持一致。这意味着「有哪些服务、各自怎么配」这件事也进了 Git，跟代码一样有版本、有历史。
+Komodo 真正适合 GitOps 的地方，是这些资源本身可以用代码声明。它提供一种叫 **Resource Sync** 的资源：把所有 Stack 的定义写进一个 TOML 文件、提交进 Git，Komodo 读这个文件，把里面声明的资源在服务器上创建出来并保持一致。这意味着「有哪些服务、各自怎么配」这件事也通过 Git 来管理，跟代码一样有版本、有历史。
 
-一个 `sync.toml` 里，每个服务对应一个 `[[stack]]` 块：
+在 `sync.toml` 里，每个服务对应一个 `[[stack]]` 块：
 
 ```toml
 [[stack]]
@@ -70,9 +73,9 @@ run_directory = "stacks/wallos"
 file_paths = ["compose.yaml"]
 ```
 
-字段含义不复杂。`server` 指定部署到哪台被 Komodo 纳管的服务器（也就是哪个 Periphery）；`linked_repo` 指向一个在 Komodo UI 里配好的 Repo 资源，Git 账号、仓库地址、访问令牌这些实例相关的东西因此留在 Komodo 里，仓库这个文件里只出现一个名字，干净、可移植；`run_directory` 和 `file_paths` 指定去仓库的哪个子目录、读哪个 Compose 文件。`deploy = false` 这一行尤其关键，它把部署这件事从 sync 里摘出去。
+字段含义并不复杂。`server` 指定部署到哪台被 Komodo 纳管的服务器（也就是哪个 Periphery）；`linked_repo` 指向一个在 Komodo UI 里配好的 Repo 资源，Git 账号、仓库地址、访问令牌这些实例相关的东西因此留在 Komodo 里，仓库这个文件里只出现一个名字，干净、可移植；`run_directory` 和 `file_paths` 指定去仓库的哪个子目录、读哪个 Compose 文件，`deploy = false` 则把部署这件事从 sync 里摘出去。
 
-对应的 Compose 文件就是一份标准的 `compose.yaml`，里面没有任何 Komodo 特有的语法：
+对应的 Compose 文件就是一份标准的 `compose.yaml`，若是需要脱离 Komodo，直接 `docker compose up -d` 就能跑，没有生态的锁定。Komodo 只是在外面包了一层声明、调度和可观测性。
 
 ```yaml
 services:
@@ -93,15 +96,13 @@ networks:
     name: wallos
 ```
 
-Compose 文件因此保持原汁原味，哪天想脱离 Komodo，直接 `docker compose up` 就能跑，没有任何锁定。Komodo 只是在外面包了一层声明、调度和可观测性。
-
-Komodo 自身的安装是这套体系里唯一一处手动操作。它由 Core、Periphery 和一个数据库组成，没法部署自己，所以这部分按官方手册在主机上 `docker compose up` 拉起一次即可，之后所有业务服务都归 Git 管。把 Komodo 自己的 compose 和环境文件也以脱敏形式留一份在仓库里，当作版本记录和灾备依据，是个好习惯。
+Komodo 自身的安装是这套体系里唯一一处手动操作。它由 Core、Periphery 和一个数据库组成，没法部署自己，所以这部分按官方手册在主机上 `docker compose up -d` 拉起一次即可，之后所有业务服务都归 Git 管。同样的，也可以把 Komodo 自己的 Compose 和 `.env` 也以脱敏形式留一份在仓库里，作为版本记录和灾备依据。
 
 ![komodo-stacks](./assets/komodo-stacks.png)
 
-整套基础设施声明放在一个 Git 仓库里，不按服务、也不按机器拆成多个。一个仓库的好处是全局一眼看全：所有服务的配置、一套 Renovate 规则、一条部署流水线都在里面，跨服务的改动一个 commit 就讲得清楚。顶层放几样全局的东西，往下每个服务占一个目录：
+整套基础设施声明放在一个 Git 仓库里，不按服务或机器拆成多个，在一个仓库内可以囊括所有服务的配置、一套 Renovate 规则、一条部署流水线，对于跨服务的改动，一个 commit 就可以完成。
 
-```
+```bash title="仓库文件树"
 homelab-infra/
 ├── sync.toml      # 所有 Stack、Procedure、Server 的声明
 ├── renovate.json  # Renovate 检测规则
@@ -118,27 +119,30 @@ homelab-infra/
 ```
 
 - `stacks/` 下一个服务一个目录，目录名跟 Stack 名对齐，`sync.toml` 里的 `run_directory = "stacks/wallos"` 正是把声明指到这个目录；加服务就是新建一个目录、放进 `compose.yaml`，再到 `sync.toml` 补一个 `[[stack]]` 指过去。
-- 服务跑在哪台机器不靠目录区分，而是由每个 Stack 的 `server` 字段决定，所以同一个仓库天然能管多台机器，加机器也只是在 `sync.toml` 里多一个 `[[server]]` 块。
+- 服务运行在哪台机器由每个 Stack 的 `server` 字段决定，所以同一个仓库天然能管多台机器，加机器也只是在 `sync.toml` 里多一个 `[[server]]` 块。
 
-Komodo 会把这个仓库反复 clone 到主机的工作目录，所以仓库里只该有声明，运行态的东西全留在它外面：应用数据在 `/srv/<service>/`，真实密钥在 Komodo 的加密变量库、部署那一刻才落成一个 git-ignored 的 `.env`，控制平面自己的资源定义和账号在 Komodo 的数据库里。Git 仓库里应当只有声明，状态都在机器上。
+Komodo 会把这个仓库 clone 到主机的工作目录，所以仓库里只存放声明，运行态的东西则留在仓库外：
 
-## 一次 git push 的完整旅程
+- 应用数据在 `/srv/<service>/`
+- 真实密钥在 Komodo 的加密变量库、部署那一刻才落成一个 git-ignored 的 `.env`
+- 控制平面自己的资源定义和账号在 Komodo 的数据库里。
 
-把上面几块串起来，看一次推送从 Git 走到容器要经过什么。这里藏着一个并发竞争的坑，绕开它正好能讲清楚整套流水线该怎么搭。
+## 一次 git push 的完整历程
 
-入口是 Git 仓库上的一个 push webhook。Komodo 的 webhook URL 有固定结构：
+当发起一次推送，从 Git 走到容器的过程中，入口是 Git 仓库上的一个 push webhook。Komodo 的 webhook URL 有固定结构：
 
 ```
 https://<HOST>/listener/<认证类型>/<资源类型>/<id 或名字>/<执行项>
 ```
 
-认证类型是 `github` 或 `gitlab`，对应平台来源；资源类型可以是 `stack`、`sync`、`procedure` 等；执行项随资源类型而定。这个 URL 在对应资源的页面能直接复制，不用手拼。配 webhook 时把 content-type 设成 `application/json`，并填上在 Komodo 里设好的 `WEBHOOK_SECRET`，Komodo 收到后会校验 GitHub 带来的 `X-Hub-Signature-256` 签名，确认这次调用确实来自该仓库，挡掉伪造请求。
+认证类型是 `github` 等，对应平台来源；资源类型则可以是 `stack`、`sync`、`procedure` 等；执行项随资源类型而定。配置 webhook 时把 content-type 设为 `application/json`，并填上在 Komodo 里设好的 `WEBHOOK_SECRET`，Komodo 在收到后会校验 GitHub 带来的 `X-Hub-Signature-256` 签名，确认这次调用确实来自该仓库，并挡掉伪造请求。
 
-最朴素的做法是让这个 webhook 直接指向 Resource Sync，推送即同步即部署。服务一多，这个朴素做法会暴露两个问题。
+最朴素的做法是让这个 webhook 直接指向 Resource Sync，推送即同步即部署。但服务一多，可能会暴露两个问题：
 
-第一个是双重部署竞争。既让 Resource Sync 在推送时部署，又另设一个部署动作，两者同时开跑，会去抢同一个 Stack 的部署锁，Komodo 报 `Resource is busy`。第二个是新服务首推漏部署：新加的 Stack 在它的定义还没被 sync 创建出来时就被部署动作轮到，于是第一次推送起不来，得手动去 UI 点一下。
+1. 双重部署竞争。既让 Resource Sync 在推送时部署，又另设一个部署动作，两者同时开跑，会去抢同一个 Stack 的部署锁，Komodo 可能会触发 `Resource is busy`；
+2. 新服务首推漏部署：新加的 Stack 在它的定义还没被 sync 创建出来时就被部署动作轮到，于是第一次推送起不来，得手动去 UI 点一下。
 
-合适的做法是把「同步定义」和「执行部署」拆成有先后的两步，交给 Komodo 的 **Procedure** 来编排。Procedure 把多个执行项组织成若干 Stage，**Stage 之间顺序执行**，同一个 Stage 内的执行项并行跑，前一个 Stage 全部完成才进下一个。据此搭一个 `Redeploy On Push` Procedure：
+合适的做法是把「同步定义」和「执行部署」拆成有先后的两步，交由 Komodo 的 **Procedure** 来编排。Procedure 把多个执行项组织成若干 Stage，**Stage 之间顺序执行**，同一个 Stage 内的执行项并行跑，前一个 Stage 全部完成才进下一个。据此搭一个 `Redeploy On Push` Procedure：
 
 ```
 Renovate / 用户   合并 PR 到 main
@@ -153,12 +157,8 @@ Git push webhook ──► Procedure "Redeploy On Push"
                            只部署 compose 内容真正变过的 Stack
 ```
 
-- Stage 1 跑 `RunSync`，让 Komodo 重新读 `sync.toml`，把里面声明的 Stack 定义对齐到最新提交。
-- Stage 2 跑 `BatchDeployStackIfChanged`，这是 Komodo 的批量执行项，用通配符匹配资源名，只对 compose 内容相比上次有变化的 Stack 触发部署。改了 wallos 的镜像 tag，就只重部署 wallos，其余几十个一动不动。
-
-两条规则配合，把上面两个问题一起根治。第一条，让 sync 只协调定义、把部署权全交出去：`sync.toml` 里每个 Stack 都写 `deploy = false`，所以 sync 阶段只创建和更新 Stack 资源，部署这件事只由 Stage 2 一个地方做，再没有第二个执行者来抢锁。第二条，把这唯一的 push webhook 指向 Procedure，Resource Sync 自己那个 webhook 关掉。因为 Stage 严格顺序执行，Stage 2 必然等到 Stage 1 把新 Stack 的定义创建好才开始，新服务第一次推送就能正常起来，既省掉手动部署，也省掉一个空的触发 commit。
-
-整套流水线本身也写在同一个 `sync.toml` 里，跟着 Git 走：
+1. Stage 1 跑 `RunSync`，让 Komodo 重新读 `sync.toml`，把里面声明的 Stack 定义对齐到最新 commit；
+2. Stage 2 跑 `BatchDeployStackIfChanged`，这是 Komodo 的批量执行项，用通配符匹配资源名，只对 compose 内容相比上次有变化的 Stack 触发部署。
 
 ```toml
 [[procedure]]
@@ -180,21 +180,15 @@ executions = [
 ]
 ```
 
-到这一步，从「改 Git」到「容器更新」的路就通了。剩下的问题是：怎么让版本升级这件事，也变成一次「改 Git」。
-
 ## Renovate 把版本升级变成可审阅的 PR
 
-[Renovate](https://docs.renovatebot.com) 是一个自动更新依赖的机器人。它定时扫描仓库，对每一处声明的依赖去上游查有没有新版本，有就开一个 PR 把版本号改好。它认得几十种依赖来源，其中的 docker-compose manager 专门解析 Compose 文件里的 `image: name:tag`，去 Docker Hub、GHCR 这类 registry 查更新的 tag，理解 `4.9.5`、`4.9.5-alpine3.11` 这类语义化格式，据此提对应的升级 PR。
+[Renovate](https://docs.renovatebot.com) 是一个自动更新依赖的机器人。它定时扫描仓库，对每一处声明的依赖去上游查是否有新版本，开 PR 把版本号改到最新，并会附上 changelog。
 
-跑 Renovate 有两种方式。一种是 Mend 托管的 GitHub App：在 Marketplace 装上、授权给目标仓库，Mend 自己的基础设施按大约每小时一次的节奏临时 clone 仓库、扫描、提 PR，跑完不留存代码，仓库里一行 CI 都不用加。另一种是自托管：把 Renovate 当 npm 包、Docker 镜像，或者一个定时跑的 GitHub Action 自己运行，控制更细，但那条路得自己提供运行环境（也就是某种 CI 或定时任务）。对一台个人服务器，托管 App 更省事，下面以它为例。
+引入 Renovate 有两种方式：
+- Mend 托管的 GitHub App：在 Marketplace 装上、授权给目标仓库，Mend 自己的基础设施按大约每小时一次的节奏临时 clone 仓库、扫描、提 PR，跑完不留存代码，不用可以修改仓库里的 CI。
+- 自托管：把 Renovate 当 npm 包、Docker 镜像，或者一个定时跑的 GitHub Action 自己运行，控制更细。
 
-整套体系有一条隐含前提：镜像 tag 必须写死，Renovate 才有得比。`image: app:latest` 对 Renovate 来说没有版本可言，它无从判断该升到哪去。所以应用镜像一律**锁到精确版本**：
-
-```yaml
-image: bellamy/wallos:4.9.5
-```
-
-版本写死有两方面收益：部署可复现（任何时候 pull 到的都是同一个镜像），以及给了 Renovate 一个比对基准。
+整套体系有一条隐含前提，镜像 tag 需要 pin 到固定版本，Renovate 才能去实现检测。此外，固定版本也可以让部署可复现，整套体系更稳定。
 
 数据库和缓存则依照另一套规则，**锁到大版本线**：
 
@@ -203,7 +197,7 @@ image: pgvector/pgvector:pg17
 image: redis:8
 ```
 
-锁到 `pg17` 这样的大版本线，补丁版本会自动跟随（拉镜像时 `pg17` 指向当前最新的 17.x）；`pg18` 这种大版本升级会单独来一个 Renovate PR。这正合自托管的胃口：大版本升级往往要手动 dump、restore 迁移数据，把它显式拎出来当成一次有意识的操作，平时的补丁噪音又压得住。一个好用的判断标准是看升级要不要人介入数据迁移：要，就锁大版本线；只是无痛补丁，就锁精确版本让 Renovate 自由提 PR。
+一个好用的判断标准是看升级要不要人介入数据迁移，需要的话就就锁大版本线，若只是无痛补丁，则锁精确版本让 Renovate 自由提 PR。
 
 一个最小可用的 Renovate 配置很短：
 
@@ -218,11 +212,12 @@ image: redis:8
 }
 ```
 
-`config:recommended` 是官方推荐基线，把大部分合理默认值打开。`:dependencyDashboard` 会在仓库里自动维护一个 Dependency Dashboard issue，把所有待升级、被忽略、有冲突的项汇总在一个看板上，一眼看清全局，也能在上面手动勾选触发某个升级。`:semanticCommits` 让 Renovate 的 commit 和 PR 标题带上 `chore(deps):` 前缀，和语义化提交风格统一。
+- `config:recommended` 是官方推荐基线，把大部分合理默认值打开。
+- `:dependencyDashboard` 会在仓库里自动维护一个 Dependency Dashboard issue，把所有待升级、被忽略、有冲突的项汇总在一个看板上，一眼看清全局，也能在上面手动勾选触发某个升级。
+- `:semanticCommits` 规定 Renovate 的 commit 和 PR 与语义化提交风格统一，整体更规范。
+- `prConcurrentLimit` 和 `prHourlyLimit` 则是限流阀门。Renovate 默认会限制同时打开的 PR 数和每小时新建的 PR 数。当服务数量比较多时，这个限制反而拖慢升级的节奏，此时可以把两个值都设为 0。
 
-`prConcurrentLimit` 和 `prHourlyLimit` 是限流阀门。Renovate 默认会限制同时打开的 PR 数和每小时新建的 PR 数，免得一上来几十个 PR 把人淹了。服务一多，这个限制反而拖慢升级的节奏，把两个都设成 `0` 就解除限制、让该开的 PR 一次到位。
-
-随着服务数的增加，PR 噪音会带来问题，此时可以通过 `packageRules` 进行分组和调度。比如把同一个 Stack 目录下的多个镜像合并成一个 PR，或者只在每周固定时间开 PR：
+随着服务数的增加，为减少 PR 噪音，可以通过 `packageRules` 进行分组和调度。比如把同一个 Stack 目录下的多个镜像合并成一个 PR，或者只在每周固定时间开 PR：
 
 ```json
 "packageRules": [
@@ -237,43 +232,41 @@ image: redis:8
 
 分组让一组关联镜像（比如 immich 的 server 加 machine-learning）一起升、一起审、一起部署，避免它们版本错配；调度把 PR 收拢到固定的时间窗口。两者配合，PR 噪音基本能压到可接受的程度。
 
-至于自动合并，Renovate 支持给某些低风险更新（比如 digest、pin、补丁）开 automerge，连人都不用点。自托管个人服务上，亲手审一眼那行 diff 成本很低，收益是对每次变更都心里有数，所以多数人会把审核留给自己。
-
-闭环到这里就合上了：Renovate 开 PR 改 tag，审核合并后，push webhook 触发那条 `Redeploy On Push` Procedure，Komodo 检测到 compose 变了，重新部署对应 Stack。版本升级和手动改配置走的是同一条流水线，同样可追溯、可回滚。
+至于自动合并，Renovate 支持给某些低风险更新（比如 digest、pin、补丁）开 automerge。而在自托管个人服务上，review 一行版本号的 bump 成本很低，却能让每次变更都心里有数，所以多数人会把审核留给自己。
 
 ![renovate-pr](./assets/renovate-pr.png)
 
+整套升级流程始于 Renovate 创建 PR 更新 image tag，在审核合并后，push webhook 触发 `Redeploy On Push` Procedure，Komodo 检测到 compose 发生变化，便会重新部署对应 Stack。
+
 ## 理解 Compose 的环境变量
 
-Docker Compose 的环境变量机制是密钥注入的基础，也是自托管里最容易似懂非懂的一块。问题出在 `${VAR}` 这个写法在 Compose 里身兼两职，很多人把两职混成一职，于是踩坑。
+Docker Compose 的环境变量机制是密钥注入的基础，`${VAR}` 这个写法在 Compose 里身兼两职：
 
-第一职是**插值**。Compose 在解析 `compose.yaml` 这个文件时，会把文件里出现的 `${VAR}` 就地替换成具体值。值从两个地方取：执行 `docker compose` 时的 shell 环境变量，以及项目目录下一个名叫 `.env` 的文件。两者都有同名变量时，shell 环境变量优先。这一步发生在容器还没创建之前，纯粹是文本替换。
+1. 第一职是**插值**。Compose 在解析 `compose.yaml` 这个文件时，会把文件里出现的 `${VAR}` 就地替换成具体值。值从两个地方取：执行 `docker compose` 时的 shell 环境变量，以及项目目录下一个名叫 `.env` 的文件。两者都有同名变量时，shell 环境变量优先。这一步发生在容器还没创建之前，只是简单的文本替换。
 
-第二职是**给容器设环境变量**，靠 `environment:` 和 `env_file:` 两个字段：
+2. 第二职是**给容器设环境变量**，靠 `environment:` 和 `env_file:` 两个字段：
+    ```yaml
+    services:
+      app:
+        environment: # 直接写进容器进程的环境变量
+          - TZ=Asia/Shanghai
+          - DB_HOST=postgres
+          - DB_PASS=${DB_PASS} # 这里的 ${DB_PASS} 是「插值」，先被替换，再设进容器
+        env_file:
+          - ./app.env # 从这个文件逐行读 KEY=VAL，设进容器
+    ```
 
-```yaml
-services:
-  app:
-    environment: # 直接写进容器进程的环境变量
-      - TZ=Asia/Shanghai
-      - DB_HOST=postgres
-      - DB_PASS=${DB_PASS} # 这里的 ${DB_PASS} 是「插值」，先被替换，再设进容器
-    env_file:
-      - ./app.env # 从这个文件逐行读 KEY=VAL，设进容器
-```
+分界线在这里：项目目录那个 `.env` 文件只为「插值」服务，它自己不会自动进容器。也就是说，在 `.env` 里写了 `FOO=bar`，容器里默认看不到 `FOO`，除非在 `environment:` 里显式写 `FOO=${FOO}`，或者把它列进 `env_file:`。`env_file` 指向的文件则相反，里面的每一行都会成为容器的环境变量。
 
-分界线在这里：项目目录那个 `.env` 文件只为「插值」服务，它自己不会自动进容器。也就是说，在 `.env` 里写了 `FOO=bar`，容器里默认看不到 `FOO`，除非在 `environment:` 里显式写 `FOO=${FOO}`，或者把它列进 `env_file:`。`env_file` 指向的文件则相反，里面的每一行都会成为容器的环境变量。新手最常见的困惑就是「`.env` 里写了，容器却读不到」，答案就是这条分界线。
-
-还有几个小陷阱。`environment` 里同名变量会覆盖 `env_file` 里的；`.env` 里的 `KEY=VAL` 等号两边不能有空格；要在 Compose 的值里写一个字面的 `$`，得转义成 `$$`，比如健康检查里用 shell 变量：
-
-```yaml
-healthcheck:
-  test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-```
-
-这里 `$$POSTGRES_USER` 经 Compose 转义后，传给容器内 shell 的是 `$POSTGRES_USER`，交给容器内 shell 在运行时展开，绕开 Compose 的提前插值。
-
-把这套机制吃透，下一节的密钥注入就是水到渠成：往项目目录写一个 `.env`，让 Compose 的 `${VAR}` 插值正好命中它。
+有几点需要注意，比如：
+- `environment` 里同名变量会覆盖 `env_file` 里的；
+- `.env` 里的 `KEY=VAL` 等号两边不能有空格；
+- 要在 Compose 的值里写一个字面的 `$`，得转义成 `$$`，比如健康检查里用 shell 变量：
+  ```yaml
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  ```
+  这里 `$$POSTGRES_USER` 经 Compose 转义后，传给容器内 shell 的是 `$POSTGRES_USER`，交给容器内 shell 在运行时展开，绕开 Compose 的提前插值。
 
 ![compose-env](./assets/compose-env.png)
 
