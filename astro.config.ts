@@ -17,8 +17,7 @@ export default defineConfig({
   integrations: [
     sitemap({
       filter: (page) =>
-        !/\/blog\/[^/]+\/[^/]+\/?$/.test(page) &&
-        !page.includes("/tags/"),
+        !/\/blog\/[^/]+\/[^/]+\/?$/.test(page) && !page.includes("/tags/"),
     }),
   ],
   markdown: {
@@ -26,7 +25,12 @@ export default defineConfig({
     processor: satteri({
       features: { directive: true, math: true },
       mdastPlugins: [calloutDirective, inlineExpressiveCode, temmlMath],
-      hastPlugins: [externalLinks, blockExpressiveCode, headingNamespace, headingAnchors],
+      hastPlugins: [
+        externalLinks,
+        blockExpressiveCode,
+        headingNamespace,
+        headingAnchors,
+      ],
     }),
   },
 })

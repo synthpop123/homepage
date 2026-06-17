@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# Format staged files with Biome before each commit.
+# Enabled via core.hooksPath=.githooks, set by the package.json "prepare" script
+# (runs automatically on `bun install`). To bypass once: `git commit --no-verify`.
+set -eu
+
+# Files staged for this commit (Added/Copied/Modified/Renamed).
+staged_files="$(git diff --cached --name-only --diff-filter=ACMR)"
+[ -z "$staged_files" ] && exit 0
+
+# Format only the staged files; Biome skips file types it doesn't support.
+bun run format:staged
+
+# Re-stage anything Biome rewrote so the formatting is part of this commit.
+printf '%s\n' "$staged_files" | xargs -r -d '\n' git add --
