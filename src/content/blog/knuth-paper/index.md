@@ -1,5 +1,5 @@
 ---
-title: 'Mathematical Analysis of Algorithms'
+title: '论文笔记 Mathematical Analysis of Algorithms'
 description: 'Reading notes on "Mathematical Analysis of Algorithms" by Donald Knuth'
 date: 2021-05-18
 authors:

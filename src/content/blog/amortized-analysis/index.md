@@ -1,5 +1,5 @@
 ---
-title: 'Amortized Analysis'
+title: '摊还分析 Amortized Analysis'
 description: 'Introduction to Amortized Analysis: a method for analyzing the average time of all operations in a sequence'
 date: 2021-05-07
 authors:

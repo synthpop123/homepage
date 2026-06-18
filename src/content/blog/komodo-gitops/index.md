@@ -1,6 +1,6 @@
 ---
-title: "Self-hosted GitOps Pipeline: Komodo + Renovate"
-description: "Implement self-hosted GitOps and version control your Docker Compose infrastructure through Git repositories"
+title: "通过 Komodo + Renovate 构建 Docker Compose GitOps 流水线"
+description: "Implement self-hosted GitOps and version control Docker Compose infrastructure through Git repositories"
 date: 2026-06-16
 authors:
   - lkw123
