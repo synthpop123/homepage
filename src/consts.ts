@@ -14,6 +14,12 @@ export const SITE = {
   defaultPostImage: "/static/1200x630.png",
 } as const
 
+export const UMAMI = {
+  src: "https://umami.lkwplus.com/script.js",
+  websiteId: "624e8690-7c02-424c-80c0-3a3480d9701e",
+  performance: true,
+} as const
+
 export const NAVIGATION: { href: string; label: string; wideOnly?: boolean }[] =
   [
     { href: "/blog", label: "Blog" },
