@@ -1,0 +1,14 @@
+---
+import Mastodon from "@/components/Mastodon.astro"
+import MetaPage from "@/components/MetaPage.astro"
+import Layout from "@/layouts/Layout.astro"
+---
+
+<Layout>
+  <MetaPage
+    slot="head"
+    title="Memos"
+    description="Short memos, pulled live from my Mastodon."
+  />
+  <Mastodon />
+</Layout>

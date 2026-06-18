@@ -3,6 +3,7 @@ import Email from "@/assets/icons/email.svg"
 import GitHub from "@/assets/icons/github.svg"
 import Globe from "@/assets/icons/globe.svg"
 import Link from "@/assets/icons/link.svg"
+import Mastodon from "@/assets/icons/mastodon.svg"
 import Twitter from "@/assets/icons/twitter.svg"
 import SocialIcons from "@/components/SocialIcons.astro"
 import { normalizePath } from "@/lib/utils"
@@ -21,6 +22,7 @@ const ICONS: Record<string, { label: string; icon: SvgComponent }> = {
   website: { label: "Website", icon: Globe },
   github: { label: "GitHub", icon: GitHub },
   twitter: { label: "Twitter", icon: Twitter },
+  mastodon: { label: "Mastodon", icon: Mastodon },
 }
 
 const links = [

@@ -25,6 +25,7 @@ export const NAVIGATION: { href: string; label: string; wideOnly?: boolean }[] =
   [
     { href: "/blog", label: "Blog" },
     { href: "/tags", label: "Tags", wideOnly: true },
+    { href: "/memos", label: "Memos" },
     { href: "/misc", label: "Misc" },
     { href: "/about", label: "About" },
   ]
@@ -35,6 +36,13 @@ export const SOCIALS: { href: string; label: string; icon: SvgComponent }[] = [
   { href: "mailto:hi@lkwplus.com", label: "Email", icon: Email },
   { href: "/rss.xml", label: "RSS", icon: RSS },
 ]
+
+export const MASTODON = {
+  instance: "https://mastodon.lkwplus.com",
+  username: "lkw123",
+  accountId: "114671030739656846",
+  limit: 20,
+} as const
 
 export const GLOBE_LOCATIONS: { location: [number, number]; size: number }[] = [
   { location: [39.904989, 116.405285], size: 0.02 }, // 北京
