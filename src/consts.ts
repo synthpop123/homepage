@@ -15,8 +15,9 @@ export const SITE = {
 } as const
 
 export const UMAMI = {
-  src: "https://umami.lkwplus.com/script.js",
+  src: "/headache.js",
   websiteId: "624e8690-7c02-424c-80c0-3a3480d9701e",
+  hostUrl: "https://umami.lkwplus.com",
   performance: true,
 } as const
 
