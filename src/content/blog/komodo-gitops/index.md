@@ -190,7 +190,7 @@ executions = [
 
 整套体系有一条隐含前提，镜像 tag 需要 pin 到固定版本，Renovate 才能去实现检测。此外，固定版本也可以让部署可复现，整套体系更稳定。
 
-数据库和缓存则依照另一套规则，**锁到大版本线**：
+数据库和缓存等则依照另一套规则，**锁到大版本线**：
 
 ```yaml
 image: pgvector/pgvector:pg17
@@ -199,9 +199,7 @@ image: redis:8
 
 一个好用的判断标准是看升级要不要人介入数据迁移，需要的话就就锁大版本线，若只是无痛补丁，则锁精确版本让 Renovate 自由提 PR。
 
-一个最小可用的 Renovate 配置很短：
-
-```json
+```json title="renovate.json"
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":dependencyDashboard", ":semanticCommits"],
@@ -256,9 +254,9 @@ Docker Compose 的环境变量机制是密钥注入的基础，`${VAR}` 这个�
           - ./app.env # 从这个文件逐行读 KEY=VAL，设进容器
     ```
 
-分界线在这里：项目目录那个 `.env` 文件只为「插值」服务，它自己不会自动进容器。也就是说，在 `.env` 里写了 `FOO=bar`，容器里默认看不到 `FOO`，除非在 `environment:` 里显式写 `FOO=${FOO}`，或者把它列进 `env_file:`。`env_file` 指向的文件则相反，里面的每一行都会成为容器的环境变量。
+两者的区别在于，项目目录那个 `.env` 文件只为「插值」服务，它自己不会自动进容器。也就是说，在 `.env` 里写了 `FOO=bar`，容器里默认看不到 `FOO`，除非在 `environment:` 里显式写 `FOO=${FOO}`，或者把它列进 `env_file:`。`env_file` 指向的文件则相反，里面的每一行都会成为容器的环境变量。
 
-有几点需要注意，比如：
+有几点需要注意：
 - `environment` 里同名变量会覆盖 `env_file` 里的；
 - `.env` 里的 `KEY=VAL` 等号两边不能有空格；
 - 要在 Compose 的值里写一个字面的 `$`，得转义成 `$$`，比如健康检查里用 shell 变量：
@@ -272,16 +270,18 @@ Docker Compose 的环境变量机制是密钥注入的基础，`${VAR}` 这个�
 
 ## 密钥：仓库里只留占位符
 
-既然要把配置放进 Git，密钥就一个都不能进。守住这条线靠两套机制，都建立在 `.env` 插值这个入口上。
+从 `.env` 插值这个入口出发，需要从两方面入手，确保密钥不进 Git：
 
-第一套处理环境变量型的密钥（数据库密码、API key）。Compose 里只写占位：
+### 环境变量型的密钥
+
+对于环境变量型的密钥（数据库密码、API key），在 Compose 里只写占位：
 
 ```yaml
 environment:
   POSTGRES_DSN: "postgres://app:${APP_DB_PASSWORD}@postgres:5432/app"
 ```
 
-真实值定义成 Komodo UI 里的 **Variables & Secrets**，再在 `sync.toml` 对应 Stack 的 `environment` 字段里做映射：
+真实值则定义在 Komodo UI 里的 **Variables & Secrets**，再在 `sync.toml` 对应 Stack 的 `environment` 字段里做映射：
 
 ```toml
 environment = """
@@ -290,13 +290,15 @@ APP_REDIS_PASSWORD=[[APP_REDIS_PASSWORD]]
 """
 ```
 
-部署时，Komodo 把 `[[ ]]` 里的变量名解析成真实值，写进该 Stack run directory 下一个 git-ignored 的 `.env` 文件，接着 `docker compose` 自然读这个同目录的 `.env` 完成 `${VAR}` 插值。整条链路下来，Git 里始终只有 `${VAR}` 占位和 `[[VAR]]` 映射，真实密钥只活在 Komodo 的加密变量库和部署那一刻生成的 `.env` 里，落盘那份还在仓库克隆之外。
+部署时，Komodo 会把 `[[ ]]` 里的变量名解析成真实值，写进该 Stack run directory 下一个 git-ignored 的 `.env` 文件，接着 `docker compose` 自然读这个同目录的 `.env` 完成 `${VAR}` 插值。整条链路中 Git 里只有 `${VAR}` 占位和 `[[VAR]]` 映射，真实密钥只存在于 Komodo 的加密变量库和部署那一刻生成的 `.env` 里，落盘那份还在仓库克隆之外。
 
-非密钥的配置（时区、`PUID`/`PGID`、功能开关）就直接写在 compose 的 `environment:` 里，提交进 Git，让服务自包含、好读。区分标准很简单：泄露了会出事的进 Komodo 变量，不会的进 compose。
+非密钥的配置（时区、`PUID`/`PGID`、功能开关）可以直接写在 compose 的 `environment:` 里，提交进 Git，让服务自包含、好读，便于管理。
 
-第二套机制处理整份带密钥的配置文件，比如某些应用要的一个 `config.yaml`，里面密钥和普通配置混在一起。这种文件的真实版本放在主机的数据目录里，bind 挂进容器，跟着数据一起备份，本体留在 Git 之外；仓库里只提交一份把密钥抹掉的 `config.example.yaml` 当参考。还有个 Docker 小陷阱：bind 挂载单个文件时，这个文件必须在容器启动前就存在于主机上，否则 Docker 会好心地创建一个同名目录顶上去，应用一读就报错。
+### 文件型的密钥
 
-控制平面自己的密钥（数据库密码、首个管理员密码、webhook secret）是这套规则的唯一例外。Komodo 正是提供变量库 UI 的那个东西，自己的密钥没处安放，所以留在主机上它自己的环境文件里，git-ignored，同样以脱敏的 `.example` 形式在仓库里留一份结构参考。
+对于整份带密钥的配置文件，比如某些应用需要的 `config.yaml`，里面密钥和普通配置混在一起。这种文件的真实版本放在主机的数据目录里，bind 挂进容器，跟着数据一起备份，本体留在 Git 之外；仓库里可以提交一份把密钥抹掉的 `config.example.yaml` 当参考。还有个 Docker 小陷阱：bind 挂载单个文件时，这个文件必须在容器启动前就存在于主机上，否则 Docker 创建一个同名目录顶上去，应用读取时便会报错。
+
+控制平面自己的密钥（数据库密码、首个管理员密码、webhook secret）是这套规则的例外。Komodo 正是提供变量库 UI 的一方，自己的密钥没处安放，所以留在主机上它自己的环境文件里，git-ignored，同样以脱敏的 `.example` 形式在仓库里留一份结构参考。
 
 ## 几条约定：端口、网络、数据落盘
 
