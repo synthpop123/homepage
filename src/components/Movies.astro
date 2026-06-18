@@ -1,0 +1,316 @@
+---
+type Props = {
+  username?: string
+  limit?: number
+}
+
+const { username = "lkw123", limit = 8 } = Astro.props
+
+const profileUrl = `https://letterboxd.com/${username}/`
+const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=true&limit=${limit}`
+---
+
+<p class="movies-intro">
+  Films I recently watched, pulled live from
+  <a href={profileUrl} target="_blank" rel="noopener noreferrer">Letterboxd</a>.
+</p>
+<movies-feed data-endpoint={feedUrl} data-limit={limit}>
+  <ol class="movies-grid">
+    {Array.from({ length: limit }).map(() => (
+        <li class="movie-card" data-skeleton aria-hidden="true">
+          <div class="movie-link">
+            <span class="poster" />
+            <span class="meta">
+              <span class="sk-line sk-title" />
+              <span class="sk-line sk-title-short" />
+              <span class="sk-line sk-date" />
+              <span class="sk-line sk-rating" />
+            </span>
+          </div>
+        </li>
+      ))}
+  </ol>
+  <p class="movies-fallback" hidden>
+    Couldn’t load right now — browse them on
+    <a href={profileUrl} target="_blank" rel="noopener noreferrer"
+      >Letterboxd</a
+    >.
+  </p>
+</movies-feed>
+
+<script>
+  type LetterboxdEntry = {
+    film?: {
+      title?: string
+      year?: string
+      image?: { tiny?: string; small?: string; medium?: string; large?: string }
+    }
+    rating?: { score?: number; text?: string }
+    date?: { watched?: number; published?: number }
+    uri?: string
+  }
+
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "Asia/Shanghai",
+  })
+
+  const entryTime = (entry: LetterboxdEntry) =>
+    entry.date?.watched ?? entry.date?.published ?? 0
+
+  const buildCard = (entry: LetterboxdEntry) => {
+    const card = document.createElement("li")
+    card.className = "movie-card"
+
+    const link = document.createElement("a")
+    link.className = "movie-link"
+    link.href = entry.uri!
+    link.target = "_blank"
+    link.rel = "noopener noreferrer"
+
+    const poster = document.createElement("span")
+    poster.className = "poster"
+    const { small, medium, large } = entry.film?.image ?? {}
+    const src = medium ?? small ?? large
+    if (src) {
+      const img = document.createElement("img")
+      img.src = src
+      const retina = large ?? medium
+      if (retina && retina !== src) img.srcset = `${src} 1x, ${retina} 2x`
+      img.alt = `${entry.film?.title ?? ""} poster`
+      img.loading = "lazy"
+      img.decoding = "async"
+      img.width = 150
+      img.height = 225
+      poster.append(img)
+    }
+    link.append(poster)
+
+    const meta = document.createElement("span")
+    meta.className = "meta"
+
+    const title = document.createElement("span")
+    title.className = "title"
+    title.append(entry.film?.title ?? "Untitled")
+    if (entry.film?.year) {
+      const year = document.createElement("span")
+      year.className = "year"
+      year.textContent = entry.film.year
+      title.append(" ", year)
+    }
+    meta.append(title)
+
+    const watched = entry.date?.watched ?? entry.date?.published
+    if (watched) {
+      const time = document.createElement("time")
+      time.className = "date"
+      const value = new Date(watched)
+      time.dateTime = value.toISOString()
+      time.textContent = dateFormatter.format(value)
+      meta.append(time)
+    }
+
+    if (typeof entry.rating?.score === "number") {
+      const rating = document.createElement("span")
+      rating.className = "rating"
+      rating.style.setProperty("--score", String(entry.rating.score))
+      rating.setAttribute("role", "img")
+      rating.setAttribute("aria-label", `${entry.rating.score} out of 5 stars`)
+      rating.append(document.createElement("span"))
+      meta.append(rating)
+    }
+
+    link.append(meta)
+    card.append(link)
+    return card
+  }
+
+  document.querySelectorAll<HTMLElement>("movies-feed").forEach((feed) => {
+    const grid = feed.querySelector<HTMLOListElement>(".movies-grid")
+    const fallback = feed.querySelector<HTMLElement>(".movies-fallback")
+    const endpoint = feed.dataset.endpoint
+    if (!grid || !endpoint) return
+
+    const limit = Number(feed.dataset.limit) || 8
+
+    fetch(endpoint)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`)
+        return response.json() as Promise<LetterboxdEntry[]>
+      })
+      .then((entries) => {
+        const valid = (Array.isArray(entries) ? entries : [])
+          .filter((entry) => entry?.film?.title && entry?.uri)
+          .sort((a, b) => entryTime(b) - entryTime(a))
+          .slice(0, limit)
+        if (valid.length === 0) throw new Error("No diary entries")
+        const fragment = document.createDocumentFragment()
+        for (const entry of valid) fragment.append(buildCard(entry))
+        grid.replaceChildren(fragment)
+      })
+      .catch(() => {
+        grid.hidden = true
+        if (fallback) fallback.hidden = false
+      })
+  })
+</script>
+
+<style>
+  .movies-intro {
+    margin-block-end: var(--space-s);
+    color: var(--muted-foreground);
+  }
+
+  .movies-fallback {
+    margin-block-end: 0;
+    color: var(--muted-foreground);
+  }
+
+  .movies-intro a,
+  .movies-fallback a {
+    color: var(--foreground);
+    text-decoration: underline;
+  }
+
+  movies-feed {
+    display: block;
+  }
+
+  .movies-grid {
+    --poster-w: clamp(4.5rem, 11vw, 5.5rem);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-s) var(--space-m);
+  }
+
+  movies-feed :global(.movie-card) {
+    min-block-size: calc(var(--poster-w) * 3 / 2);
+  }
+
+  movies-feed :global(.movie-link) {
+    display: flex;
+    gap: var(--space-2xs);
+    color: var(--foreground);
+    text-decoration: none;
+  }
+
+  movies-feed :global(.movie-link:hover .title) {
+    text-decoration: underline;
+    text-decoration-thickness: max(1px, 0.0625em);
+    text-underline-offset: 0.15em;
+  }
+
+  movies-feed :global(.poster) {
+    flex-shrink: 0;
+    inline-size: var(--poster-w);
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+  }
+
+  movies-feed :global(.poster img) {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  movies-feed :global(.meta) {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--space-3xs);
+  }
+
+  movies-feed :global(.title) {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--step-0);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  movies-feed :global(.year) {
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-normal);
+    color: var(--muted-foreground);
+  }
+
+  movies-feed :global(.date) {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  movies-feed :global(.rating) {
+    --score: 0;
+    position: relative;
+    inline-size: max-content;
+    margin-block-start: auto;
+    font-size: var(--step-0);
+    line-height: 1;
+    color: var(--gray-6);
+  }
+
+  movies-feed :global(.rating::before) {
+    content: "★★★★★";
+  }
+
+  movies-feed :global(.rating > span) {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: calc(var(--score) / 5 * 100%);
+    overflow: hidden;
+    color: var(--foreground);
+  }
+
+  movies-feed :global(.rating > span::before) {
+    content: "★★★★★";
+  }
+
+  movies-feed :global(.sk-line) {
+    display: block;
+    block-size: 0.85em;
+    border-radius: var(--radius-sm);
+  }
+
+  movies-feed :global(.sk-title) {
+    inline-size: 85%;
+  }
+
+  movies-feed :global(.sk-title-short) {
+    inline-size: 55%;
+  }
+
+  movies-feed :global(.sk-date) {
+    inline-size: 40%;
+    block-size: 0.7em;
+  }
+
+  movies-feed :global(.sk-rating) {
+    inline-size: 4.8em;
+    block-size: 0.95em;
+    margin-block-start: auto;
+  }
+
+  movies-feed :global([data-skeleton] .poster),
+  movies-feed :global(.sk-line) {
+    background-color: var(--gray-5);
+    animation: movies-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes movies-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+</style>

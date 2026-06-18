@@ -2,6 +2,7 @@
 import AuthorCard from "@/components/AuthorCard.astro"
 import Globe from "@/components/Globe.astro"
 import MetaPage from "@/components/MetaPage.astro"
+import Movies from "@/components/Movies.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getCollection } from "astro:content"
 
@@ -32,6 +33,10 @@ const friends = (await getCollection("friends")).sort((a, b) =>
       >, a lightweight (5kB) WebGL globe library.
     </p>
     <Globe />
+  </section>
+  <section>
+    <h2>Movies</h2>
+    <Movies username="lkw123" limit={8} />
   </section>
 </Layout>
 
