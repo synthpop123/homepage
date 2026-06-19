@@ -14,10 +14,16 @@ import { headingAnchors } from "./src/lib/heading-anchors"
 export default defineConfig({
   site: "https://lkwplus.com",
   prefetch: { prefetchAll: true },
+  redirects: {
+    "/posts": "/blog",
+    "/posts/[...id]": "/blog/[...id]",
+  },
   integrations: [
     sitemap({
       filter: (page) =>
-        !/\/blog\/[^/]+\/[^/]+\/?$/.test(page) && !page.includes("/tags/"),
+        !/\/blog\/[^/]+\/[^/]+\/?$/.test(page) &&
+        !page.includes("/tags/") &&
+        !page.includes("/posts/"),
     }),
   ],
   markdown: {
