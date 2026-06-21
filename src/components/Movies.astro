@@ -60,28 +60,13 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
   const entryTime = (entry: LetterboxdEntry) =>
     entry.date?.watched ?? entry.date?.published ?? 0
 
-  const SVG_NS = "http://www.w3.org/2000/svg"
-
   const createRewatchIcon = () => {
-    const svg = document.createElementNS(SVG_NS, "svg")
-    svg.setAttribute("class", "rewatch-icon")
-    svg.setAttribute("viewBox", "0 0 24 24")
-    svg.setAttribute("fill", "none")
-    svg.setAttribute("stroke", "currentColor")
-    svg.setAttribute("stroke-width", "2.5")
-    svg.setAttribute("stroke-linecap", "round")
-    svg.setAttribute("stroke-linejoin", "round")
-    svg.setAttribute("role", "img")
-    svg.setAttribute("aria-label", "Rewatch")
-    for (const d of [
-      "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8",
-      "M3 3v5h5",
-    ]) {
-      const path = document.createElementNS(SVG_NS, "path")
-      path.setAttribute("d", d)
-      svg.append(path)
-    }
-    return svg
+    const icon = document.createElement("span")
+    icon.className = "rewatch-icon"
+    icon.setAttribute("role", "img")
+    icon.setAttribute("aria-label", "Rewatch")
+    icon.textContent = "\u267A"
+    return icon
   }
 
   const buildCard = (entry: LetterboxdEntry) => {
@@ -277,9 +262,9 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
   }
 
   movies-feed :global(.rewatch-icon) {
-    inline-size: 0.9em;
-    block-size: 0.9em;
     flex-shrink: 0;
+    font-size: 1em;
+    line-height: 1;
   }
 
   movies-feed :global(.rating) {
