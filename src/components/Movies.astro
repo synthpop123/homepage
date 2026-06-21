@@ -46,6 +46,7 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
     }
     rating?: { score?: number; text?: string }
     date?: { watched?: number; published?: number }
+    isRewatch?: boolean
     uri?: string
   }
 
@@ -58,6 +59,30 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
 
   const entryTime = (entry: LetterboxdEntry) =>
     entry.date?.watched ?? entry.date?.published ?? 0
+
+  const SVG_NS = "http://www.w3.org/2000/svg"
+
+  const createRewatchIcon = () => {
+    const svg = document.createElementNS(SVG_NS, "svg")
+    svg.setAttribute("class", "rewatch-icon")
+    svg.setAttribute("viewBox", "0 0 24 24")
+    svg.setAttribute("fill", "none")
+    svg.setAttribute("stroke", "currentColor")
+    svg.setAttribute("stroke-width", "2.5")
+    svg.setAttribute("stroke-linecap", "round")
+    svg.setAttribute("stroke-linejoin", "round")
+    svg.setAttribute("role", "img")
+    svg.setAttribute("aria-label", "Rewatch")
+    for (const d of [
+      "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8",
+      "M3 3v5h5",
+    ]) {
+      const path = document.createElementNS(SVG_NS, "path")
+      path.setAttribute("d", d)
+      svg.append(path)
+    }
+    return svg
+  }
 
   const buildCard = (entry: LetterboxdEntry) => {
     const card = document.createElement("li")
@@ -102,12 +127,15 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
     meta.append(title)
 
     const watched = entry.date?.watched ?? entry.date?.published
-    if (watched) {
+    if (watched || entry.isRewatch) {
       const time = document.createElement("time")
       time.className = "date"
-      const value = new Date(watched)
-      time.dateTime = value.toISOString()
-      time.textContent = dateFormatter.format(value)
+      if (entry.isRewatch) time.append(createRewatchIcon())
+      if (watched) {
+        const value = new Date(watched)
+        time.dateTime = value.toISOString()
+        time.append(dateFormatter.format(value))
+      }
       meta.append(time)
     }
 
@@ -241,8 +269,17 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
   }
 
   movies-feed :global(.date) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
     font-size: var(--step--1);
     color: var(--muted-foreground);
+  }
+
+  movies-feed :global(.rewatch-icon) {
+    inline-size: 0.9em;
+    block-size: 0.9em;
+    flex-shrink: 0;
   }
 
   movies-feed :global(.rating) {
