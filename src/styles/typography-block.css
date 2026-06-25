@@ -33,29 +33,6 @@ prose-content {
     border-block-start: 1.5px solid var(--border);
   }
 
-  :is(math, math *) {
-    letter-spacing: normal;
-  }
-
-  math {
-    font-family: var(--font-math);
-  }
-
-  math-display {
-    display: flex;
-    justify-content: safe center;
-    overflow-x: auto;
-    overflow-y: hidden;
-
-    .tml-right { text-align: right; text-align: -webkit-right; }
-    .tml-left  { text-align: left;  text-align: -webkit-left; }
-  
-    mtable.tml-jot   mtd { padding-block: 0.7ex; }
-    mtable.tml-small mtd { padding-block: 0.35ex; }
-
-    mtd { padding-block: 0.5ex; }
-  }
-
   .expressive-code {
     content-visibility: auto;
     contain-intrinsic-block-size: auto 20rem;
