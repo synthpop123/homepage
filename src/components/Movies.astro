@@ -11,7 +11,7 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
 ---
 
 <p class="movies-intro">
-  Films I recently watched, pulled live from
+  Films I recently watched, pulled live from{" "}
   <a href={profileUrl} target="_blank" rel="noopener noreferrer">Letterboxd</a>.
 </p>
 <movies-feed data-endpoint={feedUrl} data-limit={limit}>
@@ -30,7 +30,7 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
       ))}
   </ol>
   <p class="movies-fallback" hidden>
-    Couldn’t load right now — browse them on
+    Couldn’t load right now — browse them on{" "}
     <a href={profileUrl} target="_blank" rel="noopener noreferrer"
       >Letterboxd</a
     >.
