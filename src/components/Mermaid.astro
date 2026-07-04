@@ -1,0 +1,36 @@
+<script>
+  const diagrams = [...document.querySelectorAll<HTMLElement>("pre.mermaid")]
+
+  if (diagrams.length > 0) {
+    const sources = new Map(diagrams.map((el) => [el, el.textContent ?? ""]))
+    const { default: mermaid } = await import("mermaid")
+
+    const prefersDark = matchMedia("(prefers-color-scheme: dark)")
+    const isDark = () => {
+      const { theme } = document.documentElement.dataset
+      return theme === "dark" || (!theme && prefersDark.matches)
+    }
+
+    const render = async () => {
+      for (const [el, source] of sources) {
+        el.removeAttribute("data-processed")
+        el.textContent = source
+      }
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: isDark() ? "dark" : "neutral",
+        fontFamily: "var(--font-sans)",
+      })
+      await mermaid.run({ nodes: diagrams })
+    }
+
+    await render()
+
+    new MutationObserver(render).observe(document.documentElement, {
+      attributeFilter: ["data-theme"],
+    })
+    prefersDark.addEventListener("change", () => {
+      if (!document.documentElement.dataset.theme) render()
+    })
+  }
+</script>

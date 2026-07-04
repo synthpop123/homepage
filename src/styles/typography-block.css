@@ -33,6 +33,20 @@ prose-content {
     border-block-start: 1.5px solid var(--border);
   }
 
+  pre.mermaid {
+    display: flex;
+    justify-content: center;
+
+    &:not([data-processed]) {
+      visibility: hidden;
+    }
+
+    svg {
+      max-inline-size: 100%;
+      block-size: auto;
+    }
+  }
+
   .expressive-code {
     content-visibility: auto;
     contain-intrinsic-block-size: auto 20rem;

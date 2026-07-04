@@ -46,7 +46,7 @@ Three glob collections: `blog`, `authors`, `friends`. The glob pattern `**/[^_]*
 - Subposts form a **series** rendered as one continuous scrollable document. `src/lib/content.ts` provides `getPosts()` (top-level only), `getSubposts()` (grouped by parent, ordered by `order` frontmatter then date), and `getTags()`.
 - The route `src/pages/blog/[...id].astro` builds the parent + subpost chain into a single page with a unified table of contents. The sitemap filter in `astro.config.ts` excludes subpost URLs and tag pages.
 
-Blog frontmatter: `title`, `description`, `date`, `authors` (refs into the `authors` collection) are required; `tags`, `image`, `order`, `draft` optional. `draft: true` posts are filtered out by `getPosts`.
+Blog frontmatter: `title`, `description`, `date`, `authors` (refs into the `authors` collection) are required; `tags`, `image`, `order`, `draft`, `mermaid` optional. `draft: true` posts are filtered out by `getPosts`. `mermaid: true` opts a post into Mermaid diagrams: it makes the `mermaid.ts` mdast plugin turn ```` ```mermaid ```` fences into `<pre class="mermaid">` and gates the client-side `Mermaid.astro` script in `src/pages/blog/[...id].astro` (any post in a series chain opting in loads it for the whole page); without the flag, fences render as plain code blocks.
 
 ### Styling
 

@@ -6,6 +6,7 @@ import {
   inlineExpressiveCode,
 } from "./src/lib/expressive-code"
 import { temmlMath } from "./src/lib/math"
+import { mermaidDiagram } from "./src/lib/mermaid"
 import { calloutDirective } from "./src/lib/callout"
 import { externalLinks } from "./src/lib/external-links"
 import { headingNamespace } from "./src/lib/heading-namespace"
@@ -31,7 +32,12 @@ export default defineConfig({
     syntaxHighlight: false,
     processor: satteri({
       features: { directive: true, math: true },
-      mdastPlugins: [calloutDirective, inlineExpressiveCode, temmlMath],
+      mdastPlugins: [
+        calloutDirective,
+        inlineExpressiveCode,
+        temmlMath,
+        mermaidDiagram,
+      ],
       hastPlugins: [
         externalLinks,
         blockExpressiveCode,

@@ -42,6 +42,7 @@ const blog = defineCollection({
       authors: z.array(reference("authors")),
       image: image().optional(),
       draft: z.boolean().optional(),
+      mermaid: z.boolean().optional(),
     }),
 })
 
