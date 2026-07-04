@@ -19,10 +19,9 @@ const profileUrl = `${instance}/@${username}`
   aria-busy="true"
 >
   <p class="mastodon-intro">
-    Pulled live from my{" "}
-    <MastodonIcon class="mastodon-mark" aria-hidden="true" />{" "}
+    Pulled live from my
+    <MastodonIcon class="mastodon-mark" aria-hidden="true" />
     <a href={profileUrl} target="_blank" rel="noopener noreferrer">Mastodon</a>
-    {" "}
     instance.
   </p>
   <ol class="mastodon-list">
@@ -39,7 +38,7 @@ const profileUrl = `${instance}/@${username}`
       ))}
   </ol>
   <p class="mastodon-fallback" hidden>
-    Couldn’t load posts right now — read them on{" "}
+    Couldn’t load posts right now — read them on
     <a href={profileUrl} target="_blank" rel="noopener noreferrer">Mastodon</a>.
   </p>
 </mastodon-feed>

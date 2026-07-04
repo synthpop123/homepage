@@ -13,6 +13,7 @@ import { headingAnchors } from "./src/lib/heading-anchors"
 
 export default defineConfig({
   site: "https://lkwplus.com",
+  compressHTML: true,
   prefetch: { prefetchAll: true },
   redirects: {
     "/posts": "/blog",
