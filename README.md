@@ -13,9 +13,9 @@
 
 astro-erudite is [enscribe](https://enscribe.dev)'s opinionated, unstyled static blogging template built with [Astro](https://astro.build/) and native CSS. astro-erudite uses no UI framework, no CSS framework, and contains minimal dependencies.
 
-| ![Preview 1](/public/static/preview-1.png) | ![Preview 2](/public/static/preview-2.png) |
-| ------------------------------------------ | ------------------------------------------ |
-| ![Preview 3](/public/static/preview-3.png) | ![Preview 4](/public/static/preview-4.png) |
+| ![Preview 1](/.github/assets/preview-1.png) | ![Preview 2](/.github/assets/preview-2.png) |
+| ------------------------------------------- | ------------------------------------------- |
+| ![Preview 3](/.github/assets/preview-3.png) | ![Preview 4](/.github/assets/preview-4.png) |
 
 > [!IMPORTANT]
 > astro-erudite has recently been updated to v2. To learn what changed and why, read the following blog post: [Introducing astro-erudite v2](https://astro-erudite.vercel.app/blog/introducing-v2). If you're migrating an existing v1 project, see [breaking changes](https://astro-erudite.vercel.app/blog/introducing-v2#breaking-changes).

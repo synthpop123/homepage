@@ -14,7 +14,7 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
   Films I recently watched, pulled live from
   <a href={profileUrl} target="_blank" rel="noopener noreferrer">Letterboxd</a>.
 </p>
-<movies-feed data-endpoint={feedUrl} data-limit={limit}>
+<movies-feed data-endpoint={feedUrl} data-limit={limit} aria-busy="true">
   <ol class="movies-grid">
     {Array.from({ length: limit }).map(() => (
         <li class="movie-card" data-skeleton aria-hidden="true">
@@ -161,10 +161,12 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
         const fragment = document.createDocumentFragment()
         for (const entry of valid) fragment.append(buildCard(entry))
         grid.replaceChildren(fragment)
+        feed.setAttribute("aria-busy", "false")
       })
       .catch(() => {
         grid.hidden = true
         if (fallback) fallback.hidden = false
+        feed.setAttribute("aria-busy", "false")
       })
   })
 </script>
