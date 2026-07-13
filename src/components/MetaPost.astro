@@ -19,6 +19,23 @@ const canonical = new URL(canonicalPath ?? Astro.url.pathname, base)
 const ogImage = image
   ? new URL(image.src, base)
   : new URL(SITE.defaultPostImage, base)
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: title,
+  description,
+  url: canonical.href,
+  mainEntityOfPage: canonical.href,
+  image: ogImage.href,
+  datePublished: date.toISOString(),
+  dateModified: (updatedDate ?? date).toISOString(),
+  author: authors.map((author) => ({
+    "@type": "Person",
+    name: author.data.name,
+    url: new URL("/about", base).href,
+  })),
+}
 ---
 
 <title>{pageTitle(title)}</title>
@@ -46,3 +63,5 @@ const ogImage = image
     <meta property="article:modified_time" content={updatedDate.toISOString()} />
   )}
 {authorNames.map((name) => <meta property="article:author" content={name} />)}
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
