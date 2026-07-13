@@ -10,8 +10,7 @@ export const SITE = {
   description: "Yet another salted fish.",
   locale: "en-US",
   dir: "ltr",
-  defaultPageImage: "/static/opengraph-image.png",
-  defaultPostImage: "/static/1200x630.png",
+  defaultPageImage: "/og/site.png",
 } as const
 
 export const UMAMI = {

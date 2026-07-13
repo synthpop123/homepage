@@ -1,4 +1,4 @@
-![Showcase Card](/public/static/opengraph-image.png)
+![Showcase Card](/.github/assets/opengraph-image.png)
 
 <div align="center">
 
