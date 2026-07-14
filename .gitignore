@@ -1,5 +1,7 @@
 dist/
 .astro/
+# Downloaded by scripts/prebuild.ts on every build
+src/assets/cat.jpg
 node_modules/
 npm-debug.log*
 yarn-debug.log*

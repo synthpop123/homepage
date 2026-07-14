@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Personal homepage/blog (lkwplus.com) built on the `astro-erudite` v2 template: Astro 6, **no UI framework and no CSS framework** — native CSS with autonomous custom elements and Utopia fluid scales. Package manager is **bun** (`bun.lock`); Node >= 22.12.0.
+Personal homepage/blog (lkwplus.com) built on the `astro-erudite` v2 template: Astro 7, **no UI framework and no CSS framework** — native CSS with autonomous custom elements and Utopia fluid scales. Package manager is **bun** (`bun.lock`); Node >= 22.12.0.
 
 ## Commands
 
@@ -16,6 +16,8 @@ bun run format       # Format with Biome (writes)
 bun run format:check # Check formatting without writing
 bun run astro ...    # Astro CLI (e.g. `bun run astro check`)
 ```
+
+`bun dev` and `bun run build` first run `scripts/prebuild.ts`, which syncs the self-hosted Umami tracker into `public/headache.js` and downloads a random cat photo to `src/assets/cat.jpg` (gitignored; falls back to the committed `src/assets/cat-fallback.jpg` when offline). Both steps are non-fatal on network failure.
 
 There is **no test suite and no linter** — Biome runs format-only (linter and assist disabled in `biome.json`). The single automated check is formatting. A `.githooks/pre-commit` hook formats staged files via Biome on every commit (installed by the `prepare` script on `bun install`; bypass once with `git commit --no-verify`). Biome style: double quotes, semicolons as-needed, 2-space indent, 80 cols.
 

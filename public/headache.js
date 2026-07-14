@@ -8,10 +8,10 @@
         document: c,
         history: s,
         top: f,
-        doNotTrack: u,
+        doNotTrack: l,
       } = t,
-      { currentScript: l, referrer: d } = c
-    if (!l) return
+      { currentScript: u, referrer: d } = c
+    if (!u) return
     const { hostname: h, href: m, origin: p } = o
     let y
     try {
@@ -20,7 +20,7 @@
     const g = "data-",
       v = "false",
       b = "true",
-      T = l.getAttribute.bind(l),
+      T = u.getAttribute.bind(u),
       w = (t) => T(`${g}${t}`),
       S = w("website-id"),
       x = w("host-url"),
@@ -35,7 +35,7 @@
       I = w("performance") === b,
       L = w("auto-pageview") !== v,
       P = O.split(",").map((t) => t.trim()),
-      K = `${(x || "https://gateway.umami.is").replace(/\/$/, "")}/api/send`,
+      K = `${(x || "" || u.src.split("/").slice(0, -1).join("/")).replace(/\/$/, "")}/api/send`,
       R = `${e}x${a}`,
       _ = /data-umami-event-([\w-_]+)/,
       D = `${g}umami-event`,
@@ -74,7 +74,7 @@
         (O && !P.includes(h)) ||
         ($ &&
           (() => {
-            const t = u || r || i
+            const t = l || r || i
             return 1 === t || "1" === t || "yes" === t
           })()),
       q = async (e, a = "event") => {
@@ -196,20 +196,20 @@
             e.lcp = Math.max(t.startTime - i, 0)
           })
         let f = 0,
-          u = []
+          l = []
         s("layout-shift", (t) => {
           if (!t.hadRecentInput) {
-            const a = u[u.length - 1],
-              n = u[0]
+            const a = l[l.length - 1],
+              n = l[0]
             a &&
             t.startTime - a.startTime - a.duration < 1e3 &&
             t.startTime - n.startTime < 5e3
-              ? ((f += t.value), u.push(t))
-              : ((f = t.value), (u = [t])),
+              ? ((f += t.value), l.push(t))
+              : ((f = t.value), (l = [t])),
               f > (e.cls || 0) && (e.cls = f)
           }
         })
-        let l,
+        let u,
           d = {}
         const h = (t) => {
           t.forEach((t) => {
@@ -220,8 +220,8 @@
           })
         }
         try {
-          ;(l = new PerformanceObserver((t) => h(t.getEntries()))),
-            l.observe({ type: "event", buffered: !0, durationThreshold: 40 })
+          ;(u = new PerformanceObserver((t) => h(t.getEntries()))),
+            u.observe({ type: "event", buffered: !0, durationThreshold: 40 })
         } catch {}
         const m = (e) => {
             try {
@@ -256,7 +256,7 @@
                 }
               })(),
               (() => {
-                l && h(l.takeRecords())
+                u && h(u.takeRecords())
                 const t = Object.values(d).sort((t, e) => e - t)
                 if (t.length) {
                   const a = Math.floor(0.02 * Math.max(t.length, 10))
@@ -277,7 +277,7 @@
             (i = 0),
             (o = performance.now()),
             (f = 0),
-            (u = []),
+            (l = []),
             (d = {}),
             (n = !1),
             a && clearTimeout(a),
