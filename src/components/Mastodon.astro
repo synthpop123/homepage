@@ -262,6 +262,28 @@ const profileUrl = `${instance}/@${username}`
     return item
   }
 
+  const CACHE_TTL = 60_000
+
+  const readCache = (key: string): Status[] | null => {
+    try {
+      const raw = sessionStorage.getItem(key)
+      if (!raw) return null
+      const { t, statuses } = JSON.parse(raw)
+      if (Date.now() - t > CACHE_TTL) return null
+      return Array.isArray(statuses) ? statuses : null
+    } catch {
+      return null
+    }
+  }
+
+  const writeCache = (key: string, statuses: Status[]) => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), statuses }))
+    } catch {
+      // Storage full or unavailable (e.g. private mode) — cache is optional.
+    }
+  }
+
   document.querySelectorAll<HTMLElement>("mastodon-feed").forEach((feed) => {
     const list = feed.querySelector<HTMLOListElement>(".mastodon-list")
     const fallback = feed.querySelector<HTMLElement>(".mastodon-fallback")
@@ -269,14 +291,26 @@ const profileUrl = `${instance}/@${username}`
     if (!instance || !accountId || !list) return
 
     const limit = Number(feed.dataset.limit) || 20
+    const cacheKey = `mastodon:${instance}:${accountId}:${limit}`
 
-    fetch(
-      `${instance}/api/v1/accounts/${accountId}/statuses?exclude_replies=true&exclude_reblogs=true&limit=${limit}`,
-    )
-      .then((response) => {
-        if (!response.ok) throw new Error(`Request failed: ${response.status}`)
-        return response.json() as Promise<Status[]>
-      })
+    const load = () => {
+      const cached = readCache(cacheKey)
+      if (cached) return Promise.resolve(cached)
+      return fetch(
+        `${instance}/api/v1/accounts/${accountId}/statuses?exclude_replies=true&exclude_reblogs=true&limit=${limit}`,
+      )
+        .then((response) => {
+          if (!response.ok)
+            throw new Error(`Request failed: ${response.status}`)
+          return response.json() as Promise<Status[]>
+        })
+        .then((statuses) => {
+          if (Array.isArray(statuses)) writeCache(cacheKey, statuses)
+          return statuses
+        })
+    }
+
+    load()
       .then((statuses) => {
         const valid = (Array.isArray(statuses) ? statuses : []).filter(
           (status) => !status.reblog,
