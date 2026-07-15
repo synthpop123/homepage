@@ -305,7 +305,7 @@ const { title, sections } = Astro.props
       const target = document.querySelectorAll(`[id="${CSS.escape(id)}"]`)[nth]
       if (target) links.set(target, a)
     }
-    const articles = document.querySelectorAll("main article")
+    const articles = document.querySelectorAll("main article, main section")
     const list = nav.querySelector(":scope > ul")
     const title = nav.querySelector("toc-title")
     const currentLabel = nav.querySelector("toc-current")
@@ -325,7 +325,9 @@ const { title, sections } = Astro.props
 
     const blockOf = new Map<Element, Element>()
     for (const target of links.keys()) {
-      const block = target.closest("prose-content > *, article[data-url]")
+      const block = target.closest(
+        "prose-content > *, article[data-url], main section",
+      )
       if (block && !blockOf.has(block)) blockOf.set(block, target)
     }
 
@@ -420,10 +422,6 @@ const { title, sections } = Astro.props
     })
 
     for (const block of sectionOf.keys()) observer.observe(block)
-    if (heading) {
-      observer.observe(heading)
-    } else {
-      title?.toggleAttribute("data-visible", true)
-    }
+    if (heading) observer.observe(heading)
   })()
 </script>

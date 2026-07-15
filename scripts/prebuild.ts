@@ -1,14 +1,16 @@
 /**
  * Runs before `astro dev` / `astro build` (wired up in package.json).
  *
- * 1. Syncs the self-hosted Umami tracker script into public/headache.js.
+ * 1. Syncs the self-hosted Umami tracker script into public/headache.js
+ *    (gitignored, like cat.jpg below).
  * 2. Downloads a random cat from cataas.com into src/assets/cat.jpg
  *    (gitignored), so the homepage ships a build-time snapshot instead
  *    of hitting cataas on every visit.
  *
- * Both steps degrade gracefully: on network failure the previously
- * committed/downloaded file (or the committed fallback cat) is kept, so
- * offline builds and CI never break.
+ * Both steps degrade gracefully: on network failure the committed
+ * fallback (src/assets/headache-fallback.js / cat-fallback.jpg) or the
+ * previously downloaded file is used, so offline builds and CI never
+ * break.
  */
 import { copyFileSync, existsSync, writeFileSync } from "node:fs"
 import path from "node:path"
@@ -19,6 +21,7 @@ const root = process.cwd()
 // Keep in sync with UMAMI.hostUrl in src/consts.ts.
 const UMAMI_SCRIPT_URL = "https://umami.lkwplus.com/script.js"
 const UMAMI_DEST = path.join(root, "public/headache.js")
+const UMAMI_FALLBACK = path.join(root, "src/assets/headache-fallback.js")
 
 const CAT_URL = "https://cataas.com/cat"
 const CAT_DEST = path.join(root, "src/assets/cat.jpg")
@@ -36,7 +39,12 @@ async function syncUmami() {
     writeFileSync(UMAMI_DEST, script)
     console.log(`[prebuild] umami: synced ${UMAMI_SCRIPT_URL}`)
   } catch (error) {
-    console.warn(`[prebuild] umami: sync failed (${error}), keeping existing`)
+    if (existsSync(UMAMI_DEST)) {
+      console.warn(`[prebuild] umami: sync failed (${error}), keeping previous`)
+    } else {
+      copyFileSync(UMAMI_FALLBACK, UMAMI_DEST)
+      console.warn(`[prebuild] umami: sync failed (${error}), using fallback`)
+    }
   }
 }
 

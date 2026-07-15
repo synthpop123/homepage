@@ -3,18 +3,38 @@ import AuthorCard from "@/components/AuthorCard.astro"
 import Globe from "@/components/Globe.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import Movies from "@/components/Movies.astro"
+import Music from "@/components/Music.astro"
+import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getCollection } from "astro:content"
 
 const friends = (await getCollection("friends")).sort((a, b) =>
   a.data.name.localeCompare(b.data.name),
 )
+
+const sections = [
+  { id: "friends", label: "Friends" },
+  { id: "footprint", label: "Footprint" },
+  { id: "movies", label: "Movies" },
+  { id: "music", label: "Music" },
+]
+const toc = [
+  {
+    label: "Misc",
+    headings: sections.map(({ id, label }) => ({
+      depth: 2,
+      slug: id,
+      text: label,
+    })),
+  },
+]
 ---
 
 <Layout>
   <MetaPage slot="head" title="Misc" />
+  <TableOfContents slot="toc" title="Misc" sections={toc} />
   <section>
-    <h2>Friends</h2>
+    <h2 id="friends">Friends</h2>
     <ul>
       {friends.map((friend) => (
         <AuthorCard author={friend} standalone />
@@ -22,7 +42,7 @@ const friends = (await getCollection("friends")).sort((a, b) =>
     </ul>
   </section>
   <section>
-    <h2>Footprint</h2>
+    <h2 id="footprint">Footprint</h2>
     <p>
       Generated with
       <a
@@ -35,8 +55,12 @@ const friends = (await getCollection("friends")).sort((a, b) =>
     <Globe />
   </section>
   <section>
-    <h2>Movies</h2>
+    <h2 id="movies">Movies</h2>
     <Movies username="lkw123" limit={8} />
+  </section>
+  <section>
+    <h2 id="music">Music</h2>
+    <Music limit={10} />
   </section>
 </Layout>
 
@@ -50,6 +74,10 @@ const friends = (await getCollection("friends")).sort((a, b) =>
     font-size: var(--step-1);
     line-height: calc(var(--leading-offset) + 1em);
     font-weight: var(--font-weight-medium);
+
+    @media (width >= 64rem) {
+      scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
+    }
   }
 
   a {
