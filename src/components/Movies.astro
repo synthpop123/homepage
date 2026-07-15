@@ -60,6 +60,28 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
   const entryTime = (entry: LetterboxdEntry) =>
     entry.date?.watched ?? entry.date?.published ?? 0
 
+  const CACHE_TTL = 60_000
+
+  const readCache = (key: string): LetterboxdEntry[] | null => {
+    try {
+      const raw = sessionStorage.getItem(key)
+      if (!raw) return null
+      const { t, entries } = JSON.parse(raw)
+      if (Date.now() - t > CACHE_TTL) return null
+      return Array.isArray(entries) ? entries : null
+    } catch {
+      return null
+    }
+  }
+
+  const writeCache = (key: string, entries: LetterboxdEntry[]) => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), entries }))
+    } catch {
+      // Storage full or unavailable (e.g. private mode) — cache is optional.
+    }
+  }
+
   const createRewatchIcon = () => {
     const icon = document.createElement("span")
     icon.className = "rewatch-icon"
@@ -146,12 +168,24 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
     if (!grid || !endpoint) return
 
     const limit = Number(feed.dataset.limit) || 8
+    const cacheKey = `letterboxd:${endpoint}`
 
-    fetch(endpoint)
-      .then((response) => {
-        if (!response.ok) throw new Error(`Request failed: ${response.status}`)
-        return response.json() as Promise<LetterboxdEntry[]>
-      })
+    const load = () => {
+      const cached = readCache(cacheKey)
+      if (cached) return Promise.resolve(cached)
+      return fetch(endpoint)
+        .then((response) => {
+          if (!response.ok)
+            throw new Error(`Request failed: ${response.status}`)
+          return response.json() as Promise<LetterboxdEntry[]>
+        })
+        .then((entries) => {
+          if (Array.isArray(entries)) writeCache(cacheKey, entries)
+          return entries
+        })
+    }
+
+    load()
       .then((entries) => {
         const valid = (Array.isArray(entries) ? entries : [])
           .filter((entry) => entry?.film?.title && entry?.uri)

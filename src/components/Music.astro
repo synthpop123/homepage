@@ -128,6 +128,32 @@ const stats: { key: string; label: string }[] = [
     })
   }
 
+  type KoitoData = [KoitoStats, KoitoActivity, KoitoListens]
+
+  const CACHE_TTL = 60_000
+
+  const readCache = (key: string): KoitoData | null => {
+    try {
+      const raw = sessionStorage.getItem(key)
+      if (!raw) return null
+      const { t, data } = JSON.parse(raw)
+      if (Date.now() - t > CACHE_TTL) return null
+      return Array.isArray(data) && data.length === 3
+        ? (data as KoitoData)
+        : null
+    } catch {
+      return null
+    }
+  }
+
+  const writeCache = (key: string, data: KoitoData) => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), data }))
+    } catch {
+      // Storage full or unavailable (e.g. private mode) — cache is optional.
+    }
+  }
+
   const fillStats = (feed: HTMLElement, stats: KoitoStats) => {
     feed.querySelectorAll<HTMLElement>(".stat").forEach((stat) => {
       const value = stats[stat.dataset.key ?? ""]
@@ -246,14 +272,26 @@ const stats: { key: string; label: string }[] = [
 
     const limit = Number(feed.dataset.limit) || 10
     const api = `${instance}/apis/web/v1`
+    const cacheKey = `koito:${instance}:${limit}`
 
-    Promise.all([
-      fetchJson<KoitoStats>(`${api}/stats?period=all_time`),
-      fetchJson<KoitoActivity>(
-        `${api}/listen-activity?step=day&range=${HEAT_MAX_WEEKS * 7}&tz=${encodeURIComponent(TIME_ZONE)}`,
-      ),
-      fetchJson<KoitoListens>(`${api}/listens?period=all_time&limit=${limit}`),
-    ])
+    const load = (): Promise<KoitoData> => {
+      const cached = readCache(cacheKey)
+      if (cached) return Promise.resolve(cached)
+      return Promise.all([
+        fetchJson<KoitoStats>(`${api}/stats?period=all_time`),
+        fetchJson<KoitoActivity>(
+          `${api}/listen-activity?step=day&range=${HEAT_MAX_WEEKS * 7}&tz=${encodeURIComponent(TIME_ZONE)}`,
+        ),
+        fetchJson<KoitoListens>(
+          `${api}/listens?period=all_time&limit=${limit}`,
+        ),
+      ]).then((data) => {
+        writeCache(cacheKey, data)
+        return data
+      })
+    }
+
+    load()
       .then(([stats, activity, listens]) => {
         const items = (listens.items ?? []).filter(
           (item) => item?.track?.title && item?.track?.id,
