@@ -1,0 +1,49 @@
+---
+import MetaPage from "@/components/MetaPage.astro"
+import TableOfContents from "@/components/TableOfContents.astro"
+import Tokens from "@/components/Tokens.astro"
+import Layout from "@/layouts/Layout.astro"
+
+const sections = [
+  { id: "overview", label: "Overview" },
+  { id: "trend", label: "Trend" },
+  { id: "activity", label: "Activity" },
+  { id: "breakdown", label: "Breakdown" },
+  { id: "devices", label: "Devices" },
+]
+const toc = [
+  {
+    label: "Tokens",
+    headings: sections.map(({ id, label }) => ({
+      depth: 2,
+      slug: id,
+      text: label,
+    })),
+  },
+]
+---
+
+<Layout>
+  <MetaPage
+    slot="head"
+    title="Tokens"
+    description="Token usage across my AI coding agents, live from a self-hosted meter."
+  />
+  <TableOfContents slot="toc" title="Tokens" sections={toc} />
+  <header>
+    <h1>Tokens</h1>
+  </header>
+  <Tokens />
+</Layout>
+
+<style>
+  header {
+    margin-block-end: var(--space-m);
+
+    h1 {
+      font-size: var(--step-3);
+      line-height: calc(var(--leading-offset) + 1em);
+      font-weight: var(--font-weight-medium);
+    }
+  }
+</style>

@@ -1,0 +1,140 @@
+---
+/**
+ * GitHub-style activity heatmap shell: weekday labels, the cell grid
+ * (skeleton until the parent feed's script fills it via mountHeatmap
+ * from @/lib/client/heatmap), and the Less–More legend. Owns the shared
+ * cell geometry and green palette for every heatmap on the site.
+ */
+---
+
+<activity-heatmap>
+  <div class="heat-frame">
+    <div class="heat-days" aria-hidden="true">
+      {["Mon", "Wed", "Fri", "Sun"].map((day) => <span>{day}</span>)}
+    </div>
+    <div class="heat-grid" data-skeleton></div>
+  </div>
+  <div class="heat-scale" aria-hidden="true">
+    <span>Less</span>
+    {[0, 1, 2, 3, 4].map((level) => <i data-level={level} />)}
+    <span>More</span>
+  </div>
+</activity-heatmap>
+
+<style>
+  activity-heatmap {
+    /* px sizes, keep in sync with HEAT_CELL / HEAT_GAP in
+       @/lib/client/heatmap. */
+    --heat-cell: 12px;
+    --heat-gap: 3px;
+    --heat-0: var(--gray-4);
+    --heat-1: light-dark(#9be9a8, #0e4429);
+    --heat-2: light-dark(#40c463, #006d32);
+    --heat-3: light-dark(#30a14e, #26a641);
+    --heat-4: light-dark(#216e39, #39d353);
+
+    display: block;
+  }
+
+  .heat-frame {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-2xs);
+    align-items: start;
+  }
+
+  .heat-days {
+    display: grid;
+    grid-template-rows: repeat(7, var(--heat-cell));
+    gap: var(--heat-gap);
+    font-size: 0.6875rem;
+    line-height: 1;
+    color: var(--muted-foreground);
+  }
+
+  .heat-days span {
+    align-self: center;
+  }
+
+  .heat-days span:nth-child(2) {
+    grid-row: 3;
+  }
+
+  .heat-days span:nth-child(3) {
+    grid-row: 5;
+  }
+
+  .heat-days span:nth-child(4) {
+    grid-row: 7;
+  }
+
+  .heat-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, var(--heat-cell));
+    grid-auto-columns: var(--heat-cell);
+    gap: var(--heat-gap);
+    min-block-size: calc(var(--heat-cell) * 7 + var(--heat-gap) * 6);
+    /* Never let a transient misfit widen the page; the ResizeObserver
+       in mountHeatmap re-fits the week count right after. */
+    overflow: hidden;
+  }
+
+  .heat-grid[data-skeleton] {
+    border-radius: var(--radius-sm);
+    background-color: var(--gray-5);
+    animation: var(--sk-pulse);
+  }
+
+  .heat-grid :global(span) {
+    border-radius: var(--radius-xs);
+  }
+
+  .heat-grid :global(span[data-pad]) {
+    visibility: hidden;
+  }
+
+  .heat-scale {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--heat-gap);
+    margin-block-start: var(--space-3xs);
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+  }
+
+  .heat-scale i {
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: var(--radius-xs);
+  }
+
+  .heat-scale span:first-child {
+    margin-inline-end: var(--space-3xs);
+  }
+
+  .heat-scale span:last-child {
+    margin-inline-start: var(--space-3xs);
+  }
+
+  activity-heatmap :global([data-level="0"]) {
+    background-color: var(--heat-0);
+  }
+
+  activity-heatmap :global([data-level="1"]) {
+    background-color: var(--heat-1);
+  }
+
+  activity-heatmap :global([data-level="2"]) {
+    background-color: var(--heat-2);
+  }
+
+  activity-heatmap :global([data-level="3"]) {
+    background-color: var(--heat-3);
+  }
+
+  activity-heatmap :global([data-level="4"]) {
+    background-color: var(--heat-4);
+  }
+</style>

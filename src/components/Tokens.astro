@@ -1,0 +1,1426 @@
+---
+import type { SvgComponent } from "astro/types"
+import ChevronIcon from "@/assets/icons/callouts/alt-arrow-down.svg"
+import Heatmap from "@/components/Heatmap.astro"
+import Anthropic from "@/assets/icons/ai/anthropic.svg"
+import Claude from "@/assets/icons/ai/claude.svg"
+import ClaudeCode from "@/assets/icons/ai/claudecode.svg"
+import Codex from "@/assets/icons/ai/codex.svg"
+import Cursor from "@/assets/icons/ai/cursor.svg"
+import Gemini from "@/assets/icons/ai/gemini.svg"
+import Google from "@/assets/icons/ai/google.svg"
+import Grok from "@/assets/icons/ai/grok.svg"
+import Kimi from "@/assets/icons/ai/kimi.svg"
+import OpenAI from "@/assets/icons/ai/openai.svg"
+import OpenCode from "@/assets/icons/ai/opencode.svg"
+import XAI from "@/assets/icons/ai/xai.svg"
+import Zed from "@/assets/icons/ai/zed.svg"
+import Zhipu from "@/assets/icons/ai/zhipu.svg"
+import { TOKENS } from "@/consts"
+import { COMPOSITION, RANGES } from "@/lib/client/tokens"
+
+type Props = {
+  endpoint?: string
+}
+
+const { endpoint = TOKENS.endpoint } = Astro.props
+
+/** Mono brand SVGs, vendored from Lobe Icons (https://lobehub.com/icons)
+ *  except zed.svg (official Zed mark, normalized to currentColor). The
+ *  hidden defs block below is what the runtime script clones from. */
+const AI_ICONS: Record<string, SvgComponent> = {
+  anthropic: Anthropic,
+  claude: Claude,
+  claudecode: ClaudeCode,
+  codex: Codex,
+  cursor: Cursor,
+  gemini: Gemini,
+  google: Google,
+  grok: Grok,
+  kimi: Kimi,
+  openai: OpenAI,
+  opencode: OpenCode,
+  xai: XAI,
+  zed: Zed,
+  zhipu: Zhipu,
+}
+
+const overviewCards = [
+  { key: "tokens", label: "Tokens" },
+  { key: "cost", label: "Cost" },
+  { key: "messages", label: "Messages" },
+  { key: "activeDays", label: "Active days" },
+]
+
+const factCards = [
+  { key: "biggest", label: "Biggest day" },
+  { key: "weekday", label: "Top weekday" },
+  { key: "longest", label: "Longest streak" },
+  { key: "current", label: "Current streak" },
+]
+
+const skeletonRows = (count: number) =>
+  Array.from({ length: count }, (_, i) => i)
+---
+
+<tokens-dashboard data-endpoint={endpoint} aria-busy="true">
+  <div class="tk-icon-defs" hidden aria-hidden="true">
+    {Object.entries(AI_ICONS).map(([name, Icon]) => (
+      <span data-icon={name}><Icon /></span>
+    ))}
+    <span data-icon="chevron"><ChevronIcon /></span>
+  </div>
+  <p class="tk-intro">
+    Token usage across my AI coding agents, live from my
+    <a href={endpoint} target="_blank" rel="noopener noreferrer"
+      >self-hosted collector</a
+    >.
+  </p>
+  <div class="tk-body">
+    <section>
+      <h2 id="overview">Overview</h2>
+      <form class="tk-controls">
+        <fieldset class="tk-seg" aria-label="Time range">
+          {RANGES.map((range) => (
+            <label>
+              <input
+                type="radio"
+                name="range"
+                value={range.key}
+                checked={range.key === "month"}
+              />
+              <span>{range.label}</span>
+            </label>
+          ))}
+        </fieldset>
+        <fieldset class="tk-seg" aria-label="Metric">
+          <label>
+            <input type="radio" name="metric" value="tokens" checked>
+            <span>Tokens</span>
+          </label>
+          <label>
+            <input type="radio" name="metric" value="cost">
+            <span>Cost</span>
+          </label>
+        </fieldset>
+      </form>
+      <dl class="tk-cards" data-cards="overview">
+        {overviewCards.map(({ key, label }) => (
+          <div class="tk-card" data-key={key}>
+            <dt>{label}</dt>
+            <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
+            <dd class="sub"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
+          </div>
+        ))}
+      </dl>
+      <h3 class="tk-label">Token composition</h3>
+      <div class="tk-mix">
+        <div class="tk-mix-bar" data-skeleton></div>
+        <ul class="tk-mix-legend">
+          {COMPOSITION.map(({ key, label }, i) => (
+            <li data-key={key}>
+              <span class="chip" data-k={i} aria-hidden="true" />
+              <span class="name">{label}</span>
+              <span class="value"><span class="sk-line sk-sub" aria-hidden="true" /></span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+    <section>
+      <h2 id="trend">Trend</h2>
+      <div class="tk-chart-head">
+        <p class="tk-chart-scope">Daily tokens</p>
+        <p class="tk-chart-peak"></p>
+      </div>
+      <div class="tk-chart" role="img" aria-label="Token usage over time">
+        <div class="tk-chart-bars" data-skeleton></div>
+        <div class="tk-chart-axis" aria-hidden="true"></div>
+        <div class="tk-tip" hidden></div>
+      </div>
+      <div class="tk-chart-foot" aria-hidden="true">
+        <span class="tk-legend-note">Stacked by model provider</span>
+        <ul class="tk-chart-legend"></ul>
+      </div>
+    </section>
+    <section>
+      <h2 id="activity">Activity</h2>
+      <Heatmap />
+      <h3 class="tk-label">All-time patterns</h3>
+      <dl class="tk-cards tk-facts" data-cards="facts">
+        {factCards.map(({ key, label }) => (
+          <div class="tk-card" data-key={key}>
+            <dt>{label}</dt>
+            <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
+            <dd class="sub"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+    <section>
+      <h2 id="breakdown">Breakdown</h2>
+      <h3 class="tk-label">Models</h3>
+      <ol class="tk-rows" data-list="model">
+        {skeletonRows(6).map(() => (
+          <li class="tk-row" data-skeleton aria-hidden="true">
+            <span class="ico sk-ico" />
+            <span class="sk-line" style="inline-size: min(11em, 70%)" />
+            <span class="sk-line sk-num" />
+            <span class="sk-line sk-num" />
+          </li>
+        ))}
+      </ol>
+      <div class="tk-split">
+        <div>
+          <h3 class="tk-label">Clients</h3>
+          <ol class="tk-rows" data-list="client">
+            {skeletonRows(4).map(() => (
+              <li class="tk-row" data-skeleton aria-hidden="true">
+                <span class="ico sk-ico" />
+                <span class="sk-line" style="inline-size: min(6em, 70%)" />
+                <span class="sk-line sk-num" />
+                <span class="sk-line sk-num" />
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div>
+          <h3 class="tk-label">Providers</h3>
+          <ol class="tk-rows" data-list="provider">
+            {skeletonRows(4).map(() => (
+              <li class="tk-row" data-skeleton aria-hidden="true">
+                <span class="ico sk-ico" />
+                <span class="sk-line" style="inline-size: min(6em, 70%)" />
+                <span class="sk-line sk-num" />
+                <span class="sk-line sk-num" />
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+    <section>
+      <h2 id="devices">Devices</h2>
+      <ol class="tk-devices">
+        {skeletonRows(2).map(() => (
+          <li class="tk-device" data-skeleton aria-hidden="true">
+            <span class="dot" />
+            <span class="dev-id">
+              <span class="sk-line" style="inline-size: 7em" />
+              <span class="sk-line sk-sub" />
+            </span>
+            <span class="dev-usage">
+              <span class="sk-line sk-num" />
+              <span class="sk-line sk-sub" style="justify-self: end" />
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  </div>
+  <p class="tk-fallback" hidden>
+    Couldn’t load usage right now — the collector at
+    <a href={endpoint} target="_blank" rel="noopener noreferrer"
+      >tokens.lkwplus.com</a
+    >
+    may be napping. Try again in a minute.
+  </p>
+</tokens-dashboard>
+
+<script>
+  import {
+    aiIcon,
+    type Bucket,
+    clientLabel,
+    COMPOSITION,
+    computeFacts,
+    dailyBuckets,
+    fillDaily,
+    formatAgo,
+    formatCost,
+    formatCostExact,
+    formatCount,
+    formatDate,
+    formatDay,
+    formatExact,
+    formatMetric,
+    formatShare,
+    formatTokens,
+    HIDDEN_MODELS,
+    isOnline,
+    levelScale,
+    loadSite,
+    type MetricKey,
+    monthlyBuckets,
+    providerLabel,
+    type RangeKey,
+    RANGES,
+    type Site,
+    shiftDays,
+    stackProviders,
+    type Usage,
+  } from "@/lib/client/tokens"
+  import { mountHeatmap } from "@/lib/client/heatmap"
+
+  const TOP_ROWS = 8
+
+  const el = (tag: string, className: string, text?: string) => {
+    const node = document.createElement(tag)
+    node.className = className
+    if (text !== undefined) node.textContent = text
+    return node
+  }
+
+  document.querySelectorAll<HTMLElement>("tokens-dashboard").forEach((root) => {
+    const endpoint = root.dataset.endpoint
+    const body = root.querySelector<HTMLElement>(".tk-body")
+    const form = root.querySelector<HTMLFormElement>(".tk-controls")
+    const fallback = root.querySelector<HTMLElement>(".tk-fallback")
+    if (!endpoint || !body || !form) return
+
+    const q = <T extends HTMLElement = HTMLElement>(selector: string) =>
+      root.querySelector<T>(selector)
+
+    let site: Site | null = null
+    let stack: string[] = []
+    /** Breakdown lists the visitor has expanded past the top rows. */
+    const expanded = new Set<string>()
+
+    const iconDefs = q(".tk-icon-defs")
+    const icon = (name: string | null) => {
+      const svg = name
+        ? iconDefs?.querySelector(`[data-icon="${name}"] svg`)
+        : null
+      return svg ? (svg.cloneNode(true) as SVGElement) : null
+    }
+    /** Icon slot; empty ones still reserve the column so names align. */
+    const iconSlot = (name: string | null) => {
+      const slot = el("span", "ico")
+      slot.setAttribute("aria-hidden", "true")
+      const svg = icon(name)
+      if (svg) slot.append(svg)
+      return slot
+    }
+
+    const readState = () => {
+      const values = new FormData(form)
+      return {
+        range: (values.get("range") ?? "month") as RangeKey,
+        metric: (values.get("metric") ?? "tokens") as MetricKey,
+      }
+    }
+
+    const setCard = (
+      cards: HTMLElement | null,
+      key: string,
+      value: string,
+      sub: string,
+      exact?: string,
+    ) => {
+      const card = cards?.querySelector(`.tk-card[data-key="${key}"]`)
+      const valueEl = card?.querySelector<HTMLElement>(".value")
+      const subEl = card?.querySelector<HTMLElement>(".sub")
+      if (!valueEl || !subEl) return
+      valueEl.textContent = value
+      if (exact) valueEl.title = exact
+      subEl.textContent = sub
+    }
+
+    /* Overview: stat cards + composition bar */
+
+    const renderOverview = (range: RangeKey) => {
+      if (!site) return
+      const totals = site.ranges[range].totals
+      const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
+      const cards = q('[data-cards="overview"]')
+      const perDay = (value: number, format: (n: number) => string) =>
+        totals.activeDays > 0
+          ? `≈ ${format(value / totals.activeDays)} per active day`
+          : "—"
+
+      setCard(
+        cards,
+        "tokens",
+        formatTokens(totals.tokens),
+        perDay(totals.tokens, formatTokens),
+        `${formatExact(totals.tokens)} tokens`,
+      )
+      setCard(
+        cards,
+        "cost",
+        formatCost(totals.cost),
+        perDay(totals.cost, formatCost),
+        formatCostExact(totals.cost),
+      )
+      setCard(
+        cards,
+        "messages",
+        formatCount(totals.messages),
+        totals.messages > 0
+          ? `≈ ${formatTokens(totals.tokens / totals.messages)} tokens each`
+          : "—",
+        formatExact(totals.messages),
+      )
+      setCard(
+        cards,
+        "activeDays",
+        String(totals.activeDays),
+        range === "all"
+          ? totals.firstDate
+            ? `since ${formatDate(totals.firstDate)}`
+            : "—"
+          : `of the last ${meta.days} days`,
+      )
+
+      const bar = q(".tk-mix-bar")
+      const legend = q(".tk-mix-legend")
+      const sum = COMPOSITION.reduce((acc, part) => acc + totals[part.key], 0)
+      if (bar) {
+        bar.replaceChildren(
+          ...COMPOSITION.flatMap((part, i) => {
+            const value = totals[part.key]
+            if (value <= 0) return []
+            const segment = el("span", "")
+            segment.dataset.k = String(i)
+            segment.style.flexGrow = String(value / sum)
+            segment.title = `${part.label} — ${formatTokens(value)} (${formatShare(value / sum)})`
+            return [segment]
+          }),
+        )
+        bar.removeAttribute("data-skeleton")
+      }
+      for (const part of COMPOSITION) {
+        const value = legend?.querySelector<HTMLElement>(
+          `[data-key="${part.key}"] .value`,
+        )
+        if (!value) continue
+        const amount = totals[part.key]
+        value.textContent =
+          sum > 0
+            ? `${formatTokens(amount)} · ${formatShare(amount / sum)}`
+            : "—"
+        value.title = `${formatExact(amount)} tokens`
+      }
+    }
+
+    /* Trend: bars stacked by provider; monthly buckets for all time */
+
+    const tip = q(".tk-tip")
+    let tipBuckets: Bucket[] = []
+    let tipMetric: MetricKey = "tokens"
+
+    const buildTip = (bucket: Bucket) => {
+      if (!tip) return
+      const rows = stack
+        .map((provider, i) => ({ provider, value: bucket.segments[i] }))
+        .filter((row) => row.value > 0)
+      const list = el("ul", "")
+      for (const row of rows) {
+        const item = el("li", "")
+        const chip = el("span", "chip")
+        chip.dataset.p = row.provider
+        item.append(
+          chip,
+          el("span", "", providerLabel(row.provider)),
+          el(
+            "span",
+            "tip-share",
+            `${formatMetric(row.value, tipMetric)} · ${formatShare(row.value / bucket[tipMetric])}`,
+          ),
+        )
+        list.append(item)
+      }
+      tip.replaceChildren(
+        el("strong", "tip-title", bucket.title),
+        el(
+          "span",
+          "tip-total",
+          bucket.tokens > 0 || bucket.cost > 0
+            ? `${formatTokens(bucket.tokens)} tokens · ${formatCost(bucket.cost)} · ${formatCount(bucket.messages)} ${bucket.messages === 1 ? "message" : "messages"}`
+            : "No usage",
+        ),
+        ...(rows.length > 0 ? [list] : []),
+      )
+    }
+
+    const hideTip = () => {
+      if (tip) tip.hidden = true
+    }
+
+    const showTip = (bar: HTMLElement) => {
+      const chart = q(".tk-chart")
+      const bucket = tipBuckets[Number(bar.dataset.i)]
+      if (!tip || !chart || !bucket) return
+      buildTip(bucket)
+      tip.hidden = false
+      const barRect = bar.getBoundingClientRect()
+      const chartRect = chart.getBoundingClientRect()
+      const center = barRect.left + barRect.width / 2 - chartRect.left
+      const left = Math.min(
+        Math.max(center - tip.offsetWidth / 2, 0),
+        chartRect.width - tip.offsetWidth,
+      )
+      tip.style.left = `${left}px`
+    }
+
+    const renderTrend = (range: RangeKey, metric: MetricKey) => {
+      if (!site) return
+      const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
+      const from = site.ranges[range].from
+      const buckets =
+        range === "all" || !from
+          ? monthlyBuckets(site.daily, site.today, stack, metric)
+          : dailyBuckets(fillDaily(site.daily, from, site.today), stack, metric)
+      const values = buckets.map((bucket) => bucket[metric])
+      const max = Math.max(...values, 0)
+      const total = values.reduce((acc, value) => acc + value, 0)
+      const peakBucket = buckets[values.indexOf(max)]
+      const noun = metric === "cost" ? "cost" : "tokens"
+      const scopeText =
+        range === "all"
+          ? `Monthly ${noun} · all time`
+          : `Daily ${noun} · last ${meta.days} days`
+
+      const scope = q(".tk-chart-scope")
+      if (scope) scope.textContent = scopeText
+      const peak = q(".tk-chart-peak")
+      if (peak) {
+        peak.textContent = total > 0 ? `peak ${formatMetric(max, metric)}` : ""
+        peak.title = total > 0 && peakBucket ? peakBucket.title : ""
+      }
+
+      tipBuckets = buckets
+      tipMetric = metric
+      hideTip()
+
+      const bars = q(".tk-chart-bars")
+      if (bars) {
+        bars.replaceChildren(
+          ...buckets.map((bucket, index) => {
+            const bar = el("span", "")
+            const value = bucket[metric]
+            bar.dataset.i = String(index)
+            bar.style.setProperty("--v", String(max > 0 ? value / max : 0))
+            if (value <= 0) bar.dataset.zero = ""
+            else
+              bar.append(
+                ...stack.flatMap((provider, i) => {
+                  const share = bucket.segments[i]
+                  if (share <= 0) return []
+                  const segment = document.createElement("i")
+                  segment.dataset.p = provider
+                  segment.style.flexGrow = String(share)
+                  return [segment]
+                }),
+              )
+            return bar
+          }),
+        )
+        bars.removeAttribute("data-skeleton")
+      }
+
+      const axis = q(".tk-chart-axis")
+      if (axis && buckets.length > 0) {
+        const marks = [
+          ...new Set([
+            0,
+            Math.floor((buckets.length - 1) / 2),
+            buckets.length - 1,
+          ]),
+        ]
+        axis.replaceChildren(
+          ...marks.map((i) => el("span", "", buckets[i].label)),
+        )
+      }
+
+      const legend = q(".tk-chart-legend")
+      if (legend) {
+        const active = stack.filter((_, i) =>
+          buckets.some((bucket) => bucket.segments[i] > 0),
+        )
+        legend.replaceChildren(
+          ...active.map((provider) => {
+            const item = el("li", "")
+            const chip = el("span", "chip")
+            chip.dataset.p = provider
+            item.append(chip, providerLabel(provider))
+            return item
+          }),
+        )
+      }
+
+      q(".tk-chart")?.setAttribute(
+        "aria-label",
+        total > 0 && peakBucket
+          ? `${scopeText}: ${formatMetric(total, metric)} in total, peaking at ${formatMetric(max, metric)} (${peakBucket.title})`
+          : `${scopeText}: no usage recorded`,
+      )
+    }
+
+    /* Activity: 12-month heatmap + all-time patterns (rendered once) */
+
+    const renderHeatmap = () => {
+      const grid = q(".heat-grid")
+      if (!grid || !site) return
+      const days = fillDaily(
+        site.daily,
+        shiftDays(site.today, -364),
+        site.today,
+      )
+      // Quartile levels over the full year, so the fit-to-width slice
+      // reads the same at any viewport.
+      const level = levelScale(days)
+      mountHeatmap(grid, days, (shown) =>
+        shown.map((day) => ({
+          level: level(day.tokens),
+          title:
+            day.tokens > 0
+              ? `${formatTokens(day.tokens)} tokens on ${formatDate(day.date)} · ${formatCostExact(day.cost)}`
+              : `No usage on ${formatDate(day.date)}`,
+        })),
+      )
+    }
+
+    const renderFacts = () => {
+      if (!site) return
+      const cards = q('[data-cards="facts"]')
+      const start = site.ranges.all.totals.firstDate ?? site.today
+      const facts = computeFacts(fillDaily(site.daily, start, site.today))
+      const days = (n: number) => `${n} ${n === 1 ? "day" : "days"}`
+
+      setCard(
+        cards,
+        "biggest",
+        facts.biggest ? formatTokens(facts.biggest.tokens) : "—",
+        facts.biggest
+          ? `${formatDate(facts.biggest.date)} · ${formatCost(facts.biggest.cost)}`
+          : "no usage yet",
+        facts.biggest
+          ? `${formatExact(facts.biggest.tokens)} tokens`
+          : undefined,
+      )
+      setCard(
+        cards,
+        "weekday",
+        facts.weekday?.name ?? "—",
+        facts.weekday
+          ? `${formatShare(facts.weekday.share)} of all tokens`
+          : "—",
+      )
+      setCard(
+        cards,
+        "longest",
+        facts.longest ? days(facts.longest.length) : "—",
+        facts.longest
+          ? `${formatDay(facts.longest.from)} – ${formatDay(facts.longest.to)}`
+          : "—",
+      )
+      setCard(
+        cards,
+        "current",
+        facts.current ? days(facts.current.length) : "0 days",
+        facts.current ? `since ${formatDay(facts.current.since)}` : "—",
+      )
+    }
+
+    /* Breakdown: top models / clients / providers for the range */
+
+    type BreakdownKind = "model" | "client" | "provider"
+
+    const renderBreakdown = (range: RangeKey, metric: MetricKey) => {
+      if (!site) return
+      const stats = site.ranges[range]
+
+      const groups: {
+        key: BreakdownKind
+        rows: { id: string; name: string; usage: Usage }[]
+      }[] = [
+        {
+          key: "model",
+          rows: stats.byModel
+            .filter((entry) => !HIDDEN_MODELS.has(entry.model))
+            .map((entry) => ({
+              id: entry.model,
+              name: entry.model,
+              usage: entry,
+            })),
+        },
+        {
+          key: "client",
+          rows: stats.byClient.map((entry) => ({
+            id: entry.client,
+            name: clientLabel(entry.client),
+            usage: entry,
+          })),
+        },
+        {
+          key: "provider",
+          rows: stats.byProvider.map((entry) => ({
+            id: entry.provider,
+            name: providerLabel(entry.provider),
+            usage: entry,
+          })),
+        },
+      ]
+
+      for (const group of groups) {
+        const list = q(`.tk-rows[data-list="${group.key}"]`)
+        if (!list) continue
+        const total = stats.totals[metric]
+        const live = group.rows
+          .filter((row) => row.usage[metric] > 0)
+          .sort((a, b) => b.usage[metric] - a.usage[metric])
+        const isOpen = expanded.has(group.key)
+        const shown = isOpen ? live : live.slice(0, TOP_ROWS)
+        const rest = live.slice(TOP_ROWS)
+
+        const items = shown.map((row) => {
+          const item = el("li", "tk-row")
+          item.title = `${row.name} — ${formatExact(row.usage.tokens)} tokens · ${formatCostExact(row.usage.cost)} · ${formatExact(row.usage.messages)} messages`
+          item.append(
+            iconSlot(aiIcon(group.key, row.id)),
+            el("span", "name", row.name),
+            el("span", "val", formatMetric(row.usage[metric], metric)),
+            el(
+              "span",
+              "share",
+              formatShare(total > 0 ? row.usage[metric] / total : NaN),
+            ),
+          )
+          return item
+        })
+
+        if (rest.length > 0) {
+          const row = el("li", "tk-more")
+          const button = document.createElement("button")
+          button.type = "button"
+          button.className = "tk-more-btn"
+          button.setAttribute("aria-expanded", String(isOpen))
+          const chevron = icon("chevron")
+          if (chevron) button.append(chevron)
+          const noun = group.key + (rest.length === 1 ? "" : "s")
+          button.append(
+            el(
+              "span",
+              "more-label",
+              isOpen ? "Show less" : `Show ${rest.length} more ${noun}`,
+            ),
+          )
+          if (!isOpen) {
+            const sum = rest.reduce((acc, r) => acc + r.usage[metric], 0)
+            button.append(el("span", "more-amount", formatMetric(sum, metric)))
+          }
+          button.addEventListener("click", () => {
+            if (isOpen) expanded.delete(group.key)
+            else expanded.add(group.key)
+            const state = readState()
+            renderBreakdown(state.range, state.metric)
+          })
+          row.append(button)
+          items.push(row)
+        }
+
+        if (items.length === 0) {
+          items.push(el("li", "tk-empty", "No usage in this range."))
+        }
+        list.replaceChildren(...items)
+      }
+    }
+
+    /* Devices: inventory with liveness, rendered once */
+
+    const renderDevices = () => {
+      const list = q(".tk-devices")
+      if (!list || !site) return
+      if (site.devices.length === 0) {
+        list.replaceChildren(el("li", "tk-empty", "No devices reporting yet."))
+        return
+      }
+      list.replaceChildren(
+        ...site.devices.map((device) => {
+          const item = el("li", "tk-device")
+          const online = isOnline(device.lastSeen)
+
+          const dot = el("span", "dot")
+          if (online) dot.dataset.online = ""
+          dot.setAttribute("role", "img")
+          dot.setAttribute("aria-label", online ? "Online" : "Offline")
+
+          const id = el("span", "dev-id")
+          const seen =
+            device.lastSeen === null
+              ? "never reported"
+              : `${online ? "synced" : "last seen"} ${formatAgo(device.lastSeen)}`
+          id.append(
+            el("span", "dev-name", device.name),
+            el("span", "dev-seen", seen),
+          )
+
+          const usage = el("span", "dev-usage")
+          const tokens = el("span", "dev-tokens", formatTokens(device.tokens))
+          tokens.title = `${formatExact(device.tokens)} tokens`
+          usage.append(
+            tokens,
+            el(
+              "span",
+              "dev-meta",
+              `${formatCost(device.cost)} · ${device.activeDays} active ${device.activeDays === 1 ? "day" : "days"}`,
+            ),
+          )
+
+          item.append(dot, id, usage)
+          return item
+        }),
+      )
+    }
+
+    const renderDynamic = () => {
+      const { range, metric } = readState()
+      renderOverview(range)
+      renderTrend(range, metric)
+      renderBreakdown(range, metric)
+    }
+
+    form.addEventListener("submit", (event) => event.preventDefault())
+    form.addEventListener("change", () => {
+      if (site) renderDynamic()
+    })
+
+    const barsArea = q(".tk-chart-bars")
+    barsArea?.addEventListener("pointerover", (event) => {
+      const bar = (event.target as Element).closest<HTMLElement>("span[data-i]")
+      if (bar) showTip(bar)
+    })
+    barsArea?.addEventListener("pointerleave", hideTip)
+
+    loadSite(endpoint)
+      .then((loaded) => {
+        site = loaded
+        stack = stackProviders(site)
+        renderHeatmap()
+        renderFacts()
+        renderDevices()
+        renderDynamic()
+        root.setAttribute("aria-busy", "false")
+      })
+      .catch(() => {
+        body.hidden = true
+        if (fallback) fallback.hidden = false
+        root.setAttribute("aria-busy", "false")
+      })
+  })
+</script>
+
+<style>
+  tokens-dashboard {
+    /* Level-3 green of the shared heatmap palette (see Heatmap.astro). */
+    --tk-accent: light-dark(#30a14e, #26a641);
+
+    /* Provider palette for the stacked trend chart. */
+    --tk-p-anthropic: light-dark(#d97757, #cc785c);
+    --tk-p-openai: light-dark(#10a37f, #2dc79f);
+    --tk-p-google: light-dark(#4285f4, #7cacf8);
+    --tk-p-xai: light-dark(#52525b, #a1a1aa);
+    --tk-p-cursor: light-dark(#8b5cf6, #a78bfa);
+    --tk-p-other: var(--gray-8);
+
+    display: block;
+  }
+
+  section + section {
+    margin-block-start: var(--space-l);
+  }
+
+  h2 {
+    margin-block-end: var(--space-s);
+    font-size: var(--step-1);
+    line-height: calc(var(--leading-offset) + 1em);
+    font-weight: var(--font-weight-medium);
+
+    @media (width >= 64rem) {
+      scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
+    }
+  }
+
+  .tk-intro {
+    margin-block-end: var(--space-m);
+    color: var(--muted-foreground);
+  }
+
+  .tk-fallback {
+    color: var(--muted-foreground);
+  }
+
+  .tk-intro a,
+  .tk-fallback a {
+    color: var(--foreground);
+    text-decoration: underline;
+  }
+
+  .tk-label {
+    margin-block: var(--space-m) var(--space-2xs);
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  /* Controls */
+
+  .tk-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2xs);
+    margin-block-end: var(--space-s);
+  }
+
+  .tk-seg {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+  }
+
+  .tk-seg label {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .tk-seg input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tk-seg span {
+    padding: 0.125rem 0.625rem;
+    border-radius: var(--radius-full);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tk-seg input:checked + span {
+    background-color: var(--foreground);
+    color: var(--background);
+  }
+
+  .tk-seg label:hover input:not(:checked) + span {
+    color: var(--foreground);
+  }
+
+  .tk-seg input:focus-visible + span {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+
+  /* Stat cards */
+
+  .tk-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-s);
+    margin: 0;
+
+    @media (width < 40rem) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .tk-card {
+    display: grid;
+    gap: var(--space-3xs);
+    align-content: start;
+  }
+
+  .tk-card dt {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .tk-card .value {
+    margin: 0;
+    font-size: var(--step-2);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .tk-facts .value {
+    font-size: var(--step-1);
+  }
+
+  .tk-card .sub {
+    margin: 0;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Composition bar */
+
+  .tk-mix {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .tk-mix-bar {
+    display: flex;
+    block-size: 0.875rem;
+    overflow: hidden;
+    border-radius: var(--radius-full);
+    background-color: var(--gray-4);
+  }
+
+  .tk-mix-bar :global(span) {
+    min-inline-size: 3px;
+    background-color: var(--c, var(--gray-6));
+  }
+
+  .tk-mix-bar :global(span + span) {
+    border-inline-start: 2px solid var(--background);
+  }
+
+  .tk-mix :global([data-k="0"]) {
+    --c: var(--foreground);
+  }
+
+  .tk-mix :global([data-k="1"]) {
+    --c: color-mix(in oklab, var(--foreground) 60%, var(--background));
+  }
+
+  .tk-mix :global([data-k="2"]) {
+    --c: var(--tk-accent);
+  }
+
+  .tk-mix :global([data-k="3"]) {
+    --c: color-mix(in oklab, var(--tk-accent) 50%, var(--background));
+  }
+
+  .tk-mix :global([data-k="4"]) {
+    --c: var(--gray-8);
+  }
+
+  .tk-mix-legend {
+    display: grid;
+    gap: var(--space-3xs);
+    font-size: var(--step--1);
+  }
+
+  .tk-mix-legend li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.4em;
+  }
+
+  .tk-mix-legend .chip {
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    border-radius: var(--radius-xs);
+    background-color: var(--c, var(--gray-6));
+  }
+
+  .tk-mix-legend .name {
+    color: var(--muted-foreground);
+  }
+
+  .tk-mix-legend .value {
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Trend chart */
+
+  .tk-chart-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+    margin-block-end: var(--space-2xs);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .tk-chart-peak {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    block-size: clamp(8rem, 24vw, 11rem);
+    border-block-end: 1px solid var(--border);
+    background-image: repeating-linear-gradient(
+      to top,
+      color-mix(in oklab, var(--border) 55%, transparent) 0 1px,
+      transparent 1px 25%
+    );
+  }
+
+  .tk-chart-bars :global(span) {
+    display: flex;
+    /* First stack segment (largest provider) sits at the bottom. */
+    flex-direction: column-reverse;
+    flex: 1 1 0;
+    min-inline-size: 0;
+    block-size: max(2px, calc(var(--v) * 100%));
+    overflow: hidden;
+    border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  }
+
+  .tk-chart-bars :global(span:hover) {
+    filter: brightness(1.12);
+  }
+
+  .tk-chart-bars :global(span[data-zero]) {
+    background-color: var(--gray-6);
+  }
+
+  .tk-chart-bars :global(i) {
+    flex-basis: 0;
+  }
+
+  .tk-chart {
+    position: relative;
+  }
+
+  .tk-tip {
+    position: absolute;
+    inset-block-start: var(--space-3xs);
+    z-index: 5;
+    display: grid;
+    gap: var(--space-3xs);
+    max-inline-size: min(18rem, 100%);
+    padding: var(--space-2xs) var(--space-xs);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--background) 92%, transparent);
+    backdrop-filter: blur(var(--blur-sm));
+    font-size: var(--step--1);
+    pointer-events: none;
+  }
+
+  .tk-tip :global(.tip-title) {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .tk-tip :global(.tip-total) {
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-tip :global(ul) {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .tk-tip :global(li) {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-tip :global(.tip-share) {
+    margin-inline-start: var(--space-s);
+    margin-inline-end: 0;
+    flex: 1;
+    text-align: end;
+    color: var(--muted-foreground);
+  }
+
+  .tk-tip :global(.chip) {
+    flex-shrink: 0;
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    border-radius: var(--radius-xs);
+  }
+
+  .tk-chart-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-block-start: var(--space-3xs);
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-chart-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3xs) var(--space-s);
+    margin-block-start: var(--space-2xs);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .tk-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-s);
+  }
+
+  .tk-chart-legend :global(li) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  .tk-chart-legend :global(.chip) {
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Provider palette, applied to bar segments and legend chips alike.
+     Keep these last: the bare [data-p] fallback must lose to the named
+     rules below it. */
+  tokens-dashboard :global([data-p]) {
+    background-color: var(--tk-p-other);
+  }
+
+  tokens-dashboard :global([data-p="anthropic"]) {
+    background-color: var(--tk-p-anthropic);
+  }
+
+  tokens-dashboard :global([data-p="openai"]) {
+    background-color: var(--tk-p-openai);
+  }
+
+  tokens-dashboard :global([data-p="google"]) {
+    background-color: var(--tk-p-google);
+  }
+
+  tokens-dashboard :global([data-p="xai"]) {
+    background-color: var(--tk-p-xai);
+  }
+
+  tokens-dashboard :global([data-p="cursor"]) {
+    background-color: var(--tk-p-cursor);
+  }
+
+  /* Breakdown lists */
+
+  .tk-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+  }
+
+  .tk-rows :global(.tk-row) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) max-content 3.2rem;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-block: var(--space-3xs);
+    font-size: var(--step--1);
+  }
+
+  .tk-rows :global(.ico) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.1em;
+    block-size: 1.1em;
+  }
+
+  .tk-rows :global(.ico svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .tk-rows :global(.name) {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .tk-rows[data-list="model"] :global(.name) {
+    font-family: var(--font-mono);
+  }
+
+  .tk-rows :global(.val) {
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-rows :global(.share) {
+    justify-self: end;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  tokens-dashboard :global(.tk-empty) {
+    padding-block: var(--space-3xs);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .tk-rows :global(.tk-more) {
+    margin-block-start: var(--space-3xs);
+  }
+
+  .tk-rows :global(.tk-more-btn) {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    inline-size: 100%;
+    padding-block: var(--space-2xs);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    cursor: pointer;
+  }
+
+  .tk-rows :global(.tk-more-btn:hover) {
+    color: var(--foreground);
+  }
+
+  .tk-rows :global(.tk-more-btn svg) {
+    inline-size: 1em;
+    block-size: 1em;
+    transition: rotate 0.15s;
+  }
+
+  .tk-rows :global(.tk-more-btn[aria-expanded="true"] svg) {
+    rotate: 180deg;
+  }
+
+  .tk-rows :global(.more-amount) {
+    margin-inline-start: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-split {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-s);
+    /* The models list (and its expand button) sits right above; keep the
+       same rhythm a .tk-label would bring. */
+    margin-block-start: var(--space-m);
+
+    @media (width >= 40rem) {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-m);
+    }
+  }
+
+  .tk-split .tk-label:first-child {
+    margin-block-start: 0;
+  }
+
+  /* Devices */
+
+  .tk-devices {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tk-devices :global(.tk-device) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-block: var(--space-2xs);
+  }
+
+  .tk-devices :global(.tk-device + .tk-device) {
+    border-block-start: 1px solid var(--border);
+  }
+
+  .tk-devices :global(.dot) {
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: var(--radius-full);
+    background-color: var(--gray-7);
+  }
+
+  .tk-devices :global(.dot[data-online]) {
+    background-color: var(--tk-accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--tk-accent) 25%, transparent);
+  }
+
+  .tk-devices :global(.dev-id) {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .tk-devices :global(.dev-name) {
+    overflow: hidden;
+    font-weight: var(--font-weight-medium);
+    line-height: 1.25;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .tk-devices :global(.dev-seen) {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .tk-devices :global(.dev-usage) {
+    display: grid;
+    gap: var(--space-3xs);
+    justify-items: end;
+  }
+
+  .tk-devices :global(.dev-tokens) {
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+  }
+
+  .tk-devices :global(.dev-meta) {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Skeletons */
+
+  .sk-line {
+    display: block;
+    block-size: 0.85em;
+    border-radius: var(--radius-sm);
+  }
+
+  .sk-stat {
+    inline-size: 4.5em;
+    block-size: 1.1em;
+  }
+
+  .sk-sub {
+    inline-size: 7em;
+    block-size: 0.8em;
+  }
+
+  .sk-num {
+    inline-size: 2.6em;
+    justify-self: end;
+  }
+
+  .sk-ico {
+    border-radius: var(--radius-full);
+  }
+
+  .sk-line,
+  .sk-ico,
+  .tk-mix-bar[data-skeleton],
+  .tk-chart-bars[data-skeleton],
+  .tk-device[data-skeleton] .dot {
+    background-color: var(--gray-5);
+    animation: var(--sk-pulse);
+  }
+
+  .tk-chart-bars[data-skeleton] {
+    border-radius: var(--radius-sm);
+    background-image: none;
+  }
+</style>

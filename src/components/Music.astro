@@ -1,4 +1,5 @@
 ---
+import Heatmap from "@/components/Heatmap.astro"
 import { KOITO } from "@/consts"
 
 type Props = {
@@ -37,12 +38,7 @@ const stats: { key: string; label: string }[] = [
       ))}
     </dl>
     <h3 class="music-label">Activity</h3>
-    <div class="music-heatmap">
-      <div class="heat-days" aria-hidden="true">
-        {["Mon", "Wed", "Fri", "Sun"].map((day) => <span>{day}</span>)}
-      </div>
-      <div class="heat-grid" data-skeleton></div>
-    </div>
+    <Heatmap />
     <h3 class="music-label">Last played</h3>
     <ol class="music-list">
       {Array.from({ length: limit }).map(() => (
@@ -66,6 +62,7 @@ const stats: { key: string; label: string }[] = [
 
 <script>
   import { cached, fetchJson, TIME_ZONE } from "@/lib/client/feed"
+  import { HEAT_MAX_WEEKS, mountHeatmap } from "@/lib/client/heatmap"
 
   type KoitoStats = Record<string, number>
 
@@ -84,10 +81,6 @@ const stats: { key: string; label: string }[] = [
       }
     }[]
   }
-
-  const HEAT_CELL = 12 // px, keep in sync with --heat-cell
-  const HEAT_GAP = 3 // px, keep in sync with --heat-gap
-  const HEAT_MAX_WEEKS = 52
 
   const numberFormatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
@@ -118,12 +111,6 @@ const stats: { key: string; label: string }[] = [
     return timeFormatter.format(value)
   }
 
-  // Monday = 0 … Sunday = 6, derived from the date part alone so the
-  // grid stays aligned to the instance's day boundaries, not the
-  // visitor's local time zone.
-  const weekdayIndex = (isoDay: string) =>
-    (new Date(`${isoDay.slice(0, 10)}T12:00:00Z`).getUTCDay() + 6) % 7
-
   type KoitoData = [KoitoStats, KoitoActivity, KoitoListens]
 
   const fillStats = (feed: HTMLElement, stats: KoitoStats) => {
@@ -136,50 +123,26 @@ const stats: { key: string; label: string }[] = [
     })
   }
 
-  const buildHeatmap = (container: HTMLElement, activity: KoitoActivity) => {
-    const grid = container.querySelector<HTMLElement>(".heat-grid")
-    const days = activity.activity ?? []
+  const buildHeatmap = (feed: HTMLElement, activity: KoitoActivity) => {
+    const grid = feed.querySelector<HTMLElement>(".heat-grid")
+    const days = (activity.activity ?? []).map((day) => ({
+      date: day.start_time,
+      listens: day.listens,
+    }))
     if (!grid || days.length === 0) throw new Error("No activity data")
 
-    const lastWeekday = weekdayIndex(days[days.length - 1].start_time)
-    let weeks = 0
-
-    const render = () => {
-      const fittable = Math.floor(
-        (grid.clientWidth + HEAT_GAP) / (HEAT_CELL + HEAT_GAP),
-      )
-      const next = Math.max(1, Math.min(HEAT_MAX_WEEKS, fittable))
-      if (next === weeks) return
-      weeks = next
-
-      const shown = days.slice(-((weeks - 1) * 7 + lastWeekday + 1))
+    mountHeatmap(grid, days, (shown) => {
+      // Linear scale over the visible window, so narrow viewports keep
+      // their contrast instead of inheriting a year-wide maximum.
       const max = Math.max(...shown.map((day) => day.listens), 1)
-
-      const cells = document.createDocumentFragment()
-      for (let pad = weekdayIndex(shown[0].start_time); pad > 0; pad--) {
-        const cell = document.createElement("span")
-        cell.dataset.pad = ""
-        cells.append(cell)
-      }
-      for (const day of shown) {
-        const cell = document.createElement("span")
-        const level =
+      return shown.map((day) => ({
+        level:
           day.listens === 0
             ? 0
-            : Math.max(1, Math.ceil((day.listens / max) * 4))
-        cell.dataset.level = String(level)
-        const date = dayFormatter.format(new Date(day.start_time))
-        cell.title = `${day.listens} ${day.listens === 1 ? "play" : "plays"} on ${date}`
-        cells.append(cell)
-      }
-      grid.replaceChildren(cells)
-    }
-
-    render()
-    grid.removeAttribute("data-skeleton")
-    // Re-fit on viewport changes (rotation, resize, mobile URL bar) so the
-    // fixed-size cells never overflow the container.
-    new ResizeObserver(render).observe(grid)
+            : Math.max(1, Math.ceil((day.listens / max) * 4)),
+        title: `${day.listens} ${day.listens === 1 ? "play" : "plays"} on ${dayFormatter.format(new Date(day.date))}`,
+      }))
+    })
   }
 
   const buildRow = (
@@ -237,10 +200,9 @@ const stats: { key: string; label: string }[] = [
   document.querySelectorAll<HTMLElement>("music-feed").forEach((feed) => {
     const instance = feed.dataset.instance
     const body = feed.querySelector<HTMLElement>(".music-body")
-    const heatmap = feed.querySelector<HTMLElement>(".music-heatmap")
     const list = feed.querySelector<HTMLOListElement>(".music-list")
     const fallback = feed.querySelector<HTMLElement>(".music-fallback")
-    if (!instance || !body || !heatmap || !list) return
+    if (!instance || !body || !list) return
 
     const limit = Number(feed.dataset.limit) || 10
     const api = `${instance}/apis/web/v1`
@@ -269,7 +231,7 @@ const stats: { key: string; label: string }[] = [
         )
         if (items.length === 0) throw new Error("No listens")
         fillStats(feed, stats)
-        buildHeatmap(heatmap, activity)
+        buildHeatmap(feed, activity)
         const fragment = document.createDocumentFragment()
         for (const item of items.slice(0, limit))
           fragment.append(buildRow(item, instance))
@@ -349,92 +311,6 @@ const stats: { key: string; label: string }[] = [
   .stat .label {
     font-size: var(--step--1);
     color: var(--muted-foreground);
-  }
-
-  /* Heatmap */
-
-  .music-heatmap {
-    --heat-cell: 12px;
-    --heat-gap: 3px;
-    --heat-0: var(--gray-4);
-    --heat-1: light-dark(#9be9a8, #0e4429);
-    --heat-2: light-dark(#40c463, #006d32);
-    --heat-3: light-dark(#30a14e, #26a641);
-    --heat-4: light-dark(#216e39, #39d353);
-
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: var(--space-2xs);
-    align-items: start;
-  }
-
-  .heat-days {
-    display: grid;
-    grid-template-rows: repeat(7, var(--heat-cell));
-    gap: var(--heat-gap);
-    font-size: 0.6875rem;
-    line-height: 1;
-    color: var(--muted-foreground);
-  }
-
-  .heat-days span {
-    align-self: center;
-  }
-
-  .heat-days span:nth-child(2) {
-    grid-row: 3;
-  }
-
-  .heat-days span:nth-child(3) {
-    grid-row: 5;
-  }
-
-  .heat-days span:nth-child(4) {
-    grid-row: 7;
-  }
-
-  .heat-grid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-template-rows: repeat(7, var(--heat-cell));
-    grid-auto-columns: var(--heat-cell);
-    gap: var(--heat-gap);
-    min-block-size: calc(var(--heat-cell) * 7 + var(--heat-gap) * 6);
-    /* Never let a transient misfit widen the page; the ResizeObserver
-       in the script re-fits the week count right after. */
-    overflow: hidden;
-  }
-
-  .heat-grid[data-skeleton] {
-    border-radius: var(--radius-sm);
-  }
-
-  .heat-grid :global(span) {
-    border-radius: var(--radius-xs);
-  }
-
-  .heat-grid :global(span[data-pad]) {
-    visibility: hidden;
-  }
-
-  .music-heatmap :global([data-level="0"]) {
-    background-color: var(--heat-0);
-  }
-
-  .music-heatmap :global([data-level="1"]) {
-    background-color: var(--heat-1);
-  }
-
-  .music-heatmap :global([data-level="2"]) {
-    background-color: var(--heat-2);
-  }
-
-  .music-heatmap :global([data-level="3"]) {
-    background-color: var(--heat-3);
-  }
-
-  .music-heatmap :global([data-level="4"]) {
-    background-color: var(--heat-4);
   }
 
   /* Last played list */
@@ -533,7 +409,6 @@ const stats: { key: string; label: string }[] = [
     block-size: 0.7em;
   }
 
-  .heat-grid[data-skeleton],
   music-feed :global([data-skeleton] .cover),
   music-feed :global(.sk-line) {
     background-color: var(--gray-5);
