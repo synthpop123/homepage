@@ -310,7 +310,7 @@ const { title, sections } = Astro.props
     const title = nav.querySelector("toc-title")
     const currentLabel = nav.querySelector("toc-current")
     const toggle = nav.querySelector<HTMLInputElement>("input")
-    const heading = document.querySelector("article > header h1")
+    const heading = document.querySelector("main header h1")
     if (articles.length === 0 || !list || links.size === 0) return
 
     const fallback = currentLabel?.textContent ?? ""
@@ -422,6 +422,10 @@ const { title, sections } = Astro.props
     })
 
     for (const block of sectionOf.keys()) observer.observe(block)
-    if (heading) observer.observe(heading)
+    if (heading) {
+      observer.observe(heading)
+    } else {
+      title?.toggleAttribute("data-visible", true)
+    }
   })()
 </script>

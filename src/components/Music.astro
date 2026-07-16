@@ -354,6 +354,10 @@ const stats: { key: string; label: string }[] = [
     grid-template-columns: repeat(4, 1fr);
     gap: var(--space-xs) var(--space-s);
     margin: 0;
+
+    @media (width < 40rem) {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 
   .stat {
