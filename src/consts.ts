@@ -24,7 +24,8 @@ export const NAVIGATION: { href: string; label: string; wideOnly?: boolean }[] =
   [
     { href: "/blog", label: "Blog" },
     { href: "/tags", label: "Tags", wideOnly: true },
-    { href: "/memos", label: "Memos" },
+    { href: "/memos", label: "Memos", wideOnly: true },
+    { href: "/tokens", label: "Tokens" },
     { href: "/misc", label: "Misc" },
     { href: "/about", label: "About" },
   ]
@@ -52,6 +53,10 @@ export const LETTERBOXD = {
   username: "lkw123",
   embedUrl: "https://letterboxd-embed.lkwplus.com",
   limit: 8,
+} as const
+
+export const TOKENS = {
+  endpoint: "https://tokens.lkwplus.com",
 } as const
 
 export const GLOBE_LOCATIONS: { location: [number, number]; size: number }[] = [
