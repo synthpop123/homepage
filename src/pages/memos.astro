@@ -10,5 +10,20 @@ import Layout from "@/layouts/Layout.astro"
     title="Memos"
     description="Short memos, pulled live from my Mastodon."
   />
+  <header>
+    <h1>Memos</h1>
+  </header>
   <Mastodon />
 </Layout>
+
+<style>
+  header {
+    margin-block-end: var(--space-m);
+
+    h1 {
+      font-size: var(--step-3);
+      line-height: calc(var(--leading-offset) + 1em);
+      font-weight: var(--font-weight-medium);
+    }
+  }
+</style>
