@@ -1,0 +1,18 @@
+/* Shared pulse for the skeleton placeholders shown while the client-side
+   feeds (Music / Movies / Mastodon) load. Components reference it via
+   `animation: var(--sk-pulse)` so the name and timing live in one place;
+   the global reduced-motion rule in reset.css neutralizes it. */
+
+:root {
+  --sk-pulse: sk-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sk-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

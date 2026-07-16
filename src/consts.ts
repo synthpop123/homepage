@@ -43,6 +43,17 @@ export const MASTODON = {
   limit: 20,
 } as const
 
+export const KOITO = {
+  instance: "https://music.lkwplus.com",
+  limit: 10,
+} as const
+
+export const LETTERBOXD = {
+  username: "lkw123",
+  embedUrl: "https://letterboxd-embed.lkwplus.com",
+  limit: 8,
+} as const
+
 export const GLOBE_LOCATIONS: { location: [number, number]; size: number }[] = [
   { location: [39.904989, 116.405285], size: 0.02 }, // 北京
   { location: [22.547, 114.085947], size: 0.02 }, // 深圳

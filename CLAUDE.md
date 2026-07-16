@@ -19,7 +19,9 @@ bun run astro ...    # Astro CLI (e.g. `bun run astro check`)
 
 `bun dev` and `bun run build` first run `scripts/prebuild.ts`, which syncs the self-hosted Umami tracker into `public/headache.js` and downloads a random cat photo to `src/assets/cat.jpg` (both gitignored; they fall back to the committed `src/assets/headache-fallback.js` / `src/assets/cat-fallback.jpg` when offline). Both steps are non-fatal on network failure.
 
-There is **no test suite and no linter** — Biome runs format-only (linter and assist disabled in `biome.json`). The single automated check is formatting. A `.githooks/pre-commit` hook formats staged files via Biome on every commit (installed by the `prepare` script on `bun install`; bypass once with `git commit --no-verify`). Biome style: double quotes, semicolons as-needed, 2-space indent, 80 cols.
+`src/assets/fonts/og/` holds **subset** Noto Sans SC woffs for build-time OG rendering (all GB2312 hanzi + kana + punctuation + every character in current content). If a new post title needs a character outside that set, re-run `bun scripts/subset-og-fonts.ts` — it re-subsets from the pristine full fonts pinned in git history, so it is safe to run repeatedly.
+
+There is **no test suite and no linter** — Biome runs format-only (linter and assist disabled in `biome.json`). The automated checks are formatting (`bun run format:check`) and type checking (`bun run astro check`, strict tsconfig); CI runs both before the build. `@astrojs/check` requires TypeScript 6.x — the pinned `typescript@^6` devDependency must not be bumped to 7 until the native compiler exposes the programmatic API. A `.githooks/pre-commit` hook formats staged files via Biome on every commit (installed by the `prepare` script on `bun install`; bypass once with `git commit --no-verify`). Biome style: double quotes, semicolons as-needed, 2-space indent, 80 cols.
 
 ## Architecture
 

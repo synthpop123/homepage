@@ -1,10 +1,12 @@
 ---
+import { KOITO } from "@/consts"
+
 type Props = {
   instance?: string
   limit?: number
 }
 
-const { instance = "https://music.lkwplus.com", limit = 10 } = Astro.props
+const { instance = KOITO.instance, limit = KOITO.limit } = Astro.props
 
 const stats: { key: string; label: string }[] = [
   { key: "listen_count", label: "Plays" },
@@ -63,6 +65,8 @@ const stats: { key: string; label: string }[] = [
 </music-feed>
 
 <script>
+  import { cached, fetchJson, TIME_ZONE } from "@/lib/client/feed"
+
   type KoitoStats = Record<string, number>
 
   type KoitoActivity = {
@@ -84,7 +88,6 @@ const stats: { key: string; label: string }[] = [
   const HEAT_CELL = 12 // px, keep in sync with --heat-cell
   const HEAT_GAP = 3 // px, keep in sync with --heat-gap
   const HEAT_MAX_WEEKS = 52
-  const TIME_ZONE = "Asia/Shanghai"
 
   const numberFormatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 1,
@@ -121,38 +124,7 @@ const stats: { key: string; label: string }[] = [
   const weekdayIndex = (isoDay: string) =>
     (new Date(`${isoDay.slice(0, 10)}T12:00:00Z`).getUTCDay() + 6) % 7
 
-  function fetchJson<T>(url: string): Promise<T> {
-    return fetch(url).then((response) => {
-      if (!response.ok) throw new Error(`Request failed: ${response.status}`)
-      return response.json() as Promise<T>
-    })
-  }
-
   type KoitoData = [KoitoStats, KoitoActivity, KoitoListens]
-
-  const CACHE_TTL = 60_000
-
-  const readCache = (key: string): KoitoData | null => {
-    try {
-      const raw = sessionStorage.getItem(key)
-      if (!raw) return null
-      const { t, data } = JSON.parse(raw)
-      if (Date.now() - t > CACHE_TTL) return null
-      return Array.isArray(data) && data.length === 3
-        ? (data as KoitoData)
-        : null
-    } catch {
-      return null
-    }
-  }
-
-  const writeCache = (key: string, data: KoitoData) => {
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), data }))
-    } catch {
-      // Storage full or unavailable (e.g. private mode) — cache is optional.
-    }
-  }
 
   const fillStats = (feed: HTMLElement, stats: KoitoStats) => {
     feed.querySelectorAll<HTMLElement>(".stat").forEach((stat) => {
@@ -274,22 +246,21 @@ const stats: { key: string; label: string }[] = [
     const api = `${instance}/apis/web/v1`
     const cacheKey = `koito:${instance}:${limit}`
 
-    const load = (): Promise<KoitoData> => {
-      const cached = readCache(cacheKey)
-      if (cached) return Promise.resolve(cached)
-      return Promise.all([
-        fetchJson<KoitoStats>(`${api}/stats?period=all_time`),
-        fetchJson<KoitoActivity>(
-          `${api}/listen-activity?step=day&range=${HEAT_MAX_WEEKS * 7}&tz=${encodeURIComponent(TIME_ZONE)}`,
-        ),
-        fetchJson<KoitoListens>(
-          `${api}/listens?period=all_time&limit=${limit}`,
-        ),
-      ]).then((data) => {
-        writeCache(cacheKey, data)
-        return data
-      })
-    }
+    const load = (): Promise<KoitoData> =>
+      cached(
+        cacheKey,
+        () =>
+          Promise.all([
+            fetchJson<KoitoStats>(`${api}/stats?period=all_time`),
+            fetchJson<KoitoActivity>(
+              `${api}/listen-activity?step=day&range=${HEAT_MAX_WEEKS * 7}&tz=${encodeURIComponent(TIME_ZONE)}`,
+            ),
+            fetchJson<KoitoListens>(
+              `${api}/listens?period=all_time&limit=${limit}`,
+            ),
+          ]),
+        (data) => Array.isArray(data) && data.length === 3,
+      )
 
     load()
       .then(([stats, activity, listens]) => {
@@ -566,16 +537,6 @@ const stats: { key: string; label: string }[] = [
   music-feed :global([data-skeleton] .cover),
   music-feed :global(.sk-line) {
     background-color: var(--gray-5);
-    animation: music-pulse 1.6s ease-in-out infinite;
-  }
-
-  @keyframes music-pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.4;
-    }
+    animation: var(--sk-pulse);
   }
 </style>

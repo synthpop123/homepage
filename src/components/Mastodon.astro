@@ -44,6 +44,8 @@ const profileUrl = `${instance}/@${username}`
 </mastodon-feed>
 
 <script>
+  import { cached, dateFormatter, fetchJson } from "@/lib/client/feed"
+
   type Emoji = { shortcode: string; url: string; static_url?: string }
 
   type ImageDim = { width?: number; height?: number }
@@ -84,13 +86,6 @@ const profileUrl = `${instance}/@${username}`
     "OL",
     "LI",
   ])
-
-  const dateFormatter = new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "Asia/Shanghai",
-  })
 
   const el = (tag: string, className?: string) => {
     const node = document.createElement(tag)
@@ -262,28 +257,6 @@ const profileUrl = `${instance}/@${username}`
     return item
   }
 
-  const CACHE_TTL = 60_000
-
-  const readCache = (key: string): Status[] | null => {
-    try {
-      const raw = sessionStorage.getItem(key)
-      if (!raw) return null
-      const { t, statuses } = JSON.parse(raw)
-      if (Date.now() - t > CACHE_TTL) return null
-      return Array.isArray(statuses) ? statuses : null
-    } catch {
-      return null
-    }
-  }
-
-  const writeCache = (key: string, statuses: Status[]) => {
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), statuses }))
-    } catch {
-      // Storage full or unavailable (e.g. private mode) — cache is optional.
-    }
-  }
-
   document.querySelectorAll<HTMLElement>("mastodon-feed").forEach((feed) => {
     const list = feed.querySelector<HTMLOListElement>(".mastodon-list")
     const fallback = feed.querySelector<HTMLElement>(".mastodon-fallback")
@@ -293,22 +266,12 @@ const profileUrl = `${instance}/@${username}`
     const limit = Number(feed.dataset.limit) || 20
     const cacheKey = `mastodon:${instance}:${accountId}:${limit}`
 
-    const load = () => {
-      const cached = readCache(cacheKey)
-      if (cached) return Promise.resolve(cached)
-      return fetch(
-        `${instance}/api/v1/accounts/${accountId}/statuses?exclude_replies=true&exclude_reblogs=true&limit=${limit}`,
+    const load = () =>
+      cached(cacheKey, () =>
+        fetchJson<Status[]>(
+          `${instance}/api/v1/accounts/${accountId}/statuses?exclude_replies=true&exclude_reblogs=true&limit=${limit}`,
+        ),
       )
-        .then((response) => {
-          if (!response.ok)
-            throw new Error(`Request failed: ${response.status}`)
-          return response.json() as Promise<Status[]>
-        })
-        .then((statuses) => {
-          if (Array.isArray(statuses)) writeCache(cacheKey, statuses)
-          return statuses
-        })
-    }
 
     load()
       .then((statuses) => {
@@ -453,7 +416,7 @@ const profileUrl = `${instance}/@${username}`
   .sk {
     background-color: var(--gray-5);
     border-radius: var(--radius-sm);
-    animation: mastodon-pulse 1.6s ease-in-out infinite;
+    animation: var(--sk-pulse);
   }
 
   .sk-line {
@@ -466,25 +429,5 @@ const profileUrl = `${instance}/@${username}`
     display: block;
     aspect-ratio: var(--aspect-video);
     border-radius: var(--radius-lg);
-  }
-
-  @keyframes mastodon-pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.4;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .sk {
-      animation: none;
-    }
-
-    mastodon-feed :global(.note-media img) {
-      transition: none;
-    }
   }
 </style>

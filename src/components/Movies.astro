@@ -1,13 +1,15 @@
 ---
+import { LETTERBOXD } from "@/consts"
+
 type Props = {
   username?: string
   limit?: number
 }
 
-const { username = "lkw123", limit = 8 } = Astro.props
+const { username = LETTERBOXD.username, limit = LETTERBOXD.limit } = Astro.props
 
 const profileUrl = `https://letterboxd.com/${username}/`
-const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=true&limit=${limit}`
+const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${limit}`
 ---
 
 <p class="movies-intro">
@@ -38,6 +40,8 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
 </movies-feed>
 
 <script>
+  import { cached, dateFormatter, fetchJson } from "@/lib/client/feed"
+
   type LetterboxdEntry = {
     film?: {
       title?: string
@@ -50,37 +54,8 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
     uri?: string
   }
 
-  const dateFormatter = new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "Asia/Shanghai",
-  })
-
   const entryTime = (entry: LetterboxdEntry) =>
     entry.date?.watched ?? entry.date?.published ?? 0
-
-  const CACHE_TTL = 60_000
-
-  const readCache = (key: string): LetterboxdEntry[] | null => {
-    try {
-      const raw = sessionStorage.getItem(key)
-      if (!raw) return null
-      const { t, entries } = JSON.parse(raw)
-      if (Date.now() - t > CACHE_TTL) return null
-      return Array.isArray(entries) ? entries : null
-    } catch {
-      return null
-    }
-  }
-
-  const writeCache = (key: string, entries: LetterboxdEntry[]) => {
-    try {
-      sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), entries }))
-    } catch {
-      // Storage full or unavailable (e.g. private mode) — cache is optional.
-    }
-  }
 
   const createRewatchIcon = () => {
     const icon = document.createElement("span")
@@ -170,20 +145,8 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
     const limit = Number(feed.dataset.limit) || 8
     const cacheKey = `letterboxd:${endpoint}`
 
-    const load = () => {
-      const cached = readCache(cacheKey)
-      if (cached) return Promise.resolve(cached)
-      return fetch(endpoint)
-        .then((response) => {
-          if (!response.ok)
-            throw new Error(`Request failed: ${response.status}`)
-          return response.json() as Promise<LetterboxdEntry[]>
-        })
-        .then((entries) => {
-          if (Array.isArray(entries)) writeCache(cacheKey, entries)
-          return entries
-        })
-    }
+    const load = () =>
+      cached(cacheKey, () => fetchJson<LetterboxdEntry[]>(endpoint))
 
     load()
       .then((entries) => {
@@ -354,16 +317,6 @@ const feedUrl = `https://letterboxd-embed.lkwplus.com/?username=${username}&raw=
   movies-feed :global([data-skeleton] .poster),
   movies-feed :global(.sk-line) {
     background-color: var(--gray-5);
-    animation: movies-pulse 1.6s ease-in-out infinite;
-  }
-
-  @keyframes movies-pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.4;
-    }
+    animation: var(--sk-pulse);
   }
 </style>

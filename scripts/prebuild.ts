@@ -15,12 +15,15 @@
 import { copyFileSync, existsSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import sharp from "sharp"
+// Runs under bun, which resolves the tsconfig path alias and the svg
+// imports inside consts.ts (file loader), so the tracker config has a
+// single source of truth.
+import { UMAMI } from "../src/consts"
 
 const root = process.cwd()
 
-// Keep in sync with UMAMI.hostUrl in src/consts.ts.
-const UMAMI_SCRIPT_URL = "https://umami.lkwplus.com/script.js"
-const UMAMI_DEST = path.join(root, "public/headache.js")
+const UMAMI_SCRIPT_URL = `${UMAMI.hostUrl}/script.js`
+const UMAMI_DEST = path.join(root, "public", UMAMI.src)
 const UMAMI_FALLBACK = path.join(root, "src/assets/headache-fallback.js")
 
 const CAT_URL = "https://cataas.com/cat"
