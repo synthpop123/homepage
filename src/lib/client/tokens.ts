@@ -86,18 +86,12 @@ export const COMPOSITION: { key: keyof Usage; label: string }[] = [
   { key: "reasoning", label: "Reasoning" },
 ]
 
-/** One request for the whole page, session-cached like the other feeds.
- *  The validator requires the quarter range so cache entries from older
- *  payload shapes refetch instead of breaking the renderers. */
+/** One request for the whole page, session-cached like the other feeds. */
 export const loadSite = (endpoint: string): Promise<Site> =>
   cached(
     `tokens:site:${endpoint}`,
     () => fetchJson<Site>(`${endpoint}/api/site`),
-    (data) =>
-      typeof data === "object" &&
-      data !== null &&
-      "ranges" in data &&
-      typeof (data as Site).ranges.quarter === "object",
+    (data) => typeof data === "object" && data !== null && "ranges" in data,
   )
 
 /* Dates ------------------------------------------------------------- */
