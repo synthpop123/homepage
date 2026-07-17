@@ -54,6 +54,8 @@ const overviewCards = [
 
 const factCards = [
   { key: "biggest", label: "Biggest day" },
+  { key: "busiest", label: "Busiest week" },
+  { key: "median", label: "Typical day" },
   { key: "weekday", label: "Top weekday" },
   { key: "longest", label: "Longest streak" },
   { key: "current", label: "Current streak" },
@@ -110,6 +112,7 @@ const skeletonRows = (count: number) =>
             <dt>{label}</dt>
             <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
             <dd class="sub"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
+            <dd class="delta"><span class="sk-line sk-sub" style="inline-size: 5em" aria-hidden="true" /></dd>
           </div>
         ))}
       </dl>
@@ -128,6 +131,13 @@ const skeletonRows = (count: number) =>
             </li>
           ))}
         </ul>
+        <p class="tk-mix-note">
+          <span
+            class="sk-line sk-sub"
+            style="inline-size: min(18em, 80%)"
+            aria-hidden="true"
+          />
+        </p>
       </div>
     </section>
     <section>
@@ -144,6 +154,24 @@ const skeletonRows = (count: number) =>
       <div class="tk-chart-foot" aria-hidden="true">
         <span class="tk-legend-note">Stacked by model provider</span>
         <ul class="tk-chart-legend"></ul>
+      </div>
+      <h3 class="tk-label">Weekly rhythm</h3>
+      <div class="tk-chart-head">
+        <p class="tk-rhythm-scope">Average tokens by weekday</p>
+        <p class="tk-rhythm-peak"></p>
+      </div>
+      <div
+        class="tk-rhythm"
+        role="img"
+        aria-label="Average token usage by weekday"
+      >
+        <div class="tk-rhythm-plot" data-skeleton></div>
+        <div class="tk-rhythm-axis" aria-hidden="true">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+            <span>{day}</span>
+          ))}
+        </div>
+        <div class="tk-tip" hidden></div>
       </div>
     </section>
     <section>
@@ -245,6 +273,8 @@ const skeletonRows = (count: number) =>
     formatCount,
     formatDate,
     formatDay,
+    formatDelta,
+    formatDuration,
     formatExact,
     formatMetric,
     formatShare,
@@ -262,6 +292,10 @@ const skeletonRows = (count: number) =>
     shiftDays,
     stackProviders,
     type Usage,
+    WEEKDAYS,
+    type WeekdayStat,
+    weekdayProfile,
+    windowTotals,
   } from "@/lib/client/tokens"
   import { mountHeatmap } from "@/lib/client/heatmap"
 
@@ -329,30 +363,50 @@ const skeletonRows = (count: number) =>
       subEl.textContent = sub
     }
 
+    const setDelta = (key: string, text: string, title = "") => {
+      const delta = q(
+        `[data-cards="overview"] .tk-card[data-key="${key}"] .delta`,
+      )
+      if (!delta) return
+      if (!text) {
+        delta.replaceChildren()
+        delta.removeAttribute("title")
+        return
+      }
+      const [arrow, ...rest] = text.split(" ")
+      delta.replaceChildren(
+        el("span", "delta-val", `${arrow} ${rest.shift() ?? ""}`),
+        document.createTextNode(` ${rest.join(" ")}`),
+      )
+      if (title) delta.title = title
+      else delta.removeAttribute("title")
+    }
+
     /* Overview: stat cards + composition bar */
 
     const renderOverview = (range: RangeKey) => {
       if (!site) return
-      const totals = site.ranges[range].totals
+      const stats = site.ranges[range]
+      const totals = stats.totals
       const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
       const cards = q('[data-cards="overview"]')
-      const perDay = (value: number, format: (n: number) => string) =>
-        totals.activeDays > 0
-          ? `≈ ${format(value / totals.activeDays)} per active day`
-          : "—"
 
       setCard(
         cards,
         "tokens",
         formatTokens(totals.tokens),
-        perDay(totals.tokens, formatTokens),
+        totals.activeDays > 0
+          ? `≈ ${formatTokens(totals.tokens / totals.activeDays)} per active day`
+          : "—",
         `${formatExact(totals.tokens)} tokens`,
       )
       setCard(
         cards,
         "cost",
         formatCost(totals.cost),
-        perDay(totals.cost, formatCost),
+        totals.tokens > 0
+          ? `≈ ${formatCostExact(totals.cost / (totals.tokens / 1e6))} per 1M tokens`
+          : "—",
         formatCostExact(totals.cost),
       )
       setCard(
@@ -374,6 +428,44 @@ const skeletonRows = (count: number) =>
             : "—"
           : `of the last ${meta.days} days`,
       )
+
+      // Period-over-period: same-length window immediately before this one.
+      if (meta.days && stats.from) {
+        const prev = windowTotals(
+          site.daily,
+          shiftDays(stats.from, -meta.days),
+          shiftDays(stats.from, -1),
+        )
+        const vs = `vs prior ${meta.days} days`
+        const ratio = (cur: number, base: number) => (cur - base) / base
+        const numeric = (
+          key: "tokens" | "cost" | "messages",
+          format: (n: number) => string,
+        ) => {
+          if (prev[key] > 0)
+            setDelta(
+              key,
+              `${formatDelta(ratio(totals[key], prev[key]))} ${vs}`,
+              `previous: ${format(prev[key])}`,
+            )
+          else setDelta(key, totals[key] > 0 ? `↑ new ${vs}` : "")
+        }
+        numeric("tokens", (n) => `${formatExact(n)} tokens`)
+        numeric("cost", formatCostExact)
+        numeric("messages", formatExact)
+        const dayDiff = totals.activeDays - prev.activeDays
+        setDelta(
+          "activeDays",
+          dayDiff === 0
+            ? `→ same as prior ${meta.days} days`
+            : `${dayDiff > 0 ? "↑" : "↓"} ${Math.abs(dayDiff)} ${vs}`,
+          `previous: ${prev.activeDays} active days`,
+        )
+      } else {
+        for (const key of ["tokens", "cost", "messages", "activeDays"]) {
+          setDelta(key, "")
+        }
+      }
 
       const bar = q(".tk-mix-bar")
       const legend = q(".tk-mix-legend")
@@ -403,6 +495,14 @@ const skeletonRows = (count: number) =>
         value.textContent = sum > 0 ? formatTokens(amount) : "—"
         value.title = `${formatExact(amount)} tokens`
         share.textContent = sum > 0 ? formatShare(amount / sum) : ""
+      }
+      const note = q(".tk-mix-note")
+      if (note) {
+        const prompt = totals.input + totals.cacheRead
+        note.textContent =
+          prompt > 0
+            ? `Cache hit rate ${formatShare(totals.cacheRead / prompt)} — share of prompt tokens read from the provider cache instead of resent as input.`
+            : ""
       }
     }
 
@@ -560,6 +660,178 @@ const skeletonRows = (count: number) =>
       )
     }
 
+    /* Weekly rhythm: average consumption per weekday as a line chart */
+
+    const rhythm = q(".tk-rhythm")
+    const rhythmPlot = q(".tk-rhythm-plot")
+    const rhythmTip = q<HTMLElement>(".tk-rhythm .tk-tip")
+    let rhythmStats: WeekdayStat[] = []
+    let rhythmMetric: MetricKey = "tokens"
+    let rhythmSingle = false
+
+    const drawRhythm = () => {
+      if (!rhythmPlot || rhythmStats.length === 0) return
+      const width = rhythmPlot.clientWidth
+      const height = rhythmPlot.clientHeight
+      if (width === 0 || height === 0) return
+
+      const max = Math.max(...rhythmStats.map((stat) => stat.average))
+      const padTop = 8
+      const padBottom = 4
+      const inner = height - padTop - padBottom
+      const x = (i: number) => ((i + 0.5) / rhythmStats.length) * width
+      const y = (value: number) =>
+        padTop + (1 - (max > 0 ? value / max : 0)) * inner
+
+      const ns = "http://www.w3.org/2000/svg"
+      const shape = (tag: string, attrs: Record<string, string>) => {
+        const node = document.createElementNS(ns, tag)
+        for (const [name, value] of Object.entries(attrs)) {
+          node.setAttribute(name, value)
+        }
+        return node
+      }
+
+      const svg = shape("svg", {
+        viewBox: `0 0 ${width} ${height}`,
+        preserveAspectRatio: "none",
+      }) as SVGSVGElement
+
+      // Quarter gridlines of the value scale, echoing the trend chart.
+      if (max > 0) {
+        for (const ratio of [0.25, 0.5, 0.75, 1]) {
+          svg.append(
+            shape("line", {
+              class: "grid",
+              x1: "0",
+              x2: String(width),
+              y1: String(y(max * ratio)),
+              y2: String(y(max * ratio)),
+            }),
+          )
+        }
+      }
+
+      const points = rhythmStats.map((stat, i) => [x(i), y(stat.average)])
+      const line = points
+        .map(([px, py], i) => `${i === 0 ? "M" : "L"}${px} ${py}`)
+        .join(" ")
+      svg.append(
+        shape("path", {
+          class: "area",
+          d: `${line} L${points[points.length - 1][0]} ${height} L${points[0][0]} ${height} Z`,
+        }),
+        shape("path", { class: "line", d: line }),
+      )
+
+      const peakIndex = rhythmStats.findIndex((stat) => stat.average === max)
+      points.forEach(([px, py], i) => {
+        const dot = shape("circle", {
+          class: "dot",
+          cx: String(px),
+          cy: String(py),
+          r: i === peakIndex && max > 0 ? "4" : "3",
+        })
+        if (i === peakIndex && max > 0) dot.dataset.peak = ""
+        svg.append(dot)
+      })
+
+      // Invisible hover columns, one per weekday.
+      rhythmStats.forEach((_, i) => {
+        svg.append(
+          shape("rect", {
+            class: "hit",
+            "data-i": String(i),
+            x: String((i / rhythmStats.length) * width),
+            y: "0",
+            width: String(width / rhythmStats.length),
+            height: String(height),
+          }),
+        )
+      })
+
+      rhythmPlot.replaceChildren(svg)
+      rhythmPlot.removeAttribute("data-skeleton")
+    }
+
+    const hideRhythmTip = () => {
+      if (rhythmTip) rhythmTip.hidden = true
+    }
+
+    const showRhythmTip = (hit: SVGElement) => {
+      const stat = rhythmStats[Number(hit.dataset.i)]
+      if (!rhythmTip || !rhythm || !stat) return
+      const name = WEEKDAYS[stat.weekday]
+      const lines: string[] = []
+      if (stat.occurrences === 0) {
+        lines.push("No data")
+      } else if (rhythmSingle) {
+        // The 7-day window holds exactly one of each weekday.
+        lines.push(
+          stat.total > 0 ? formatMetric(stat.total, rhythmMetric) : "No usage",
+        )
+      } else {
+        lines.push(
+          `≈ ${formatMetric(stat.average, rhythmMetric)} on average · ${formatMetric(stat.total, rhythmMetric)} total`,
+          `active on ${stat.activeDays} of ${stat.occurrences} ${name}s`,
+        )
+      }
+      rhythmTip.replaceChildren(
+        el("strong", "tip-title", name),
+        ...lines.map((line) => el("span", "tip-total", line)),
+      )
+      rhythmTip.hidden = false
+      const hitRect = hit.getBoundingClientRect()
+      const areaRect = rhythm.getBoundingClientRect()
+      const center = hitRect.left + hitRect.width / 2 - areaRect.left
+      rhythmTip.style.left = `${Math.min(
+        Math.max(center - rhythmTip.offsetWidth / 2, 0),
+        areaRect.width - rhythmTip.offsetWidth,
+      )}px`
+    }
+
+    const renderRhythm = (range: RangeKey, metric: MetricKey) => {
+      if (!site) return
+      const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
+      const from =
+        site.ranges[range].from ??
+        site.ranges.all.totals.firstDate ??
+        site.today
+      rhythmStats = weekdayProfile(
+        fillDaily(site.daily, from, site.today),
+        metric,
+      )
+      rhythmMetric = metric
+      rhythmSingle = range === "week"
+      hideRhythmTip()
+
+      const noun = metric === "cost" ? "cost" : "tokens"
+      const scope = q(".tk-rhythm-scope")
+      if (scope) {
+        scope.textContent = rhythmSingle
+          ? `Daily ${noun} by weekday · last 7 days`
+          : `Average daily ${noun} by weekday · ${meta.days ? `last ${meta.days} days` : "all time"}`
+      }
+
+      const max = Math.max(...rhythmStats.map((stat) => stat.average))
+      const peakStat = rhythmStats.find((stat) => stat.average === max)
+      const peak = q(".tk-rhythm-peak")
+      if (peak) {
+        peak.textContent =
+          max > 0 && peakStat
+            ? `peak ${WEEKDAYS[peakStat.weekday].slice(0, 3)} ${rhythmSingle ? "" : "≈ "}${formatMetric(max, metric)}`
+            : ""
+      }
+      rhythm?.setAttribute(
+        "aria-label",
+        max > 0 && peakStat
+          ? `Average daily ${noun} by weekday: peaks on ${WEEKDAYS[peakStat.weekday]} at ${formatMetric(max, metric)}`
+          : `Average daily ${noun} by weekday: no usage recorded`,
+      )
+
+      drawRhythm()
+    }
+
     /* Activity: 12-month heatmap + all-time patterns (rendered once) */
 
     const renderHeatmap = () => {
@@ -578,7 +850,7 @@ const skeletonRows = (count: number) =>
           level: level(day.tokens),
           title:
             day.tokens > 0
-              ? `${formatTokens(day.tokens)} tokens on ${formatDate(day.date)} · ${formatCostExact(day.cost)}`
+              ? `${formatTokens(day.tokens)} tokens on ${formatDate(day.date)} · ${formatCostExact(day.cost)} · ${formatCount(day.messages)} ${day.messages === 1 ? "message" : "messages"}${day.active ? ` · ${formatDuration(day.active)} active` : ""}`
               : `No usage on ${formatDate(day.date)}`,
         })),
       )
@@ -600,6 +872,26 @@ const skeletonRows = (count: number) =>
           : "no usage yet",
         facts.biggest
           ? `${formatExact(facts.biggest.tokens)} tokens`
+          : undefined,
+      )
+      setCard(
+        cards,
+        "busiest",
+        facts.busiestWeek ? formatTokens(facts.busiestWeek.tokens) : "—",
+        facts.busiestWeek
+          ? `${formatDay(facts.busiestWeek.from)} – ${formatDay(facts.busiestWeek.to)}`
+          : "—",
+        facts.busiestWeek
+          ? `${formatExact(facts.busiestWeek.tokens)} tokens`
+          : undefined,
+      )
+      setCard(
+        cards,
+        "median",
+        facts.median !== null ? formatTokens(facts.median) : "—",
+        "median across active days",
+        facts.median !== null
+          ? `${formatExact(Math.round(facts.median))} tokens`
           : undefined,
       )
       setCard(
@@ -676,10 +968,16 @@ const skeletonRows = (count: number) =>
         const isOpen = expanded.has(group.key)
         const shown = isOpen ? live : live.slice(0, TOP_ROWS)
         const rest = live.slice(TOP_ROWS)
+        const top = live[0]?.usage[metric] ?? 0
 
         const items = shown.map((row) => {
           const item = el("li", "tk-row")
           item.title = `${row.name} — ${formatExact(row.usage.tokens)} tokens · ${formatCostExact(row.usage.cost)} · ${formatExact(row.usage.messages)} messages`
+          // Proportional fill behind the row, scaled to the list leader.
+          item.style.setProperty(
+            "--w",
+            String(top > 0 ? row.usage[metric] / top : 0),
+          )
           item.append(
             iconSlot(aiIcon(group.key, row.id)),
             el("span", "name", row.name),
@@ -744,6 +1042,23 @@ const skeletonRows = (count: number) =>
           const item = el("li", "tk-device")
           const online = isOnline(device.lastSeen)
 
+          // Depth that doesn't fit the row lives in the tooltip.
+          const details = [
+            device.longestMs
+              ? `longest stretch ${formatDuration(device.longestMs)}`
+              : "",
+            device.maxConcurrent && device.maxConcurrent > 1
+              ? `up to ${device.maxConcurrent} concurrent sessions`
+              : "",
+            device.mcpServers?.length
+              ? `MCP: ${device.mcpServers.join(", ")}`
+              : "",
+            device.firstSeen
+              ? `first seen ${formatDate(new Date(device.firstSeen).toISOString())}`
+              : "",
+          ].filter((part) => part !== "")
+          if (details.length > 0) item.title = details.join(" · ")
+
           const dot = el("span", "dot")
           if (online) dot.dataset.online = ""
           dot.setAttribute("role", "img")
@@ -754,22 +1069,25 @@ const skeletonRows = (count: number) =>
             device.lastSeen === null
               ? "never reported"
               : `${online ? "synced" : "last seen"} ${formatAgo(device.lastSeen)}`
+          const facts = [
+            seen,
+            device.cliVersion ? `v${device.cliVersion}` : "",
+            device.sessions ? `${formatExact(device.sessions)} sessions` : "",
+          ].filter((part) => part !== "")
           id.append(
             el("span", "dev-name", device.name),
-            el("span", "dev-seen", seen),
+            el("span", "dev-seen", facts.join(" · ")),
           )
 
           const usage = el("span", "dev-usage")
           const tokens = el("span", "dev-tokens", formatTokens(device.tokens))
           tokens.title = `${formatExact(device.tokens)} tokens`
-          usage.append(
-            tokens,
-            el(
-              "span",
-              "dev-meta",
-              `${formatCost(device.cost)} · ${device.activeDays} active ${device.activeDays === 1 ? "day" : "days"}`,
-            ),
-          )
+          const meta = [
+            formatCost(device.cost),
+            `${device.activeDays} active ${device.activeDays === 1 ? "day" : "days"}`,
+            device.activeMs ? formatDuration(device.activeMs) : "",
+          ].filter((part) => part !== "")
+          usage.append(tokens, el("span", "dev-meta", meta.join(" · ")))
 
           item.append(dot, id, usage)
           return item
@@ -781,6 +1099,7 @@ const skeletonRows = (count: number) =>
       const { range, metric } = readState()
       renderOverview(range)
       renderTrend(range, metric)
+      renderRhythm(range, metric)
       renderBreakdown(range, metric)
     }
 
@@ -796,6 +1115,12 @@ const skeletonRows = (count: number) =>
     })
     barsArea?.addEventListener("pointerleave", hideTip)
 
+    rhythmPlot?.addEventListener("pointerover", (event) => {
+      const hit = (event.target as Element).closest<SVGElement>("rect[data-i]")
+      if (hit) showRhythmTip(hit)
+    })
+    rhythmPlot?.addEventListener("pointerleave", hideRhythmTip)
+
     loadSite(endpoint)
       .then((loaded) => {
         site = loaded
@@ -804,6 +1129,7 @@ const skeletonRows = (count: number) =>
         renderFacts()
         renderDevices()
         renderDynamic()
+        if (rhythmPlot) new ResizeObserver(drawRhythm).observe(rhythmPlot)
         root.setAttribute("aria-busy", "false")
       })
       .catch(() => {
@@ -935,6 +1261,14 @@ const skeletonRows = (count: number) =>
     }
   }
 
+  .tk-cards.tk-facts {
+    grid-template-columns: repeat(3, 1fr);
+
+    @media (width < 40rem) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   .tk-card {
     display: grid;
     gap: var(--space-3xs);
@@ -958,11 +1292,20 @@ const skeletonRows = (count: number) =>
     font-size: var(--step-1);
   }
 
-  .tk-card .sub {
+  .tk-card .sub,
+  .tk-card .delta {
     margin: 0;
     font-size: var(--step--1);
     color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
+  }
+
+  .tk-card .delta:empty {
+    display: none;
+  }
+
+  .tk-card .delta :global(.delta-val) {
+    color: var(--foreground);
   }
 
   /* Composition bar */
@@ -1059,6 +1402,16 @@ const skeletonRows = (count: number) =>
     max-inline-size: 100%;
   }
 
+  .tk-mix-note {
+    margin: 0;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .tk-mix-note:empty {
+    display: none;
+  }
+
   /* Trend chart */
 
   .tk-chart-head {
@@ -1070,7 +1423,8 @@ const skeletonRows = (count: number) =>
     color: var(--muted-foreground);
   }
 
-  .tk-chart-peak {
+  .tk-chart-peak,
+  .tk-rhythm-peak {
     font-variant-numeric: tabular-nums;
   }
 
@@ -1204,6 +1558,72 @@ const skeletonRows = (count: number) =>
     border-radius: var(--radius-xs);
   }
 
+  /* Weekly rhythm line chart */
+
+  .tk-rhythm {
+    position: relative;
+  }
+
+  .tk-rhythm-plot {
+    block-size: clamp(6.5rem, 18vw, 8.5rem);
+    border-block-end: 1px solid var(--border);
+  }
+
+  .tk-rhythm-plot :global(svg) {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+  }
+
+  .tk-rhythm-plot :global(.grid) {
+    stroke: color-mix(in oklab, var(--border) 55%, transparent);
+    stroke-width: 1;
+    shape-rendering: crispedges;
+  }
+
+  .tk-rhythm-plot :global(.area) {
+    fill: color-mix(in oklab, var(--tk-accent) 12%, transparent);
+  }
+
+  .tk-rhythm-plot :global(.line) {
+    fill: none;
+    stroke: var(--tk-accent);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .tk-rhythm-plot :global(.dot) {
+    fill: var(--tk-accent);
+    stroke: var(--background);
+    stroke-width: 1.5;
+  }
+
+  .tk-rhythm-plot :global(.dot[data-peak]) {
+    stroke: color-mix(in oklab, var(--tk-accent) 35%, var(--background));
+    stroke-width: 2.5;
+  }
+
+  .tk-rhythm-plot :global(.hit) {
+    fill: transparent;
+  }
+
+  .tk-rhythm-axis {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-block-start: var(--space-3xs);
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+    text-align: center;
+  }
+
+  .tk-rhythm-plot[data-skeleton] {
+    border-radius: var(--radius-sm);
+    background-color: var(--gray-5);
+    animation: var(--sk-pulse);
+  }
+
   /* Provider palette, applied to bar segments and legend chips alike.
      Keep these last: the bare [data-p] fallback must lose to the named
      rules below it. */
@@ -1246,6 +1666,15 @@ const skeletonRows = (count: number) =>
     gap: var(--space-2xs);
     padding-block: var(--space-3xs);
     font-size: var(--step--1);
+    /* Proportional fill (share of the list leader) behind each row,
+       sized by the --w custom property the script sets. */
+    border-radius: var(--radius-xs);
+    background-image: linear-gradient(
+      color-mix(in oklab, var(--gray-5) 55%, transparent),
+      color-mix(in oklab, var(--gray-5) 55%, transparent)
+    );
+    background-size: calc(var(--w, 0) * 100%) 100%;
+    background-repeat: no-repeat;
   }
 
   .tk-rows :global(.ico) {

@@ -37,14 +37,25 @@ export type SiteDay = {
   tokens: number
   cost: number
   messages: number
+  /** Wall-clock active time (ms) summed across devices; only present on
+   *  days the CLI reported it. */
+  active?: number
   providers: Record<string, { tokens: number; cost: number }>
 }
 
 export type SiteDevice = {
   name: string
+  firstSeen: number | null
   lastSeen: number | null
+  cliVersion: string | null
+  sessions: number | null
+  activeMs: number | null
+  longestMs: number | null
+  maxConcurrent: number | null
+  mcpServers: string[] | null
   activeDays: number
   tokens: number
+  messages: number
   cost: number
 }
 
@@ -56,12 +67,13 @@ export type Site = {
   devices: SiteDevice[]
 }
 
-export type RangeKey = "week" | "month" | "all"
+export type RangeKey = "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
 
 export const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
   { key: "week", label: "7 days", days: 7 },
   { key: "month", label: "30 days", days: 30 },
+  { key: "quarter", label: "90 days", days: 90 },
   { key: "all", label: "All time", days: null },
 ]
 
@@ -74,12 +86,18 @@ export const COMPOSITION: { key: keyof Usage; label: string }[] = [
   { key: "reasoning", label: "Reasoning" },
 ]
 
-/** One request for the whole page, session-cached like the other feeds. */
+/** One request for the whole page, session-cached like the other feeds.
+ *  The validator requires the quarter range so cache entries from older
+ *  payload shapes refetch instead of breaking the renderers. */
 export const loadSite = (endpoint: string): Promise<Site> =>
   cached(
     `tokens:site:${endpoint}`,
     () => fetchJson<Site>(`${endpoint}/api/site`),
-    (data) => typeof data === "object" && data !== null && "ranges" in data,
+    (data) =>
+      typeof data === "object" &&
+      data !== null &&
+      "ranges" in data &&
+      typeof (data as Site).ranges.quarter === "object",
   )
 
 /* Dates ------------------------------------------------------------- */
@@ -186,6 +204,29 @@ export const formatAgo = (epochMs: number, now = Date.now()) => {
   if (minutes < 60) return `${minutes}m ago`
   if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`
   return `${Math.round(minutes / (60 * 24))}d ago`
+}
+
+/** "42 min" / "9.5 h" — for CLI-reported active time. */
+export const formatDuration = (ms: number) => {
+  const minutes = ms / 60_000
+  if (minutes < 1) return "<1 min"
+  if (minutes < 90) return `${Math.round(minutes)} min`
+  return `${(minutes / 60).toFixed(1)} h`
+}
+
+/**
+ * "↑ 23%" / "↓ 8%" / "→ 0%" for period-over-period change; beyond +200%
+ * it switches to the new-to-old multiple ("↑ 3.4×") which stays readable
+ * where percentages get silly.
+ */
+export const formatDelta = (ratio: number) => {
+  const pct = Math.abs(ratio) * 100
+  const arrow = ratio > 0.0005 ? "↑" : ratio < -0.0005 ? "↓" : "→"
+  const magnitude =
+    ratio >= 2
+      ? `${(ratio + 1).toFixed(1)}×`
+      : `${pct.toFixed(pct < 10 ? 1 : 0)}%`
+  return `${arrow} ${magnitude}`
 }
 
 /**
@@ -326,8 +367,67 @@ const nextMonth = (month: string) => {
     : `${year}-${String(m + 1).padStart(2, "0")}`
 }
 
+/**
+ * Sums over a [from, to] date window of the sparse daily series — the
+ * "previous period" comparisons only need totals, so idle days can stay
+ * missing.
+ */
+export function windowTotals(daily: SiteDay[], from: string, to: string) {
+  const totals = { tokens: 0, cost: 0, messages: 0, activeDays: 0 }
+  for (const day of daily) {
+    if (day.date < from || day.date > to) continue
+    totals.tokens += day.tokens
+    totals.cost += day.cost
+    totals.messages += day.messages
+    if (day.tokens > 0) totals.activeDays += 1
+  }
+  return totals
+}
+
+export type WeekdayStat = {
+  /** Monday-based index, aligned with WEEKDAYS. */
+  weekday: number
+  average: number
+  total: number
+  /** How many of this weekday the window contains. */
+  occurrences: number
+  activeDays: number
+}
+
+/**
+ * Average consumption per weekday over a dense daily series. Idle days
+ * count toward the divisor — the profile answers "what does a typical
+ * Monday cost", not "what does an active Monday cost".
+ */
+export function weekdayProfile(
+  days: SiteDay[],
+  metric: MetricKey,
+): WeekdayStat[] {
+  const stats: WeekdayStat[] = WEEKDAYS.map((_, weekday) => ({
+    weekday,
+    average: 0,
+    total: 0,
+    occurrences: 0,
+    activeDays: 0,
+  }))
+  for (const day of days) {
+    const stat = stats[weekdayIndex(day.date)]
+    stat.total += day[metric]
+    stat.occurrences += 1
+    if (day.tokens > 0) stat.activeDays += 1
+  }
+  for (const stat of stats) {
+    stat.average = stat.occurrences > 0 ? stat.total / stat.occurrences : 0
+  }
+  return stats
+}
+
 export type Facts = {
   biggest: SiteDay | null
+  /** Calendar week (Monday-based) with the most tokens. */
+  busiestWeek: { from: string; to: string; tokens: number } | null
+  /** Median tokens across active days — the "typical" day. */
+  median: number | null
   weekday: { name: string; share: number } | null
   longest: { length: number; from: string; to: string } | null
   current: { length: number; since: string } | null
@@ -341,10 +441,14 @@ export function computeFacts(days: SiteDay[]): Facts {
   let longest: Facts["longest"] = null
   let run = 0
   let runStart = ""
+  let busiestWeek: Facts["busiestWeek"] = null
+  let week: { from: string; to: string; tokens: number } | null = null
+  const active: number[] = []
 
   for (const day of days) {
     total += day.tokens
     byWeekday[weekdayIndex(day.date)] += day.tokens
+    if (day.tokens > 0) active.push(day.tokens)
     if (day.tokens > (biggest?.tokens ?? 0)) biggest = day
     if (day.tokens > 0) {
       if (run === 0) runStart = day.date
@@ -354,6 +458,12 @@ export function computeFacts(days: SiteDay[]): Facts {
     } else {
       run = 0
     }
+    if (!week || weekdayIndex(day.date) === 0) {
+      week = { from: day.date, to: day.date, tokens: 0 }
+    }
+    week.to = day.date
+    week.tokens += day.tokens
+    if (week.tokens > (busiestWeek?.tokens ?? 0)) busiestWeek = week
   }
 
   // Current streak: count back from the end, forgiving only today (the
@@ -367,9 +477,19 @@ export function computeFacts(days: SiteDay[]): Facts {
     since = days[i].date
   }
 
+  active.sort((a, b) => a - b)
+  const median =
+    active.length === 0
+      ? null
+      : active.length % 2 === 1
+        ? active[(active.length - 1) / 2]
+        : (active[active.length / 2 - 1] + active[active.length / 2]) / 2
+
   const top = byWeekday.indexOf(Math.max(...byWeekday))
   return {
     biggest,
+    busiestWeek,
+    median,
     weekday:
       total > 0 ? { name: WEEKDAYS[top], share: byWeekday[top] / total } : null,
     longest,
