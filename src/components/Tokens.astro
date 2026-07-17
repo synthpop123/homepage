@@ -1648,8 +1648,10 @@ const skeletonRows = (count: number) =>
   }
 
   /* Proportional fill behind each row — its share of the range total,
-     sized by the --w custom property the script sets. Pill ends echo
-     the composition bar and segmented controls above. */
+     sized by the --w custom property the script sets. Soft-cornered
+     rectangle, the site's shape for data marks (heatmap cells, trend
+     bars, chips); tiny shares taper to a hairline rather than getting
+     a forced minimum width. */
   .tk-rows :global(.tk-row:not([data-skeleton]))::before {
     content: "";
     position: absolute;
@@ -1657,8 +1659,7 @@ const skeletonRows = (count: number) =>
     inset-inline-start: 0;
     z-index: -1;
     inline-size: calc(var(--w, 0) * 100%);
-    min-inline-size: 3px;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-xs);
     background-color: color-mix(in oklab, var(--gray-5) 55%, transparent);
   }
 
