@@ -131,13 +131,6 @@ const skeletonRows = (count: number) =>
             </li>
           ))}
         </ul>
-        <p class="tk-mix-note">
-          <span
-            class="sk-line sk-sub"
-            style="inline-size: min(18em, 80%)"
-            aria-hidden="true"
-          />
-        </p>
       </div>
     </section>
     <section>
@@ -495,14 +488,6 @@ const skeletonRows = (count: number) =>
         value.textContent = sum > 0 ? formatTokens(amount) : "—"
         value.title = `${formatExact(amount)} tokens`
         share.textContent = sum > 0 ? formatShare(amount / sum) : ""
-      }
-      const note = q(".tk-mix-note")
-      if (note) {
-        const prompt = totals.input + totals.cacheRead
-        note.textContent =
-          prompt > 0
-            ? `Cache hit rate ${formatShare(totals.cacheRead / prompt)} — share of prompt tokens read from the provider cache instead of resent as input.`
-            : ""
       }
     }
 
@@ -968,15 +953,15 @@ const skeletonRows = (count: number) =>
         const isOpen = expanded.has(group.key)
         const shown = isOpen ? live : live.slice(0, TOP_ROWS)
         const rest = live.slice(TOP_ROWS)
-        const top = live[0]?.usage[metric] ?? 0
 
         const items = shown.map((row) => {
           const item = el("li", "tk-row")
           item.title = `${row.name} — ${formatExact(row.usage.tokens)} tokens · ${formatCostExact(row.usage.cost)} · ${formatExact(row.usage.messages)} messages`
-          // Proportional fill behind the row, scaled to the list leader.
+          // Proportional fill behind the row: its share of the range
+          // total, so the bar width matches the printed percentage.
           item.style.setProperty(
             "--w",
-            String(top > 0 ? row.usage[metric] / top : 0),
+            String(total > 0 ? row.usage[metric] / total : 0),
           )
           item.append(
             iconSlot(aiIcon(group.key, row.id)),
@@ -1402,16 +1387,6 @@ const skeletonRows = (count: number) =>
     max-inline-size: 100%;
   }
 
-  .tk-mix-note {
-    margin: 0;
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
-
-  .tk-mix-note:empty {
-    display: none;
-  }
-
   /* Trend chart */
 
   .tk-chart-head {
@@ -1660,21 +1635,31 @@ const skeletonRows = (count: number) =>
   }
 
   .tk-rows :global(.tk-row) {
+    position: relative;
+    /* Isolate the row so the fill can slot between its background and
+       its content via z-index: -1. */
+    z-index: 0;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) max-content 3.2rem;
     align-items: center;
     gap: var(--space-2xs);
     padding-block: var(--space-3xs);
     font-size: var(--step--1);
-    /* Proportional fill (share of the list leader) behind each row,
-       sized by the --w custom property the script sets. */
-    border-radius: var(--radius-xs);
-    background-image: linear-gradient(
-      color-mix(in oklab, var(--gray-5) 55%, transparent),
-      color-mix(in oklab, var(--gray-5) 55%, transparent)
-    );
-    background-size: calc(var(--w, 0) * 100%) 100%;
-    background-repeat: no-repeat;
+  }
+
+  /* Proportional fill behind each row — its share of the range total,
+     sized by the --w custom property the script sets. Pill ends echo
+     the composition bar and segmented controls above. */
+  .tk-rows :global(.tk-row:not([data-skeleton]))::before {
+    content: "";
+    position: absolute;
+    inset-block: 2px;
+    inset-inline-start: 0;
+    z-index: -1;
+    inline-size: calc(var(--w, 0) * 100%);
+    min-inline-size: 3px;
+    border-radius: var(--radius-full);
+    background-color: color-mix(in oklab, var(--gray-5) 55%, transparent);
   }
 
   .tk-rows :global(.ico) {
