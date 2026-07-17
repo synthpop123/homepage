@@ -119,9 +119,12 @@ const skeletonRows = (count: number) =>
         <ul class="tk-mix-legend">
           {COMPOSITION.map(({ key, label }, i) => (
             <li data-key={key}>
-              <span class="chip" data-k={i} aria-hidden="true" />
-              <span class="name">{label}</span>
-              <span class="value"><span class="sk-line sk-sub" aria-hidden="true" /></span>
+              <span class="name">
+                <span class="chip" data-k={i} aria-hidden="true" />
+                {label}
+              </span>
+              <span class="value"><span class="sk-line sk-stat" aria-hidden="true" /></span>
+              <span class="share"><span class="sk-line sk-sub" style="inline-size: 3em" aria-hidden="true" /></span>
             </li>
           ))}
         </ul>
@@ -390,16 +393,16 @@ const skeletonRows = (count: number) =>
         bar.removeAttribute("data-skeleton")
       }
       for (const part of COMPOSITION) {
-        const value = legend?.querySelector<HTMLElement>(
-          `[data-key="${part.key}"] .value`,
+        const item = legend?.querySelector<HTMLElement>(
+          `[data-key="${part.key}"]`,
         )
-        if (!value) continue
+        const value = item?.querySelector<HTMLElement>(".value")
+        const share = item?.querySelector<HTMLElement>(".share")
+        if (!value || !share) continue
         const amount = totals[part.key]
-        value.textContent =
-          sum > 0
-            ? `${formatTokens(amount)} · ${formatShare(amount / sum)}`
-            : "—"
+        value.textContent = sum > 0 ? formatTokens(amount) : "—"
         value.title = `${formatExact(amount)} tokens`
+        share.textContent = sum > 0 ? formatShare(amount / sum) : ""
       }
     }
 
@@ -966,7 +969,7 @@ const skeletonRows = (count: number) =>
 
   .tk-mix {
     display: grid;
-    gap: var(--space-2xs);
+    gap: var(--space-xs);
   }
 
   .tk-mix-bar {
@@ -1006,33 +1009,54 @@ const skeletonRows = (count: number) =>
     --c: var(--gray-8);
   }
 
+  /* One column per category, echoing the stat cards above:
+     muted label, medium value, muted share. */
   .tk-mix-legend {
     display: grid;
-    gap: var(--space-3xs);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--space-xs) var(--space-s);
     font-size: var(--step--1);
+
+    @media (width < 40rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   .tk-mix-legend li {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-3xs);
+    align-content: start;
+  }
+
+  .tk-mix-legend .name {
+    display: flex;
     align-items: center;
-    column-gap: 0.4em;
+    gap: 0.4em;
+    color: var(--muted-foreground);
   }
 
   .tk-mix-legend .chip {
+    flex-shrink: 0;
     inline-size: 0.625rem;
     block-size: 0.625rem;
     border-radius: var(--radius-xs);
     background-color: var(--c, var(--gray-6));
   }
 
-  .tk-mix-legend .name {
-    color: var(--muted-foreground);
+  .tk-mix-legend .value {
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
   }
 
-  .tk-mix-legend .value {
-    justify-self: end;
+  .tk-mix-legend .share {
+    color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
+  }
+
+  .tk-mix-legend .sk-line {
+    max-inline-size: 100%;
   }
 
   /* Trend chart */
