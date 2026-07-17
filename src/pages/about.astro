@@ -1,29 +1,114 @@
 ---
 import AuthorCard from "@/components/AuthorCard.astro"
+import GitHub from "@/components/GitHub.astro"
 import MetaPage from "@/components/MetaPage.astro"
+import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
-import { getEntry } from "astro:content"
+import { getTags } from "@/lib/content"
+import { isSubpost } from "@/lib/utils"
+import { getCollection, getEntry } from "astro:content"
 
 const author = await getEntry("authors", "lkw123")
 if (!author) throw new Error("Missing author: lkw123")
+
+// Build-time blog stats: every deploy re-counts the content collection.
+const entries = await getCollection("blog", ({ data }) => !data.draft)
+const posts = entries.filter((entry) => !isSubpost(entry.id))
+const tags = await getTags()
+
+const CJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/g
+
+/** CJK characters count as one word each, the rest as space-ish tokens. */
+const countWords = (text: string) => {
+  const prose = text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]+`/g, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+  const cjk = prose.match(CJK)?.length ?? 0
+  const latin =
+    prose.replace(CJK, " ").match(/[A-Za-z0-9][A-Za-z0-9'’.-]*/g)?.length ?? 0
+  return cjk + latin
+}
+
+const words = entries.reduce(
+  (sum, entry) => sum + countWords(entry.body ?? ""),
+  0,
+)
+const sinceYear = new Date(
+  Math.min(...posts.map((post) => post.data.date.getTime())),
+).getUTCFullYear()
+
+const compactFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+})
+
+const stats = [
+  { label: "Posts", value: String(posts.length) },
+  { label: "Words", value: compactFormatter.format(words) },
+  { label: "Tags", value: String(tags.size) },
+  { label: "Since", value: String(sinceYear) },
+]
+
+const sections = [
+  { id: "who-am-i", label: "Who Am I" },
+  { id: "github", label: "GitHub" },
+  { id: "blog", label: "Blog in numbers" },
+  { id: "site", label: "About this site" },
+]
+const toc = [
+  {
+    label: "About",
+    headings: sections.map(({ id, label }) => ({
+      depth: 2,
+      slug: id,
+      text: label,
+    })),
+  },
+]
 ---
 
 <Layout>
-  <MetaPage slot="head" title="About" />
+  <MetaPage
+    slot="head"
+    title="About"
+    description="Who I am, what I've been building, and how this site is put together."
+  />
+  <TableOfContents slot="toc" title="About" sections={toc} />
   <header>
     <ul>
       <AuthorCard author={author} standalone />
     </ul>
   </header>
   <section>
+    <h2 id="who-am-i">Who Am I</h2>
     <prose-content>
-      <h2>Who Am I</h2>
       <ul>
         <li>INTP-T (I Need To sleeP)</li>
         <li>Male | Movie | Music | Minimalist</li>
         <li>Keep Learning &amp; Be Creative</li>
       </ul>
-      <h2>About this site</h2>
+    </prose-content>
+  </section>
+  <section>
+    <h2 id="github">GitHub</h2>
+    <GitHub />
+  </section>
+  <section>
+    <h2 id="blog">Blog in numbers</h2>
+    <p>What the writing here adds up to, counted at build time.</p>
+    <dl class="blog-stats">
+      {stats.map(({ label, value }) => (
+        <div class="stat">
+          <dt class="label">{label}</dt>
+          <dd class="value">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+  <section>
+    <h2 id="site">About this site</h2>
+    <prose-content>
       <ul>
         <li>
           This site is built with
@@ -32,7 +117,47 @@ if (!author) throw new Error("Missing author: lkw123")
             target="_blank"
             rel="noopener noreferrer"
             >Astro</a
-          >, deployed on Vercel.
+          >
+          — no UI or CSS framework, just hand-written CSS on
+          <a href="https://utopia.fyi" target="_blank" rel="noopener noreferrer"
+            >Utopia</a
+          >
+          fluid scales — and deployed on Vercel.
+        </li>
+        <li>
+          Type is set in
+          <a
+            href="https://vercel.com/font"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Geist</a
+          >
+          and Geist Mono.
+        </li>
+        <li>
+          Markdown is compiled by
+          <a
+            href="https://github.com/bruits/satteri"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Sätteri</a
+          >, with math rendered to MathML by
+          <a href="https://temml.org" target="_blank" rel="noopener noreferrer"
+            >Temml</a
+          >
+          and code blocks highlighted by
+          <a
+            href="https://expressive-code.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Expressive Code</a
+          >.
+        </li>
+        <li>
+          Analytics are cookie-less, self-hosted
+          <a href="https://umami.is" target="_blank" rel="noopener noreferrer"
+            >Umami</a
+          >.
         </li>
         <li>
           Credits to
@@ -60,5 +185,56 @@ if (!author) throw new Error("Missing author: lkw123")
 <style>
   header {
     margin-block-end: var(--space-l);
+  }
+
+  section + section {
+    margin-block-start: var(--space-l);
+  }
+
+  h2 {
+    margin-block-end: var(--space-s);
+    font-size: var(--step-1);
+    line-height: calc(var(--leading-offset) + 1em);
+    font-weight: var(--font-weight-medium);
+
+    @media (width >= 64rem) {
+      scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
+    }
+  }
+
+  section > p {
+    margin-block-end: var(--space-s);
+    color: var(--muted-foreground);
+  }
+
+  .blog-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-xs) var(--space-s);
+    margin: 0;
+
+    @media (width < 40rem) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .stat {
+    display: flex;
+    /* dt comes first in the DOM for validity, value renders on top */
+    flex-direction: column-reverse;
+    gap: var(--space-3xs);
+  }
+
+  .stat .value {
+    margin: 0;
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .stat .label {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
   }
 </style>
