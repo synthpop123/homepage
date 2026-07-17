@@ -232,6 +232,19 @@ export const isOnline = (lastSeen: number | null, now = Date.now()) =>
 
 /* Aggregation --------------------------------------------------------- */
 
+/**
+ * True when the day saw any activity. Early-2025 Cursor logs carry message
+ * counts but no token usage (the metadata was never recorded upstream), so
+ * `tokens === 0 && messages > 0` days are real activity — streaks and
+ * active-day counts must not treat them as idle.
+ */
+export const hasActivity = (day: Pick<SiteDay, "tokens" | "messages">) =>
+  day.tokens > 0 || day.messages > 0
+
+/** Real activity, but no token metadata to size it with. */
+export const isMessagesOnly = (day: Pick<SiteDay, "tokens" | "messages">) =>
+  day.tokens === 0 && day.messages > 0
+
 /** The API omits idle days entirely; charts and streaks need them back. */
 export function fillDaily(
   daily: SiteDay[],
@@ -373,7 +386,7 @@ export function windowTotals(daily: SiteDay[], from: string, to: string) {
     totals.tokens += day.tokens
     totals.cost += day.cost
     totals.messages += day.messages
-    if (day.tokens > 0) totals.activeDays += 1
+    if (hasActivity(day)) totals.activeDays += 1
   }
   return totals
 }
@@ -408,7 +421,7 @@ export function weekdayProfile(
     const stat = stats[weekdayIndex(day.date)]
     stat.total += day[metric]
     stat.occurrences += 1
-    if (day.tokens > 0) stat.activeDays += 1
+    if (hasActivity(day)) stat.activeDays += 1
   }
   for (const stat of stats) {
     stat.average = stat.occurrences > 0 ? stat.total / stat.occurrences : 0
@@ -427,7 +440,11 @@ export type Facts = {
   current: { length: number; since: string } | null
 }
 
-/** Fun stats over the dense daily series; "active" means tokens > 0. */
+/**
+ * Fun stats over the dense daily series. Streaks count any activity
+ * (message-only days included); the size-based facts (biggest, median,
+ * weekday, busiest week) stay token-based since that is what they measure.
+ */
 export function computeFacts(days: SiteDay[]): Facts {
   let biggest: SiteDay | null = null
   const byWeekday = [0, 0, 0, 0, 0, 0, 0]
@@ -444,7 +461,7 @@ export function computeFacts(days: SiteDay[]): Facts {
     byWeekday[weekdayIndex(day.date)] += day.tokens
     if (day.tokens > 0) active.push(day.tokens)
     if (day.tokens > (biggest?.tokens ?? 0)) biggest = day
-    if (day.tokens > 0) {
+    if (hasActivity(day)) {
       if (run === 0) runStart = day.date
       run += 1
       if (!longest || run > longest.length)
@@ -463,10 +480,10 @@ export function computeFacts(days: SiteDay[]): Facts {
   // Current streak: count back from the end, forgiving only today (the
   // last entry) for having no usage yet.
   let end = days.length - 1
-  if (end >= 0 && days[end].tokens === 0) end -= 1
+  if (end >= 0 && !hasActivity(days[end])) end -= 1
   let length = 0
   let since = ""
-  for (let i = end; i >= 0 && days[i].tokens > 0; i--) {
+  for (let i = end; i >= 0 && hasActivity(days[i]); i--) {
     length += 1
     since = days[i].date
   }

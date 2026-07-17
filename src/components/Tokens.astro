@@ -273,6 +273,7 @@ const skeletonRows = (count: number) =>
     formatShare,
     formatTokens,
     HIDDEN_MODELS,
+    isMessagesOnly,
     isOnline,
     levelScale,
     loadSite,
@@ -525,7 +526,9 @@ const skeletonRows = (count: number) =>
           "tip-total",
           bucket.tokens > 0 || bucket.cost > 0
             ? `${formatTokens(bucket.tokens)} tokens · ${formatCost(bucket.cost)} · ${formatCount(bucket.messages)} ${bucket.messages === 1 ? "message" : "messages"}`
-            : "No usage",
+            : bucket.messages > 0
+              ? `${formatCount(bucket.messages)} ${bucket.messages === 1 ? "message" : "messages"} · token counts unavailable`
+              : "No usage",
         ),
         ...(rows.length > 0 ? [list] : []),
       )
@@ -828,15 +831,19 @@ const skeletonRows = (count: number) =>
         site.today,
       )
       // Quartile levels over the full year, so the fit-to-width slice
-      // reads the same at any viewport.
+      // reads the same at any viewport. Days with messages but no token
+      // metadata (early-2025 Cursor logs) render as hollow cells, level -1
+      // in Heatmap.astro — real activity, unknown size.
       const level = levelScale(days)
       mountHeatmap(grid, days, (shown) =>
         shown.map((day) => ({
-          level: level(day.tokens),
+          level: isMessagesOnly(day) ? -1 : level(day.tokens),
           title:
             day.tokens > 0
               ? `${formatTokens(day.tokens)} tokens on ${formatDate(day.date)} · ${formatCostExact(day.cost)} · ${formatCount(day.messages)} ${day.messages === 1 ? "message" : "messages"}${day.active ? ` · ${formatDuration(day.active)} active` : ""}`
-              : `No usage on ${formatDate(day.date)}`,
+              : isMessagesOnly(day)
+                ? `${formatCount(day.messages)} ${day.messages === 1 ? "message" : "messages"} on ${formatDate(day.date)} · token counts unavailable`
+                : `No usage on ${formatDate(day.date)}`,
         })),
       )
     }
@@ -1070,7 +1077,6 @@ const skeletonRows = (count: number) =>
           const meta = [
             formatCost(device.cost),
             `${device.activeDays} active ${device.activeDays === 1 ? "day" : "days"}`,
-            device.activeMs ? formatDuration(device.activeMs) : "",
           ].filter((part) => part !== "")
           usage.append(tokens, el("span", "dev-meta", meta.join(" · ")))
 

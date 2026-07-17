@@ -122,6 +122,15 @@
     background-color: var(--heat-0);
   }
 
+  /* Level -1: activity happened but its size is unknown (e.g. token
+     counts missing from early logs) — a hollow cell instead of a filled
+     one, so it reads as "something, not nothing" without claiming an
+     intensity. */
+  activity-heatmap :global([data-level="-1"]) {
+    background-color: var(--heat-0);
+    box-shadow: inset 0 0 0 1.5px var(--heat-2);
+  }
+
   activity-heatmap :global([data-level="1"]) {
     background-color: var(--heat-1);
   }
