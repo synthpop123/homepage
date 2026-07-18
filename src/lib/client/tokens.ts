@@ -20,6 +20,13 @@ export type Usage = {
   cost: number
 }
 
+/** Usage span of a breakdown row inside its range. */
+export type UsageSpan = {
+  days: number
+  firstDate: string | null
+  lastDate: string | null
+}
+
 export type SiteRange = {
   from: string | null
   totals: Usage & {
@@ -27,10 +34,12 @@ export type SiteRange = {
     firstDate: string | null
     lastDate: string | null
   }
-  byModel: (Usage & { model: string; providers?: string })[]
-  byClient: (Usage & { client: string })[]
-  byProvider: (Usage & { provider: string })[]
+  byModel: (Usage & UsageSpan & { model: string; providers: string })[]
+  byClient: (Usage & UsageSpan & { client: string })[]
+  byProvider: (Usage & UsageSpan & { provider: string })[]
 }
+
+export type DaySlice = { tokens: number; cost: number }
 
 export type SiteDay = {
   date: string
@@ -40,7 +49,8 @@ export type SiteDay = {
   /** Wall-clock active time (ms) summed across devices; only present on
    *  days the CLI reported it. */
   active?: number
-  providers: Record<string, { tokens: number; cost: number }>
+  providers: Record<string, DaySlice>
+  clients: Record<string, DaySlice>
 }
 
 export type SiteDevice = {
@@ -261,6 +271,7 @@ export function fillDaily(
         cost: 0,
         messages: 0,
         providers: {},
+        clients: {},
       },
     )
   }
@@ -270,17 +281,33 @@ export function fillDaily(
 /** Sentinel for the residual stack segment. */
 export const OTHER = "other"
 
+/** The two dimensions the daily series is sliced by. */
+export type StackDim = "provider" | "client"
+
+/** A trend-chart stacking: dimension plus the ids that get own colors. */
+export type Stack = { dim: StackDim; ids: string[] }
+
 /**
- * The providers worth their own color in the trend chart: the top few by
- * all-time tokens; everything else collapses into "other".
+ * The ids worth their own color when stacking the trend chart by `dim`:
+ * the top few by all-time tokens; everything else collapses into "other".
  */
-export function stackProviders(site: Site, limit = 3): string[] {
-  const named = site.ranges.all.byProvider
-    .filter((entry) => entry.provider && entry.provider !== "unknown")
+export function stackFor(site: Site, dim: StackDim, limit = 3): Stack {
+  const all = site.ranges.all
+  const named = (
+    dim === "provider"
+      ? all.byProvider.map((entry) => entry.provider)
+      : all.byClient.map((entry) => entry.client)
+  )
+    .filter((id) => id && id !== "unknown")
     .slice(0, limit)
-    .map((entry) => entry.provider)
-  return [...named, OTHER]
+  return { dim, ids: [...named, OTHER] }
 }
+
+export const stackLabel = (dim: StackDim, id: string) =>
+  dim === "provider" ? providerLabel(id) : clientLabel(id)
+
+const daySlices = (day: SiteDay, dim: StackDim) =>
+  dim === "provider" ? day.providers : day.clients
 
 export type Bucket = {
   label: string
@@ -288,47 +315,43 @@ export type Bucket = {
   tokens: number
   cost: number
   messages: number
-  /** Aligned with the stack order passed to the bucket builders. */
+  /** Aligned with the id order of the stack passed to the bucket builders. */
   segments: number[]
 }
 
-const emptyBucket = (
-  label: string,
-  title: string,
-  stack: string[],
-): Bucket => ({
+const emptyBucket = (label: string, title: string, stack: Stack): Bucket => ({
   label,
   title,
   tokens: 0,
   cost: 0,
   messages: 0,
-  segments: stack.map(() => 0),
+  segments: stack.ids.map(() => 0),
 })
 
 const addDay = (
   bucket: Bucket,
   day: SiteDay,
-  stack: string[],
+  stack: Stack,
   metric: MetricKey,
 ) => {
   bucket.tokens += day.tokens
   bucket.cost += day.cost
   bucket.messages += day.messages
   let named = 0
-  for (const [provider, slice] of Object.entries(day.providers)) {
-    const index = stack.indexOf(provider)
+  for (const [id, slice] of Object.entries(daySlices(day, stack.dim))) {
+    const index = stack.ids.indexOf(id)
     if (index >= 0) {
       bucket.segments[index] += slice[metric]
       named += slice[metric]
     }
   }
-  // Residual: providers below the stack cutoff (float-safe clamp).
-  bucket.segments[stack.length - 1] += Math.max(0, day[metric] - named)
+  // Residual: ids below the stack cutoff (float-safe clamp).
+  bucket.segments[stack.ids.length - 1] += Math.max(0, day[metric] - named)
 }
 
 export const dailyBuckets = (
   days: SiteDay[],
-  stack: string[],
+  stack: Stack,
   metric: MetricKey,
 ): Bucket[] =>
   days.map((day) => {
@@ -341,7 +364,7 @@ export const dailyBuckets = (
 export function monthlyBuckets(
   daily: SiteDay[],
   today: string,
-  stack: string[],
+  stack: Stack,
   metric: MetricKey,
 ): Bucket[] {
   if (daily.length === 0) return []
@@ -389,6 +412,19 @@ export function windowTotals(daily: SiteDay[], from: string, to: string) {
     if (hasActivity(day)) totals.activeDays += 1
   }
   return totals
+}
+
+/** Total CLI-reported active time (ms) and how many days carried it. */
+export function activeTotals(daily: SiteDay[]) {
+  let ms = 0
+  let days = 0
+  for (const day of daily) {
+    if (day.active && day.active > 0) {
+      ms += day.active
+      days += 1
+    }
+  }
+  return { ms, days }
 }
 
 export type WeekdayStat = {
@@ -540,6 +576,8 @@ const CLIENT_LABELS: Record<string, string> = {
   gemini: "Gemini CLI",
   grok: "Grok CLI",
   zed: "Zed",
+  unknown: "Other",
+  [OTHER]: "Other",
 }
 
 const PROVIDER_LABELS: Record<string, string> = {

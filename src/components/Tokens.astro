@@ -59,6 +59,8 @@ const factCards = [
   { key: "weekday", label: "Top weekday" },
   { key: "longest", label: "Longest streak" },
   { key: "current", label: "Current streak" },
+  { key: "models", label: "Models tried" },
+  { key: "activeTime", label: "Active time" },
 ]
 
 const skeletonRows = (count: number) =>
@@ -144,9 +146,18 @@ const skeletonRows = (count: number) =>
         <div class="tk-chart-axis" aria-hidden="true"></div>
         <div class="tk-tip" hidden></div>
       </div>
-      <div class="tk-chart-foot" aria-hidden="true">
-        <span class="tk-legend-note">Stacked by model provider</span>
-        <ul class="tk-chart-legend"></ul>
+      <div class="tk-chart-foot">
+        <fieldset class="tk-seg tk-seg-sm" aria-label="Stack trend bars by">
+          <label>
+            <input type="radio" name="stack" value="provider" checked>
+            <span>By provider</span>
+          </label>
+          <label>
+            <input type="radio" name="stack" value="client">
+            <span>By client</span>
+          </label>
+        </fieldset>
+        <ul class="tk-chart-legend" aria-hidden="true"></ul>
       </div>
       <h3 class="tk-label">Weekly rhythm</h3>
       <div class="tk-chart-head">
@@ -253,6 +264,7 @@ const skeletonRows = (count: number) =>
 
 <script>
   import {
+    activeTotals,
     aiIcon,
     type Bucket,
     clientLabel,
@@ -284,8 +296,12 @@ const skeletonRows = (count: number) =>
     RANGES,
     type Site,
     shiftDays,
-    stackProviders,
+    type Stack,
+    type StackDim,
+    stackFor,
+    stackLabel,
     type Usage,
+    type UsageSpan,
     WEEKDAYS,
     type WeekdayStat,
     weekdayProfile,
@@ -313,7 +329,7 @@ const skeletonRows = (count: number) =>
       root.querySelector<T>(selector)
 
     let site: Site | null = null
-    let stack: string[] = []
+    let stack: Stack = { dim: "provider", ids: [] }
     /** Breakdown lists the visitor has expanded past the top rows. */
     const expanded = new Set<string>()
 
@@ -335,9 +351,13 @@ const skeletonRows = (count: number) =>
 
     const readState = () => {
       const values = new FormData(form)
+      const stackInput = root.querySelector<HTMLInputElement>(
+        'input[name="stack"]:checked',
+      )
       return {
         range: (values.get("range") ?? "month") as RangeKey,
         metric: (values.get("metric") ?? "tokens") as MetricKey,
+        stackDim: (stackInput?.value ?? "provider") as StackDim,
       }
     }
 
@@ -500,17 +520,17 @@ const skeletonRows = (count: number) =>
 
     const buildTip = (bucket: Bucket) => {
       if (!tip) return
-      const rows = stack
-        .map((provider, i) => ({ provider, value: bucket.segments[i] }))
+      const rows = stack.ids
+        .map((id, i) => ({ id, value: bucket.segments[i] }))
         .filter((row) => row.value > 0)
       const list = el("ul", "")
       for (const row of rows) {
         const item = el("li", "")
         const chip = el("span", "chip")
-        chip.dataset.p = row.provider
+        chip.dataset.p = row.id
         item.append(
           chip,
-          el("span", "", providerLabel(row.provider)),
+          el("span", "", stackLabel(stack.dim, row.id)),
           el(
             "span",
             "tip-share",
@@ -554,8 +574,9 @@ const skeletonRows = (count: number) =>
       tip.style.left = `${left}px`
     }
 
-    const renderTrend = (range: RangeKey, metric: MetricKey) => {
+    const renderTrend = (range: RangeKey, metric: MetricKey, dim: StackDim) => {
       if (!site) return
+      stack = stackFor(site, dim)
       const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
       const from = site.ranges[range].from
       const buckets =
@@ -595,11 +616,11 @@ const skeletonRows = (count: number) =>
             if (value <= 0) bar.dataset.zero = ""
             else
               bar.append(
-                ...stack.flatMap((provider, i) => {
+                ...stack.ids.flatMap((id, i) => {
                   const share = bucket.segments[i]
                   if (share <= 0) return []
                   const segment = document.createElement("i")
-                  segment.dataset.p = provider
+                  segment.dataset.p = id
                   segment.style.flexGrow = String(share)
                   return [segment]
                 }),
@@ -626,15 +647,15 @@ const skeletonRows = (count: number) =>
 
       const legend = q(".tk-chart-legend")
       if (legend) {
-        const active = stack.filter((_, i) =>
+        const active = stack.ids.filter((_, i) =>
           buckets.some((bucket) => bucket.segments[i] > 0),
         )
         legend.replaceChildren(
-          ...active.map((provider) => {
+          ...active.map((id) => {
             const item = el("li", "")
             const chip = el("span", "chip")
-            chip.dataset.p = provider
-            item.append(chip, providerLabel(provider))
+            chip.dataset.p = id
+            item.append(chip, stackLabel(stack.dim, id))
             return item
           }),
         )
@@ -908,6 +929,32 @@ const skeletonRows = (count: number) =>
         facts.current ? days(facts.current.length) : "0 days",
         facts.current ? `since ${formatDay(facts.current.since)}` : "—",
       )
+
+      const models = site.ranges.all.byModel.filter(
+        (entry) => !HIDDEN_MODELS.has(entry.model),
+      )
+      setCard(
+        cards,
+        "models",
+        String(models.length),
+        models.length > 0
+          ? `across ${site.ranges.all.byClient.length} ${site.ranges.all.byClient.length === 1 ? "client" : "clients"}`
+          : "—",
+        models.length > 0 ? `most used: ${models[0].model}` : undefined,
+      )
+
+      const tracked = activeTotals(site.daily)
+      setCard(
+        cards,
+        "activeTime",
+        tracked.ms > 0 ? formatDuration(tracked.ms) : "—",
+        tracked.ms > 0
+          ? `across ${tracked.days} tracked ${tracked.days === 1 ? "day" : "days"}`
+          : "not reported yet",
+        tracked.ms > 0
+          ? `wall-clock agent time, reported by the CLI since it began tracking`
+          : undefined,
+      )
     }
 
     /* Breakdown: top models / clients / providers for the range */
@@ -920,7 +967,7 @@ const skeletonRows = (count: number) =>
 
       const groups: {
         key: BreakdownKind
-        rows: { id: string; name: string; usage: Usage }[]
+        rows: { id: string; name: string; usage: Usage & UsageSpan }[]
       }[] = [
         {
           key: "model",
@@ -963,7 +1010,26 @@ const skeletonRows = (count: number) =>
 
         const items = shown.map((row) => {
           const item = el("li", "tk-row")
-          item.title = `${row.name} — ${formatExact(row.usage.tokens)} tokens · ${formatCostExact(row.usage.cost)} · ${formatExact(row.usage.messages)} messages`
+          // Row depth that has no column: exact numbers, unit cost, span.
+          const parts = [
+            `${formatExact(row.usage.tokens)} tokens`,
+            formatCostExact(row.usage.cost),
+            `${formatExact(row.usage.messages)} messages`,
+          ]
+          if (row.usage.tokens > 0 && row.usage.cost > 0) {
+            parts.push(
+              `${formatCostExact(row.usage.cost / (row.usage.tokens / 1e6))} per 1M`,
+            )
+          }
+          if (row.usage.days > 0) {
+            parts.push(
+              `used ${row.usage.days} ${row.usage.days === 1 ? "day" : "days"}`,
+            )
+          }
+          if (row.usage.firstDate) {
+            parts.push(`first ${formatDate(row.usage.firstDate)}`)
+          }
+          item.title = `${row.name} — ${parts.join(" · ")}`
           // Proportional fill behind the row: its share of the range
           // total, so the bar width matches the printed percentage.
           item.style.setProperty(
@@ -1036,6 +1102,9 @@ const skeletonRows = (count: number) =>
 
           // Depth that doesn't fit the row lives in the tooltip.
           const details = [
+            device.activeMs
+              ? `${formatDuration(device.activeMs)} active in total`
+              : "",
             device.longestMs
               ? `longest stretch ${formatDuration(device.longestMs)}`
               : "",
@@ -1087,15 +1156,19 @@ const skeletonRows = (count: number) =>
     }
 
     const renderDynamic = () => {
-      const { range, metric } = readState()
+      const { range, metric, stackDim } = readState()
       renderOverview(range)
-      renderTrend(range, metric)
+      renderTrend(range, metric, stackDim)
       renderRhythm(range, metric)
       renderBreakdown(range, metric)
     }
 
     form.addEventListener("submit", (event) => event.preventDefault())
     form.addEventListener("change", () => {
+      if (site) renderDynamic()
+    })
+    // The stack toggle lives in the chart footer, outside the form.
+    q(".tk-chart-foot .tk-seg")?.addEventListener("change", () => {
       if (site) renderDynamic()
     })
 
@@ -1115,7 +1188,6 @@ const skeletonRows = (count: number) =>
     loadSite(endpoint)
       .then((loaded) => {
         site = loaded
-        stack = stackProviders(site)
         renderHeatmap()
         renderFacts()
         renderDevices()
@@ -1136,12 +1208,15 @@ const skeletonRows = (count: number) =>
     /* Level-3 green of the shared heatmap palette (see Heatmap.astro). */
     --tk-accent: light-dark(#30a14e, #26a641);
 
-    /* Provider palette for the stacked trend chart. */
+    /* Brand palette for stacked segments and chips. Client ids map onto
+       their vendor's hue (see the [data-p] rules below). */
     --tk-p-anthropic: light-dark(#d97757, #cc785c);
     --tk-p-openai: light-dark(#10a37f, #2dc79f);
     --tk-p-google: light-dark(#4285f4, #7cacf8);
     --tk-p-xai: light-dark(#52525b, #a1a1aa);
     --tk-p-cursor: light-dark(#8b5cf6, #a78bfa);
+    --tk-p-zed: light-dark(#084ccf, #7a9bff);
+    --tk-p-opencode: light-dark(#78716c, #a8a29e);
     --tk-p-other: var(--gray-8);
 
     display: block;
@@ -1239,6 +1314,12 @@ const skeletonRows = (count: number) =>
     outline-offset: 1px;
   }
 
+  /* Compact variant for in-chart controls (the trend stack toggle). */
+  .tk-seg-sm span {
+    padding: 0.0625rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+
   /* Stat cards */
 
   .tk-cards {
@@ -1253,7 +1334,7 @@ const skeletonRows = (count: number) =>
   }
 
   .tk-cards.tk-facts {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
 
     @media (width < 40rem) {
       grid-template-columns: repeat(2, 1fr);
@@ -1605,31 +1686,48 @@ const skeletonRows = (count: number) =>
     animation: var(--sk-pulse);
   }
 
-  /* Provider palette, applied to bar segments and legend chips alike.
-     Keep these last: the bare [data-p] fallback must lose to the named
-     rules below it. */
+  /* Brand palette, applied through --p to bar segments and chips.
+     Clients take their vendor's hue — Claude Code renders Anthropic
+     coral, Codex the OpenAI green — so both stackings of the same data
+     read in one color language. Keep the bare [data-p] fallback first:
+     the named rules below must win. */
   tokens-dashboard :global([data-p]) {
-    background-color: var(--tk-p-other);
+    --p: var(--tk-p-other);
+
+    background-color: var(--p);
   }
 
-  tokens-dashboard :global([data-p="anthropic"]) {
-    background-color: var(--tk-p-anthropic);
+  tokens-dashboard :global([data-p="anthropic"]),
+  tokens-dashboard :global([data-p="claude"]) {
+    --p: var(--tk-p-anthropic);
   }
 
-  tokens-dashboard :global([data-p="openai"]) {
-    background-color: var(--tk-p-openai);
+  tokens-dashboard :global([data-p="openai"]),
+  tokens-dashboard :global([data-p="codex"]) {
+    --p: var(--tk-p-openai);
   }
 
-  tokens-dashboard :global([data-p="google"]) {
-    background-color: var(--tk-p-google);
+  tokens-dashboard :global([data-p="google"]),
+  tokens-dashboard :global([data-p="gemini"]) {
+    --p: var(--tk-p-google);
   }
 
-  tokens-dashboard :global([data-p="xai"]) {
-    background-color: var(--tk-p-xai);
+  tokens-dashboard :global([data-p="xai"]),
+  tokens-dashboard :global([data-p="grok"]) {
+    --p: var(--tk-p-xai);
   }
 
   tokens-dashboard :global([data-p="cursor"]) {
-    background-color: var(--tk-p-cursor);
+    --p: var(--tk-p-cursor);
+  }
+
+  tokens-dashboard :global([data-p="zed"]),
+  tokens-dashboard :global([data-p="zed.dev"]) {
+    --p: var(--tk-p-zed);
+  }
+
+  tokens-dashboard :global([data-p="opencode"]) {
+    --p: var(--tk-p-opencode);
   }
 
   /* Breakdown lists */
