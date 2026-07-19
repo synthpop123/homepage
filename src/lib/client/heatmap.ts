@@ -1,6 +1,6 @@
 /**
  * Shared client-side plumbing for the GitHub-style activity heatmaps
- * (Music, Tokens, GitHub): cell geometry, weekday math, and the
+ * (Music, Tokens): cell geometry, weekday math, and the
  * fit-to-width renderer. The matching markup and styles live in Heatmap.astro.
  * Imported from component <script> blocks, so everything here must be
  * browser-safe.

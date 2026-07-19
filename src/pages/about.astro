@@ -1,6 +1,5 @@
 ---
 import AuthorCard from "@/components/AuthorCard.astro"
-import GitHub from "@/components/GitHub.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
@@ -52,7 +51,6 @@ const stats = [
 
 const sections = [
   { id: "who-am-i", label: "Who Am I" },
-  { id: "github", label: "GitHub" },
   { id: "blog", label: "Blog in numbers" },
   { id: "site", label: "About this site" },
 ]
@@ -89,10 +87,6 @@ const toc = [
         <li>Keep Learning &amp; Be Creative</li>
       </ul>
     </prose-content>
-  </section>
-  <section>
-    <h2 id="github">GitHub</h2>
-    <GitHub />
   </section>
   <section>
     <h2 id="blog">Blog in numbers</h2>

@@ -55,11 +55,6 @@ export const LETTERBOXD = {
   limit: 8,
 } as const
 
-export const GITHUB = {
-  username: "synthpop123",
-  contributionsApi: "https://github-contributions-api.jogruber.de/v4",
-} as const
-
 export const TOKENS = {
   endpoint: "https://tokens.lkwplus.com",
 } as const
