@@ -1,4 +1,5 @@
 ---
+import Lightbox from "@/components/Lightbox.astro"
 import Mermaid from "@/components/Mermaid.astro"
 import MetaPost from "@/components/MetaPost.astro"
 import PostActions from "@/components/PostActions.astro"
@@ -127,6 +128,7 @@ const hasMermaid = chain.some((entry) => entry.data.mermaid)
     ))}
   {chain.length > 1 && <SeriesReader />}
   {hasMermaid && <Mermaid />}
+  <Lightbox />
 </Layout>
 
 <style>
@@ -219,6 +221,7 @@ const hasMermaid = chain.some((entry) => entry.data.mermaid)
     :global(img) {
       inline-size: 100%;
       block-size: auto;
+      border-radius: var(--radius-lg);
     }
   }
 </style>

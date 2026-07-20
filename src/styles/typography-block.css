@@ -14,8 +14,11 @@ prose-content {
     border-block-start: 1.5px solid var(--border);
   }
 
-  :is(img, video) {
+  /* Content images (not the inline custom emoji on /memos) get the
+     same soft corners as the media cards there. */
+  :is(img, video):not(.emoji) {
     margin-inline: auto;
+    border-radius: var(--radius-lg);
   }
 
   summary {
