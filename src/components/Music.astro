@@ -221,7 +221,10 @@ const stats: { key: string; label: string }[] = [
               `${api}/listens?period=all_time&limit=${limit}`,
             ),
           ]),
-        (data) => Array.isArray(data) && data.length === 3,
+        (data) =>
+          Array.isArray(data) &&
+          data.length === 3 &&
+          data.every((part) => typeof part === "object" && part !== null),
       )
 
     load()

@@ -19,6 +19,9 @@ export default defineConfig({
   redirects: {
     "/posts": "/blog",
     "/posts/[...id]": "/blog/[...id]",
+    // Pre-rebuild standalone pages, now sections on /misc.
+    "/movies": "/misc#movies",
+    "/music": "/misc#music",
   },
   integrations: [
     sitemap({

@@ -44,7 +44,12 @@ const profileUrl = `${instance}/@${username}`
 </mastodon-feed>
 
 <script>
-  import { cached, dateFormatter, fetchJson } from "@/lib/client/feed"
+  import {
+    cached,
+    dateFormatter,
+    fetchJson,
+    safeHttpUrl,
+  } from "@/lib/client/feed"
 
   type Emoji = { shortcode: string; url: string; static_url?: string }
 
@@ -98,7 +103,8 @@ const profileUrl = `${instance}/@${username}`
   const emojiMap = (emojis?: Emoji[]) => {
     const map: Record<string, string> = {}
     for (const e of emojis ?? []) {
-      if (e.shortcode) map[e.shortcode] = e.url || e.static_url || ""
+      const url = safeHttpUrl(e.url) ?? safeHttpUrl(e.static_url)
+      if (e.shortcode && url) map[e.shortcode] = url
     }
     return map
   }
@@ -165,9 +171,13 @@ const profileUrl = `${instance}/@${username}`
     if (!images.length) return null
 
     const media = images[0]
+    const url = safeHttpUrl(media.url)
+    if (!url) return null
+    const preview = safeHttpUrl(media.preview_url)
+
     const figure = el("figure", "note-media")
     const link = el("a") as HTMLAnchorElement
-    link.href = media.url
+    link.href = url
     link.target = "_blank"
     link.rel = "noopener noreferrer"
 
@@ -180,15 +190,14 @@ const profileUrl = `${instance}/@${username}`
 
     const img = el("img") as HTMLImageElement
     const srcset: string[] = []
-    if (media.preview_url && small?.width)
-      srcset.push(`${media.preview_url} ${small.width}w`)
-    if (original?.width) srcset.push(`${media.url} ${original.width}w`)
+    if (preview && small?.width) srcset.push(`${preview} ${small.width}w`)
+    if (original?.width) srcset.push(`${url} ${original.width}w`)
     if (srcset.length > 1) {
-      img.src = media.preview_url || media.url
+      img.src = preview || url
       img.srcset = srcset.join(", ")
       img.sizes = "(min-width: 64rem) 42rem, 100vw"
     } else {
-      img.src = media.url
+      img.src = url
     }
     img.alt =
       media.description || stripTags(status.content).trim() || "Attached image"
@@ -201,9 +210,9 @@ const profileUrl = `${instance}/@${username}`
     const reveal = () => img.classList.add("is-loaded")
     img.addEventListener("load", reveal)
     img.addEventListener("error", () => {
-      if (media.preview_url && !img.src.endsWith(media.preview_url)) {
+      if (preview && !img.src.endsWith(preview)) {
         img.removeAttribute("srcset")
-        img.src = media.preview_url
+        img.src = preview
       } else {
         reveal()
       }
@@ -221,7 +230,7 @@ const profileUrl = `${instance}/@${username}`
     return figure
   }
 
-  const renderStatus = (status: Status) => {
+  const renderStatus = (status: Status, permalinkUrl: string) => {
     const item = el("li", "note")
     const article = el("article")
     const map = emojiMap(status.emojis)
@@ -234,7 +243,7 @@ const profileUrl = `${instance}/@${username}`
 
     const footer = el("footer", "note-foot")
     const permalink = el("a", "note-time") as HTMLAnchorElement
-    permalink.href = status.url
+    permalink.href = permalinkUrl
     permalink.target = "_blank"
     permalink.rel = "noopener noreferrer"
     const time = el("time") as HTMLTimeElement
@@ -267,21 +276,28 @@ const profileUrl = `${instance}/@${username}`
     const cacheKey = `mastodon:${instance}:${accountId}:${limit}`
 
     const load = () =>
-      cached(cacheKey, () =>
-        fetchJson<Status[]>(
-          `${instance}/api/v1/accounts/${accountId}/statuses?exclude_replies=true&exclude_reblogs=true&limit=${limit}`,
-        ),
+      cached(
+        cacheKey,
+        () =>
+          fetchJson<Status[]>(
+            `${instance}/api/v1/accounts/${accountId}/statuses?exclude_replies=true&exclude_reblogs=true&limit=${limit}`,
+          ),
+        (data) => Array.isArray(data),
       )
 
     load()
       .then((statuses) => {
-        const valid = (Array.isArray(statuses) ? statuses : []).filter(
-          (status) => !status.reblog,
-        )
+        const valid = statuses.flatMap((status) => {
+          const url = safeHttpUrl(status?.url)
+          return url && typeof status.created_at === "string" && !status.reblog
+            ? [{ status, url }]
+            : []
+        })
         if (!valid.length) throw new Error("No statuses")
 
         const fragment = document.createDocumentFragment()
-        for (const status of valid) fragment.append(renderStatus(status))
+        for (const { status, url } of valid)
+          fragment.append(renderStatus(status, url))
         list.replaceChildren(fragment)
         feed.setAttribute("aria-busy", "false")
       })

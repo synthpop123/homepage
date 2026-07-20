@@ -23,8 +23,8 @@
 
 <style>
   activity-heatmap {
-    /* px sizes, keep in sync with HEAT_CELL / HEAT_GAP in
-       @/lib/client/heatmap. */
+    /* Single source of truth for cell geometry — mountHeatmap in
+       @/lib/client/heatmap reads these computed values to fit weeks. */
     --heat-cell: 12px;
     --heat-gap: 3px;
     --heat-0: var(--gray-4);

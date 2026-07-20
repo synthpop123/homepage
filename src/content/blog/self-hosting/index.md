@@ -1739,7 +1739,7 @@ TELEGRAM_AVAILABLE_TOKENS= "{your_bot_token}"
 </div>
 ```
 
-可以通过如下方式将其嵌入到博客中。具体效果详见我的博客的 [Movies 页面](/movies)。
+可以通过如下方式将其嵌入到博客中。具体效果详见我的博客的 [Movies 页面](/misc#movies)。
 
 ```html showLineNumbers
 <div id="letterboxd-embed-wrapper-tc">Loading...</div>
@@ -1800,7 +1800,7 @@ Google Analytics 的开源替代，[项目地址](https://github.com/umami-softw
 
 [项目地址](https://github.com/JeffreyCA/lastfm-recently-played-readme)，用于生成个人的最新 Last.fm 听歌记录，可美观的展示于 GitHub Profile 或其他地方，类似的还可以选择同开发者的 [JeffreyCA/spotify-recently-played-readme](https://github.com/JeffreyCA/spotify-recently-played-readme) 项目。
 
-由于该仓库自身提供服务使用的 `*.vercel.app` 子域名被墙，因此部署后绑定自定义域名以规避这个问题。具体效果详见我的博客的 [Music 页面](/music)。
+由于该仓库自身提供服务使用的 `*.vercel.app` 子域名被墙，因此部署后绑定自定义域名以规避这个问题。具体效果详见我的博客的 [Music 页面](/misc#music)。
 
 ### [NetEase Music API](https://netease-api.lkwplus.com/)
 

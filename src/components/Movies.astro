@@ -40,7 +40,12 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
 </movies-feed>
 
 <script>
-  import { cached, dateFormatter, fetchJson } from "@/lib/client/feed"
+  import {
+    cached,
+    dateFormatter,
+    fetchJson,
+    safeHttpUrl,
+  } from "@/lib/client/feed"
 
   type LetterboxdEntry = {
     film?: {
@@ -66,24 +71,24 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
     return icon
   }
 
-  const buildCard = (entry: LetterboxdEntry) => {
+  const buildCard = (entry: LetterboxdEntry, href: string) => {
     const card = document.createElement("li")
     card.className = "movie-card"
 
     const link = document.createElement("a")
     link.className = "movie-link"
-    link.href = entry.uri!
+    link.href = href
     link.target = "_blank"
     link.rel = "noopener noreferrer"
 
     const poster = document.createElement("span")
     poster.className = "poster"
     const { small, medium, large } = entry.film?.image ?? {}
-    const src = medium ?? small ?? large
+    const src = safeHttpUrl(medium ?? small ?? large)
     if (src) {
       const img = document.createElement("img")
       img.src = src
-      const retina = large ?? medium
+      const retina = safeHttpUrl(large ?? medium)
       if (retina && retina !== src) img.srcset = `${src} 1x, ${retina} 2x`
       img.alt = `${entry.film?.title ?? ""} poster`
       img.loading = "lazy"
@@ -146,17 +151,25 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
     const cacheKey = `letterboxd:${endpoint}`
 
     const load = () =>
-      cached(cacheKey, () => fetchJson<LetterboxdEntry[]>(endpoint))
+      cached(
+        cacheKey,
+        () => fetchJson<LetterboxdEntry[]>(endpoint),
+        (data) => Array.isArray(data),
+      )
 
     load()
       .then((entries) => {
-        const valid = (Array.isArray(entries) ? entries : [])
-          .filter((entry) => entry?.film?.title && entry?.uri)
-          .sort((a, b) => entryTime(b) - entryTime(a))
+        const valid = entries
+          .flatMap((entry) => {
+            const href = safeHttpUrl(entry?.uri)
+            return entry?.film?.title && href ? [{ entry, href }] : []
+          })
+          .sort((a, b) => entryTime(b.entry) - entryTime(a.entry))
           .slice(0, limit)
         if (valid.length === 0) throw new Error("No diary entries")
         const fragment = document.createDocumentFragment()
-        for (const entry of valid) fragment.append(buildCard(entry))
+        for (const { entry, href } of valid)
+          fragment.append(buildCard(entry, href))
         grid.replaceChildren(fragment)
         feed.setAttribute("aria-busy", "false")
       })

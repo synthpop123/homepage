@@ -6,10 +6,20 @@
  * browser-safe.
  */
 
-// px, keep in sync with --heat-cell / --heat-gap in Heatmap.astro.
-export const HEAT_CELL = 12
-export const HEAT_GAP = 3
 export const HEAT_MAX_WEEKS = 52
+
+/**
+ * Cell geometry lives in one place — the --heat-cell / --heat-gap
+ * custom properties on <activity-heatmap> in Heatmap.astro — and the
+ * renderer reads the computed values instead of mirroring them here.
+ */
+const gridMetrics = (grid: HTMLElement) => {
+  const styles = getComputedStyle(grid)
+  return {
+    cell: Number.parseFloat(styles.getPropertyValue("--heat-cell")),
+    gap: Number.parseFloat(styles.getPropertyValue("--heat-gap")),
+  }
+}
 
 /**
  * Monday = 0 … Sunday = 6, derived from the date part alone (anchored
@@ -34,13 +44,12 @@ export function mountHeatmap<T extends { date: string }>(
   cells: (shown: T[]) => HeatCell[],
 ) {
   if (days.length === 0) throw new Error("No activity data")
+  const { cell, gap } = gridMetrics(grid)
   const lastWeekday = weekdayIndex(days[days.length - 1].date)
   let weeks = 0
 
   const render = () => {
-    const fittable = Math.floor(
-      (grid.clientWidth + HEAT_GAP) / (HEAT_CELL + HEAT_GAP),
-    )
+    const fittable = Math.floor((grid.clientWidth + gap) / (cell + gap))
     const next = Math.max(1, Math.min(HEAT_MAX_WEEKS, fittable))
     if (next === weeks) return
     weeks = next
@@ -48,15 +57,15 @@ export function mountHeatmap<T extends { date: string }>(
     const shown = days.slice(-((weeks - 1) * 7 + lastWeekday + 1))
     const fragment = document.createDocumentFragment()
     for (let pad = weekdayIndex(shown[0].date); pad > 0; pad--) {
-      const cell = document.createElement("span")
-      cell.dataset.pad = ""
-      fragment.append(cell)
+      const node = document.createElement("span")
+      node.dataset.pad = ""
+      fragment.append(node)
     }
     for (const { level, title } of cells(shown)) {
-      const cell = document.createElement("span")
-      cell.dataset.level = String(level)
-      cell.title = title
-      fragment.append(cell)
+      const node = document.createElement("span")
+      node.dataset.level = String(level)
+      node.title = title
+      fragment.append(node)
     }
     grid.replaceChildren(fragment)
   }

@@ -1,7 +1,8 @@
 {
-  "name": "astro-erudite",
+  "name": "homepage",
   "type": "module",
   "version": "2.0.1",
+  "private": true,
   "engines": {
     "node": ">=22.12.0"
   },
@@ -11,6 +12,8 @@
     "build": "bun run prebuild:assets && astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "test": "bun test",
+    "check:links": "bun scripts/check-links.ts",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "format:staged": "biome format --staged --write --files-ignore-unknown=true --no-errors-on-unmatched",
@@ -37,6 +40,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@biomejs/biome": "^2.5.4",
+    "@types/bun": "^1.3.14",
     "sharp": "^0.35.3",
     "subset-font": "^2.5.0",
     "typescript": "^6"

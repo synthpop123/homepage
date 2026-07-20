@@ -1,9 +1,9 @@
 /**
- * Client-side plumbing for the Tokens dashboard: types for the collector's
+ * Data layer for the Tokens dashboard: types for the collector's
  * /api/site view (see tokens-worker/src/site.ts) plus the pure date,
- * aggregation and formatting helpers its component script renders from.
- * Imported from an Astro <script> block, so everything here must be
- * browser-safe.
+ * aggregation and formatting helpers the renderers in
+ * ./tokens-dashboard/ draw from. Pure and browser-safe — this module
+ * never touches the DOM, which is what keeps it testable.
  */
 
 import { cached, fetchJson } from "./feed"
@@ -96,12 +96,43 @@ export const COMPOSITION: { key: keyof Usage; label: string }[] = [
   { key: "reasoning", label: "Reasoning" },
 ]
 
+/**
+ * Minimal runtime decoder for the /api/site payload: the spine the
+ * dashboard indexes unconditionally (all four ranges with their
+ * breakdown arrays, the daily series, the device list). Deeper fields
+ * stay lenient — a missing optional is handled at the render site.
+ */
+export function isSite(data: unknown): data is Site {
+  if (typeof data !== "object" || data === null) return false
+  const site = data as Record<string, unknown>
+  const ranges = site.ranges as Record<string, unknown> | null
+  return (
+    typeof site.today === "string" &&
+    Array.isArray(site.daily) &&
+    Array.isArray(site.devices) &&
+    typeof ranges === "object" &&
+    ranges !== null &&
+    RANGES.every(({ key }) => {
+      const range = ranges[key] as Record<string, unknown> | undefined
+      return (
+        typeof range === "object" &&
+        range !== null &&
+        typeof range.totals === "object" &&
+        range.totals !== null &&
+        Array.isArray(range.byModel) &&
+        Array.isArray(range.byClient) &&
+        Array.isArray(range.byProvider)
+      )
+    })
+  )
+}
+
 /** One request for the whole page, session-cached like the other feeds. */
 export const loadSite = (endpoint: string): Promise<Site> =>
   cached(
     `tokens:site:${endpoint}`,
     () => fetchJson<Site>(`${endpoint}/api/site`),
-    (data) => typeof data === "object" && data !== null && "ranges" in data,
+    isSite,
   )
 
 /* Dates ------------------------------------------------------------- */
