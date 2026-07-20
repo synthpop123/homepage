@@ -161,7 +161,7 @@ const skeletonRows = (count: number) =>
       </div>
       <h3 class="tk-label">Weekly rhythm</h3>
       <div class="tk-chart-head">
-        <p class="tk-rhythm-scope">Avg. weekday tokens</p>
+        <p class="tk-rhythm-scope">Weekday tokens</p>
         <p class="tk-rhythm-peak"></p>
       </div>
       <div
@@ -817,9 +817,7 @@ const skeletonRows = (count: number) =>
       const noun = metric === "cost" ? "cost" : "tokens"
       const scope = q(".tk-rhythm-scope")
       if (scope) {
-        scope.textContent = rhythmSingle
-          ? `Weekday ${noun} · last 7 days`
-          : `Avg. weekday ${noun} · ${meta.days ? `last ${meta.days} days` : "all time"}`
+        scope.textContent = `Weekday ${noun} · ${meta.days ? `last ${meta.days} days` : "all time"}`
       }
 
       const max = Math.max(...rhythmStats.map((stat) => stat.average))
