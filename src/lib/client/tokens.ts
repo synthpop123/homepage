@@ -572,6 +572,8 @@ const CLIENT_LABELS: Record<string, string> = {
   cursor: "Cursor",
   codex: "Codex CLI",
   claude: "Claude Code",
+  // The brand is lowercase; the raw id is already the display name.
+  pi: "pi",
   opencode: "OpenCode",
   gemini: "Gemini CLI",
   grok: "Grok CLI",
@@ -615,6 +617,7 @@ const CLIENT_ICONS: Record<string, string> = {
   cursor: "cursor",
   claude: "claudecode",
   codex: "codex",
+  pi: "pi",
   opencode: "opencode",
   gemini: "gemini",
   grok: "grok",
