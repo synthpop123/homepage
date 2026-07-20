@@ -2,8 +2,8 @@
 /**
  * Click-to-zoom for content images (see @/lib/client/lightbox): drop
  * this component on any page whose images should enlarge in place.
- * The dialog is created lazily by the script; the styles are global
- * because none of the markup exists at build time.
+ * Only the click trigger loads with the page — PhotoSwipe arrives as
+ * its own chunk on first use, bringing its stylesheet with it.
  */
 ---
 
@@ -18,59 +18,5 @@
   post-banner img,
   .memo-shot a {
     cursor: zoom-in;
-  }
-
-  dialog.lightbox {
-    position: fixed;
-    inset: 0;
-    inline-size: 100%;
-    block-size: 100%;
-    max-inline-size: none;
-    max-block-size: none;
-    padding: var(--space-s);
-    border: none;
-    background: none;
-    cursor: zoom-out;
-
-    &[open] {
-      display: grid;
-      place-items: center;
-    }
-
-    &::backdrop {
-      background: none;
-    }
-
-    /* Self-drawn scrim so it can fade independently of the FLIP. */
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-color: color-mix(in oklab, var(--background) 88%, transparent);
-      backdrop-filter: blur(var(--blur-md));
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    &.is-open::before {
-      opacity: 1;
-    }
-
-    img {
-      position: relative;
-      inline-size: auto;
-      block-size: auto;
-      max-inline-size: 100%;
-      max-block-size: 100%;
-      border-radius: var(--radius-lg);
-      transform-origin: top left;
-      transition: transform 0.3s cubic-bezier(0.3, 1, 0.4, 1);
-    }
-  }
-
-  /* The modal layer traps interaction; keep the page beneath from
-     scrolling out from under the zoomed image. */
-  body:has(dialog.lightbox[open]) {
-    overflow: hidden;
   }
 </style>

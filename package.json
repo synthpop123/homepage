@@ -33,6 +33,7 @@
     "hast-util-to-html": "^9.0.5",
     "hastscript": "^9.0.1",
     "mermaid": "^11.16.0",
+    "photoswipe": "^5.4.4",
     "satori": "^0.28.0",
     "satteri-expressive-code": "^0.1.18",
     "temml": "^0.13.3"
