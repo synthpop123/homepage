@@ -1,6 +1,6 @@
 /**
  * Shared client-side plumbing for the live feeds (Music, Movies,
- * Mastodon, Tokens): a sessionStorage TTL cache, JSON fetching with a
+ * Memos, Tokens): a sessionStorage TTL cache, JSON fetching with a
  * timeout, URL sanitizing for remote payloads, and the site's display
  * time zone. Imported from component <script> blocks, so everything
  * here must be browser-safe.

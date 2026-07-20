@@ -1,5 +1,5 @@
 ---
-import Mastodon from "@/components/Mastodon.astro"
+import Memos from "@/components/Memos.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import Layout from "@/layouts/Layout.astro"
 ---
@@ -8,12 +8,12 @@ import Layout from "@/layouts/Layout.astro"
   <MetaPage
     slot="head"
     title="Memos"
-    description="Short memos, pulled live from my Mastodon."
+    description="Short notes, pulled live from my Mastodon."
   />
   <header>
     <h1>Memos</h1>
   </header>
-  <Mastodon />
+  <Memos />
 </Layout>
 
 <style>
