@@ -2,8 +2,11 @@
 import MetaPage from "@/components/MetaPage.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Tokens from "@/components/Tokens.astro"
+import { TOKENS } from "@/consts"
 import Layout from "@/layouts/Layout.astro"
 
+// The preconnect below warms the cross-origin connection to the
+// collector while the page loads, hiding that RTT from the first fetch.
 const sections = [
   { id: "overview", label: "Overview" },
   { id: "trend", label: "Trend" },
@@ -29,6 +32,7 @@ const toc = [
     title="Tokens"
     description="Token usage across my AI coding agents, live from a self-hosted meter."
   />
+  <link rel="preconnect" href={TOKENS.endpoint} crossorigin slot="head">
   <TableOfContents slot="toc" title="Tokens" sections={toc} />
   <header>
     <h1>Tokens</h1>

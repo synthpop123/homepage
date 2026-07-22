@@ -11,6 +11,7 @@ import {
   computeFacts,
   dailyBuckets,
   fillDaily,
+  formatClock,
   formatDelta,
   formatShare,
   hasActivity,
@@ -494,6 +495,18 @@ describe("formatShare", () => {
   })
 })
 
+describe("formatClock", () => {
+  it("shows the bare time for a same-day timestamp", () => {
+    const now = new Date("2026-07-20T20:00:00")
+    expect(formatClock("2026-07-20T09:41:00", now)).toBe("9:41 AM")
+  })
+
+  it("names the day when the timestamp is from another one", () => {
+    const now = new Date("2026-07-20T20:00:00")
+    expect(formatClock("2026-07-19T23:05:00", now)).toBe("Jul 19, 11:05 PM")
+  })
+})
+
 /* Payload decoding ------------------------------------------------------ */
 
 describe("isSite", () => {
@@ -506,6 +519,8 @@ describe("isSite", () => {
     expect(isSite([])).toBe(false)
     expect(isSite({})).toBe(false)
     expect(isSite({ ...site(), daily: "nope" })).toBe(false)
+    // generatedAt is the freshness key the SWR path compares on.
+    expect(isSite({ ...site(), generatedAt: undefined })).toBe(false)
     const missingRange = site()
     // @ts-expect-error deliberately breaking the shape
     delete missingRange.ranges.quarter

@@ -6,7 +6,7 @@
  * never touches the DOM, which is what keeps it testable.
  */
 
-import { cached, fetchJson } from "./feed"
+import { fetchJson, swr } from "./feed"
 import { weekdayIndex } from "./heatmap"
 
 export type Usage = {
@@ -99,14 +99,17 @@ export const COMPOSITION: { key: keyof Usage; label: string }[] = [
 /**
  * Minimal runtime decoder for the /api/site payload: the spine the
  * dashboard indexes unconditionally (all four ranges with their
- * breakdown arrays, the daily series, the device list). Deeper fields
- * stay lenient — a missing optional is handled at the render site.
+ * breakdown arrays, the daily series, the device list, and
+ * `generatedAt`, which the controller compares to skip no-op
+ * re-renders). Deeper fields stay lenient — a missing optional is
+ * handled at the render site.
  */
 export function isSite(data: unknown): data is Site {
   if (typeof data !== "object" || data === null) return false
   const site = data as Record<string, unknown>
   const ranges = site.ranges as Record<string, unknown> | null
   return (
+    typeof site.generatedAt === "string" &&
     typeof site.today === "string" &&
     Array.isArray(site.daily) &&
     Array.isArray(site.devices) &&
@@ -127,12 +130,23 @@ export function isSite(data: unknown): data is Site {
   )
 }
 
-/** One request for the whole page, session-cached like the other feeds. */
-export const loadSite = (endpoint: string): Promise<Site> =>
-  cached(
+/**
+ * One request for the whole page. Unlike the leisurely feeds this one
+ * is freshness-critical, so it takes the stale-while-revalidate path:
+ * a session-cached copy (any age) is delivered synchronously for an
+ * instant first paint, then the network answer follows — cheap, since
+ * the collector revalidates by ETag and an unchanged payload is a
+ * ~0-byte 304 out of the browser's HTTP cache.
+ */
+export const loadSite = (
+  endpoint: string,
+  onSite: (site: Site) => void,
+): Promise<void> =>
+  swr(
     `tokens:site:${endpoint}`,
     () => fetchJson<Site>(`${endpoint}/api/site`),
     isSite,
+    onSite,
   )
 
 /* Dates ------------------------------------------------------------- */
@@ -192,6 +206,15 @@ const monthTitle = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   timeZone: "UTC",
 })
+// No timeZone: freshness reads against the visitor's own clock.
+const clock = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+})
+const clockDay = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+})
 
 export const formatTokens = (value: number) => compact.format(value)
 
@@ -232,6 +255,19 @@ export const formatMonth = (month: string) =>
 export const formatMonthTitle = (month: string) =>
   monthTitle.format(noon(`${month}-15`))
 
+/**
+ * "11:41 PM" in the visitor's local time — for the freshness line. A
+ * timestamp from another calendar day (a stale cached paint about to be
+ * revalidated) says so: "Jul 21, 11:41 PM".
+ */
+export const formatClock = (iso: string, now = new Date()) => {
+  const date = new Date(iso)
+  const time = clock.format(date)
+  return date.toDateString() === now.toDateString()
+    ? time
+    : `${clockDay.format(date)}, ${time}`
+}
+
 /** "just now" / "5m ago" / "3h ago" / "2d ago" — for device sync times. */
 export const formatAgo = (epochMs: number, now = Date.now()) => {
   const minutes = Math.round((now - epochMs) / 60_000)
@@ -265,8 +301,9 @@ export const formatDelta = (ratio: number) => {
 }
 
 /**
- * Each device's CLI resubmits every ~30 minutes and the read API caches
- * for 5, so anything seen within the last 45 minutes is a live reporter.
+ * Each device's CLI resubmits every ~30 minutes, so anything seen
+ * within the last 45 is a live reporter (the slack absorbs a delayed
+ * run and KV's ≤30 s propagation).
  */
 export const isOnline = (lastSeen: number | null, now = Date.now()) =>
   lastSeen !== null && now - lastSeen < 45 * 60_000

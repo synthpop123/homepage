@@ -1,9 +1,10 @@
 /**
  * Shared client-side plumbing for the live feeds (Music, Movies,
- * Memos, Tokens): a sessionStorage TTL cache, JSON fetching with a
- * timeout, URL sanitizing for remote payloads, and the site's display
- * time zone. Imported from component <script> blocks, so everything
- * here must be browser-safe.
+ * Memos, Tokens): a sessionStorage cache with two reading disciplines
+ * (TTL for the leisurely feeds, stale-while-revalidate for the
+ * freshness-critical one), JSON fetching with a timeout, URL sanitizing
+ * for remote payloads, and the site's display time zone. Imported from
+ * component <script> blocks, so everything here must be browser-safe.
  */
 
 const CACHE_TTL = 60_000
@@ -21,12 +22,13 @@ export const dateFormatter = new Intl.DateTimeFormat("en-US", {
 function readCache<T>(
   key: string,
   valid: (data: unknown) => boolean,
+  maxAge = CACHE_TTL,
 ): T | null {
   try {
     const raw = sessionStorage.getItem(key)
     if (!raw) return null
     const { t, data } = JSON.parse(raw)
-    if (Date.now() - t > CACHE_TTL) return null
+    if (Date.now() - t > maxAge) return null
     return valid(data) ? (data as T) : null
   } catch {
     return null
@@ -61,6 +63,36 @@ export function cached<T>(
     writeCache(key, data)
     return data
   })
+}
+
+/**
+ * Stale-while-revalidate over the same cache, for a feed whose endpoint
+ * revalidates cheaply (the tokens collector serves `no-cache` + ETag,
+ * so an unchanged payload costs a ~0-byte 304): any cached copy paints
+ * immediately regardless of age, while a fetch runs regardless of the
+ * cache and hands the network's answer to the same callback — deciding
+ * whether it actually changed is the caller's business. `valid` gates
+ * both deliveries, exactly as in `cached`. Rejects only when there is
+ * nothing to show at all (no cache and the network failed); once
+ * painted from cache, a failed refresh keeps the stale data on screen,
+ * which beats swapping it for a fallback message.
+ */
+export async function swr<T>(
+  key: string,
+  load: () => Promise<T>,
+  valid: (data: unknown) => boolean,
+  onData: (data: T) => void,
+): Promise<void> {
+  const hit = readCache<T>(key, valid, Number.POSITIVE_INFINITY)
+  if (hit) onData(hit)
+  try {
+    const data = await load()
+    if (!valid(data)) throw new Error("Unexpected payload shape")
+    writeCache(key, data)
+    onData(data)
+  } catch (error) {
+    if (!hit) throw error
+  }
 }
 
 /**

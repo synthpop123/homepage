@@ -31,12 +31,17 @@ export const weekdayIndex = (day: string) =>
 
 export type HeatCell = { level: number; title: string }
 
+/** One observer per grid, replaced on remount — a data refresh must not
+ *  leave the previous mount's observer re-rendering its stale days. */
+const observers = new WeakMap<HTMLElement, ResizeObserver>()
+
 /**
  * Fill a Heatmap.astro grid with as many trailing weeks of `days` as
  * fit its width, pad the first column down to the right weekday, and
  * re-fit on viewport changes (rotation, resize, mobile URL bar) so the
  * fixed-size cells never overflow. `days` must be chronological and
  * dense; `cells` maps the visible slice to one { level, title } per day.
+ * Remounting on the same grid replaces the previous data.
  */
 export function mountHeatmap<T extends { date: string }>(
   grid: HTMLElement,
@@ -44,6 +49,7 @@ export function mountHeatmap<T extends { date: string }>(
   cells: (shown: T[]) => HeatCell[],
 ) {
   if (days.length === 0) throw new Error("No activity data")
+  observers.get(grid)?.disconnect()
   const { cell, gap } = gridMetrics(grid)
   const lastWeekday = weekdayIndex(days[days.length - 1].date)
   let weeks = 0
@@ -72,5 +78,7 @@ export function mountHeatmap<T extends { date: string }>(
 
   render()
   grid.removeAttribute("data-skeleton")
-  new ResizeObserver(render).observe(grid)
+  const observer = new ResizeObserver(render)
+  observer.observe(grid)
+  observers.set(grid, observer)
 }
