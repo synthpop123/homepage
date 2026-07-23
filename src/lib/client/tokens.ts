@@ -206,15 +206,6 @@ const monthTitle = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   timeZone: "UTC",
 })
-// No timeZone: freshness reads against the visitor's own clock.
-const clock = new Intl.DateTimeFormat("en-US", {
-  hour: "numeric",
-  minute: "2-digit",
-})
-const clockDay = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-})
 
 export const formatTokens = (value: number) => compact.format(value)
 
@@ -254,19 +245,6 @@ export const formatMonth = (month: string) =>
 /** "May 2025" */
 export const formatMonthTitle = (month: string) =>
   monthTitle.format(noon(`${month}-15`))
-
-/**
- * "11:41 PM" in the visitor's local time — for the freshness line. A
- * timestamp from another calendar day (a stale cached paint about to be
- * revalidated) says so: "Jul 21, 11:41 PM".
- */
-export const formatClock = (iso: string, now = new Date()) => {
-  const date = new Date(iso)
-  const time = clock.format(date)
-  return date.toDateString() === now.toDateString()
-    ? time
-    : `${clockDay.format(date)}, ${time}`
-}
 
 /** "just now" / "5m ago" / "3h ago" / "2d ago" — for device sync times. */
 export const formatAgo = (epochMs: number, now = Date.now()) => {

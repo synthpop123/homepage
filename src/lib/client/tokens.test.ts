@@ -11,7 +11,6 @@ import {
   computeFacts,
   dailyBuckets,
   fillDaily,
-  formatClock,
   formatDelta,
   formatShare,
   hasActivity,
@@ -494,19 +493,6 @@ describe("formatShare", () => {
     expect(formatShare(Number.NaN)).toBe("—")
   })
 })
-
-describe("formatClock", () => {
-  it("shows the bare time for a same-day timestamp", () => {
-    const now = new Date("2026-07-20T20:00:00")
-    expect(formatClock("2026-07-20T09:41:00", now)).toBe("9:41 AM")
-  })
-
-  it("names the day when the timestamp is from another one", () => {
-    const now = new Date("2026-07-20T20:00:00")
-    expect(formatClock("2026-07-19T23:05:00", now)).toBe("Jul 19, 11:05 PM")
-  })
-})
-
 /* Payload decoding ------------------------------------------------------ */
 
 describe("isSite", () => {

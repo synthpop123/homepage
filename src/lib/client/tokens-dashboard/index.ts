@@ -11,7 +11,6 @@
  */
 
 import {
-  formatClock,
   loadSite,
   type MetricKey,
   type RangeKey,
@@ -72,11 +71,6 @@ export function mountTokensDashboard(root: HTMLElement) {
     renderFacts(q, loaded)
     renderDevices(q, loaded)
     renderDynamic()
-    const updated = q(".tk-updated")
-    if (updated) {
-      updated.textContent = `Data as of ${formatClock(loaded.generatedAt)}.`
-      updated.title = new Date(loaded.generatedAt).toLocaleString()
-    }
     root.setAttribute("aria-busy", "false")
   }
 
