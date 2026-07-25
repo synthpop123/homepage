@@ -66,11 +66,22 @@ export function mountTokensDashboard(root: HTMLElement) {
   q(".tk-chart-foot .tk-seg")?.addEventListener("change", renderDynamic)
 
   const renderAll = (loaded: Site) => {
+    // renderDynamic reads the module state, so commit before rendering —
+    // but roll back if any renderer throws. A half-render must not count
+    // as delivered: the revalidated payload often carries the same
+    // generatedAt, and the equal-generatedAt skip below would otherwise
+    // block the recovery render.
+    const previous = site
     site = loaded
-    renderHeatmap(q, loaded)
-    renderFacts(q, loaded)
-    renderDevices(q, loaded)
-    renderDynamic()
+    try {
+      renderHeatmap(q, loaded)
+      renderFacts(q, loaded)
+      renderDevices(q, loaded)
+      renderDynamic()
+    } catch (error) {
+      site = previous
+      throw error
+    }
     root.setAttribute("aria-busy", "false")
   }
 

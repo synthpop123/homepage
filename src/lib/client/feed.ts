@@ -72,10 +72,13 @@ export function cached<T>(
  * immediately regardless of age, while a fetch runs regardless of the
  * cache and hands the network's answer to the same callback — deciding
  * whether it actually changed is the caller's business. `valid` gates
- * both deliveries, exactly as in `cached`. Rejects only when there is
- * nothing to show at all (no cache and the network failed); once
- * painted from cache, a failed refresh keeps the stale data on screen,
- * which beats swapping it for a fallback message.
+ * both deliveries, exactly as in `cached`. The cached paint is fenced:
+ * if rendering the stale copy throws, the failure must not abort the
+ * revalidation — the network answer is exactly what recovers from a
+ * bad cache. Rejects only when there is nothing on screen at all (no
+ * usable cached paint and the network delivery failed too); once
+ * painted, a failed refresh keeps the stale data visible, which beats
+ * swapping it for a fallback message.
  */
 export async function swr<T>(
   key: string,
@@ -84,14 +87,22 @@ export async function swr<T>(
   onData: (data: T) => void,
 ): Promise<void> {
   const hit = readCache<T>(key, valid, Number.POSITIVE_INFINITY)
-  if (hit) onData(hit)
+  let painted = false
+  if (hit) {
+    try {
+      onData(hit)
+      painted = true
+    } catch {
+      // A stale copy the renderer chokes on is as good as no cache.
+    }
+  }
   try {
     const data = await load()
     if (!valid(data)) throw new Error("Unexpected payload shape")
     writeCache(key, data)
     onData(data)
   } catch (error) {
-    if (!hit) throw error
+    if (!painted) throw error
   }
 }
 

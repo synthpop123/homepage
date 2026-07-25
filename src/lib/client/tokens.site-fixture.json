@@ -1,0 +1,2348 @@
+{
+  "schemaVersion": 4,
+  "generatedAt": "2026-07-25T14:20:31.891Z",
+  "today": "2026-07-25",
+  "ranges": {
+    "week": {
+      "from": "2026-07-19",
+      "totals": {
+        "input": 675347,
+        "output": 2793118,
+        "cacheRead": 243803217,
+        "cacheWrite": 11531691,
+        "reasoning": 0,
+        "tokens": 258803373,
+        "messages": 287,
+        "cost": 512.8828335000001,
+        "activeDays": 7,
+        "firstDate": "2026-07-19",
+        "lastDate": "2026-07-25"
+      },
+      "byModel": [
+        {
+          "input": 2770,
+          "output": 2628944,
+          "cacheRead": 222620692,
+          "cacheWrite": 10947341,
+          "reasoning": 0,
+          "tokens": 236199747,
+          "messages": 97,
+          "cost": 490.93735449999997,
+          "model": "claude-fable-5",
+          "providers": "anthropic",
+          "days": 7,
+          "firstDate": "2026-07-19",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 621276,
+          "output": 77434,
+          "cacheRead": 15366656,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 16065366,
+          "messages": 182,
+          "cost": 13.112727999999999,
+          "model": "gpt-5.6-sol",
+          "providers": "openai",
+          "days": 2,
+          "firstDate": "2026-07-20",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 104,
+          "output": 86233,
+          "cacheRead": 5815869,
+          "cacheWrite": 584350,
+          "reasoning": 0,
+          "tokens": 6486556,
+          "messages": 5,
+          "cost": 8.716467000000002,
+          "model": "claude-opus-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-07-25",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 50792,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 50792,
+          "messages": 2,
+          "cost": 0.101584,
+          "model": "grok-4.5",
+          "providers": "xai",
+          "days": 1,
+          "firstDate": "2026-07-23",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 405,
+          "output": 507,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 912,
+          "messages": 1,
+          "cost": 0.014700000000000001,
+          "model": "claude-opus-4-8",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-07-24",
+          "lastDate": "2026-07-24"
+        }
+      ],
+      "byClient": [
+        {
+          "input": 3279,
+          "output": 2715684,
+          "cacheRead": 228436561,
+          "cacheWrite": 11531691,
+          "reasoning": 0,
+          "tokens": 242687215,
+          "messages": 103,
+          "cost": 499.66852150000005,
+          "client": "cursor",
+          "days": 7,
+          "firstDate": "2026-07-19",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 621276,
+          "output": 77434,
+          "cacheRead": 15366656,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 16065366,
+          "messages": 182,
+          "cost": 13.112727999999999,
+          "client": "pi",
+          "days": 2,
+          "firstDate": "2026-07-20",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 50792,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 50792,
+          "messages": 2,
+          "cost": 0.101584,
+          "client": "grok",
+          "days": 1,
+          "firstDate": "2026-07-23",
+          "lastDate": "2026-07-23"
+        }
+      ],
+      "byProvider": [
+        {
+          "input": 3279,
+          "output": 2715684,
+          "cacheRead": 228436561,
+          "cacheWrite": 11531691,
+          "reasoning": 0,
+          "tokens": 242687215,
+          "messages": 103,
+          "cost": 499.66852150000005,
+          "provider": "anthropic",
+          "days": 7,
+          "firstDate": "2026-07-19",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 621276,
+          "output": 77434,
+          "cacheRead": 15366656,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 16065366,
+          "messages": 182,
+          "cost": 13.112727999999999,
+          "provider": "openai",
+          "days": 2,
+          "firstDate": "2026-07-20",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 50792,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 50792,
+          "messages": 2,
+          "cost": 0.101584,
+          "provider": "xai",
+          "days": 1,
+          "firstDate": "2026-07-23",
+          "lastDate": "2026-07-23"
+        }
+      ]
+    },
+    "month": {
+      "from": "2026-06-26",
+      "totals": {
+        "input": 3916594,
+        "output": 9658438,
+        "cacheRead": 767246331,
+        "cacheWrite": 36800249,
+        "reasoning": 67941,
+        "tokens": 817689553,
+        "messages": 1148,
+        "cost": 1623.814788099999,
+        "activeDays": 27,
+        "firstDate": "2026-06-26",
+        "lastDate": "2026-07-25"
+      },
+      "byModel": [
+        {
+          "input": 851339,
+          "output": 8614884,
+          "cacheRead": 673325977,
+          "cacheWrite": 31811342,
+          "reasoning": 0,
+          "tokens": 714603542,
+          "messages": 522,
+          "cost": 1510.2253419999995,
+          "model": "claude-fable-5",
+          "providers": "anthropic",
+          "days": 21,
+          "firstDate": "2026-07-02",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 213168,
+          "output": 592470,
+          "cacheRead": 31886590,
+          "cacheWrite": 3592828,
+          "reasoning": 0,
+          "tokens": 36285056,
+          "messages": 43,
+          "cost": 54.276059999999994,
+          "model": "claude-opus-4-8",
+          "providers": "anthropic",
+          "days": 5,
+          "firstDate": "2026-06-27",
+          "lastDate": "2026-07-24"
+        },
+        {
+          "input": 2185594,
+          "output": 213410,
+          "cacheRead": 32259584,
+          "cacheWrite": 0,
+          "reasoning": 54527,
+          "tokens": 34713115,
+          "messages": 422,
+          "cost": 35.095872,
+          "model": "gpt-5.6-sol",
+          "providers": "openai",
+          "days": 7,
+          "firstDate": "2026-07-10",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 9321,
+          "output": 31221,
+          "cacheRead": 10830183,
+          "cacheWrite": 219398,
+          "reasoning": 0,
+          "tokens": 11090123,
+          "messages": 81,
+          "cost": 3.0477364999999996,
+          "model": "claude-sonnet-5",
+          "providers": "anthropic,zed.dev",
+          "days": 3,
+          "firstDate": "2026-07-09",
+          "lastDate": "2026-07-15"
+        },
+        {
+          "input": 104,
+          "output": 86233,
+          "cacheRead": 5815869,
+          "cacheWrite": 584350,
+          "reasoning": 0,
+          "tokens": 6486556,
+          "messages": 5,
+          "cost": 8.716467000000002,
+          "model": "claude-opus-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-07-25",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 31463,
+          "output": 50550,
+          "cacheRead": 5687032,
+          "cacheWrite": 510840,
+          "reasoning": 0,
+          "tokens": 6279885,
+          "messages": 13,
+          "cost": 7.457331,
+          "model": "claude-opus-4-6",
+          "providers": "anthropic",
+          "days": 3,
+          "firstDate": "2026-07-07",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 211219,
+          "output": 29518,
+          "cacheRead": 3440452,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 3681189,
+          "messages": 4,
+          "cost": 0.8674949000000001,
+          "model": "composer-2.5",
+          "providers": "cursor",
+          "days": 2,
+          "firstDate": "2026-07-07",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 231662,
+          "output": 27435,
+          "cacheRead": 2789888,
+          "cacheWrite": 0,
+          "reasoning": 13414,
+          "tokens": 3062399,
+          "messages": 48,
+          "cost": 3.7787239999999995,
+          "model": "gpt-5.5",
+          "providers": "openai",
+          "days": 3,
+          "firstDate": "2026-06-26",
+          "lastDate": "2026-07-05"
+        },
+        {
+          "input": 83624,
+          "output": 9936,
+          "cacheRead": 802046,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 895606,
+          "messages": 4,
+          "cost": 0.08648120000000001,
+          "model": "auto",
+          "providers": "cursor",
+          "days": 2,
+          "firstDate": "2026-07-01",
+          "lastDate": "2026-07-17"
+        },
+        {
+          "input": 99,
+          "output": 2702,
+          "cacheRead": 408710,
+          "cacheWrite": 62217,
+          "reasoning": 0,
+          "tokens": 473728,
+          "messages": 1,
+          "cost": 0.040827,
+          "model": "claude-sonnet-4-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-07-06",
+          "lastDate": "2026-07-06"
+        },
+        {
+          "input": 98964,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 98964,
+          "messages": 3,
+          "cost": 0.197928,
+          "model": "grok-4.5",
+          "providers": "xai",
+          "days": 2,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 37,
+          "output": 79,
+          "cacheRead": 0,
+          "cacheWrite": 19274,
+          "reasoning": 0,
+          "tokens": 19390,
+          "messages": 1,
+          "cost": 0.0245245,
+          "model": "claude-haiku-4-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-06-27",
+          "lastDate": "2026-06-27"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 1,
+          "cost": 0,
+          "model": "<synthetic>",
+          "providers": "unknown",
+          "days": 1,
+          "firstDate": "2026-07-01",
+          "lastDate": "2026-07-01"
+        }
+      ],
+      "byClient": [
+        {
+          "input": 1238485,
+          "output": 9224605,
+          "cacheRead": 697137678,
+          "cacheWrite": 35427233,
+          "reasoning": 0,
+          "tokens": 743028001,
+          "messages": 347,
+          "cost": 1535.3595018499993,
+          "client": "cursor",
+          "days": 23,
+          "firstDate": "2026-06-30",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 161887,
+          "output": 192121,
+          "cacheRead": 35059181,
+          "cacheWrite": 1367074,
+          "reasoning": 0,
+          "tokens": 36780263,
+          "messages": 327,
+          "cost": 49.356880350000004,
+          "client": "claude",
+          "days": 7,
+          "firstDate": "2026-06-27",
+          "lastDate": "2026-07-18"
+        },
+        {
+          "input": 1795980,
+          "output": 163411,
+          "cacheRead": 19682816,
+          "cacheWrite": 0,
+          "reasoning": 67941,
+          "tokens": 21710148,
+          "messages": 288,
+          "cost": 25.761868000000003,
+          "client": "codex",
+          "days": 8,
+          "firstDate": "2026-06-26",
+          "lastDate": "2026-07-18"
+        },
+        {
+          "input": 621276,
+          "output": 77434,
+          "cacheRead": 15366656,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 16065366,
+          "messages": 182,
+          "cost": 13.112727999999999,
+          "client": "pi",
+          "days": 2,
+          "firstDate": "2026-07-20",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 98964,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 98964,
+          "messages": 3,
+          "cost": 0.197928,
+          "client": "grok",
+          "days": 2,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 2,
+          "output": 867,
+          "cacheRead": 0,
+          "cacheWrite": 5942,
+          "reasoning": 0,
+          "tokens": 6811,
+          "messages": 1,
+          "cost": 0.025881900000000003,
+          "client": "zed",
+          "days": 1,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-12"
+        }
+      ],
+      "byProvider": [
+        {
+          "input": 1105529,
+          "output": 9377272,
+          "cacheRead": 727954361,
+          "cacheWrite": 36794307,
+          "reasoning": 0,
+          "tokens": 775231469,
+          "messages": 665,
+          "cost": 1583.7624060999995,
+          "provider": "anthropic",
+          "days": 24,
+          "firstDate": "2026-06-27",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 2417256,
+          "output": 240845,
+          "cacheRead": 35049472,
+          "cacheWrite": 0,
+          "reasoning": 67941,
+          "tokens": 37775514,
+          "messages": 470,
+          "cost": 38.874596000000004,
+          "provider": "openai",
+          "days": 10,
+          "firstDate": "2026-06-26",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 294843,
+          "output": 39454,
+          "cacheRead": 4242498,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 4576795,
+          "messages": 8,
+          "cost": 0.9539761,
+          "provider": "cursor",
+          "days": 4,
+          "firstDate": "2026-07-01",
+          "lastDate": "2026-07-17"
+        },
+        {
+          "input": 98964,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 98964,
+          "messages": 3,
+          "cost": 0.197928,
+          "provider": "xai",
+          "days": 2,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 2,
+          "output": 867,
+          "cacheRead": 0,
+          "cacheWrite": 5942,
+          "reasoning": 0,
+          "tokens": 6811,
+          "messages": 1,
+          "cost": 0.025881900000000003,
+          "provider": "zed.dev",
+          "days": 1,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 1,
+          "cost": 0,
+          "provider": "unknown",
+          "days": 1,
+          "firstDate": "2026-07-01",
+          "lastDate": "2026-07-01"
+        }
+      ]
+    },
+    "quarter": {
+      "from": "2026-04-27",
+      "totals": {
+        "input": 12343742,
+        "output": 17906333,
+        "cacheRead": 1433000225,
+        "cacheWrite": 73736907,
+        "reasoning": 270174,
+        "tokens": 1537257381,
+        "messages": 3337,
+        "cost": 2536.5068208500006,
+        "activeDays": 68,
+        "firstDate": "2026-04-27",
+        "lastDate": "2026-07-25"
+      },
+      "byModel": [
+        {
+          "input": 1015417,
+          "output": 9315168,
+          "cacheRead": 775542715,
+          "cacheWrite": 35572456,
+          "reasoning": 0,
+          "tokens": 821445756,
+          "messages": 742,
+          "cost": 1696.1109849999996,
+          "model": "claude-fable-5",
+          "providers": "anthropic",
+          "days": 24,
+          "firstDate": "2026-06-10",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 3129477,
+          "output": 7001744,
+          "cacheRead": 433080221,
+          "cacheWrite": 32874717,
+          "reasoning": 0,
+          "tokens": 476086159,
+          "messages": 852,
+          "cost": 612.6980767499999,
+          "model": "claude-opus-4-8",
+          "providers": "anthropic",
+          "days": 27,
+          "firstDate": "2026-05-30",
+          "lastDate": "2026-07-24"
+        },
+        {
+          "input": 273329,
+          "output": 591663,
+          "cacheRead": 82376117,
+          "cacheWrite": 3336007,
+          "reasoning": 0,
+          "tokens": 86577116,
+          "messages": 50,
+          "cost": 78.19632225000001,
+          "model": "claude-opus-4-7",
+          "providers": "anthropic",
+          "days": 8,
+          "firstDate": "2026-04-27",
+          "lastDate": "2026-05-27"
+        },
+        {
+          "input": 5127731,
+          "output": 515831,
+          "cacheRead": 79989376,
+          "cacheWrite": 0,
+          "reasoning": 215647,
+          "tokens": 85848585,
+          "messages": 1133,
+          "cost": 87.577683,
+          "model": "gpt-5.5",
+          "providers": "openai",
+          "days": 22,
+          "firstDate": "2026-04-27",
+          "lastDate": "2026-07-05"
+        },
+        {
+          "input": 2185594,
+          "output": 213410,
+          "cacheRead": 32259584,
+          "cacheWrite": 0,
+          "reasoning": 54527,
+          "tokens": 34713115,
+          "messages": 422,
+          "cost": 35.095872,
+          "model": "gpt-5.6-sol",
+          "providers": "openai",
+          "days": 7,
+          "firstDate": "2026-07-10",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 9321,
+          "output": 31221,
+          "cacheRead": 10830183,
+          "cacheWrite": 219398,
+          "reasoning": 0,
+          "tokens": 11090123,
+          "messages": 81,
+          "cost": 3.0477364999999996,
+          "model": "claude-sonnet-5",
+          "providers": "anthropic,zed.dev",
+          "days": 3,
+          "firstDate": "2026-07-09",
+          "lastDate": "2026-07-15"
+        },
+        {
+          "input": 49411,
+          "output": 97051,
+          "cacheRead": 8365032,
+          "cacheWrite": 1068488,
+          "reasoning": 0,
+          "tokens": 9579982,
+          "messages": 28,
+          "cost": 13.533896,
+          "model": "claude-opus-4-6",
+          "providers": "anthropic",
+          "days": 7,
+          "firstDate": "2026-05-06",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 104,
+          "output": 86233,
+          "cacheRead": 5815869,
+          "cacheWrite": 584350,
+          "reasoning": 0,
+          "tokens": 6486556,
+          "messages": 5,
+          "cost": 8.716467000000002,
+          "model": "claude-opus-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-07-25",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 219819,
+          "output": 30048,
+          "cacheRead": 3442308,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 3692175,
+          "messages": 5,
+          "cost": 0.8850195000000001,
+          "model": "composer-2.5",
+          "providers": "cursor",
+          "days": 3,
+          "firstDate": "2026-06-25",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 96951,
+          "output": 10098,
+          "cacheRead": 802046,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 909095,
+          "messages": 6,
+          "cost": 0.09806025000000002,
+          "model": "auto",
+          "providers": "cursor",
+          "days": 3,
+          "firstDate": "2026-04-27",
+          "lastDate": "2026-07-17"
+        },
+        {
+          "input": 99,
+          "output": 2702,
+          "cacheRead": 408710,
+          "cacheWrite": 62217,
+          "reasoning": 0,
+          "tokens": 473728,
+          "messages": 1,
+          "cost": 0.040827,
+          "model": "claude-sonnet-4-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-07-06",
+          "lastDate": "2026-07-06"
+        },
+        {
+          "input": 97504,
+          "output": 4907,
+          "cacheRead": 32768,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 135179,
+          "messages": 2,
+          "cost": 0.1269591,
+          "model": "composer-2",
+          "providers": "cursor",
+          "days": 2,
+          "firstDate": "2026-04-30",
+          "lastDate": "2026-05-14"
+        },
+        {
+          "input": 39984,
+          "output": 6178,
+          "cacheRead": 55296,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 101458,
+          "messages": 1,
+          "cost": 0.156464,
+          "model": "gpt-5.3-codex",
+          "providers": "openai",
+          "days": 1,
+          "firstDate": "2026-05-06",
+          "lastDate": "2026-05-06"
+        },
+        {
+          "input": 98964,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 98964,
+          "messages": 3,
+          "cost": 0.197928,
+          "model": "grok-4.5",
+          "providers": "xai",
+          "days": 2,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 37,
+          "output": 79,
+          "cacheRead": 0,
+          "cacheWrite": 19274,
+          "reasoning": 0,
+          "tokens": 19390,
+          "messages": 1,
+          "cost": 0.0245245,
+          "model": "claude-haiku-4-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-06-27",
+          "lastDate": "2026-06-27"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 5,
+          "cost": 0,
+          "model": "<synthetic>",
+          "providers": "unknown",
+          "days": 4,
+          "firstDate": "2026-06-07",
+          "lastDate": "2026-07-01"
+        }
+      ],
+      "byClient": [
+        {
+          "input": 4242438,
+          "output": 16204793,
+          "cacheRead": 1182960344,
+          "cacheWrite": 69160145,
+          "reasoning": 0,
+          "tokens": 1272567720,
+          "messages": 697,
+          "cost": 2231.4229623500005,
+          "client": "cursor",
+          "days": 61,
+          "firstDate": "2026-04-27",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 713928,
+          "output": 974314,
+          "cacheRead": 137929673,
+          "cacheWrite": 4570820,
+          "reasoning": 0,
+          "tokens": 144188735,
+          "messages": 1083,
+          "cost": 182.4669046,
+          "client": "claude",
+          "days": 17,
+          "firstDate": "2026-06-01",
+          "lastDate": "2026-07-18"
+        },
+        {
+          "input": 6667134,
+          "output": 648925,
+          "cacheRead": 96743552,
+          "cacheWrite": 0,
+          "reasoning": 270174,
+          "tokens": 104329785,
+          "messages": 1371,
+          "cost": 109.280416,
+          "client": "codex",
+          "days": 26,
+          "firstDate": "2026-05-06",
+          "lastDate": "2026-07-18"
+        },
+        {
+          "input": 621276,
+          "output": 77434,
+          "cacheRead": 15366656,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 16065366,
+          "messages": 182,
+          "cost": 13.112727999999999,
+          "client": "pi",
+          "days": 2,
+          "firstDate": "2026-07-20",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 98964,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 98964,
+          "messages": 3,
+          "cost": 0.197928,
+          "client": "grok",
+          "days": 2,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 2,
+          "output": 867,
+          "cacheRead": 0,
+          "cacheWrite": 5942,
+          "reasoning": 0,
+          "tokens": 6811,
+          "messages": 1,
+          "cost": 0.025881900000000003,
+          "client": "zed",
+          "days": 1,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-12"
+        }
+      ],
+      "byProvider": [
+        {
+          "input": 4477193,
+          "output": 17124994,
+          "cacheRead": 1316418847,
+          "cacheWrite": 73730965,
+          "reasoning": 0,
+          "tokens": 1411751999,
+          "messages": 1759,
+          "cost": 2412.3429531000006,
+          "provider": "anthropic",
+          "days": 60,
+          "firstDate": "2026-04-27",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 7353309,
+          "output": 735419,
+          "cacheRead": 112304256,
+          "cacheWrite": 0,
+          "reasoning": 270174,
+          "tokens": 120663158,
+          "messages": 1556,
+          "cost": 122.83001900000001,
+          "provider": "openai",
+          "days": 29,
+          "firstDate": "2026-04-27",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 414274,
+          "output": 45053,
+          "cacheRead": 4277122,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 4736449,
+          "messages": 13,
+          "cost": 1.11003885,
+          "provider": "cursor",
+          "days": 8,
+          "firstDate": "2026-04-27",
+          "lastDate": "2026-07-17"
+        },
+        {
+          "input": 98964,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 98964,
+          "messages": 3,
+          "cost": 0.197928,
+          "provider": "xai",
+          "days": 2,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 2,
+          "output": 867,
+          "cacheRead": 0,
+          "cacheWrite": 5942,
+          "reasoning": 0,
+          "tokens": 6811,
+          "messages": 1,
+          "cost": 0.025881900000000003,
+          "provider": "zed.dev",
+          "days": 1,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 5,
+          "cost": 0,
+          "provider": "unknown",
+          "days": 4,
+          "firstDate": "2026-06-07",
+          "lastDate": "2026-07-01"
+        }
+      ]
+    },
+    "all": {
+      "from": null,
+      "totals": {
+        "input": 18669018,
+        "output": 19737779,
+        "cacheRead": 1654804586,
+        "cacheWrite": 85500842,
+        "reasoning": 438624,
+        "tokens": 1779150849,
+        "messages": 4928,
+        "cost": 2744.55054504,
+        "activeDays": 164,
+        "firstDate": "2025-04-28",
+        "lastDate": "2026-07-25"
+      },
+      "byModel": [
+        {
+          "input": 1015417,
+          "output": 9315168,
+          "cacheRead": 775542715,
+          "cacheWrite": 35572456,
+          "reasoning": 0,
+          "tokens": 821445756,
+          "messages": 742,
+          "cost": 1696.1109849999996,
+          "model": "claude-fable-5",
+          "providers": "anthropic",
+          "days": 24,
+          "firstDate": "2026-06-10",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 3129477,
+          "output": 7001744,
+          "cacheRead": 433080221,
+          "cacheWrite": 32874717,
+          "reasoning": 0,
+          "tokens": 476086159,
+          "messages": 852,
+          "cost": 612.6980767499999,
+          "model": "claude-opus-4-8",
+          "providers": "anthropic",
+          "days": 27,
+          "firstDate": "2026-05-30",
+          "lastDate": "2026-07-24"
+        },
+        {
+          "input": 1900460,
+          "output": 988655,
+          "cacheRead": 117045395,
+          "cacheWrite": 8701947,
+          "reasoning": 0,
+          "tokens": 128636457,
+          "messages": 193,
+          "cost": 147.12854125000004,
+          "model": "claude-opus-4-6",
+          "providers": "anthropic",
+          "days": 26,
+          "firstDate": "2026-02-09",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 281849,
+          "output": 646250,
+          "cacheRead": 94736546,
+          "cacheWrite": 3733433,
+          "reasoning": 0,
+          "tokens": 99398078,
+          "messages": 57,
+          "cost": 88.26772425000001,
+          "model": "claude-opus-4-7",
+          "providers": "anthropic",
+          "days": 9,
+          "firstDate": "2026-04-18",
+          "lastDate": "2026-05-27"
+        },
+        {
+          "input": 5127732,
+          "output": 516443,
+          "cacheRead": 79996082,
+          "cacheWrite": 415,
+          "reasoning": 215647,
+          "tokens": 85856319,
+          "messages": 1134,
+          "cost": 87.6015728,
+          "model": "gpt-5.5",
+          "providers": "zed.dev,openai",
+          "days": 23,
+          "firstDate": "2026-03-14",
+          "lastDate": "2026-07-05"
+        },
+        {
+          "input": 1544540,
+          "output": 257017,
+          "cacheRead": 49096832,
+          "cacheWrite": 0,
+          "reasoning": 151616,
+          "tokens": 51050005,
+          "messages": 836,
+          "cost": 12.154109,
+          "model": "gpt-5-codex",
+          "providers": "openai",
+          "days": 5,
+          "firstDate": "2025-09-19",
+          "lastDate": "2025-11-10"
+        },
+        {
+          "input": 2185594,
+          "output": 213410,
+          "cacheRead": 32259584,
+          "cacheWrite": 0,
+          "reasoning": 54527,
+          "tokens": 34713115,
+          "messages": 422,
+          "cost": 35.095872,
+          "model": "gpt-5.6-sol",
+          "providers": "openai",
+          "days": 7,
+          "firstDate": "2026-07-10",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 32825,
+          "output": 259705,
+          "cacheRead": 16671517,
+          "cacheWrite": 2325604,
+          "reasoning": 0,
+          "tokens": 19289651,
+          "messages": 69,
+          "cost": 29.527533500000004,
+          "model": "claude-opus-4-5",
+          "providers": "anthropic",
+          "days": 9,
+          "firstDate": "2025-11-28",
+          "lastDate": "2026-02-04"
+        },
+        {
+          "input": 833160,
+          "output": 71433,
+          "cacheRead": 14581248,
+          "cacheWrite": 0,
+          "reasoning": 16448,
+          "tokens": 15502289,
+          "messages": 87,
+          "cost": 5.2400824,
+          "model": "gpt-5.2-codex",
+          "providers": "openai",
+          "days": 1,
+          "firstDate": "2026-01-29",
+          "lastDate": "2026-01-29"
+        },
+        {
+          "input": 9321,
+          "output": 31221,
+          "cacheRead": 10830183,
+          "cacheWrite": 219398,
+          "reasoning": 0,
+          "tokens": 11090123,
+          "messages": 81,
+          "cost": 3.0477364999999996,
+          "model": "claude-sonnet-5",
+          "providers": "anthropic,zed.dev",
+          "days": 3,
+          "firstDate": "2026-07-09",
+          "lastDate": "2026-07-15"
+        },
+        {
+          "input": 60491,
+          "output": 45581,
+          "cacheRead": 5877127,
+          "cacheWrite": 839243,
+          "reasoning": 0,
+          "tokens": 6822442,
+          "messages": 11,
+          "cost": 5.77548735,
+          "model": "claude-sonnet-4-6",
+          "providers": "anthropic",
+          "days": 2,
+          "firstDate": "2026-03-04",
+          "lastDate": "2026-04-21"
+        },
+        {
+          "input": 104,
+          "output": 86233,
+          "cacheRead": 5815869,
+          "cacheWrite": 584350,
+          "reasoning": 0,
+          "tokens": 6486556,
+          "messages": 5,
+          "cost": 8.716467000000002,
+          "model": "claude-opus-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-07-25",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 969899,
+          "output": 25846,
+          "cacheRead": 3544832,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 4540577,
+          "messages": 12,
+          "cost": 2.66983605,
+          "model": "gpt-5.3-codex",
+          "providers": "openai",
+          "days": 5,
+          "firstDate": "2026-02-10",
+          "lastDate": "2026-05-06"
+        },
+        {
+          "input": 219819,
+          "output": 30048,
+          "cacheRead": 3442308,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 3692175,
+          "messages": 5,
+          "cost": 0.8850195000000001,
+          "model": "composer-2.5",
+          "providers": "cursor",
+          "days": 3,
+          "firstDate": "2026-06-25",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 429655,
+          "output": 40746,
+          "cacheRead": 2608864,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 3079265,
+          "messages": 12,
+          "cost": 1.6020657000000003,
+          "model": "composer-2",
+          "providers": "cursor",
+          "days": 3,
+          "firstDate": "2026-04-05",
+          "lastDate": "2026-05-14"
+        },
+        {
+          "input": 308080,
+          "output": 31824,
+          "cacheRead": 2546944,
+          "cacheWrite": 0,
+          "reasoning": 130,
+          "tokens": 2886978,
+          "messages": 11,
+          "cost": 1.886246,
+          "model": "gpt-5.4",
+          "providers": "openai",
+          "days": 2,
+          "firstDate": "2026-03-15",
+          "lastDate": "2026-04-05"
+        },
+        {
+          "input": 136837,
+          "output": 51574,
+          "cacheRead": 2097737,
+          "cacheWrite": 352032,
+          "reasoning": 0,
+          "tokens": 2638180,
+          "messages": 20,
+          "cost": 2.91263025,
+          "model": "claude-sonnet-4-5",
+          "providers": "anthropic",
+          "days": 6,
+          "firstDate": "2025-10-17",
+          "lastDate": "2026-07-06"
+        },
+        {
+          "input": 35545,
+          "output": 40753,
+          "cacheRead": 1798115,
+          "cacheWrite": 202272,
+          "reasoning": 0,
+          "tokens": 2076685,
+          "messages": 273,
+          "cost": 0.71793,
+          "model": "claude-sonnet-4",
+          "providers": "anthropic",
+          "days": 38,
+          "firstDate": "2025-05-23",
+          "lastDate": "2025-10-20"
+        },
+        {
+          "input": 90982,
+          "output": 39021,
+          "cacheRead": 1817806,
+          "cacheWrite": 37527,
+          "reasoning": 0,
+          "tokens": 1985336,
+          "messages": 3,
+          "cost": 0.63,
+          "model": "agent_review",
+          "providers": "cursor",
+          "days": 1,
+          "firstDate": "2026-03-04",
+          "lastDate": "2026-03-04"
+        },
+        {
+          "input": 96951,
+          "output": 10098,
+          "cacheRead": 802046,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 909095,
+          "messages": 25,
+          "cost": 0.09806025000000002,
+          "model": "auto",
+          "providers": "cursor",
+          "days": 7,
+          "firstDate": "2025-04-28",
+          "lastDate": "2026-07-17"
+        },
+        {
+          "input": 46190,
+          "output": 17556,
+          "cacheRead": 308608,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 372354,
+          "messages": 6,
+          "cost": 0.2718735,
+          "model": "gpt-5",
+          "providers": "openai",
+          "days": 3,
+          "firstDate": "2025-08-08",
+          "lastDate": "2025-09-23"
+        },
+        {
+          "input": 80482,
+          "output": 5315,
+          "cacheRead": 117952,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 203749,
+          "messages": 1,
+          "cost": 0.41598270000000004,
+          "model": "composer-1.5",
+          "providers": "cursor",
+          "days": 1,
+          "firstDate": "2026-03-16",
+          "lastDate": "2026-03-16"
+        },
+        {
+          "input": 5286,
+          "output": 10166,
+          "cacheRead": 128463,
+          "cacheWrite": 18136,
+          "reasoning": 0,
+          "tokens": 162051,
+          "messages": 9,
+          "cost": 0.84174,
+          "model": "claude-opus-4",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2025-06-09",
+          "lastDate": "2025-06-09"
+        },
+        {
+          "input": 98964,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 98964,
+          "messages": 3,
+          "cost": 0.197928,
+          "model": "grok-4.5",
+          "providers": "xai",
+          "days": 2,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 3576,
+          "output": 385,
+          "cacheRead": 25328,
+          "cacheWrite": 14415,
+          "reasoning": 0,
+          "tokens": 43704,
+          "messages": 3,
+          "cost": 0.005525400000000001,
+          "model": "big-pickle",
+          "providers": "opencode",
+          "days": 1,
+          "firstDate": "2026-03-17",
+          "lastDate": "2026-03-17"
+        },
+        {
+          "input": 4065,
+          "output": 224,
+          "cacheRead": 26176,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 30465,
+          "messages": 1,
+          "cost": 0.0016725199999999998,
+          "model": "grok-code-fast-1",
+          "providers": "xai",
+          "days": 1,
+          "firstDate": "2025-12-30",
+          "lastDate": "2025-12-30"
+        },
+        {
+          "input": 37,
+          "output": 79,
+          "cacheRead": 0,
+          "cacheWrite": 19274,
+          "reasoning": 0,
+          "tokens": 19390,
+          "messages": 1,
+          "cost": 0.0245245,
+          "model": "claude-haiku-4-5",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2026-06-27",
+          "lastDate": "2026-06-27"
+        },
+        {
+          "input": 11700,
+          "output": 215,
+          "cacheRead": 72,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 11987,
+          "messages": 1,
+          "cost": 0,
+          "model": "glm-4.7",
+          "providers": "opencode",
+          "days": 1,
+          "firstDate": "2026-01-04",
+          "lastDate": "2026-01-04"
+        },
+        {
+          "input": 9817,
+          "output": 398,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 10215,
+          "messages": 1,
+          "cost": 0.024409999999999998,
+          "model": "gemini-3-pro-preview",
+          "providers": "google",
+          "days": 1,
+          "firstDate": "2025-11-20",
+          "lastDate": "2025-11-20"
+        },
+        {
+          "input": 163,
+          "output": 326,
+          "cacheRead": 6016,
+          "cacheWrite": 0,
+          "reasoning": 256,
+          "tokens": 6761,
+          "messages": 1,
+          "cost": 0,
+          "model": "unknown",
+          "providers": "openai",
+          "days": 1,
+          "firstDate": "2025-09-16",
+          "lastDate": "2025-09-16"
+        },
+        {
+          "input": 0,
+          "output": 345,
+          "cacheRead": 0,
+          "cacheWrite": 5623,
+          "reasoning": 0,
+          "tokens": 5968,
+          "messages": 2,
+          "cost": 0.0009128699999999999,
+          "model": "kimi-k2-instruct",
+          "providers": "cursor",
+          "days": 2,
+          "firstDate": "2025-11-09",
+          "lastDate": "2026-01-29"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 1,
+          "cost": 0,
+          "model": "claude-3-5-sonnet",
+          "providers": "anthropic",
+          "days": 1,
+          "firstDate": "2025-04-28",
+          "lastDate": "2025-04-28"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 30,
+          "cost": 0,
+          "model": "claude-3-7-sonnet",
+          "providers": "anthropic",
+          "days": 9,
+          "firstDate": "2025-05-06",
+          "lastDate": "2025-06-24"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 6,
+          "cost": 0,
+          "model": "gemini-2.5-pro",
+          "providers": "google",
+          "days": 3,
+          "firstDate": "2025-05-09",
+          "lastDate": "2025-07-03"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 2,
+          "cost": 0,
+          "model": "cursor-small",
+          "providers": "cursor",
+          "days": 1,
+          "firstDate": "2025-05-12",
+          "lastDate": "2025-05-12"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 3,
+          "cost": 0,
+          "model": "gpt-4.1",
+          "providers": "openai",
+          "days": 1,
+          "firstDate": "2025-05-12",
+          "lastDate": "2025-05-12"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 2,
+          "cost": 0,
+          "model": "o3",
+          "providers": "openai",
+          "days": 2,
+          "firstDate": "2025-06-11",
+          "lastDate": "2025-07-03"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 5,
+          "cost": 0,
+          "model": "<synthetic>",
+          "providers": "unknown",
+          "days": 4,
+          "firstDate": "2026-06-07",
+          "lastDate": "2026-07-01"
+        }
+      ],
+      "byClient": [
+        {
+          "input": 8904791,
+          "output": 17736461,
+          "cacheRead": 1352627767,
+          "cacheWrite": 80909250,
+          "reasoning": 0,
+          "tokens": 1460178269,
+          "messages": 1358,
+          "cost": 2425.69634119,
+          "client": "cursor",
+          "days": 149,
+          "firstDate": "2025-04-28",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 8314780,
+          "output": 947491,
+          "cacheRead": 148848384,
+          "cacheWrite": 0,
+          "reasoning": 438624,
+          "tokens": 158549279,
+          "messages": 2296,
+          "cost": 123.02134615,
+          "client": "codex",
+          "days": 33,
+          "firstDate": "2025-09-16",
+          "lastDate": "2026-07-18"
+        },
+        {
+          "input": 713928,
+          "output": 974314,
+          "cacheRead": 137929673,
+          "cacheWrite": 4570820,
+          "reasoning": 0,
+          "tokens": 144188735,
+          "messages": 1083,
+          "cost": 182.4669046,
+          "client": "claude",
+          "days": 17,
+          "firstDate": "2026-06-01",
+          "lastDate": "2026-07-18"
+        },
+        {
+          "input": 621276,
+          "output": 77434,
+          "cacheRead": 15366656,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 16065366,
+          "messages": 182,
+          "cost": 13.112727999999999,
+          "client": "pi",
+          "days": 2,
+          "firstDate": "2026-07-20",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 98964,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 98964,
+          "messages": 3,
+          "cost": 0.197928,
+          "client": "grok",
+          "days": 2,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 15276,
+          "output": 600,
+          "cacheRead": 25400,
+          "cacheWrite": 14415,
+          "reasoning": 0,
+          "tokens": 55691,
+          "messages": 4,
+          "cost": 0.005525400000000001,
+          "client": "opencode",
+          "days": 2,
+          "firstDate": "2026-01-04",
+          "lastDate": "2026-03-17"
+        },
+        {
+          "input": 3,
+          "output": 1479,
+          "cacheRead": 6706,
+          "cacheWrite": 6357,
+          "reasoning": 0,
+          "tokens": 14545,
+          "messages": 2,
+          "cost": 0.0497717,
+          "client": "zed",
+          "days": 2,
+          "firstDate": "2026-03-14",
+          "lastDate": "2026-07-12"
+        }
+      ],
+      "byProvider": [
+        {
+          "input": 6607647,
+          "output": 18476262,
+          "cacheRead": 1463623888,
+          "cacheWrite": 85436920,
+          "reasoning": 0,
+          "tokens": 1574144717,
+          "messages": 2343,
+          "cost": 2595.74349445,
+          "provider": "anthropic",
+          "days": 140,
+          "firstDate": "2025-04-28",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 11015357,
+          "output": 1133243,
+          "cacheRead": 182333440,
+          "cacheWrite": 0,
+          "reasoning": 438624,
+          "tokens": 194920664,
+          "messages": 2513,
+          "cost": 144.89570195,
+          "provider": "openai",
+          "days": 48,
+          "firstDate": "2025-05-12",
+          "lastDate": "2026-07-25"
+        },
+        {
+          "input": 917889,
+          "output": 125573,
+          "cacheRead": 8788976,
+          "cacheWrite": 43150,
+          "reasoning": 0,
+          "tokens": 9875588,
+          "messages": 50,
+          "cost": 3.632041020000001,
+          "provider": "cursor",
+          "days": 18,
+          "firstDate": "2025-04-28",
+          "lastDate": "2026-07-17"
+        },
+        {
+          "input": 103029,
+          "output": 224,
+          "cacheRead": 26176,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 129429,
+          "messages": 4,
+          "cost": 0.19960052,
+          "provider": "xai",
+          "days": 3,
+          "firstDate": "2025-12-30",
+          "lastDate": "2026-07-23"
+        },
+        {
+          "input": 15276,
+          "output": 600,
+          "cacheRead": 25400,
+          "cacheWrite": 14415,
+          "reasoning": 0,
+          "tokens": 55691,
+          "messages": 4,
+          "cost": 0.005525400000000001,
+          "provider": "opencode",
+          "days": 2,
+          "firstDate": "2026-01-04",
+          "lastDate": "2026-03-17"
+        },
+        {
+          "input": 3,
+          "output": 1479,
+          "cacheRead": 6706,
+          "cacheWrite": 6357,
+          "reasoning": 0,
+          "tokens": 14545,
+          "messages": 2,
+          "cost": 0.0497717,
+          "provider": "zed.dev",
+          "days": 2,
+          "firstDate": "2026-03-14",
+          "lastDate": "2026-07-12"
+        },
+        {
+          "input": 9817,
+          "output": 398,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 10215,
+          "messages": 7,
+          "cost": 0.024409999999999998,
+          "provider": "google",
+          "days": 4,
+          "firstDate": "2025-05-09",
+          "lastDate": "2025-11-20"
+        },
+        {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "tokens": 0,
+          "messages": 5,
+          "cost": 0,
+          "provider": "unknown",
+          "days": 4,
+          "firstDate": "2026-06-07",
+          "lastDate": "2026-07-01"
+        }
+      ]
+    }
+  },
+  "daily": [
+    {
+      "date": "2026-07-04",
+      "tokens": 23371030,
+      "cost": 54.8431315,
+      "messages": 10,
+      "providers": {
+        "anthropic": {
+          "tokens": 23371030,
+          "cost": 54.8431315
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 23371030,
+          "cost": 54.8431315
+        }
+      }
+    },
+    {
+      "date": "2026-07-05",
+      "tokens": 25110339,
+      "cost": 62.4531605,
+      "messages": 40,
+      "providers": {
+        "openai": {
+          "tokens": 2630875,
+          "cost": 2.8481229999999997
+        },
+        "anthropic": {
+          "tokens": 22479464,
+          "cost": 59.6050375
+        }
+      },
+      "clients": {
+        "codex": {
+          "tokens": 2630875,
+          "cost": 2.8481229999999997
+        },
+        "cursor": {
+          "tokens": 22479464,
+          "cost": 59.6050375
+        }
+      },
+      "active": 376243
+    },
+    {
+      "date": "2026-07-06",
+      "tokens": 24042288,
+      "cost": 51.4761285,
+      "messages": 6,
+      "providers": {
+        "anthropic": {
+          "tokens": 24042288,
+          "cost": 51.4761285
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 24042288,
+          "cost": 51.4761285
+        }
+      }
+    },
+    {
+      "date": "2026-07-07",
+      "tokens": 13423689,
+      "cost": 33.23363375,
+      "messages": 12,
+      "providers": {
+        "anthropic": {
+          "tokens": 11398779,
+          "cost": 32.77003725
+        },
+        "cursor": {
+          "tokens": 2024910,
+          "cost": 0.4635965
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 13423689,
+          "cost": 33.23363375
+        }
+      }
+    },
+    {
+      "date": "2026-07-09",
+      "tokens": 17466155,
+      "cost": 15.2013478,
+      "messages": 135,
+      "providers": {
+        "anthropic": {
+          "tokens": 17466155,
+          "cost": 15.2013478
+        }
+      },
+      "clients": {
+        "claude": {
+          "tokens": 16131213,
+          "cost": 13.0237438
+        },
+        "cursor": {
+          "tokens": 1334942,
+          "cost": 2.177604
+        }
+      },
+      "active": 1839097
+    },
+    {
+      "date": "2026-07-10",
+      "tokens": 5744843,
+      "cost": 7.62039,
+      "messages": 60,
+      "providers": {
+        "openai": {
+          "tokens": 5744843,
+          "cost": 7.62039
+        }
+      },
+      "clients": {
+        "codex": {
+          "tokens": 5744843,
+          "cost": 7.62039
+        }
+      },
+      "active": 1429251
+    },
+    {
+      "date": "2026-07-11",
+      "tokens": 290168,
+      "cost": 0.458299,
+      "messages": 10,
+      "providers": {
+        "openai": {
+          "tokens": 290168,
+          "cost": 0.458299
+        }
+      },
+      "clients": {
+        "codex": {
+          "tokens": 290168,
+          "cost": 0.458299
+        }
+      },
+      "active": 117390
+    },
+    {
+      "date": "2026-07-12",
+      "tokens": 17469024,
+      "cost": 31.193444550000002,
+      "messages": 14,
+      "providers": {
+        "anthropic": {
+          "tokens": 15757762,
+          "cost": 30.667320250000003
+        },
+        "cursor": {
+          "tokens": 1656279,
+          "cost": 0.4038984
+        },
+        "xai": {
+          "tokens": 48172,
+          "cost": 0.096344
+        },
+        "zed.dev": {
+          "tokens": 6811,
+          "cost": 0.025881900000000003
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 17414041,
+          "cost": 31.071218650000002
+        },
+        "grok": {
+          "tokens": 48172,
+          "cost": 0.096344
+        },
+        "zed": {
+          "tokens": 6811,
+          "cost": 0.025881900000000003
+        }
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "tokens": 9040103,
+      "cost": 17.989202499999998,
+      "messages": 25,
+      "providers": {
+        "openai": {
+          "tokens": 498726,
+          "cost": 0.634566
+        },
+        "anthropic": {
+          "tokens": 8541377,
+          "cost": 17.354636499999998
+        }
+      },
+      "clients": {
+        "codex": {
+          "tokens": 498726,
+          "cost": 0.634566
+        },
+        "cursor": {
+          "tokens": 8541377,
+          "cost": 17.354636499999998
+        }
+      },
+      "active": 208411
+    },
+    {
+      "date": "2026-07-14",
+      "tokens": 4185675,
+      "cost": 7.8661639999999995,
+      "messages": 3,
+      "providers": {
+        "anthropic": {
+          "tokens": 4185675,
+          "cost": 7.8661639999999995
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 4185675,
+          "cost": 7.8661639999999995
+        }
+      }
+    },
+    {
+      "date": "2026-07-15",
+      "tokens": 49874063,
+      "cost": 95.05950680000001,
+      "messages": 212,
+      "providers": {
+        "anthropic": {
+          "tokens": 39650139,
+          "cost": 84.0062778
+        },
+        "openai": {
+          "tokens": 10223924,
+          "cost": 11.053229
+        }
+      },
+      "clients": {
+        "claude": {
+          "tokens": 2283039,
+          "cost": 5.5517633
+        },
+        "codex": {
+          "tokens": 10223924,
+          "cost": 11.053229
+        },
+        "cursor": {
+          "tokens": 37367100,
+          "cost": 78.4545145
+        }
+      },
+      "active": 2957296
+    },
+    {
+      "date": "2026-07-16",
+      "tokens": 100170533,
+      "cost": 202.18199949999996,
+      "messages": 79,
+      "providers": {
+        "anthropic": {
+          "tokens": 100170533,
+          "cost": 202.18199949999996
+        }
+      },
+      "clients": {
+        "claude": {
+          "tokens": 5103241,
+          "cost": 8.964959
+        },
+        "cursor": {
+          "tokens": 95067292,
+          "cost": 193.21704049999994
+        }
+      },
+      "active": 795156
+    },
+    {
+      "date": "2026-07-17",
+      "tokens": 42555245,
+      "cost": 103.73245094999999,
+      "messages": 66,
+      "providers": {
+        "anthropic": {
+          "tokens": 42075874,
+          "cost": 103.68041849999999
+        },
+        "cursor": {
+          "tokens": 479371,
+          "cost": 0.05203245000000001
+        }
+      },
+      "clients": {
+        "claude": {
+          "tokens": 6798144,
+          "cost": 11.550322
+        },
+        "cursor": {
+          "tokens": 35757101,
+          "cost": 92.18212894999999
+        }
+      },
+      "active": 751666
+    },
+    {
+      "date": "2026-07-18",
+      "tokens": 145096354,
+      "cost": 255.76650499999997,
+      "messages": 120,
+      "providers": {
+        "anthropic": {
+          "tokens": 143206266,
+          "cost": 253.54984499999998
+        },
+        "openai": {
+          "tokens": 1890088,
+          "cost": 2.21666
+        }
+      },
+      "clients": {
+        "claude": {
+          "tokens": 6346809,
+          "cost": 9.7848405
+        },
+        "codex": {
+          "tokens": 1890088,
+          "cost": 2.21666
+        },
+        "cursor": {
+          "tokens": 136859457,
+          "cost": 243.76500449999997
+        }
+      },
+      "active": 1017055
+    },
+    {
+      "date": "2026-07-19",
+      "tokens": 79911103,
+      "cost": 129.222013,
+      "messages": 22,
+      "providers": {
+        "anthropic": {
+          "tokens": 79911103,
+          "cost": 129.222013
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 79911103,
+          "cost": 129.222013
+        }
+      }
+    },
+    {
+      "date": "2026-07-20",
+      "tokens": 79305629,
+      "cost": 164.8578945,
+      "messages": 62,
+      "providers": {
+        "anthropic": {
+          "tokens": 77224327,
+          "cost": 162.65038049999998
+        },
+        "openai": {
+          "tokens": 2081302,
+          "cost": 2.207514
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 77224327,
+          "cost": 162.65038049999998
+        },
+        "pi": {
+          "tokens": 2081302,
+          "cost": 2.207514
+        }
+      },
+      "active": 552065
+    },
+    {
+      "date": "2026-07-21",
+      "tokens": 9909442,
+      "cost": 35.01390000000001,
+      "messages": 10,
+      "providers": {
+        "anthropic": {
+          "tokens": 9909442,
+          "cost": 35.01390000000001
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 9909442,
+          "cost": 35.01390000000001
+        }
+      }
+    },
+    {
+      "date": "2026-07-22",
+      "tokens": 9234445,
+      "cost": 35.4261185,
+      "messages": 10,
+      "providers": {
+        "anthropic": {
+          "tokens": 9234445,
+          "cost": 35.4261185
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 9234445,
+          "cost": 35.4261185
+        }
+      }
+    },
+    {
+      "date": "2026-07-23",
+      "tokens": 12345024,
+      "cost": 24.031083499999998,
+      "messages": 8,
+      "providers": {
+        "anthropic": {
+          "tokens": 12294232,
+          "cost": 23.9294995
+        },
+        "xai": {
+          "tokens": 50792,
+          "cost": 0.101584
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 12294232,
+          "cost": 23.9294995
+        },
+        "grok": {
+          "tokens": 50792,
+          "cost": 0.101584
+        }
+      },
+      "active": 153432
+    },
+    {
+      "date": "2026-07-24",
+      "tokens": 28106049,
+      "cost": 53.905716999999996,
+      "messages": 5,
+      "providers": {
+        "anthropic": {
+          "tokens": 28106049,
+          "cost": 53.905716999999996
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 28106049,
+          "cost": 53.905716999999996
+        }
+      }
+    },
+    {
+      "date": "2026-07-25",
+      "tokens": 39991681,
+      "cost": 70.426107,
+      "messages": 170,
+      "providers": {
+        "anthropic": {
+          "tokens": 26007617,
+          "cost": 59.52089300000001
+        },
+        "openai": {
+          "tokens": 13984064,
+          "cost": 10.905213999999999
+        }
+      },
+      "clients": {
+        "cursor": {
+          "tokens": 26007617,
+          "cost": 59.52089300000001
+        },
+        "pi": {
+          "tokens": 13984064,
+          "cost": 10.905213999999999
+        }
+      },
+      "active": 1738691
+    }
+  ],
+  "devices": [
+    {
+      "name": "MacbookPro",
+      "firstSeen": 1784199105234,
+      "lastSeen": 1784989231554,
+      "cliVersion": "3.1.0",
+      "sessions": 1458,
+      "activeMs": 35685693,
+      "longestMs": 2155519,
+      "maxConcurrent": 2,
+      "mcpServers": ["context7"],
+      "activeDays": 164,
+      "tokens": 1657484859,
+      "messages": 3869,
+      "cost": 2593.5736789899997
+    },
+    {
+      "name": "OracleARM",
+      "firstSeen": 1784199107887,
+      "lastSeen": 1784988999116,
+      "cliVersion": "3.1.0",
+      "sessions": 17,
+      "activeMs": 2957296,
+      "longestMs": 642736,
+      "maxConcurrent": 3,
+      "mcpServers": null,
+      "activeDays": 1,
+      "tokens": 12506963,
+      "messages": 182,
+      "cost": 16.6049923
+    },
+    {
+      "name": "UbuntuPC",
+      "firstSeen": 1784513632313,
+      "lastSeen": 1784881716642,
+      "cliVersion": "3.1.0",
+      "sessions": 42,
+      "activeMs": 18048115,
+      "longestMs": 2482024,
+      "maxConcurrent": 1,
+      "mcpServers": ["context7"],
+      "activeDays": 12,
+      "tokens": 109159027,
+      "messages": 877,
+      "cost": 134.37187375
+    }
+  ]
+}

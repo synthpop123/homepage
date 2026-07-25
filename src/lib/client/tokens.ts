@@ -70,12 +70,24 @@ export type SiteDevice = {
 }
 
 export type Site = {
+  schemaVersion: number
   generatedAt: string
   today: string
   ranges: Record<RangeKey, SiteRange>
   daily: SiteDay[]
   devices: SiteDevice[]
 }
+
+/**
+ * The /api/site schema version this dashboard was built against. The
+ * collector stamps its payload (`schemaVersion`, SITE_VERSION in
+ * tokens-worker/src/site.ts) and bumps it on any shape or semantics
+ * change; isSite rejects every other version, so a stale cache or a
+ * mid-deploy mismatch falls back to a refetch (or the fallback UI)
+ * instead of a renderer crash. Bump both sides together, and refresh
+ * the fixture in tokens.test.ts.
+ */
+export const SITE_SCHEMA_VERSION = 4
 
 export type RangeKey = "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -96,37 +108,117 @@ export const COMPOSITION: { key: keyof Usage; label: string }[] = [
   { key: "reasoning", label: "Reasoning" },
 ]
 
+/* Payload decoding ---------------------------------------------------- */
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+const isCount = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value)
+
+const isDateOrNull = (value: unknown): boolean =>
+  value === null || typeof value === "string"
+
+/** The full metric set every totals object and breakdown row carries. */
+const hasUsage = (row: Record<string, unknown>): boolean =>
+  COMPOSITION.every(({ key }) => isCount(row[key])) &&
+  isCount(row.tokens) &&
+  isCount(row.messages) &&
+  isCount(row.cost)
+
+const isSpanRow = (value: unknown, id: string): boolean =>
+  isRecord(value) &&
+  typeof value[id] === "string" &&
+  hasUsage(value) &&
+  isCount(value.days) &&
+  isDateOrNull(value.firstDate) &&
+  isDateOrNull(value.lastDate)
+
+/** A daily providers/clients map the trend chart Object.entries() over. */
+const isSlices = (value: unknown): boolean =>
+  isRecord(value) &&
+  Object.values(value).every(
+    (slice) => isRecord(slice) && isCount(slice.tokens) && isCount(slice.cost),
+  )
+
+const isDay = (value: unknown): boolean =>
+  isRecord(value) &&
+  typeof value.date === "string" &&
+  isCount(value.tokens) &&
+  isCount(value.cost) &&
+  isCount(value.messages) &&
+  (value.active === undefined || isCount(value.active)) &&
+  isSlices(value.providers) &&
+  isSlices(value.clients)
+
+const isCountOrNull = (value: unknown): boolean =>
+  value === null || isCount(value)
+
 /**
- * Minimal runtime decoder for the /api/site payload: the spine the
- * dashboard indexes unconditionally (all four ranges with their
- * breakdown arrays, the daily series, the device list, and
- * `generatedAt`, which the controller compares to skip no-op
- * re-renders). Deeper fields stay lenient — a missing optional is
- * handled at the render site.
+ * Device rows are validated in full. The metadata fields render behind
+ * truthiness guards, but their types still matter: a string mcpServers
+ * has a truthy .length and no .join() — exactly the malformed-cache
+ * crash this decoder exists to keep away from the renderers.
+ */
+const isDevice = (value: unknown): boolean =>
+  isRecord(value) &&
+  typeof value.name === "string" &&
+  isCountOrNull(value.firstSeen) &&
+  isCountOrNull(value.lastSeen) &&
+  (value.cliVersion === null || typeof value.cliVersion === "string") &&
+  isCountOrNull(value.sessions) &&
+  isCountOrNull(value.activeMs) &&
+  isCountOrNull(value.longestMs) &&
+  isCountOrNull(value.maxConcurrent) &&
+  (value.mcpServers === null ||
+    (Array.isArray(value.mcpServers) &&
+      value.mcpServers.every((item) => typeof item === "string"))) &&
+  isCount(value.activeDays) &&
+  isCount(value.tokens) &&
+  isCount(value.messages) &&
+  isCount(value.cost)
+
+const isRange = (value: unknown): boolean =>
+  isRecord(value) &&
+  (value.from === null || typeof value.from === "string") &&
+  isRecord(value.totals) &&
+  hasUsage(value.totals) &&
+  isCount(value.totals.activeDays) &&
+  isDateOrNull(value.totals.firstDate) &&
+  isDateOrNull(value.totals.lastDate) &&
+  Array.isArray(value.byModel) &&
+  value.byModel.every(
+    (row) =>
+      isSpanRow(row, "model") &&
+      typeof (row as Record<string, unknown>).providers === "string",
+  ) &&
+  Array.isArray(value.byClient) &&
+  value.byClient.every((row) => isSpanRow(row, "client")) &&
+  Array.isArray(value.byProvider) &&
+  value.byProvider.every((row) => isSpanRow(row, "provider"))
+
+/**
+ * Runtime decoder for the /api/site payload, strict over every field
+ * the renderers actually read: the schema version (anything the
+ * dashboard wasn't built against is rejected outright), all four
+ * ranges with their totals and breakdown rows (metrics + usage spans),
+ * every daily row including the providers/clients slice maps the trend
+ * chart iterates, and the device list down to its nullable metadata —
+ * render-site truthiness guards handle absence, not wrong types.
  */
 export function isSite(data: unknown): data is Site {
-  if (typeof data !== "object" || data === null) return false
-  const site = data as Record<string, unknown>
-  const ranges = site.ranges as Record<string, unknown> | null
+  if (!isRecord(data)) return false
+  const ranges = data.ranges
   return (
-    typeof site.generatedAt === "string" &&
-    typeof site.today === "string" &&
-    Array.isArray(site.daily) &&
-    Array.isArray(site.devices) &&
-    typeof ranges === "object" &&
-    ranges !== null &&
-    RANGES.every(({ key }) => {
-      const range = ranges[key] as Record<string, unknown> | undefined
-      return (
-        typeof range === "object" &&
-        range !== null &&
-        typeof range.totals === "object" &&
-        range.totals !== null &&
-        Array.isArray(range.byModel) &&
-        Array.isArray(range.byClient) &&
-        Array.isArray(range.byProvider)
-      )
-    })
+    data.schemaVersion === SITE_SCHEMA_VERSION &&
+    typeof data.generatedAt === "string" &&
+    typeof data.today === "string" &&
+    isRecord(ranges) &&
+    RANGES.every(({ key }) => isRange(ranges[key])) &&
+    Array.isArray(data.daily) &&
+    data.daily.every(isDay) &&
+    Array.isArray(data.devices) &&
+    data.devices.every(isDevice)
   )
 }
 
@@ -136,14 +228,17 @@ export function isSite(data: unknown): data is Site {
  * a session-cached copy (any age) is delivered synchronously for an
  * instant first paint, then the network answer follows — cheap, since
  * the collector revalidates by ETag and an unchanged payload is a
- * ~0-byte 304 out of the browser's HTTP cache.
+ * ~0-byte 304 out of the browser's HTTP cache. The schema version is
+ * part of the cache key, so a deploy that bumps the contract never
+ * even reads the previous schema's entries (isSite would reject them
+ * anyway — belt and braces).
  */
 export const loadSite = (
   endpoint: string,
   onSite: (site: Site) => void,
 ): Promise<void> =>
   swr(
-    `tokens:site:${endpoint}`,
+    `tokens:site:v${SITE_SCHEMA_VERSION}:${endpoint}`,
     () => fetchJson<Site>(`${endpoint}/api/site`),
     isSite,
     onSite,

@@ -20,6 +20,7 @@ import {
   monthlyBuckets,
   shiftDays,
   type Site,
+  SITE_SCHEMA_VERSION,
   type SiteDay,
   type SiteRange,
   stackFor,
@@ -28,6 +29,7 @@ import {
   weekdayProfile,
   windowTotals,
 } from "./tokens"
+import fixture from "./tokens.site-fixture.json"
 
 /* Fixtures ------------------------------------------------------------ */
 
@@ -58,6 +60,22 @@ const usage = (tokens = 0): Usage => ({
 
 const span: UsageSpan = { days: 0, firstDate: null, lastDate: null }
 
+const device = (): Site["devices"][number] => ({
+  name: "MacbookPro",
+  firstSeen: 1784199105234,
+  lastSeen: 1784989231554,
+  cliVersion: "3.1.0",
+  sessions: 12,
+  activeMs: 3_600_000,
+  longestMs: 1_200_000,
+  maxConcurrent: 2,
+  mcpServers: ["context7"],
+  activeDays: 3,
+  tokens: 100,
+  messages: 5,
+  cost: 1.5,
+})
+
 const rangeStats = (
   byProvider: SiteRange["byProvider"] = [],
   byClient: SiteRange["byClient"] = [],
@@ -73,6 +91,7 @@ const site = (
   byProvider: SiteRange["byProvider"] = [],
   byClient: SiteRange["byClient"] = [],
 ): Site => ({
+  schemaVersion: SITE_SCHEMA_VERSION,
   generatedAt: "2026-07-20T00:00:00Z",
   today: "2026-07-20",
   ranges: {
@@ -500,6 +519,16 @@ describe("isSite", () => {
     expect(isSite(site())).toBe(true)
   })
 
+  it("rejects every schema version but the one it was built against", () => {
+    expect(isSite({ ...site(), schemaVersion: undefined })).toBe(false)
+    expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION - 1 })).toBe(
+      false,
+    )
+    expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION + 1 })).toBe(
+      false,
+    )
+  })
+
   it("rejects payloads missing the spine the dashboard indexes", () => {
     expect(isSite(null)).toBe(false)
     expect(isSite([])).toBe(false)
@@ -515,5 +544,98 @@ describe("isSite", () => {
     // @ts-expect-error deliberately breaking the shape
     badBreakdown.ranges.all.byModel = {}
     expect(isSite(badBreakdown)).toBe(false)
+  })
+
+  it("rejects rows missing fields the renderers read unconditionally", () => {
+    // A daily row without its slice maps used to crash the trend
+    // chart's Object.entries() — the exact stale-cache failure the
+    // schema version + strict decoding exist to prevent.
+    const noSlices = site()
+    noSlices.daily = [
+      { date: "2026-07-20", tokens: 1, cost: 0, messages: 1 } as SiteDay,
+    ]
+    expect(isSite(noSlices)).toBe(false)
+
+    const partialTotals = site()
+    // @ts-expect-error deliberately breaking the shape
+    delete partialTotals.ranges.week.totals.cacheRead
+    expect(isSite(partialTotals)).toBe(false)
+
+    const spanless = site([
+      // @ts-expect-error deliberately breaking the shape
+      { ...usage(10), provider: "anthropic" },
+    ])
+    expect(isSite(spanless)).toBe(false)
+
+    const namelessDevice = site()
+    namelessDevice.devices = [{ activeDays: 1 } as Site["devices"][number]]
+    expect(isSite(namelessDevice)).toBe(false)
+  })
+
+  it("rejects device metadata whose types would crash the renderer", () => {
+    const withDevice = (overrides: Record<string, unknown>) => ({
+      ...site(),
+      devices: [{ ...device(), ...overrides }],
+    })
+    expect(isSite(withDevice({}))).toBe(true)
+    expect(
+      isSite(
+        withDevice({
+          cliVersion: null,
+          sessions: null,
+          activeMs: null,
+          longestMs: null,
+          maxConcurrent: null,
+          mcpServers: null,
+        }),
+      ),
+    ).toBe(true)
+    // A string has a truthy .length but no .join() — the exact crash
+    // the device tooltip would hit on a malformed cached payload.
+    expect(isSite(withDevice({ mcpServers: "context7" }))).toBe(false)
+    expect(isSite(withDevice({ mcpServers: ["context7", 1] }))).toBe(false)
+    expect(isSite(withDevice({ mcpServers: undefined }))).toBe(false)
+    expect(isSite(withDevice({ sessions: "12" }))).toBe(false)
+    expect(isSite(withDevice({ activeMs: {} }))).toBe(false)
+    expect(isSite(withDevice({ maxConcurrent: Number.NaN }))).toBe(false)
+    expect(isSite(withDevice({ cliVersion: 3.1 }))).toBe(false)
+    expect(isSite(withDevice({ lastSeen: "yesterday" }))).toBe(false)
+  })
+})
+
+/* Producer contract ----------------------------------------------------- */
+
+describe("/api/site fixture contract", () => {
+  // Captured from the live collector (tokens-worker composeSiteBody,
+  // daily series truncated); the producer-side twin of these assertions
+  // lives in tokens-worker/test/site.spec.ts. Refresh it whenever
+  // SITE_SCHEMA_VERSION bumps: curl the endpoint, keep schemaVersion in
+  // sync, trim `daily`.
+  it("passes the strict decoder", () => {
+    expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
+    expect(isSite(fixture)).toBe(true)
+  })
+
+  it("feeds the render paths the dashboard actually runs", () => {
+    if (!isSite(fixture)) throw new Error("fixture failed decoding")
+    for (const dim of ["provider", "client"] as const) {
+      const stack = stackFor(fixture, dim)
+      expect(stack.ids.length).toBeGreaterThan(1)
+      const buckets = dailyBuckets(fixture.daily, stack, "tokens")
+      expect(buckets).toHaveLength(fixture.daily.length)
+      // Every day's stack segments add back up to the day's total.
+      for (const [i, bucket] of buckets.entries()) {
+        const sum = bucket.segments.reduce((a, b) => a + b, 0)
+        expect(sum).toBeCloseTo(fixture.daily[i].tokens, 5)
+      }
+    }
+    const facts = computeFacts(
+      fillDaily(
+        fixture.daily,
+        fixture.daily[0].date,
+        fixture.daily[fixture.daily.length - 1].date,
+      ),
+    )
+    expect(facts.biggest).not.toBeNull()
   })
 })
