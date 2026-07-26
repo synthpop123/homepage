@@ -10,7 +10,9 @@ import Cursor from "@/assets/icons/ai/cursor.svg"
 import Gemini from "@/assets/icons/ai/gemini.svg"
 import Google from "@/assets/icons/ai/google.svg"
 import Grok from "@/assets/icons/ai/grok.svg"
+import HermesAgent from "@/assets/icons/ai/hermesagent.svg"
 import Kimi from "@/assets/icons/ai/kimi.svg"
+import Moonshot from "@/assets/icons/ai/moonshot.svg"
 import OpenAI from "@/assets/icons/ai/openai.svg"
 import OpenCode from "@/assets/icons/ai/opencode.svg"
 import Pi from "@/assets/icons/ai/pi.svg"
@@ -38,7 +40,9 @@ const AI_ICONS: Record<string, SvgComponent> = {
   gemini: Gemini,
   google: Google,
   grok: Grok,
+  hermesagent: HermesAgent,
   kimi: Kimi,
+  moonshot: Moonshot,
   openai: OpenAI,
   opencode: OpenCode,
   pi: Pi,
@@ -286,6 +290,11 @@ const skeletonRows = (count: number) =>
     --tk-p-cursor: light-dark(#8b5cf6, #a78bfa);
     --tk-p-zed: light-dark(#084ccf, #7a9bff);
     --tk-p-opencode: light-dark(#78716c, #a8a29e);
+    /* Nous ships a cream-on-black brand; a parchment tan keeps it apart
+       from the zinc (xAI) and stone (OpenCode) neutrals. */
+    --tk-p-hermes: light-dark(#8a7248, #cdb37e);
+    /* Moonshot's brand near-black (#16191e), lifted for dark mode. */
+    --tk-p-moonshot: light-dark(#16191e, #e4e4e7);
     --tk-p-other: var(--gray-8);
 
     display: block;
@@ -797,6 +806,14 @@ const skeletonRows = (count: number) =>
 
   tokens-dashboard :global([data-p="opencode"]) {
     --p: var(--tk-p-opencode);
+  }
+
+  tokens-dashboard :global([data-p="hermes"]) {
+    --p: var(--tk-p-hermes);
+  }
+
+  tokens-dashboard :global([data-p="moonshotai"]) {
+    --p: var(--tk-p-moonshot);
   }
 
   /* Breakdown lists */

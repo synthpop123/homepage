@@ -711,12 +711,13 @@ export function levelScale(days: SiteDay[]): (tokens: number) => number {
 
 const CLIENT_LABELS: Record<string, string> = {
   cursor: "Cursor",
-  codex: "Codex CLI",
+  codex: "Codex",
   claude: "Claude Code",
   pi: "Pi",
   opencode: "OpenCode",
   gemini: "Gemini CLI",
-  grok: "Grok CLI",
+  grok: "Grok Build",
+  hermes: "Hermes Agent",
   zed: "Zed",
   unknown: "Other",
   [OTHER]: "Other",
@@ -728,6 +729,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   google: "Google",
   xai: "xAI",
   cursor: "Cursor",
+  moonshotai: "Moonshot AI",
   opencode: "OpenCode",
   "zed.dev": "Zed",
   unknown: "Other",
@@ -749,6 +751,7 @@ const PROVIDER_ICONS: Record<string, string> = {
   google: "google",
   xai: "xai",
   cursor: "cursor",
+  moonshotai: "moonshot",
   opencode: "opencode",
   "zed.dev": "zed",
 }
@@ -761,6 +764,7 @@ const CLIENT_ICONS: Record<string, string> = {
   opencode: "opencode",
   gemini: "gemini",
   grok: "grok",
+  hermes: "hermesagent",
   zed: "zed",
 }
 
