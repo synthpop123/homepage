@@ -58,7 +58,7 @@ Markdown extras: `:::note[Title]` GitHub-style callouts, `$…$`/`$$…$$` math 
 
 ## CI
 
-Every push runs formatting, type checking, unit tests, the production build, and a static internal-link check over the output (`.github/workflows/ci.yml`, actions pinned to commit SHAs). Dependabot keeps the pinned actions and bun dependencies current.
+Every push runs formatting, type checking, unit tests, the production build, and a static internal-link check over the output (`.github/workflows/ci.yml`, actions pinned to commit SHAs).
 
 ## License
 
