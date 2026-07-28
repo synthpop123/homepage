@@ -757,8 +757,7 @@ const PROVIDER_ICONS: Record<string, string> = {
   xai: "xai",
   cursor: "cursor",
   moonshotai: "moonshot",
-  // Z.ai is Zhipu AI's international brand; same mark as the GLM models.
-  zai: "zhipu",
+  zai: "zai",
   opencode: "opencode",
   "zed.dev": "zed",
 }
@@ -784,7 +783,7 @@ const MODEL_ICONS: [RegExp, string][] = [
   [/^grok/, "grok"],
   [/^(composer|cursor|auto$|agent)/, "cursor"],
   [/^kimi/, "kimi"],
-  [/^glm/, "zhipu"],
+  [/^glm/, "zai"],
   [/^big-pickle/, "opencode"],
 ]
 

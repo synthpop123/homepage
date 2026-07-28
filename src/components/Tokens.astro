@@ -17,8 +17,8 @@ import OpenAI from "@/assets/icons/ai/openai.svg"
 import OpenCode from "@/assets/icons/ai/opencode.svg"
 import Pi from "@/assets/icons/ai/pi.svg"
 import XAI from "@/assets/icons/ai/xai.svg"
+import Zai from "@/assets/icons/ai/zai.svg"
 import Zed from "@/assets/icons/ai/zed.svg"
-import Zhipu from "@/assets/icons/ai/zhipu.svg"
 import { TOKENS } from "@/consts"
 import { COMPOSITION, RANGES } from "@/lib/client/tokens"
 
@@ -47,8 +47,8 @@ const AI_ICONS: Record<string, SvgComponent> = {
   opencode: OpenCode,
   pi: Pi,
   xai: XAI,
+  zai: Zai,
   zed: Zed,
-  zhipu: Zhipu,
 }
 
 const overviewCards = [
@@ -295,7 +295,8 @@ const skeletonRows = (count: number) =>
     --tk-p-hermes: light-dark(#8a7248, #cdb37e);
     /* Moonshot's brand near-black (#16191e), lifted for dark mode. */
     --tk-p-moonshot: light-dark(#16191e, #e4e4e7);
-    /* Zhipu/Z.ai brand blue, deeper than Zed's azure. */
+    /* Z.ai brands near-black like Moonshot; keep its Zhipu-heritage
+       blue (deeper than Zed's azure) so the two stay apart in stacks. */
     --tk-p-zai: light-dark(#3859ff, #8da2ff);
     --tk-p-other: var(--gray-8);
 
