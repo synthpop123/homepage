@@ -295,6 +295,8 @@ const skeletonRows = (count: number) =>
     --tk-p-hermes: light-dark(#8a7248, #cdb37e);
     /* Moonshot's brand near-black (#16191e), lifted for dark mode. */
     --tk-p-moonshot: light-dark(#16191e, #e4e4e7);
+    /* Zhipu/Z.ai brand blue, deeper than Zed's azure. */
+    --tk-p-zai: light-dark(#3859ff, #8da2ff);
     --tk-p-other: var(--gray-8);
 
     display: block;
@@ -814,6 +816,10 @@ const skeletonRows = (count: number) =>
 
   tokens-dashboard :global([data-p="moonshotai"]) {
     --p: var(--tk-p-moonshot);
+  }
+
+  tokens-dashboard :global([data-p="zai"]) {
+    --p: var(--tk-p-zai);
   }
 
   /* Breakdown lists */

@@ -87,7 +87,7 @@ export type Site = {
  * instead of a renderer crash. Bump both sides together, and refresh
  * the fixture in tokens.test.ts.
  */
-export const SITE_SCHEMA_VERSION = 4
+export const SITE_SCHEMA_VERSION = 5
 
 export type RangeKey = "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -730,6 +730,11 @@ const PROVIDER_LABELS: Record<string, string> = {
   xai: "xAI",
   cursor: "Cursor",
   moonshotai: "Moonshot AI",
+  zai: "Z.ai",
+  deepseek: "DeepSeek",
+  qwen: "Qwen",
+  // Serving gateways: the collector re-attributes their rows to model
+  // vendors; these ids remain only for models the rules can't place.
   opencode: "OpenCode",
   "zed.dev": "Zed",
   unknown: "Other",
@@ -752,6 +757,8 @@ const PROVIDER_ICONS: Record<string, string> = {
   xai: "xai",
   cursor: "cursor",
   moonshotai: "moonshot",
+  // Z.ai is Zhipu AI's international brand; same mark as the GLM models.
+  zai: "zhipu",
   opencode: "opencode",
   "zed.dev": "zed",
 }
