@@ -220,12 +220,6 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
     text-decoration: none;
   }
 
-  movies-feed :global(.movie-link:hover .title) {
-    text-decoration: underline;
-    text-decoration-thickness: max(1px, 0.0625em);
-    text-underline-offset: 0.15em;
-  }
-
   movies-feed :global(.poster) {
     flex-shrink: 0;
     inline-size: var(--poster-w);
