@@ -19,7 +19,7 @@ import {
   shiftDays,
   windowTotals,
 } from "../tokens"
-import { el, type Query, setCard } from "./dom"
+import { el, type Query, setCard, setDelta as fillDelta } from "./dom"
 
 export function renderOverview(q: Query, site: Site, range: RangeKey) {
   const stats = site.ranges[range]
@@ -27,24 +27,12 @@ export function renderOverview(q: Query, site: Site, range: RangeKey) {
   const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
   const cards = q('[data-cards="overview"]')
 
-  const setDelta = (key: string, text: string, title = "") => {
-    const delta = q(
-      `[data-cards="overview"] .tk-card[data-key="${key}"] .delta`,
+  const setDelta = (key: string, text: string, title = "") =>
+    fillDelta(
+      q(`[data-cards="overview"] .tk-card[data-key="${key}"] .delta`),
+      text,
+      title,
     )
-    if (!delta) return
-    if (!text) {
-      delta.replaceChildren()
-      delta.removeAttribute("title")
-      return
-    }
-    const [arrow, ...rest] = text.split(" ")
-    delta.replaceChildren(
-      el("span", "delta-val", `${arrow} ${rest.shift() ?? ""}`),
-      document.createTextNode(` ${rest.join(" ")}`),
-    )
-    if (title) delta.title = title
-    else delta.removeAttribute("title")
-  }
 
   setCard(
     cards,
@@ -122,7 +110,7 @@ export function renderOverview(q: Query, site: Site, range: RangeKey) {
     }
   }
 
-  const bar = q(".tk-mix-bar")
+  const bar = q(".tk-mix-composition")
   const legend = q(".tk-mix-legend")
   const sum = COMPOSITION.reduce((acc, part) => acc + totals[part.key], 0)
   if (bar) {

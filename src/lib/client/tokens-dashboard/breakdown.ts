@@ -12,7 +12,6 @@ import {
   formatDate,
   formatExact,
   formatMetric,
-  formatShare,
   HIDDEN_MODELS,
   type MetricKey,
   providerLabel,
@@ -21,7 +20,7 @@ import {
   type Usage,
   type UsageSpan,
 } from "../tokens"
-import { el, type Icons, type Query } from "./dom"
+import { el, type Icons, type Query, usageRow } from "./dom"
 
 const TOP_ROWS = 8
 
@@ -80,7 +79,6 @@ export function createBreakdown(q: Query, icons: Icons) {
       const rest = live.slice(TOP_ROWS)
 
       const items = shown.map((row) => {
-        const item = el("li", "tk-row")
         // Row depth that has no column: exact numbers, unit cost, span.
         const parts = [
           `${formatExact(row.usage.tokens)} tokens`,
@@ -100,24 +98,13 @@ export function createBreakdown(q: Query, icons: Icons) {
         if (row.usage.firstDate) {
           parts.push(`first ${formatDate(row.usage.firstDate)}`)
         }
-        item.title = `${row.name} — ${parts.join(" · ")}`
-        // Proportional fill behind the row: its share of the range
-        // total, so the bar width matches the printed percentage.
-        item.style.setProperty(
-          "--w",
-          String(total > 0 ? row.usage[metric] / total : 0),
-        )
-        item.append(
-          icons.slot(aiIcon(group.key, row.id)),
-          el("span", "name", row.name),
-          el("span", "val", formatMetric(row.usage[metric], metric)),
-          el(
-            "span",
-            "share",
-            formatShare(total > 0 ? row.usage[metric] / total : NaN),
-          ),
-        )
-        return item
+        return usageRow(icons, {
+          icon: aiIcon(group.key, row.id),
+          name: row.name,
+          value: formatMetric(row.usage[metric], metric),
+          share: total > 0 ? row.usage[metric] / total : NaN,
+          title: `${row.name} — ${parts.join(" · ")}`,
+        })
       })
 
       if (rest.length > 0) {
