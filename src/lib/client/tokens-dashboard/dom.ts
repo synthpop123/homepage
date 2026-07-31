@@ -1,9 +1,12 @@
 /**
  * Shared DOM plumbing for the Tokens dashboard renderers: element
- * creation, the scoped query helper, stat-card filling, the vendored
- * brand-icon defs, and tooltip positioning. Kept separate so the
- * section renderers don't have to import each other.
+ * creation, the scoped query helper, stat-card filling, delta lines,
+ * breakdown rows, the vendored brand-icon defs, and tooltip
+ * positioning. Kept separate so the section renderers don't have to
+ * import each other.
  */
+
+import { formatShare } from "../tokens"
 
 export const el = (tag: string, className: string, text?: string) => {
   const node = document.createElement(tag)
@@ -35,6 +38,60 @@ export const setCard = (
   valueEl.textContent = value
   if (exact) valueEl.title = exact
   subEl.textContent = sub
+}
+
+/**
+ * Fill a comparison line — "↑ 34% vs yesterday". The arrow and the
+ * magnitude carry the emphasis, the baseline it is measured against
+ * stays muted; an empty `text` clears the line (and `.delta:empty`
+ * collapses it). `title` holds the number being compared to.
+ */
+export const setDelta = (
+  target: HTMLElement | null,
+  text: string,
+  title = "",
+) => {
+  if (!target) return
+  if (!text) {
+    target.replaceChildren()
+    target.removeAttribute("title")
+    return
+  }
+  const [arrow, ...rest] = text.split(" ")
+  target.replaceChildren(
+    el("span", "delta-val", `${arrow} ${rest.shift() ?? ""}`),
+    document.createTextNode(` ${rest.join(" ")}`),
+  )
+  if (title) target.title = title
+  else target.removeAttribute("title")
+}
+
+/** One breakdown row: brand icon, name, metric value, share. */
+export type RowSpec = {
+  icon: string | null
+  name: string
+  value: string
+  /** Share of the section total (0–1, NaN when there is no total): it
+   *  prints as the percentage *and* sizes the fill behind the row, so
+   *  the bar always matches the number next to it. */
+  share: number
+  title?: string
+}
+
+export const usageRow = (icons: Icons, row: RowSpec) => {
+  const item = el("li", "tk-row")
+  if (row.title) item.title = row.title
+  item.style.setProperty(
+    "--w",
+    String(Number.isFinite(row.share) ? row.share : 0),
+  )
+  item.append(
+    icons.slot(row.icon),
+    el("span", "name", row.name),
+    el("span", "val", row.value),
+    el("span", "share", formatShare(row.share)),
+  )
+  return item
 }
 
 /**

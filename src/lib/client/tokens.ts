@@ -87,17 +87,26 @@ export type Site = {
  * instead of a renderer crash. Bump both sides together, and refresh
  * the fixture in tokens.test.ts.
  */
-export const SITE_SCHEMA_VERSION = 5
+export const SITE_SCHEMA_VERSION = 6
 
-export type RangeKey = "week" | "month" | "quarter" | "all"
+export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
 
+/**
+ * The ranges the selector offers. `day` is deliberately not among them:
+ * it is the collector's today-only window, and it backs the standalone
+ * Today section (the only per-model split of a single day the payload
+ * carries) rather than the range-driven parts of the page.
+ */
 export const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
   { key: "week", label: "7 days", days: 7 },
   { key: "month", label: "30 days", days: 30 },
   { key: "quarter", label: "90 days", days: 90 },
   { key: "all", label: "All time", days: null },
 ]
+
+/** Every range key the payload carries — what the decoder validates. */
+export const RANGE_KEYS: RangeKey[] = ["day", ...RANGES.map(({ key }) => key)]
 
 /** The five token categories, in display order (shade 1…5). */
 export const COMPOSITION: { key: keyof Usage; label: string }[] = [
@@ -200,7 +209,7 @@ const isRange = (value: unknown): boolean =>
 /**
  * Runtime decoder for the /api/site payload, strict over every field
  * the renderers actually read: the schema version (anything the
- * dashboard wasn't built against is rejected outright), all four
+ * dashboard wasn't built against is rejected outright), all five
  * ranges with their totals and breakdown rows (metrics + usage spans),
  * every daily row including the providers/clients slice maps the trend
  * chart iterates, and the device list down to its nullable metadata —
@@ -214,7 +223,7 @@ export function isSite(data: unknown): data is Site {
     typeof data.generatedAt === "string" &&
     typeof data.today === "string" &&
     isRecord(ranges) &&
-    RANGES.every(({ key }) => isRange(ranges[key])) &&
+    RANGE_KEYS.every((key) => isRange(ranges[key])) &&
     Array.isArray(data.daily) &&
     data.daily.every(isDay) &&
     Array.isArray(data.devices) &&

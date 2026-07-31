@@ -95,6 +95,7 @@ const site = (
   generatedAt: "2026-07-20T00:00:00Z",
   today: "2026-07-20",
   ranges: {
+    day: rangeStats(),
     week: rangeStats(),
     month: rangeStats(),
     quarter: rangeStats(),
@@ -540,6 +541,12 @@ describe("isSite", () => {
     // @ts-expect-error deliberately breaking the shape
     delete missingRange.ranges.quarter
     expect(isSite(missingRange)).toBe(false)
+    // "day" is not in the range selector but the Today section reads it,
+    // so it is part of the spine like any other range.
+    const missingDay = site()
+    // @ts-expect-error deliberately breaking the shape
+    delete missingDay.ranges.day
+    expect(isSite(missingDay)).toBe(false)
     const badBreakdown = site()
     // @ts-expect-error deliberately breaking the shape
     badBreakdown.ranges.all.byModel = {}
@@ -610,7 +617,10 @@ describe("/api/site fixture contract", () => {
   // daily series truncated); the producer-side twin of these assertions
   // lives in tokens-worker/test/site.spec.ts. Refresh it whenever
   // SITE_SCHEMA_VERSION bumps: curl the endpoint, keep schemaVersion in
-  // sync, trim `daily`.
+  // sync, trim `daily`. `ranges.day` here was reconstructed from the
+  // capture's own today row (the collector was still on schema 5 when it
+  // was taken) — recapture it on the next bump to make it a pure capture
+  // again, ideally late in a day so the range has rows to pin.
   it("passes the strict decoder", () => {
     expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
     expect(isSite(fixture)).toBe(true)

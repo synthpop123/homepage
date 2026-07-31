@@ -22,6 +22,7 @@ import { createBreakdown } from "./breakdown"
 import { renderDevices } from "./devices"
 import { createIcons, scopedQuery } from "./dom"
 import { renderOverview } from "./overview"
+import { renderToday } from "./today"
 import { createRhythmChart, createTrendChart } from "./trend"
 
 export function mountTokensDashboard(root: HTMLElement) {
@@ -74,6 +75,7 @@ export function mountTokensDashboard(root: HTMLElement) {
     const previous = site
     site = loaded
     try {
+      renderToday(q, loaded, icons)
       renderHeatmap(q, loaded)
       renderFacts(q, loaded)
       renderDevices(q, loaded)
