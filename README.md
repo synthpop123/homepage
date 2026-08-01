@@ -14,7 +14,7 @@ Personal homepage and blog at [lkwplus.com](https://lkwplus.com) — built with 
 | Command                | Description                                            |
 | ---------------------- | ------------------------------------------------------ |
 | `bun dev`              | Dev server at `http://localhost:4321`                  |
-| `bun run build`        | Build the production site to `dist/`                   |
+| `bun run build`        | Type-check and build the production site to `dist/`    |
 | `bun run preview`      | Preview the production build                           |
 | `bun test`             | Unit tests for the pure data helpers                   |
 | `bun run check:links`  | Verify internal links in `dist/` (run after a build)   |
