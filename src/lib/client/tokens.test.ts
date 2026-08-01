@@ -8,6 +8,8 @@
 import { describe, expect, it } from "bun:test"
 import { weekdayIndex } from "./heatmap"
 import {
+  aiIcon,
+  clientLabel,
   computeFacts,
   dailyBuckets,
   fillDaily,
@@ -18,12 +20,15 @@ import {
   isSite,
   levelScale,
   monthlyBuckets,
+  providerLabel,
+  RANGE_KEYS,
   shiftDays,
   type Site,
   SITE_SCHEMA_VERSION,
   type SiteDay,
   type SiteRange,
   stackFor,
+  todayView,
   type Usage,
   type UsageSpan,
   weekdayProfile,
@@ -360,6 +365,187 @@ describe("weekdayProfile", () => {
   })
 })
 
+/* Today ----------------------------------------------------------------- */
+
+describe("todayView", () => {
+  const TODAY = "2026-07-20"
+  const EVE = "2026-07-19"
+
+  const clientRow = (client: string, tokens: number) => ({
+    ...usage(tokens),
+    ...span,
+    client,
+  })
+
+  const modelRow = (model: string, tokens: number) => ({
+    ...usage(tokens),
+    ...span,
+    model,
+    providers: "anthropic",
+  })
+
+  /** A site whose only populated range is `day`, plus a daily series. */
+  const todaySite = (
+    day: Omit<Partial<SiteRange>, "totals"> & {
+      totals?: Partial<SiteRange["totals"]>
+    },
+    daily: SiteDay[] = [],
+  ): Site => {
+    const base = site()
+    return {
+      ...base,
+      today: TODAY,
+      ranges: {
+        ...base.ranges,
+        day: {
+          ...rangeStats(),
+          ...day,
+          from: TODAY,
+          totals: { ...rangeStats().totals, ...day.totals },
+        },
+      },
+      daily,
+    }
+  }
+
+  it("is idle only when nothing at all was recorded", () => {
+    expect(todayView(todaySite({})).idle).toBe(true)
+    expect(todayView(todaySite({ totals: { tokens: 10 } })).idle).toBe(false)
+    expect(todayView(todaySite({ totals: { messages: 3 } })).idle).toBe(false)
+    expect(todayView(todaySite({ totals: { cost: 0.4 } })).idle).toBe(false)
+  })
+
+  it("counts CLI-reported active time as activity of its own", () => {
+    // activeTimeMs is stored and displayed independently of tokens, and
+    // a submission carrying only active time passes validation — the
+    // section must not answer "nothing logged" while holding a duration.
+    const view = todayView(
+      todaySite({}, [day(TODAY, 0, { active: 1_800_000 })]),
+    )
+    expect(view.idle).toBe(false)
+    expect(view.active).toBe(1_800_000)
+    // No tokens means no breakdown to draw.
+    expect(view.mix).toEqual([])
+    expect(view.models).toEqual([])
+  })
+
+  it("baselines against yesterday, active time included", () => {
+    const view = todayView(
+      todaySite({ totals: { tokens: 300, cost: 3, messages: 9 } }, [
+        day(EVE, 100, { cost: 1, messages: 4, active: 600_000 }),
+        day(TODAY, 300, { cost: 3, messages: 9, active: 900_000 }),
+      ]),
+    )
+    expect(view.before).toMatchObject({
+      tokens: 100,
+      cost: 1,
+      messages: 4,
+      active: 600_000,
+    })
+    expect(view.active).toBe(900_000)
+  })
+
+  it("reads no baseline when yesterday is missing from the series", () => {
+    const view = todayView(
+      todaySite({ totals: { tokens: 300 } }, [day(TODAY, 300)]),
+    )
+    expect(view.before).toMatchObject({ tokens: 0, active: 0 })
+  })
+
+  it("keeps the top clients and merges the tail into one segment", () => {
+    const view = todayView(
+      todaySite({
+        totals: { tokens: 100 },
+        byClient: [
+          clientRow("claude", 40),
+          clientRow("codex", 30),
+          clientRow("cursor", 15),
+          clientRow("pi", 10),
+          clientRow("zed", 3),
+          clientRow("gemini", 2),
+          clientRow("hermes", 0), // no tokens today: not a segment
+        ],
+      }),
+    )
+    expect(view.mix.map((entry) => entry.id)).toEqual([
+      "claude",
+      "codex",
+      "cursor",
+      "pi",
+      "other",
+    ])
+    expect(view.mix.at(-1)).toMatchObject({ tokens: 5, label: "Other" })
+    expect(view.mix.reduce((sum, entry) => sum + entry.share, 0)).toBeCloseTo(
+      1,
+      10,
+    )
+  })
+
+  it("labels client ids that shadow Object members as themselves", () => {
+    // Client ids come off the wire unconstrained; a plain-object label
+    // table would answer `constructor` with a native function, and the
+    // legend would print its source text.
+    const view = todayView(
+      todaySite({
+        totals: { tokens: 10 },
+        byClient: [clientRow("constructor", 6), clientRow("__proto__", 4)],
+      }),
+    )
+    expect(view.mix.map((entry) => entry.label)).toEqual([
+      "constructor",
+      "__proto__",
+    ])
+  })
+
+  it("drops placeholder models and caps the list at five", () => {
+    const view = todayView(
+      todaySite({
+        totals: { tokens: 100 },
+        byModel: [
+          modelRow("unknown", 50),
+          modelRow("<synthetic>", 20),
+          ...Array.from({ length: 6 }, (_, i) => modelRow(`m-${i}`, 10 - i)),
+          modelRow("m-idle", 0),
+        ],
+      }),
+    )
+    expect(view.models.map((row) => row.model)).toEqual([
+      "m-0",
+      "m-1",
+      "m-2",
+      "m-3",
+      "m-4",
+    ])
+  })
+})
+
+describe("labels and icons", () => {
+  it("falls back to the raw id for ids that shadow Object members", () => {
+    for (const id of [
+      "constructor",
+      "__proto__",
+      "toString",
+      "hasOwnProperty",
+    ]) {
+      expect(clientLabel(id)).toBe(id)
+      expect(providerLabel(id)).toBe(id)
+      expect(aiIcon("client", id)).toBeNull()
+      expect(aiIcon("provider", id)).toBeNull()
+      expect(aiIcon("model", id)).toBeNull()
+    }
+  })
+
+  it("still resolves the known ids", () => {
+    expect(clientLabel("claude")).toBe("Claude Code")
+    expect(clientLabel("other")).toBe("Other")
+    expect(clientLabel("brand-new-cli")).toBe("brand-new-cli")
+    expect(providerLabel("zed.dev")).toBe("Zed")
+    expect(aiIcon("client", "claude")).toBe("claudecode")
+    expect(aiIcon("provider", "moonshotai")).toBe("moonshot")
+    expect(aiIcon("model", "claude-opus-5")).toBe("claude")
+  })
+})
+
 /* Facts ---------------------------------------------------------------- */
 
 describe("computeFacts", () => {
@@ -520,7 +706,9 @@ describe("isSite", () => {
     expect(isSite(site())).toBe(true)
   })
 
-  it("rejects every schema version but the one it was built against", () => {
+  it("rejects schema versions this build does not accept", () => {
+    // The accepted set is widened by hand for a cross-repo rollout; by
+    // default it holds exactly the version this build was written for.
     expect(isSite({ ...site(), schemaVersion: undefined })).toBe(false)
     expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION - 1 })).toBe(
       false,
@@ -551,6 +739,31 @@ describe("isSite", () => {
     // @ts-expect-error deliberately breaking the shape
     badBreakdown.ranges.all.byModel = {}
     expect(isSite(badBreakdown)).toBe(false)
+  })
+
+  it("rejects dates the renderers would feed to Date and Intl", () => {
+    // Not pedantry: shiftDays() calls toISOString() on the parsed day,
+    // and that *throws* on an Invalid Date — a malformed cache entry
+    // would take the whole dashboard down rather than fall back.
+    expect(isSite({ ...site(), today: "yesterday" })).toBe(false)
+    expect(isSite({ ...site(), today: "2026-07-20T00:00:00Z" })).toBe(false)
+    expect(isSite({ ...site(), generatedAt: "soon" })).toBe(false)
+
+    const badDay = site()
+    badDay.daily = [day("20/07/2026", 5)]
+    expect(isSite(badDay)).toBe(false)
+
+    const badFrom = site()
+    badFrom.ranges.week.from = "last monday"
+    expect(isSite(badFrom)).toBe(false)
+
+    const badSpan = site([{ ...usage(10), ...span, provider: "anthropic" }])
+    badSpan.ranges.all.byProvider[0].firstDate = "n/a"
+    expect(isSite(badSpan)).toBe(false)
+
+    // Nulls still mean "no dates in this range", as the producer emits
+    // for an empty window.
+    expect(isSite(site())).toBe(true)
   })
 
   it("rejects rows missing fields the renderers read unconditionally", () => {
@@ -613,17 +826,49 @@ describe("isSite", () => {
 /* Producer contract ----------------------------------------------------- */
 
 describe("/api/site fixture contract", () => {
-  // Captured from the live collector (tokens-worker composeSiteBody,
-  // daily series truncated); the producer-side twin of these assertions
-  // lives in tokens-worker/test/site.spec.ts. Refresh it whenever
-  // SITE_SCHEMA_VERSION bumps: curl the endpoint, keep schemaVersion in
-  // sync, trim `daily`. `ranges.day` here was reconstructed from the
-  // capture's own today row (the collector was still on schema 5 when it
-  // was taken) — recapture it on the next bump to make it a pure capture
-  // again, ideally late in a day so the range has rows to pin.
+  // A verbatim capture of the live collector's schema-6 payload
+  // (tokens-worker composeSiteBody, GET /api/site); the producer-side
+  // twin of these assertions lives in tokens-worker/test/site.spec.ts.
+  // Refresh it whenever SITE_SCHEMA_VERSION bumps — curl the endpoint
+  // late in a day, so `ranges.day` has rows to pin — and never
+  // hand-edit it: a fixture that no longer matches what the producer
+  // emits proves nothing.
   it("passes the strict decoder", () => {
     expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
     expect(isSite(fixture)).toBe(true)
+  })
+
+  it("is composed as of its own `today`", () => {
+    if (!isSite(fixture)) throw new Error("fixture failed decoding")
+    // The payload is a view as of the collector's day: submissions may
+    // legitimately carry dates up to two days ahead, but every window
+    // the dashboard draws ends today, and Today's active time is
+    // matched by exact date — a row past `today` would show up in the
+    // day range while the active-time card ignored it.
+    for (const day of fixture.daily) {
+      expect(day.date <= fixture.today).toBe(true)
+    }
+    for (const key of RANGE_KEYS) {
+      const { totals } = fixture.ranges[key]
+      expect(totals.lastDate === null || totals.lastDate <= fixture.today).toBe(
+        true,
+      )
+    }
+    expect(fixture.ranges.day.from).toBe(fixture.today)
+  })
+
+  it("derives a Today view that agrees with the daily series", () => {
+    if (!isSite(fixture)) throw new Error("fixture failed decoding")
+    const view = todayView(fixture)
+    const today = fixture.daily.find((day) => day.date === fixture.today)
+    expect(view.idle).toBe(false)
+    expect(view.totals.tokens).toBe(today?.tokens ?? 0)
+    expect(view.totals.messages).toBe(today?.messages ?? 0)
+    expect(view.totals.cost).toBeCloseTo(today?.cost ?? 0, 6)
+    // The mix apportions the whole day, whatever the client count.
+    expect(view.mix.reduce((sum, entry) => sum + entry.tokens, 0)).toBe(
+      view.totals.tokens,
+    )
   })
 
   it("feeds the render paths the dashboard actually runs", () => {

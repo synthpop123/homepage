@@ -82,12 +82,27 @@ export type Site = {
  * The /api/site schema version this dashboard was built against. The
  * collector stamps its payload (`schemaVersion`, SITE_VERSION in
  * tokens-worker/src/site.ts) and bumps it on any shape or semantics
- * change; isSite rejects every other version, so a stale cache or a
- * mid-deploy mismatch falls back to a refetch (or the fallback UI)
- * instead of a renderer crash. Bump both sides together, and refresh
- * the fixture in tokens.test.ts.
+ * change; isSite rejects versions this build does not know, so a stale
+ * cache or a mid-deploy mismatch falls back to a refetch (or the
+ * fallback UI) instead of a renderer crash. Bump both sides together,
+ * and refresh the fixture in tokens.test.ts.
  */
 export const SITE_SCHEMA_VERSION = 6
+
+/**
+ * The versions this build can decode. Producer and consumer live in
+ * separate repos with independent deploys, so a contract bump has no
+ * atomic moment: whichever ships first spends a minute or two talking
+ * to the other side's previous version, and visitors without a session
+ * cache see the fallback for that window. Widening this set is how the
+ * window closes — during a rollout list both versions here and ship the
+ * homepage *first*, so it already understands the new payload when the
+ * collector starts sending it; prune the old entry afterwards. It only
+ * works for a shape both readers can survive: the structural checks
+ * below still have to pass, and every renderer must tolerate what the
+ * older payload omits.
+ */
+const ACCEPTED_SCHEMA_VERSIONS = new Set([SITE_SCHEMA_VERSION])
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -125,8 +140,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isCount = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value)
 
+/**
+ * Calendar days are not merely strings to the renderers: they are fed
+ * to `shiftDays` and `formatDate`, where anything Date can't parse
+ * becomes an Invalid Date — and `toISOString()` on one *throws*, which
+ * would take down a render the decoder exists to protect. The producer
+ * enforces the same shape on the way in (tokens-worker: DATE_RE).
+ */
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+const isCalendarDay = (value: unknown): value is string =>
+  typeof value === "string" && DATE_RE.test(value)
+
 const isDateOrNull = (value: unknown): boolean =>
-  value === null || typeof value === "string"
+  value === null || isCalendarDay(value)
 
 /** The full metric set every totals object and breakdown row carries. */
 const hasUsage = (row: Record<string, unknown>): boolean =>
@@ -152,7 +179,7 @@ const isSlices = (value: unknown): boolean =>
 
 const isDay = (value: unknown): boolean =>
   isRecord(value) &&
-  typeof value.date === "string" &&
+  isCalendarDay(value.date) &&
   isCount(value.tokens) &&
   isCount(value.cost) &&
   isCount(value.messages) &&
@@ -189,7 +216,7 @@ const isDevice = (value: unknown): boolean =>
 
 const isRange = (value: unknown): boolean =>
   isRecord(value) &&
-  (value.from === null || typeof value.from === "string") &&
+  isDateOrNull(value.from) &&
   isRecord(value.totals) &&
   hasUsage(value.totals) &&
   isCount(value.totals.activeDays) &&
@@ -208,20 +235,24 @@ const isRange = (value: unknown): boolean =>
 
 /**
  * Runtime decoder for the /api/site payload, strict over every field
- * the renderers actually read: the schema version (anything the
- * dashboard wasn't built against is rejected outright), all five
- * ranges with their totals and breakdown rows (metrics + usage spans),
- * every daily row including the providers/clients slice maps the trend
- * chart iterates, and the device list down to its nullable metadata —
- * render-site truthiness guards handle absence, not wrong types.
+ * the renderers actually read: the schema version (anything this build
+ * does not accept is rejected outright), all five ranges with their
+ * totals and breakdown rows (metrics + usage spans), every daily row
+ * including the providers/clients slice maps the trend chart iterates,
+ * and the device list down to its nullable metadata —
+ * render-site truthiness guards handle absence, not wrong types. Dates
+ * are held to the calendar-day shape and `generatedAt` to something
+ * Date can actually parse: both are arithmetic inputs, not labels.
  */
 export function isSite(data: unknown): data is Site {
   if (!isRecord(data)) return false
   const ranges = data.ranges
   return (
-    data.schemaVersion === SITE_SCHEMA_VERSION &&
+    typeof data.schemaVersion === "number" &&
+    ACCEPTED_SCHEMA_VERSIONS.has(data.schemaVersion) &&
     typeof data.generatedAt === "string" &&
-    typeof data.today === "string" &&
+    Number.isFinite(Date.parse(data.generatedAt)) &&
+    isCalendarDay(data.today) &&
     isRecord(ranges) &&
     RANGE_KEYS.every((key) => isRange(ranges[key])) &&
     Array.isArray(data.daily) &&
@@ -237,10 +268,10 @@ export function isSite(data: unknown): data is Site {
  * a session-cached copy (any age) is delivered synchronously for an
  * instant first paint, then the network answer follows — cheap, since
  * the collector revalidates by ETag and an unchanged payload is a
- * ~0-byte 304 out of the browser's HTTP cache. The schema version is
- * part of the cache key, so a deploy that bumps the contract never
- * even reads the previous schema's entries (isSite would reject them
- * anyway — belt and braces).
+ * ~0-byte 304 out of the browser's HTTP cache. The build's own schema
+ * version is part of the cache key, so a deploy that bumps the contract
+ * never even reads the previous build's entries (an entry it can no
+ * longer decode is dropped by isSite anyway — belt and braces).
  */
 export const loadSite = (
   endpoint: string,
@@ -577,6 +608,84 @@ export function activeTotals(daily: SiteDay[]) {
   return { ms, days }
 }
 
+/* Today --------------------------------------------------------------- */
+
+/** Clients that keep their own segment in the Today mix; the tail merges. */
+const MIX_SEGMENTS = 4
+const TOP_MODELS = 5
+
+export type TodayView = {
+  /** Nothing recorded yet — the section collapses to a single line
+   *  rather than showing a wall of zeroes. */
+  idle: boolean
+  totals: SiteRange["totals"]
+  /** CLI-reported active time today (ms), 0 where none was reported. */
+  active: number
+  /** Yesterday, the baseline every delta is measured against. */
+  before: ReturnType<typeof windowTotals> & { active: number }
+  /** Client mix as bar segments; empty when the day has no tokens to
+   *  apportion (a message- or active-time-only day is not idle, but it
+   *  has no breakdown either). */
+  mix: { id: string; label: string; tokens: number; share: number }[]
+  models: SiteRange["byModel"]
+}
+
+/**
+ * Everything the Today section shows, derived in one pass so the
+ * renderer only writes DOM: the collector's own today window
+ * (`ranges.day` — the payload's only per-model split of a single day),
+ * yesterday as the baseline, and the day's client mix and top models.
+ *
+ * "Nothing logged" means nothing at all, not merely no tokens: cost and
+ * CLI-reported active time are stored and displayed independently of
+ * token counts, and a day carrying only one of them would otherwise
+ * hide the very card that has something to say.
+ */
+export function todayView(site: Site): TodayView {
+  const { totals, byClient, byModel } = site.ranges.day
+  const eve = shiftDays(site.today, -1)
+  const dayOf = (date: string) => site.daily.find((day) => day.date === date)
+  const active = dayOf(site.today)?.active ?? 0
+
+  const clients = byClient.filter((row) => row.tokens > 0)
+  const tail = clients
+    .slice(MIX_SEGMENTS)
+    .reduce((sum, row) => sum + row.tokens, 0)
+  const mix =
+    totals.tokens > 0
+      ? [
+          ...clients.slice(0, MIX_SEGMENTS).map((row) => ({
+            id: row.client,
+            tokens: row.tokens,
+          })),
+          ...(tail > 0 ? [{ id: OTHER, tokens: tail }] : []),
+        ].map(({ id, tokens }) => ({
+          id,
+          label: clientLabel(id),
+          tokens,
+          share: tokens / totals.tokens,
+        }))
+      : []
+
+  return {
+    idle:
+      totals.tokens === 0 &&
+      totals.messages === 0 &&
+      totals.cost === 0 &&
+      active === 0,
+    totals,
+    active,
+    before: {
+      ...windowTotals(site.daily, eve, eve),
+      active: dayOf(eve)?.active ?? 0,
+    },
+    mix,
+    models: byModel
+      .filter((row) => row.tokens > 0 && !HIDDEN_MODELS.has(row.model))
+      .slice(0, TOP_MODELS),
+  }
+}
+
 export type WeekdayStat = {
   /** Monday-based index, aligned with WEEKDAYS. */
   weekday: number
@@ -718,70 +827,82 @@ export function levelScale(days: SiteDay[]): (tokens: number) => number {
 
 /* Labels -------------------------------------------------------------- */
 
-const CLIENT_LABELS: Record<string, string> = {
-  cursor: "Cursor",
-  codex: "Codex",
-  claude: "Claude Code",
-  pi: "Pi",
-  opencode: "OpenCode",
-  gemini: "Gemini CLI",
-  grok: "Grok Build",
-  hermes: "Hermes Agent",
-  zed: "Zed",
-  unknown: "Other",
-  [OTHER]: "Other",
-}
+/**
+ * Maps, not plain objects: every id below is looked up with a string the
+ * collector took from a CLI payload, and nothing constrains those ids
+ * beyond "non-empty". On an object literal, `constructor` resolves to a
+ * function and `__proto__` to Object.prototype instead of missing — the
+ * `?? id` fallback never fires and a row renders the source text of a
+ * native function. The producer keeps its own slice maps prototype-free
+ * for the same reason (tokens-worker: src/site.ts).
+ */
+const CLIENT_LABELS = new Map<string, string>([
+  ["cursor", "Cursor"],
+  ["codex", "Codex"],
+  ["claude", "Claude Code"],
+  ["pi", "Pi"],
+  ["opencode", "OpenCode"],
+  ["gemini", "Gemini CLI"],
+  ["grok", "Grok Build"],
+  ["hermes", "Hermes Agent"],
+  ["zed", "Zed"],
+  ["unknown", "Other"],
+  [OTHER, "Other"],
+])
 
-const PROVIDER_LABELS: Record<string, string> = {
-  anthropic: "Anthropic",
-  openai: "OpenAI",
-  google: "Google",
-  xai: "xAI",
-  cursor: "Cursor",
-  moonshotai: "Moonshot AI",
-  zai: "Z.ai",
-  deepseek: "DeepSeek",
-  qwen: "Qwen",
+const PROVIDER_LABELS = new Map<string, string>([
+  ["anthropic", "Anthropic"],
+  ["openai", "OpenAI"],
+  ["google", "Google"],
+  ["xai", "xAI"],
+  ["cursor", "Cursor"],
+  ["moonshotai", "Moonshot AI"],
+  ["zai", "Z.ai"],
+  ["deepseek", "DeepSeek"],
+  ["qwen", "Qwen"],
   // Serving gateways: the collector re-attributes their rows to model
   // vendors; these ids remain only for models the rules can't place.
-  opencode: "OpenCode",
-  "zed.dev": "Zed",
-  unknown: "Other",
-  [OTHER]: "Other",
-}
+  ["opencode", "OpenCode"],
+  ["zed.dev", "Zed"],
+  ["unknown", "Other"],
+  [OTHER, "Other"],
+])
 
-export const clientLabel = (id: string) => CLIENT_LABELS[id] ?? id
+export const clientLabel = (id: string) => CLIENT_LABELS.get(id) ?? id
 
-export const providerLabel = (id: string) => PROVIDER_LABELS[id] ?? id
+export const providerLabel = (id: string) => PROVIDER_LABELS.get(id) ?? id
 
 /* Brand icons ---------------------------------------------------------- */
 
 /** Placeholder ids the collector reports that aren't real models. */
 export const HIDDEN_MODELS = new Set(["unknown", "<synthetic>"])
 
-const PROVIDER_ICONS: Record<string, string> = {
-  anthropic: "anthropic",
-  openai: "openai",
-  google: "google",
-  xai: "xai",
-  cursor: "cursor",
-  moonshotai: "moonshot",
-  zai: "zai",
-  opencode: "opencode",
-  "zed.dev": "zed",
-}
+/** Maps for the same reason the label tables are — and here a stray
+ *  inherited value would be interpolated into a CSS attribute selector
+ *  (dom.ts, createIcons) rather than merely printed. */
+const PROVIDER_ICONS = new Map<string, string>([
+  ["anthropic", "anthropic"],
+  ["openai", "openai"],
+  ["google", "google"],
+  ["xai", "xai"],
+  ["cursor", "cursor"],
+  ["moonshotai", "moonshot"],
+  ["zai", "zai"],
+  ["opencode", "opencode"],
+  ["zed.dev", "zed"],
+])
 
-const CLIENT_ICONS: Record<string, string> = {
-  cursor: "cursor",
-  claude: "claudecode",
-  codex: "codex",
-  pi: "pi",
-  opencode: "opencode",
-  gemini: "gemini",
-  grok: "grok",
-  hermes: "hermesagent",
-  zed: "zed",
-}
+const CLIENT_ICONS = new Map<string, string>([
+  ["cursor", "cursor"],
+  ["claude", "claudecode"],
+  ["codex", "codex"],
+  ["pi", "pi"],
+  ["opencode", "opencode"],
+  ["gemini", "gemini"],
+  ["grok", "grok"],
+  ["hermes", "hermesagent"],
+  ["zed", "zed"],
+])
 
 /** Ordered prefix rules over canonical model names. */
 const MODEL_ICONS: [RegExp, string][] = [
@@ -805,8 +926,8 @@ export function aiIcon(
   kind: "model" | "client" | "provider",
   id: string,
 ): string | null {
-  if (kind === "provider") return PROVIDER_ICONS[id] ?? null
-  if (kind === "client") return CLIENT_ICONS[id] ?? null
+  if (kind === "provider") return PROVIDER_ICONS.get(id) ?? null
+  if (kind === "client") return CLIENT_ICONS.get(id) ?? null
   const model = id.toLowerCase()
   for (const [pattern, icon] of MODEL_ICONS) {
     if (pattern.test(model)) return icon
