@@ -111,22 +111,24 @@ const skeletonRows = (count: number) =>
             </div>
           ))}
         </dl>
-        <h3 class="tk-label">Clients</h3>
-        <div class="tk-mix">
-          <div class="tk-mix-bar tk-today-bar" data-skeleton></div>
-          <ul class="tk-today-legend"></ul>
+        <div class="tk-today-breakdown">
+          <h3 class="tk-label">Clients</h3>
+          <div class="tk-mix">
+            <div class="tk-mix-bar tk-today-bar" data-skeleton></div>
+            <ul class="tk-today-legend"></ul>
+          </div>
+          <h3 class="tk-label">Models</h3>
+          <ol class="tk-rows" data-list="today-model">
+            {skeletonRows(3).map(() => (
+              <li class="tk-row" data-skeleton aria-hidden="true">
+                <span class="ico sk-ico" />
+                <span class="sk-line" style="inline-size: min(11em, 70%)" />
+                <span class="sk-line sk-num" />
+                <span class="sk-line sk-num" />
+              </li>
+            ))}
+          </ol>
         </div>
-        <h3 class="tk-label">Models</h3>
-        <ol class="tk-rows" data-list="today-model">
-          {skeletonRows(3).map(() => (
-            <li class="tk-row" data-skeleton aria-hidden="true">
-              <span class="ico sk-ico" />
-              <span class="sk-line" style="inline-size: min(11em, 70%)" />
-              <span class="sk-line sk-num" />
-              <span class="sk-line sk-num" />
-            </li>
-          ))}
-        </ol>
       </div>
       <p class="tk-today-empty" hidden>
         Nothing logged yet today — every collector reports in twice an hour.
@@ -407,6 +409,14 @@ const skeletonRows = (count: number) =>
   .tk-today-empty {
     font-size: var(--step--1);
     color: var(--muted-foreground);
+  }
+
+  /* The clients bar and the model list are one unit: today.ts hides
+     both on a day that has activity but no tokens yet (active time or
+     messages only), where there is nothing to apportion and an empty
+     bar would read as a broken one. */
+  .tk-today-breakdown[hidden] {
+    display: none;
   }
 
   /* Inline legend under the client-mix bar: chip, name, share. */
