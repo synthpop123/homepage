@@ -872,6 +872,53 @@ export const clientLabel = (id: string) => CLIENT_LABELS.get(id) ?? id
 
 export const providerLabel = (id: string) => PROVIDER_LABELS.get(id) ?? id
 
+/* Model names ---------------------------------------------------------- */
+
+/**
+ * Display names for model ids. The collector reports the CLI's raw model
+ * id (claude-opus-4-5); the dashboard should read like a human writes it
+ * (Claude Opus 4.5). Exact ids get canonical names from MODEL_NAMES —
+ * the room for brand spellings the generic path can't guess (DeepSeek V4
+ * Flash, not "Deepseek") — everything else falls back to splitting the id
+ * into words, Title Casing them (a couple of acronyms stay uppercase),
+ * and joining numeric runs into dotted versions.
+ */
+
+/** Words whose display form isn't plain Title Case. */
+const MODEL_ACRONYMS = new Map<string, string>([
+  ["gpt", "GPT"],
+  ["glm", "GLM"],
+])
+
+/** Exact-id overrides: canonical names no generic rule could derive.
+ *  Add new custom spellings here. */
+const MODEL_NAMES = new Map<string, string>([
+  ["deepseek-v4-flash", "DeepSeek V4 Flash"],
+])
+
+const isVersion = (token: string) => /^\d+(\.\d+)*$/.test(token)
+
+const titleWord = (word: string) =>
+  MODEL_ACRONYMS.get(word) ?? word.charAt(0).toUpperCase() + word.slice(1)
+
+/** claude-fable-5 → Claude Fable 5; claude-opus-4-5 → Claude Opus 4.5
+ *  (consecutive version parts join with a dot). */
+const genericModelName = (id: string) => {
+  const words: string[] = []
+  for (const raw of id.split(/[-_]/)) {
+    const last = words[words.length - 1]
+    if (isVersion(raw) && last !== undefined && isVersion(last)) {
+      words[words.length - 1] = `${last}.${raw}`
+    } else {
+      words.push(titleWord(raw))
+    }
+  }
+  return words.join(" ")
+}
+
+export const modelLabel = (id: string) =>
+  MODEL_NAMES.get(id) ?? genericModelName(id)
+
 /* Brand icons ---------------------------------------------------------- */
 
 /** Placeholder ids the collector reports that aren't real models. */

@@ -14,6 +14,7 @@ import {
   formatMetric,
   HIDDEN_MODELS,
   type MetricKey,
+  modelLabel,
   providerLabel,
   type RangeKey,
   type Site,
@@ -45,7 +46,7 @@ export function createBreakdown(q: Query, icons: Icons) {
           .filter((entry) => !HIDDEN_MODELS.has(entry.model))
           .map((entry) => ({
             id: entry.model,
-            name: entry.model,
+            name: modelLabel(entry.model),
             usage: entry,
           })),
       },

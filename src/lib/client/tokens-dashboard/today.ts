@@ -21,6 +21,7 @@ import {
   formatExact,
   formatShare,
   formatTokens,
+  modelLabel,
   type Site,
   todayView,
 } from "../tokens"
@@ -152,17 +153,18 @@ export function renderToday(q: Query, site: Site, icons: Icons) {
   if (list) {
     list.replaceChildren(
       ...(models.length > 0
-        ? models.map((row) =>
-            usageRow(icons, {
+        ? models.map((row) => {
+            const name = modelLabel(row.model)
+            return usageRow(icons, {
               icon: aiIcon("model", row.model),
-              name: row.model,
+              name,
               value: formatTokens(row.tokens),
               share: row.tokens / totals.tokens,
-              title: `${row.model} — ${formatExact(row.tokens)} tokens · ${formatCostExact(
+              title: `${name} — ${formatExact(row.tokens)} tokens · ${formatCostExact(
                 row.cost,
               )} · ${formatExact(row.messages)} messages`,
-            }),
-          )
+            })
+          })
         : [el("li", "tk-empty", "No model usage recorded yet today.")]),
     )
   }

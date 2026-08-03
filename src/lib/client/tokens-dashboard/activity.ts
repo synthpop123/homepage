@@ -20,6 +20,7 @@ import {
   HIDDEN_MODELS,
   isMessagesOnly,
   levelScale,
+  modelLabel,
   type Site,
   shiftDays,
 } from "../tokens"
@@ -113,7 +114,7 @@ export function renderFacts(q: Query, site: Site) {
     models.length > 0
       ? `across ${site.ranges.all.byClient.length} ${site.ranges.all.byClient.length === 1 ? "client" : "clients"}`
       : "—",
-    models.length > 0 ? `most used: ${models[0].model}` : undefined,
+    models.length > 0 ? `most used: ${modelLabel(models[0].model)}` : undefined,
   )
 
   const tracked = activeTotals(site.daily)

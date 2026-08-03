@@ -19,6 +19,7 @@ import {
   isMessagesOnly,
   isSite,
   levelScale,
+  modelLabel,
   monthlyBuckets,
   providerLabel,
   RANGE_KEYS,
@@ -545,6 +546,20 @@ describe("labels and icons", () => {
     expect(aiIcon("provider", "deepseek")).toBe("deepseek")
     expect(aiIcon("model", "claude-opus-5")).toBe("claude")
     expect(aiIcon("model", "deepseek-v4-flash")).toBe("deepseek")
+  })
+
+  it("humanizes model ids into display names", () => {
+    // Exact overrides keep their canonical brand spelling.
+    expect(modelLabel("deepseek-v4-flash")).toBe("DeepSeek V4 Flash")
+    // Generic path: split into words, Title Case, dot-join versions.
+    expect(modelLabel("claude-fable-5")).toBe("Claude Fable 5")
+    expect(modelLabel("claude-opus-4-5")).toBe("Claude Opus 4.5")
+    expect(modelLabel("claude-haiku-4-5")).toBe("Claude Haiku 4.5")
+    expect(modelLabel("gemini-2.5-pro")).toBe("Gemini 2.5 Pro")
+    expect(modelLabel("gpt-5.2-codex")).toBe("GPT 5.2 Codex")
+    expect(modelLabel("kimi-k2")).toBe("Kimi K2")
+    // A lone unknown id falls back to the raw string.
+    expect(modelLabel("brand-new-model")).toBe("Brand New Model")
   })
 })
 
