@@ -542,7 +542,9 @@ describe("labels and icons", () => {
     expect(providerLabel("zed.dev")).toBe("Zed")
     expect(aiIcon("client", "claude")).toBe("claudecode")
     expect(aiIcon("provider", "moonshotai")).toBe("moonshot")
+    expect(aiIcon("provider", "deepseek")).toBe("deepseek")
     expect(aiIcon("model", "claude-opus-5")).toBe("claude")
+    expect(aiIcon("model", "deepseek-v4-flash")).toBe("deepseek")
   })
 })
 

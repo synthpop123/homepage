@@ -888,6 +888,7 @@ const PROVIDER_ICONS = new Map<string, string>([
   ["cursor", "cursor"],
   ["moonshotai", "moonshot"],
   ["zai", "zai"],
+  ["deepseek", "deepseek"],
   ["opencode", "opencode"],
   ["zed.dev", "zed"],
 ])
@@ -913,6 +914,7 @@ const MODEL_ICONS: [RegExp, string][] = [
   [/^grok/, "grok"],
   [/^(composer|cursor|auto$|agent)/, "cursor"],
   [/^kimi/, "kimi"],
+  [/^deepseek/, "deepseek"],
   [/^glm/, "zai"],
   [/^big-pickle/, "opencode"],
 ]
