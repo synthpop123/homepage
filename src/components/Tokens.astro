@@ -2,6 +2,7 @@
 import type { SvgComponent } from "astro/types"
 import ChevronIcon from "@/assets/icons/callouts/alt-arrow-down.svg"
 import Heatmap from "@/components/Heatmap.astro"
+import Alibaba from "@/assets/icons/ai/alibaba.svg"
 import Anthropic from "@/assets/icons/ai/anthropic.svg"
 import Claude from "@/assets/icons/ai/claude.svg"
 import ClaudeCode from "@/assets/icons/ai/claudecode.svg"
@@ -17,6 +18,7 @@ import Moonshot from "@/assets/icons/ai/moonshot.svg"
 import OpenAI from "@/assets/icons/ai/openai.svg"
 import OpenCode from "@/assets/icons/ai/opencode.svg"
 import Pi from "@/assets/icons/ai/pi.svg"
+import Qwen from "@/assets/icons/ai/qwen.svg"
 import XAI from "@/assets/icons/ai/xai.svg"
 import Zai from "@/assets/icons/ai/zai.svg"
 import Zed from "@/assets/icons/ai/zed.svg"
@@ -33,6 +35,7 @@ const { endpoint = TOKENS.endpoint } = Astro.props
  *  except zed.svg (official Zed mark, normalized to currentColor). The
  *  hidden defs block below is what the runtime script clones from. */
 const AI_ICONS: Record<string, SvgComponent> = {
+  alibaba: Alibaba,
   anthropic: Anthropic,
   claude: Claude,
   claudecode: ClaudeCode,
@@ -48,6 +51,7 @@ const AI_ICONS: Record<string, SvgComponent> = {
   openai: OpenAI,
   opencode: OpenCode,
   pi: Pi,
+  qwen: Qwen,
   xai: XAI,
   zai: Zai,
   zed: Zed,
@@ -333,6 +337,7 @@ const skeletonRows = (count: number) =>
     --tk-p-anthropic: light-dark(#d97757, #cc785c);
     --tk-p-openai: light-dark(#10a37f, #2dc79f);
     --tk-p-google: light-dark(#4285f4, #7cacf8);
+    --tk-p-alibaba: light-dark(#ff6a00, #ff8a3d);
     --tk-p-xai: light-dark(#52525b, #a1a1aa);
     --tk-p-cursor: light-dark(#8b5cf6, #a78bfa);
     --tk-p-zed: light-dark(#084ccf, #7a9bff);
@@ -908,6 +913,11 @@ const skeletonRows = (count: number) =>
   tokens-dashboard :global([data-p="google"]),
   tokens-dashboard :global([data-p="gemini"]) {
     --p: var(--tk-p-google);
+  }
+
+  tokens-dashboard :global([data-p="alibaba"]),
+  tokens-dashboard :global([data-p="qwen"]) {
+    --p: var(--tk-p-alibaba);
   }
 
   tokens-dashboard :global([data-p="xai"]),

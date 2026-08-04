@@ -541,11 +541,14 @@ describe("labels and icons", () => {
     expect(clientLabel("other")).toBe("Other")
     expect(clientLabel("brand-new-cli")).toBe("brand-new-cli")
     expect(providerLabel("zed.dev")).toBe("Zed")
+    expect(providerLabel("alibaba")).toBe("Alibaba")
     expect(aiIcon("client", "claude")).toBe("claudecode")
     expect(aiIcon("provider", "moonshotai")).toBe("moonshot")
     expect(aiIcon("provider", "deepseek")).toBe("deepseek")
+    expect(aiIcon("provider", "alibaba")).toBe("alibaba")
     expect(aiIcon("model", "claude-opus-5")).toBe("claude")
     expect(aiIcon("model", "deepseek-v4-flash")).toBe("deepseek")
+    expect(aiIcon("model", "qwen3.8-max")).toBe("qwen")
   })
 
   it("humanizes model ids into display names", () => {
@@ -724,8 +727,6 @@ describe("isSite", () => {
   })
 
   it("rejects schema versions this build does not accept", () => {
-    // The accepted set is widened by hand for a cross-repo rollout; by
-    // default it holds exactly the version this build was written for.
     expect(isSite({ ...site(), schemaVersion: undefined })).toBe(false)
     expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION - 1 })).toBe(
       false,
@@ -843,13 +844,8 @@ describe("isSite", () => {
 /* Producer contract ----------------------------------------------------- */
 
 describe("/api/site fixture contract", () => {
-  // A verbatim capture of the live collector's schema-6 payload
-  // (tokens-worker composeSiteBody, GET /api/site); the producer-side
-  // twin of these assertions lives in tokens-worker/test/site.spec.ts.
-  // Refresh it whenever SITE_SCHEMA_VERSION bumps — curl the endpoint
-  // late in a day, so `ranges.day` has rows to pin — and never
-  // hand-edit it: a fixture that no longer matches what the producer
-  // emits proves nothing.
+  // Captured /api/site payload; producer-side assertions live in
+  // tokens-worker/test/site.spec.ts.
   it("passes the strict decoder", () => {
     expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
     expect(isSite(fixture)).toBe(true)

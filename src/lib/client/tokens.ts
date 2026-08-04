@@ -87,21 +87,8 @@ export type Site = {
  * fallback UI) instead of a renderer crash. Bump both sides together,
  * and refresh the fixture in tokens.test.ts.
  */
-export const SITE_SCHEMA_VERSION = 6
+export const SITE_SCHEMA_VERSION = 7
 
-/**
- * The versions this build can decode. Producer and consumer live in
- * separate repos with independent deploys, so a contract bump has no
- * atomic moment: whichever ships first spends a minute or two talking
- * to the other side's previous version, and visitors without a session
- * cache see the fallback for that window. Widening this set is how the
- * window closes — during a rollout list both versions here and ship the
- * homepage *first*, so it already understands the new payload when the
- * collector starts sending it; prune the old entry afterwards. It only
- * works for a shape both readers can survive: the structural checks
- * below still have to pass, and every renderer must tolerate what the
- * older payload omits.
- */
 const ACCEPTED_SCHEMA_VERSIONS = new Set([SITE_SCHEMA_VERSION])
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
@@ -859,7 +846,7 @@ const PROVIDER_LABELS = new Map<string, string>([
   ["moonshotai", "Moonshot AI"],
   ["zai", "Z.ai"],
   ["deepseek", "DeepSeek"],
-  ["qwen", "Qwen"],
+  ["alibaba", "Alibaba"],
   // Serving gateways: the collector re-attributes their rows to model
   // vendors; these ids remain only for models the rules can't place.
   ["opencode", "OpenCode"],
@@ -936,6 +923,7 @@ const PROVIDER_ICONS = new Map<string, string>([
   ["moonshotai", "moonshot"],
   ["zai", "zai"],
   ["deepseek", "deepseek"],
+  ["alibaba", "alibaba"],
   ["opencode", "opencode"],
   ["zed.dev", "zed"],
 ])
@@ -962,6 +950,7 @@ const MODEL_ICONS: [RegExp, string][] = [
   [/^(composer|cursor|auto$|agent)/, "cursor"],
   [/^kimi/, "kimi"],
   [/^deepseek/, "deepseek"],
+  [/^qwen/, "qwen"],
   [/^glm/, "zai"],
   [/^big-pickle/, "opencode"],
 ]
