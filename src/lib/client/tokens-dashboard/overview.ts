@@ -14,7 +14,7 @@ import {
   formatShare,
   formatTokens,
   type RangeKey,
-  RANGES,
+  rangeMeta,
   type Site,
   shiftDays,
   windowTotals,
@@ -24,7 +24,7 @@ import { el, type Query, setCard, setDelta as fillDelta } from "./dom"
 export function renderOverview(q: Query, site: Site, range: RangeKey) {
   const stats = site.ranges[range]
   const totals = stats.totals
-  const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
+  const meta = rangeMeta(range)
   const cards = q('[data-cards="overview"]')
 
   const setDelta = (key: string, text: string, title = "") =>

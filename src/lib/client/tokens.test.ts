@@ -8,7 +8,6 @@
 import { describe, expect, it } from "bun:test"
 import { weekdayIndex } from "./heatmap"
 import {
-  ACCEPTED_SCHEMA_VERSIONS,
   activeTotals,
   aiIcon,
   clientLabel,
@@ -90,10 +89,13 @@ const device = (): Site["devices"][number] => ({
   cost: 1.5,
 })
 
-const modelRows = (...models: [string, number][]): SiteRange["byModel"] =>
-  models.map(([model, tokens]) => ({
+const modelRows = (
+  ...models: [model: string, tokens: number, cost?: number][]
+): SiteRange["byModel"] =>
+  models.map(([model, tokens, cost = 0]) => ({
     ...usage(tokens),
     ...span,
+    cost,
     model,
     providers: "anthropic",
   }))
@@ -251,6 +253,7 @@ describe("stackFor", () => {
         { ...usage(10), ...span, provider: "xai" },
       ]),
       "provider",
+      "tokens",
     )
     expect(stacked).toEqual({
       dim: "provider",
@@ -266,6 +269,7 @@ describe("stackFor", () => {
         { ...usage(25), ...span, provider: "openai" },
       ]),
       "provider",
+      "tokens",
     )
     expect(stacked.ids).toEqual(["openai", "other"])
     // Same treatment on the model dimension, where the collector also
@@ -282,6 +286,7 @@ describe("stackFor", () => {
           ),
         ),
         "model",
+        "tokens",
       ).ids,
     ).toEqual(["claude-opus-5", "other"])
   })
@@ -304,6 +309,7 @@ describe("stackFor", () => {
         ),
       ),
       "model",
+      "tokens",
     )
     expect(stacked.ids).toEqual([
       "claude-opus-5",
@@ -372,7 +378,7 @@ describe("stackPaint", () => {
     const stacked = stackFor(
       rangeStats([], [{ ...usage(10), ...span, client: "cursor" }]),
       "client",
-      2,
+      "tokens",
     )
     expect(stacked).toEqual({ dim: "client", ids: ["cursor", "other"] })
   })
@@ -387,9 +393,41 @@ describe("stackPaint", () => {
         { ...usage(1), ...span, provider: "cursor" },
       ]),
       "provider",
-      1,
+      "tokens",
     )
-    expect(stacked.ids).toEqual(["deepseek", "other"])
+    expect(stacked.ids).toEqual(["deepseek", "cursor", "other"])
+  })
+
+  // ...and by the metric being drawn, not always by tokens. A model can
+  // be a small share of the volume and a large share of the bill, and
+  // folding it into "other" leaves the cost chart unable to name what
+  // drove the cost. The payload arrives tokens-desc, so this is the one
+  // ordering the stack has to redo itself.
+  it("ranks by the metric the chart is drawn in", () => {
+    const range = rangeStats(
+      [],
+      [],
+      modelRows(
+        ["deepseek-v4-flash", 100, 0.1],
+        ["gpt-5.6-sol", 90, 0.2],
+        ["claude-opus-5", 80, 0.3],
+        ["claude-sonnet-5", 70, 0.4],
+        ["gemini-3-pro", 60, 0.5],
+        ["qwen3.8-max", 10, 9],
+      ),
+    )
+    const byTokens = stackFor(range, "model", "tokens").ids
+    expect(byTokens).toEqual([
+      "deepseek-v4-flash",
+      "gpt-5.6-sol",
+      "claude-opus-5",
+      "claude-sonnet-5",
+      "gemini-3-pro",
+      "other",
+    ])
+    const byCost = stackFor(range, "model", "cost").ids
+    expect(byCost[0]).toBe("qwen3.8-max")
+    expect(byCost).not.toContain("deepseek-v4-flash")
   })
 })
 
@@ -966,16 +1004,15 @@ describe("isSite", () => {
     expect(isSite(site())).toBe(true)
   })
 
-  it("rejects schema versions this build does not accept", () => {
-    expect(isSite({ ...site(), schemaVersion: undefined })).toBe(false)
-    expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION + 1 })).toBe(
-      false,
-    )
-    for (const version of ACCEPTED_SCHEMA_VERSIONS) {
-      expect(isSite({ ...site(), schemaVersion: version })).toBe(true)
-      expect(isSite({ ...site(), schemaVersion: version - 1 })).toBe(
-        ACCEPTED_SCHEMA_VERSIONS.has(version - 1),
-      )
+  it("accepts exactly the version this build was written against", () => {
+    expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION })).toBe(true)
+    for (const version of [
+      undefined,
+      String(SITE_SCHEMA_VERSION),
+      SITE_SCHEMA_VERSION - 1,
+      SITE_SCHEMA_VERSION + 1,
+    ]) {
+      expect(isSite({ ...site(), schemaVersion: version })).toBe(false)
     }
   })
 
@@ -1121,11 +1158,9 @@ describe("/api/site fixture contract", () => {
   // Captured /api/site payload; producer-side assertions live in
   // tokens-worker/test/site.spec.ts.
   it("passes the strict decoder", () => {
-    // A captured payload is whatever the collector was serving that day,
-    // so during a rollout window it pins one of the accepted versions,
-    // not necessarily the newest. Recapture it (never hand-edit) when
-    // tokens-worker bumps SITE_VERSION.
-    expect(ACCEPTED_SCHEMA_VERSIONS.has(fixture.schemaVersion)).toBe(true)
+    // Recapture the fixture from the live endpoint (never hand-edit it)
+    // when tokens-worker bumps SITE_VERSION.
+    expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
     expect(isSite(fixture)).toBe(true)
   })
 
@@ -1166,7 +1201,7 @@ describe("/api/site fixture contract", () => {
     if (!isSite(fixture)) throw new Error("fixture failed decoding")
     const dims: StackDim[] = ["provider", "client", "model"]
     for (const dim of dims) {
-      const stack = stackFor(fixture.ranges.all, dim)
+      const stack = stackFor(fixture.ranges.all, dim, "tokens")
       expect(stack.ids.length).toBeGreaterThan(1)
       expect(stackPaint(stack)).toHaveLength(stack.ids.length)
       const buckets = dailyBuckets(fixture.daily, stack, "tokens")

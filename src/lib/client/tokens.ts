@@ -82,20 +82,15 @@ export type Site = {
 }
 
 /**
- * The /api/site schema version this dashboard is built against. The
- * collector stamps its payload (`schemaVersion`, SITE_VERSION in
- * tokens-worker/src/site.ts) and bumps it on any shape or semantics
- * change; isSite rejects versions this build does not accept, so a stale
- * cache or a mid-deploy mismatch falls back to a refetch (or the
- * fallback UI) instead of a renderer crash. This number is also the
- * sessionStorage cache key, so a deploy never reads the previous build's
- * entries.
+ * The /api/site schema version this dashboard is built against, in
+ * lockstep with tokens-worker's SITE_VERSION. The collector stamps its
+ * payload and bumps on any shape or semantics change; isSite rejects
+ * anything else, so a stale cache or a mid-deploy mismatch falls back to
+ * a refetch (or the fallback UI) instead of a renderer crash. This
+ * number is also the sessionStorage cache key, so a deploy never reads
+ * the previous build's entries.
  */
 export const SITE_SCHEMA_VERSION = 8
-
-/** The schema versions this build accepts — exactly the current one.
- *  Keep in lockstep with tokens-worker's SITE_VERSION. */
-export const ACCEPTED_SCHEMA_VERSIONS = new Set([SITE_SCHEMA_VERSION])
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -115,6 +110,11 @@ export const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
 
 /** Every range key the payload carries — what the decoder validates. */
 export const RANGE_KEYS: RangeKey[] = ["day", ...RANGES.map(({ key }) => key)]
+
+/** The selector entry behind a range key. `day` is not one of them, so a
+ *  miss falls back to the 30-day window the markup starts checked. */
+export const rangeMeta = (key: RangeKey) =>
+  RANGES.find((entry) => entry.key === key) ?? RANGES[1]
 
 /** The five token categories, in display order (shade 1…5). */
 export const COMPOSITION: { key: keyof Usage; label: string }[] = [
@@ -242,8 +242,7 @@ export function isSite(data: unknown): data is Site {
   if (!isRecord(data)) return false
   const ranges = data.ranges
   return (
-    typeof data.schemaVersion === "number" &&
-    ACCEPTED_SCHEMA_VERSIONS.has(data.schemaVersion) &&
+    data.schemaVersion === SITE_SCHEMA_VERSION &&
     typeof data.generatedAt === "string" &&
     Number.isFinite(Date.parse(data.generatedAt)) &&
     isCalendarDay(data.today) &&
@@ -476,30 +475,37 @@ const STACK_LIMITS: Record<StackDim, number> = {
   model: 5,
 }
 
-const rangeIds = (range: SiteRange, dim: StackDim): string[] =>
+const rangeRows = (
+  range: SiteRange,
+  dim: StackDim,
+): { id: string; usage: Usage }[] =>
   dim === "provider"
-    ? range.byProvider.map((entry) => entry.provider)
+    ? range.byProvider.map((entry) => ({ id: entry.provider, usage: entry }))
     : dim === "client"
-      ? range.byClient.map((entry) => entry.client)
-      : range.byModel.map((entry) => entry.model)
+      ? range.byClient.map((entry) => ({ id: entry.client, usage: entry }))
+      : range.byModel.map((entry) => ({ id: entry.model, usage: entry }))
 
 /**
  * The ids worth their own color when stacking the trend chart by `dim`:
- * the top few by tokens *within the range being charted*, so the colored
- * segments are whoever actually drove that window — reading all-time
- * ranks instead would fold a currently-busy provider into "other" to
- * keep a slot for one that has gone quiet. Everything below the cutoff
- * collapses into "other", placeholder ids (`unknown`, `<synthetic>`)
- * included: they are the one thing a color band can't say anything about.
+ * the top few *within the range being charted, by the metric being
+ * drawn*, so the colored segments are whoever actually drove that
+ * window — all-time ranks would fold a currently-busy provider into
+ * "other" to keep a slot for one that has gone quiet, and token ranks
+ * would do the same to a model that is a small share of the volume but
+ * a large share of the bill. Everything below the cutoff collapses into
+ * "other", placeholder ids (`unknown`, `<synthetic>`) included: they are
+ * the one thing a color band can't say anything about.
  */
 export function stackFor(
   range: SiteRange,
   dim: StackDim,
-  limit = STACK_LIMITS[dim],
+  metric: MetricKey,
 ): Stack {
-  const named = rangeIds(range, dim)
-    .filter((id) => id && !PLACEHOLDER_IDS.has(id))
-    .slice(0, limit)
+  const named = rangeRows(range, dim)
+    .filter(({ id }) => id && !PLACEHOLDER_IDS.has(id))
+    .sort((a, b) => b.usage[metric] - a.usage[metric])
+    .slice(0, STACK_LIMITS[dim])
+    .map(({ id }) => id)
   return { dim, ids: [...named, OTHER] }
 }
 

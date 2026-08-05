@@ -19,7 +19,7 @@ import {
   monthlyBuckets,
   perHour,
   type RangeKey,
-  RANGES,
+  rangeMeta,
   type Site,
   type Stack,
   type StackDim,
@@ -113,9 +113,9 @@ export function createTrendChart(q: Query) {
     metric: MetricKey,
     dim: StackDim,
   ) => {
-    stack = stackFor(site.ranges[range], dim)
+    stack = stackFor(site.ranges[range], dim, metric)
     paints = stackPaint(stack)
-    const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
+    const meta = rangeMeta(range)
     const from = site.ranges[range].from
     const buckets =
       range === "all" || !from
@@ -341,7 +341,7 @@ export function createRhythmChart(q: Query) {
   if (plot) new ResizeObserver(draw).observe(plot)
 
   const render = (site: Site, range: RangeKey, nextMetric: MetricKey) => {
-    const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
+    const meta = rangeMeta(range)
     const from =
       site.ranges[range].from ?? site.ranges.all.totals.firstDate ?? site.today
     stats = weekdayProfile(fillDaily(site.daily, from, site.today), nextMetric)
