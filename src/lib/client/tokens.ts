@@ -51,6 +51,13 @@ export type SiteDay = {
   active?: number
   providers: Record<string, DaySlice>
   clients: Record<string, DaySlice>
+  /** Keyed by *canonical* model id, so the slices agree with
+   *  `ranges.*.byModel`. Optional only for the schema-7 window: the
+   *  collector added it under the current version, so a payload composed
+   *  before that deploy (or a session cache holding one) simply has no
+   *  model slicing — `hasModelSlices` gates the chart's model stacking on
+   *  it. Make it required when 7 leaves ACCEPTED_SCHEMA_VERSIONS. */
+  models?: Record<string, DaySlice>
 }
 
 export type SiteDevice = {
@@ -79,17 +86,28 @@ export type Site = {
 }
 
 /**
- * The /api/site schema version this dashboard was built against. The
+ * The /api/site schema version this dashboard is built against. The
  * collector stamps its payload (`schemaVersion`, SITE_VERSION in
  * tokens-worker/src/site.ts) and bumps it on any shape or semantics
- * change; isSite rejects versions this build does not know, so a stale
+ * change; isSite rejects versions this build does not accept, so a stale
  * cache or a mid-deploy mismatch falls back to a refetch (or the
- * fallback UI) instead of a renderer crash. Bump both sides together,
- * and refresh the fixture in tokens.test.ts.
+ * fallback UI) instead of a renderer crash. This number is also the
+ * sessionStorage cache key, so a deploy never reads the previous build's
+ * entries. What the decoder actually accepts is the set below.
  */
-export const SITE_SCHEMA_VERSION = 7
+export const SITE_SCHEMA_VERSION = 8
 
-const ACCEPTED_SCHEMA_VERSIONS = new Set([SITE_SCHEMA_VERSION])
+/**
+ * The two repos deploy independently, so a bump has no atomic moment.
+ * `daily[].models` is a shape the *previous* reader survives whole (it
+ * white-listed the fields it read), which is why the collector shipped it
+ * under 7 and left the bump to this side: widening the accepted set here
+ * and deploying first means neither version mismatch is ever visible.
+ * Rollout — this repo with {7, 8} → tokens-worker to SITE_VERSION 8 →
+ * this repo drops 7, makes `SiteDay.models` required, and recaptures the
+ * fixture (`curl https://tokens.lkwplus.com/api/site`).
+ */
+export const ACCEPTED_SCHEMA_VERSIONS = new Set([7, SITE_SCHEMA_VERSION])
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -172,7 +190,8 @@ const isDay = (value: unknown): boolean =>
   isCount(value.messages) &&
   (value.active === undefined || isCount(value.active)) &&
   isSlices(value.providers) &&
-  isSlices(value.clients)
+  isSlices(value.clients) &&
+  (value.models === undefined || isSlices(value.models))
 
 const isCountOrNull = (value: unknown): boolean =>
   value === null || isCount(value)
@@ -449,11 +468,31 @@ export function fillDaily(
 /** Sentinel for the residual stack segment. */
 export const OTHER = "other"
 
-/** The two dimensions the daily series is sliced by. */
-export type StackDim = "provider" | "client"
+/** The three dimensions the daily series is sliced by. */
+export type StackDim = "provider" | "client" | "model"
 
 /** A trend-chart stacking: dimension plus the ids that get own colors. */
 export type Stack = { dim: StackDim; ids: string[] }
+
+/**
+ * How many ids keep their own color per dimension. Three is right where
+ * the id space is small and stable (~8 providers, ~8 clients, and the
+ * top three carry almost everything); models are 40-odd and the question
+ * there is a *handover* — which model displaced which — so the stack
+ * needs room for the two or three in play plus what they replaced.
+ */
+const STACK_LIMITS: Record<StackDim, number> = {
+  provider: 3,
+  client: 3,
+  model: 5,
+}
+
+const rangeIds = (range: SiteRange, dim: StackDim): string[] =>
+  dim === "provider"
+    ? range.byProvider.map((entry) => entry.provider)
+    : dim === "client"
+      ? range.byClient.map((entry) => entry.client)
+      : range.byModel.map((entry) => entry.model)
 
 /**
  * The ids worth their own color when stacking the trend chart by `dim`:
@@ -461,24 +500,71 @@ export type Stack = { dim: StackDim; ids: string[] }
  * segments are whoever actually drove that window — reading all-time
  * ranks instead would fold a currently-busy provider into "other" to
  * keep a slot for one that has gone quiet. Everything below the cutoff
- * collapses into "other".
+ * collapses into "other", placeholder ids (`unknown`, `<synthetic>`)
+ * included: they are the one thing a color band can't say anything about.
  */
-export function stackFor(range: SiteRange, dim: StackDim, limit = 3): Stack {
-  const named = (
-    dim === "provider"
-      ? range.byProvider.map((entry) => entry.provider)
-      : range.byClient.map((entry) => entry.client)
-  )
-    .filter((id) => id && id !== "unknown")
+export function stackFor(
+  range: SiteRange,
+  dim: StackDim,
+  limit = STACK_LIMITS[dim],
+): Stack {
+  const named = rangeIds(range, dim)
+    .filter((id) => id && !PLACEHOLDER_IDS.has(id))
     .slice(0, limit)
   return { dim, ids: [...named, OTHER] }
 }
 
 export const stackLabel = (dim: StackDim, id: string) =>
-  dim === "provider" ? providerLabel(id) : clientLabel(id)
+  dim === "provider"
+    ? providerLabel(id)
+    : dim === "client"
+      ? clientLabel(id)
+      : id === OTHER
+        ? "Other"
+        : modelLabel(id)
+
+/** Where a stack segment takes its color from: a brand hue plus, for the
+ *  model dimension, how far to mix it toward the background. */
+export type StackPaint = { p: string; shade: number }
+
+/** Shades 0…3; past that the tints stop being tellable apart. */
+const SHADE_STEPS = 4
+
+/**
+ * Colors for a stack's ids, aligned with `stack.ids`.
+ *
+ * Provider and client ids are their own palette keys — a closed set of
+ * brand hues, one CSS rule each. Model ids are 40-odd and growing, so
+ * they take their *vendor's* hue instead (Opus renders Anthropic coral
+ * because it is Anthropic, matching what provider stacking shows) and
+ * separate within it by shade, assigned in stack order so a vendor's
+ * busiest model is its most saturated band. Nothing to maintain when a
+ * new model appears: it inherits whatever hue `modelBrand` places it in.
+ */
+export function stackPaint(stack: Stack): StackPaint[] {
+  // The residual segment is the plain grey; unbranded models start one
+  // shade in so they never render as a second "other".
+  const used = new Map<string, number>([[OTHER, 1]])
+  return stack.ids.map((id) => {
+    if (stack.dim !== "model" || id === OTHER) return { p: id, shade: 0 }
+    const brand = modelBrand(id) ?? OTHER
+    const seen = used.get(brand) ?? 0
+    used.set(brand, seen + 1)
+    return { p: brand, shade: Math.min(seen, SHADE_STEPS - 1) }
+  })
+}
 
 const daySlices = (day: SiteDay, dim: StackDim) =>
-  dim === "provider" ? day.providers : day.clients
+  (dim === "provider"
+    ? day.providers
+    : dim === "client"
+      ? day.clients
+      : day.models) ?? {}
+
+/** Whether the payload carries the per-day model slicing at all — false
+ *  for anything the collector composed before it shipped that key. */
+export const hasModelSlices = (site: Site) =>
+  site.daily.some((day) => day.models !== undefined)
 
 export type Bucket = {
   label: string
@@ -486,6 +572,11 @@ export type Bucket = {
   tokens: number
   cost: number
   messages: number
+  /** CLI-reported active time (ms) over the bucket's days. */
+  active: number
+  /** The metric summed over *only* the days that reported active time,
+   *  so the per-hour ratio divides two numbers about the same days. */
+  activeMetric: number
   /** Aligned with the id order of the stack passed to the bucket builders. */
   segments: number[]
 }
@@ -496,6 +587,8 @@ const emptyBucket = (label: string, title: string, stack: Stack): Bucket => ({
   tokens: 0,
   cost: 0,
   messages: 0,
+  active: 0,
+  activeMetric: 0,
   segments: stack.ids.map(() => 0),
 })
 
@@ -508,6 +601,10 @@ const addDay = (
   bucket.tokens += day.tokens
   bucket.cost += day.cost
   bucket.messages += day.messages
+  if (day.active && day.active > 0) {
+    bucket.active += day.active
+    bucket.activeMetric += day[metric]
+  }
   let named = 0
   for (const [id, slice] of Object.entries(daySlices(day, stack.dim))) {
     const index = stack.ids.indexOf(id)
@@ -585,17 +682,48 @@ export function windowTotals(daily: SiteDay[], from: string, to: string) {
   return totals
 }
 
-/** Total CLI-reported active time (ms) and how many days carried it. */
+/**
+ * Total CLI-reported active time (ms), how many days carried it, and the
+ * usage on those days — the intensity ratio ("tokens per hour of actual
+ * work") has to divide by the same days it measures, and the CLI only
+ * began tracking time partway through the history.
+ */
 export function activeTotals(daily: SiteDay[]) {
   let ms = 0
   let days = 0
+  let tokens = 0
+  let cost = 0
   for (const day of daily) {
     if (day.active && day.active > 0) {
       ms += day.active
       days += 1
+      tokens += day.tokens
+      cost += day.cost
     }
   }
-  return { ms, days }
+  return { ms, days, tokens, cost }
+}
+
+/** Consumption per hour of tracked active time; 0 without a duration. */
+export const perHour = (value: number, ms: number) =>
+  ms > 0 ? value / (ms / 3_600_000) : 0
+
+/**
+ * When a machine last reported, i.e. how fresh the numbers actually are.
+ * `generatedAt` answers a different question — the collector recomposes
+ * the payload on every accepted submission, including the ones that
+ * change nothing, so it reads "just now" through an idle afternoon.
+ */
+export const lastReport = (site: Site): number | null => {
+  let latest: number | null = null
+  for (const device of site.devices) {
+    if (
+      device.lastSeen !== null &&
+      (latest === null || device.lastSeen > latest)
+    )
+      latest = device.lastSeen
+  }
+  return latest
 }
 
 /* Today --------------------------------------------------------------- */
@@ -670,9 +798,7 @@ export function todayView(site: Site): TodayView {
       active: dayOf(eve)?.active ?? 0,
     },
     mix,
-    models: byModel
-      .filter((row) => row.tokens > 0 && !HIDDEN_MODELS.has(row.model))
-      .slice(0, TOP_MODELS),
+    models: byModel.filter((row) => row.tokens > 0).slice(0, TOP_MODELS),
   }
 }
 
@@ -884,6 +1010,10 @@ const MODEL_ACRONYMS = new Map<string, string>([
  *  Add new custom spellings here. */
 const MODEL_NAMES = new Map<string, string>([
   ["deepseek-v4-flash", "DeepSeek V4 Flash"],
+  // Placeholders, labelled the way the client and provider tables label
+  // theirs — a row for usage nothing could attribute, not a hidden one.
+  ["unknown", "Other"],
+  ["<synthetic>", "Synthetic"],
 ])
 
 const isVersion = (token: string) => /^\d+(\.\d+)*$/.test(token)
@@ -911,8 +1041,15 @@ export const modelLabel = (id: string) =>
 
 /* Brand icons ---------------------------------------------------------- */
 
-/** Placeholder ids the collector reports that aren't real models. */
-export const HIDDEN_MODELS = new Set(["unknown", "<synthetic>"])
+/**
+ * Ids the collector reports for usage it could not attribute. They are
+ * *rendered*, labelled "Other" like their client and provider
+ * counterparts — hiding a row silently drops its tokens out of a list
+ * whose shares are supposed to sum to the range. What they are excluded
+ * from is anything that counts distinct things ("models tried") or gives
+ * one its own color band, where "unattributed" is not an answer.
+ */
+export const PLACEHOLDER_IDS = new Set(["unknown", "<synthetic>"])
 
 /** Maps for the same reason the label tables are — and here a stray
  *  inherited value would be interpolated into a CSS attribute selector
@@ -959,6 +1096,20 @@ const MODEL_ICONS: [RegExp, string][] = [
 ]
 
 /**
+ * The vendor a model id belongs to, as a brand slug — the same key the
+ * icon set and the `[data-p]` color palette are indexed by, which is what
+ * lets a model band in the trend chart wear its vendor's hue without a
+ * per-model CSS rule. Null when no rule places the id.
+ */
+export function modelBrand(id: string): string | null {
+  const model = id.toLowerCase()
+  for (const [pattern, brand] of MODEL_ICONS) {
+    if (pattern.test(model)) return brand
+  }
+  return null
+}
+
+/**
  * Lobe Icons slug (vendored under src/assets/icons/ai/) for a breakdown
  * row, or null when the brand has no icon there — rows render a blank
  * spacer so names stay aligned.
@@ -969,9 +1120,5 @@ export function aiIcon(
 ): string | null {
   if (kind === "provider") return PROVIDER_ICONS.get(id) ?? null
   if (kind === "client") return CLIENT_ICONS.get(id) ?? null
-  const model = id.toLowerCase()
-  for (const [pattern, icon] of MODEL_ICONS) {
-    if (pattern.test(model)) return icon
-  }
-  return null
+  return modelBrand(id)
 }

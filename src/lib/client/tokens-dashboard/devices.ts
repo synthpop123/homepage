@@ -1,6 +1,8 @@
 /**
- * Devices section renderer: the reporting-device inventory with
- * liveness dots and CLI metadata, rendered once per load.
+ * Devices section renderer: the reporting-device inventory with liveness
+ * dots, and the CLI metadata behind an expandable row. Rendered once per
+ * load. The metadata used to live in a `title` tooltip, which is
+ * unreachable on touch — a phone got the dot and nothing else.
  */
 
 import {
@@ -12,10 +14,40 @@ import {
   formatTokens,
   isOnline,
   type Site,
+  type SiteDevice,
 } from "../tokens"
-import { el, type Query } from "./dom"
+import { el, type Icons, type Query } from "./dom"
 
-export function renderDevices(q: Query, site: Site) {
+/** Metadata that has no column, as label/value pairs; empty when the
+ *  device reported none of it (older CLIs, or a first submission). */
+const detailsOf = (device: SiteDevice): [string, string][] =>
+  (
+    [
+      ["Active time", device.activeMs ? formatDuration(device.activeMs) : ""],
+      [
+        "Longest stretch",
+        device.longestMs ? formatDuration(device.longestMs) : "",
+      ],
+      [
+        "Peak concurrency",
+        device.maxConcurrent && device.maxConcurrent > 1
+          ? `${device.maxConcurrent} sessions`
+          : "",
+      ],
+      [
+        "MCP servers",
+        device.mcpServers?.length ? device.mcpServers.join(", ") : "",
+      ],
+      [
+        "First seen",
+        device.firstSeen
+          ? formatDate(new Date(device.firstSeen).toISOString())
+          : "",
+      ],
+    ] as [string, string][]
+  ).filter(([, value]) => value !== "")
+
+export function renderDevices(q: Query, site: Site, icons: Icons) {
   const list = q(".tk-devices")
   if (!list) return
   if (site.devices.length === 0) {
@@ -26,24 +58,7 @@ export function renderDevices(q: Query, site: Site) {
     ...site.devices.map((device) => {
       const item = el("li", "tk-device")
       const online = isOnline(device.lastSeen)
-
-      // Depth that doesn't fit the row lives in the tooltip.
-      const details = [
-        device.activeMs
-          ? `${formatDuration(device.activeMs)} active in total`
-          : "",
-        device.longestMs
-          ? `longest stretch ${formatDuration(device.longestMs)}`
-          : "",
-        device.maxConcurrent && device.maxConcurrent > 1
-          ? `up to ${device.maxConcurrent} concurrent sessions`
-          : "",
-        device.mcpServers?.length ? `MCP: ${device.mcpServers.join(", ")}` : "",
-        device.firstSeen
-          ? `first seen ${formatDate(new Date(device.firstSeen).toISOString())}`
-          : "",
-      ].filter((part) => part !== "")
-      if (details.length > 0) item.title = details.join(" · ")
+      const details = detailsOf(device)
 
       const dot = el("span", "dot")
       if (online) dot.dataset.online = ""
@@ -68,13 +83,51 @@ export function renderDevices(q: Query, site: Site) {
       const usage = el("span", "dev-usage")
       const tokens = el("span", "dev-tokens", formatTokens(device.tokens))
       tokens.title = `${formatExact(device.tokens)} tokens`
-      const meta = [
-        formatCost(device.cost),
-        `${device.activeDays} active ${device.activeDays === 1 ? "day" : "days"}`,
-      ].filter((part) => part !== "")
-      usage.append(tokens, el("span", "dev-meta", meta.join(" · ")))
+      usage.append(
+        tokens,
+        el(
+          "span",
+          "dev-meta",
+          `${formatCost(device.cost)} · ${device.activeDays} active ${
+            device.activeDays === 1 ? "day" : "days"
+          }`,
+        ),
+      )
 
-      item.append(dot, id, usage)
+      // Nothing to expand into means nothing to click: a device without
+      // metadata stays a plain row rather than an empty disclosure.
+      if (details.length === 0) {
+        const row = el("div", "dev-row")
+        row.append(dot, id, usage)
+        item.append(row)
+        return item
+      }
+
+      const button = document.createElement("button")
+      button.type = "button"
+      button.className = "dev-row"
+      button.setAttribute("aria-expanded", "false")
+      const chevron = icons.icon("chevron")
+      button.append(dot, id, usage)
+      if (chevron) {
+        chevron.setAttribute("aria-hidden", "true")
+        button.append(chevron)
+      }
+
+      const table = el("dl", "dev-details")
+      table.hidden = true
+      for (const [label, value] of details) {
+        const pair = document.createElement("div")
+        pair.append(el("dt", "", label), el("dd", "", value))
+        table.append(pair)
+      }
+      button.addEventListener("click", () => {
+        const open = button.getAttribute("aria-expanded") === "true"
+        button.setAttribute("aria-expanded", String(!open))
+        table.hidden = open
+      })
+
+      item.append(button, table)
       return item
     }),
   )

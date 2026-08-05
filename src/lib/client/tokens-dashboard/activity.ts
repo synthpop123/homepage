@@ -17,10 +17,11 @@ import {
   formatExact,
   formatShare,
   formatTokens,
-  HIDDEN_MODELS,
   isMessagesOnly,
   levelScale,
   modelLabel,
+  perHour,
+  PLACEHOLDER_IDS,
   type Site,
   shiftDays,
 } from "../tokens"
@@ -104,8 +105,10 @@ export function renderFacts(q: Query, site: Site) {
     facts.current ? `since ${formatDay(facts.current.since)}` : "—",
   )
 
+  // "Models tried" counts distinct models, so the unattributed rows the
+  // lists still render are exactly what this must leave out.
   const models = site.ranges.all.byModel.filter(
-    (entry) => !HIDDEN_MODELS.has(entry.model),
+    (entry) => !PLACEHOLDER_IDS.has(entry.model),
   )
   setCard(
     cards,
@@ -117,16 +120,21 @@ export function renderFacts(q: Query, site: Site) {
     models.length > 0 ? `most used: ${modelLabel(models[0].model)}` : undefined,
   )
 
+  // Intensity rather than volume: tokens per hour of work that actually
+  // happened, over the days the CLI timed — the one ratio the rest of
+  // the page can't express.
   const tracked = activeTotals(site.daily)
   setCard(
     cards,
     "activeTime",
     tracked.ms > 0 ? formatDuration(tracked.ms) : "—",
     tracked.ms > 0
-      ? `across ${tracked.days} tracked ${tracked.days === 1 ? "day" : "days"}`
+      ? `≈ ${formatTokens(perHour(tracked.tokens, tracked.ms))} tokens per hour`
       : "not reported yet",
     tracked.ms > 0
-      ? `wall-clock agent time, reported by the CLI since it began tracking`
+      ? `wall-clock agent time across ${tracked.days} tracked ${
+          tracked.days === 1 ? "day" : "days"
+        } · ${formatCost(perHour(tracked.cost, tracked.ms))} per hour`
       : undefined,
   )
 }

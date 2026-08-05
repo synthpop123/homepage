@@ -21,6 +21,7 @@ import {
   formatExact,
   formatShare,
   formatTokens,
+  lastReport,
   modelLabel,
   type Site,
   todayView,
@@ -31,11 +32,20 @@ export function renderToday(q: Query, site: Site, icons: Icons) {
   const { idle, totals, active, before, mix, models } = todayView(site)
 
   // The date itself is redundant next to a heading that says "Today";
-  // how long ago the collector last reported is not.
+  // how long ago a machine last reported is not — and that is what the
+  // device list says too, so the two are one statement. `generatedAt` is
+  // a different clock: the collector recomposes on every submission,
+  // including the 80% that change nothing, so it would read "just now"
+  // through an idle afternoon. It stays as the fallback for a payload
+  // with no devices in it at all.
   const meta = q(".tk-today-meta")
   if (meta) {
-    meta.textContent = `updated ${formatAgo(Date.parse(site.generatedAt))}`
-    meta.title = formatDate(site.today)
+    const seen = lastReport(site)
+    const stamp = seen ?? Date.parse(site.generatedAt)
+    meta.textContent = `${seen === null ? "collected" : "synced"} ${formatAgo(stamp)}`
+    meta.title = `${formatDate(site.today)} · ${
+      seen === null ? "collector last ran" : "last device report"
+    } ${new Date(stamp).toLocaleString()}`
   }
 
   // Before the first submission of the day there is nothing to draw —

@@ -6,7 +6,20 @@
  * import each other.
  */
 
-import { formatShare } from "../tokens"
+import { formatShare, type StackPaint } from "../tokens"
+
+/**
+ * Color a stack segment or chip: `data-p` picks the brand hue out of the
+ * palette in Tokens.astro, `data-shade` mixes it toward the background
+ * so two models of the same vendor stay tellable apart. Shade 0 is the
+ * pure hue and carries no attribute, which is what every non-model
+ * stacking renders as.
+ */
+export const paint = <T extends HTMLElement>(node: T, spec?: StackPaint) => {
+  node.dataset.p = spec?.p ?? "other"
+  if (spec && spec.shade > 0) node.dataset.shade = String(spec.shade)
+  return node
+}
 
 export const el = (tag: string, className: string, text?: string) => {
   const node = document.createElement(tag)

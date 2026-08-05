@@ -71,6 +71,15 @@ const overviewCards = [
   { key: "activeDays", label: "Active days" },
 ]
 
+/** Dimensions the trend chart stacks by. `model` starts hidden: only a
+ *  payload carrying the per-day model slices can be stacked by it, and
+ *  the controller unhides the option when one arrives. */
+const stackOptions = [
+  { key: "provider", label: "By provider" },
+  { key: "client", label: "By client" },
+  { key: "model", label: "By model", hidden: true },
+]
+
 const factCards = [
   { key: "biggest", label: "Biggest day" },
   { key: "busiest", label: "Busiest week" },
@@ -205,14 +214,17 @@ const skeletonRows = (count: number) =>
       </div>
       <div class="tk-chart-foot">
         <fieldset class="tk-seg tk-seg-sm" aria-label="Stack trend bars by">
-          <label>
-            <input type="radio" name="stack" value="provider" checked>
-            <span>By provider</span>
-          </label>
-          <label>
-            <input type="radio" name="stack" value="client">
-            <span>By client</span>
-          </label>
+          {stackOptions.map(({ key, label, hidden }) => (
+            <label data-stack={key} hidden={hidden}>
+              <input
+                type="radio"
+                name="stack"
+                value={key}
+                checked={key === "provider"}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
         </fieldset>
         <ul class="tk-chart-legend" aria-hidden="true"></ul>
       </div>
@@ -296,15 +308,17 @@ const skeletonRows = (count: number) =>
       <ol class="tk-devices">
         {skeletonRows(2).map(() => (
           <li class="tk-device" data-skeleton aria-hidden="true">
-            <span class="dot" />
-            <span class="dev-id">
-              <span class="sk-line" style="inline-size: 7em" />
-              <span class="sk-line sk-sub" />
-            </span>
-            <span class="dev-usage">
-              <span class="sk-line sk-num" />
-              <span class="sk-line sk-sub" style="justify-self: end" />
-            </span>
+            <div class="dev-row">
+              <span class="dot" />
+              <span class="dev-id">
+                <span class="sk-line" style="inline-size: 7em" />
+                <span class="sk-line sk-sub" />
+              </span>
+              <span class="dev-usage">
+                <span class="sk-line sk-num" />
+                <span class="sk-line sk-sub" style="justify-self: end" />
+              </span>
+            </div>
           </li>
         ))}
       </ol>
@@ -340,6 +354,7 @@ const skeletonRows = (count: number) =>
     --tk-p-alibaba: light-dark(#ff6a00, #ff8a3d);
     --tk-p-xai: light-dark(#52525b, #a1a1aa);
     --tk-p-cursor: light-dark(#8b5cf6, #a78bfa);
+    --tk-p-deepseek: light-dark(#4d6bfe, #8ba0ff);
     --tk-p-zed: light-dark(#084ccf, #7a9bff);
     --tk-p-opencode: light-dark(#78716c, #a8a29e);
     /* Nous ships a cream-on-black brand; a parchment tan keeps it apart
@@ -475,6 +490,12 @@ const skeletonRows = (count: number) =>
   .tk-seg label {
     position: relative;
     display: inline-flex;
+  }
+
+  /* An option the loaded payload can't support (model stacking on a
+     collector that predates the per-day model slices). */
+  .tk-seg label[hidden] {
+    display: none;
   }
 
   .tk-seg input {
@@ -950,6 +971,34 @@ const skeletonRows = (count: number) =>
     --p: var(--tk-p-zai);
   }
 
+  tokens-dashboard :global([data-p="deepseek"]) {
+    --p: var(--tk-p-deepseek);
+  }
+
+  /* Kimi is Moonshot's model line: same vendor, same hue. */
+  tokens-dashboard :global([data-p="kimi"]) {
+    --p: var(--tk-p-moonshot);
+  }
+
+  /* Shades of a brand hue, for stacking the trend chart by model: the
+     vendor decides the color and the shade separates its models within
+     it, assigned in stack order, so "everything Anthropic" still reads
+     as one family. Model ids are 40-odd and growing — a rule per model
+     would be a maintenance queue, and an unmapped one would fall back to
+     grey. Must follow the [data-p] rules above: same specificity, and
+     these override the flat background-color they set. */
+  tokens-dashboard :global([data-shade="1"]) {
+    background-color: color-mix(in oklab, var(--p) 78%, var(--background));
+  }
+
+  tokens-dashboard :global([data-shade="2"]) {
+    background-color: color-mix(in oklab, var(--p) 58%, var(--background));
+  }
+
+  tokens-dashboard :global([data-shade="3"]) {
+    background-color: color-mix(in oklab, var(--p) 40%, var(--background));
+  }
+
   /* Breakdown lists */
 
   .tk-rows {
@@ -1082,16 +1131,78 @@ const skeletonRows = (count: number) =>
     flex-direction: column;
   }
 
-  .tk-devices :global(.tk-device) {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-2xs);
-    padding-block: var(--space-2xs);
-  }
-
   .tk-devices :global(.tk-device + .tk-device) {
     border-block-start: 1px solid var(--border);
+  }
+
+  /* The row is a button wherever there is CLI metadata to expand into;
+     the fourth column holds the chevron and collapses to nothing on the
+     plain <div> variant. */
+  .tk-devices :global(.dev-row) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-2xs);
+    inline-size: 100%;
+    padding-block: var(--space-2xs);
+    text-align: start;
+  }
+
+  .tk-devices :global(button.dev-row) {
+    cursor: pointer;
+  }
+
+  .tk-devices :global(button.dev-row:hover .dev-name) {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .tk-devices :global(button.dev-row:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .tk-devices :global(.dev-row svg) {
+    inline-size: 1em;
+    block-size: 1em;
+    color: var(--muted-foreground);
+    transition: rotate 0.15s;
+  }
+
+  .tk-devices :global(.dev-row[aria-expanded="true"] svg) {
+    rotate: 180deg;
+  }
+
+  /* Two columns of label/value pairs, indented past the liveness dot so
+     they read as belonging to the row above. */
+  .tk-devices :global(.dev-details) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3xs) var(--space-s);
+    margin-inline-start: calc(0.5rem + var(--space-2xs));
+    padding-block-end: var(--space-2xs);
+    font-size: var(--step--1);
+
+    @media (width < 30rem) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .tk-devices :global(.dev-details > div) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+  }
+
+  .tk-devices :global(.dev-details dt) {
+    color: var(--muted-foreground);
+  }
+
+  .tk-devices :global(.dev-details dd) {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
   }
 
   .tk-devices :global(.dot) {

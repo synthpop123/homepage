@@ -11,6 +11,7 @@
  */
 
 import {
+  hasModelSlices,
   loadSite,
   type MetricKey,
   type RangeKey,
@@ -79,16 +80,22 @@ export function mountTokensDashboard(root: HTMLElement) {
    *  until a render completes, which is what makes a fresh payload (or a
    *  recovery after a throw) repaint everything. */
   let shown: Controls | null = null
+  /** Whether the loaded payload can be stacked by model at all. */
+  let modelStacking = false
 
   const readState = (): Controls => {
     const values = new FormData(form)
     const stackInput = root.querySelector<HTMLInputElement>(
       'input[name="stack"]:checked',
     )
+    const stackDim = (stackInput?.value ?? "provider") as StackDim
     return {
       range: (values.get("range") ?? "month") as RangeKey,
       metric: (values.get("metric") ?? "tokens") as MetricKey,
-      stackDim: (stackInput?.value ?? "provider") as StackDim,
+      // Model stacking needs the per-day model slices; a payload composed
+      // before the collector shipped them charts by provider instead of
+      // by a single grey "other" band.
+      stackDim: stackDim === "model" && !modelStacking ? "provider" : stackDim,
     }
   }
 
@@ -135,11 +142,28 @@ export function mountTokensDashboard(root: HTMLElement) {
     site = loaded
     // New numbers behind unchanged controls: every section is stale.
     shown = null
+    // Hiding the option is not enough on its own: the controls persist
+    // for the session, so a restored "model" choice would leave the
+    // segmented control with no visible selection while the chart drew
+    // something else. Hand the selection back to provider.
+    modelStacking = hasModelSlices(loaded)
+    const modelOption = q('.tk-chart-foot label[data-stack="model"]')
+    if (modelOption) modelOption.hidden = !modelStacking
+    const modelInput = root.querySelector<HTMLInputElement>(
+      'input[name="stack"][value="model"]',
+    )
+    if (!modelStacking && modelInput?.checked) {
+      modelInput.checked = false
+      const fallback = root.querySelector<HTMLInputElement>(
+        'input[name="stack"][value="provider"]',
+      )
+      if (fallback) fallback.checked = true
+    }
     try {
       renderToday(q, loaded, icons)
       renderHeatmap(q, loaded)
       renderFacts(q, loaded)
-      renderDevices(q, loaded)
+      renderDevices(q, loaded, icons)
       renderDynamic()
     } catch (error) {
       site = previous

@@ -11,11 +11,13 @@ import {
   fillDaily,
   formatCost,
   formatCount,
+  formatDuration,
   formatMetric,
   formatShare,
   formatTokens,
   type MetricKey,
   monthlyBuckets,
+  perHour,
   type RangeKey,
   RANGES,
   type Site,
@@ -23,11 +25,13 @@ import {
   type StackDim,
   stackFor,
   stackLabel,
+  stackPaint,
+  type StackPaint,
   WEEKDAYS,
   type WeekdayStat,
   weekdayProfile,
 } from "../tokens"
-import { el, placeTip, type Query } from "./dom"
+import { el, paint, placeTip, type Query } from "./dom"
 
 /* Trend: bars stacked by provider/client; monthly buckets for all time */
 
@@ -36,21 +40,20 @@ export function createTrendChart(q: Query) {
   const tip = q(".tk-tip")
   const barsArea = q(".tk-chart-bars")
   let stack: Stack = { dim: "provider", ids: [] }
+  let paints: StackPaint[] = []
   let tipBuckets: Bucket[] = []
   let tipMetric: MetricKey = "tokens"
 
   const buildTip = (bucket: Bucket) => {
     if (!tip) return
     const rows = stack.ids
-      .map((id, i) => ({ id, value: bucket.segments[i] }))
+      .map((id, i) => ({ id, value: bucket.segments[i], paint: paints[i] }))
       .filter((row) => row.value > 0)
     const list = el("ul", "")
     for (const row of rows) {
       const item = el("li", "")
-      const chip = el("span", "chip")
-      chip.dataset.p = row.id
       item.append(
-        chip,
+        paint(el("span", "chip"), row.paint),
         el("span", "", stackLabel(stack.dim, row.id)),
         el(
           "span",
@@ -60,6 +63,16 @@ export function createTrendChart(q: Query) {
       )
       list.append(item)
     }
+    // Intensity, where the CLI tracked the hours behind the numbers: the
+    // ratio is taken over those days alone, so a month that was only
+    // half tracked still reports the rate of the half it knows.
+    const intensity =
+      bucket.active > 0
+        ? `${formatDuration(bucket.active)} active · ≈ ${formatMetric(
+            perHour(bucket.activeMetric, bucket.active),
+            tipMetric,
+          )}${tipMetric === "tokens" ? " tokens" : ""} per hour`
+        : ""
     tip.replaceChildren(
       el("strong", "tip-title", bucket.title),
       el(
@@ -71,6 +84,7 @@ export function createTrendChart(q: Query) {
             ? `${formatCount(bucket.messages)} ${bucket.messages === 1 ? "message" : "messages"} · token counts unavailable`
             : "No usage",
       ),
+      ...(intensity ? [el("span", "tip-total", intensity)] : []),
       ...(rows.length > 0 ? [list] : []),
     )
   }
@@ -100,6 +114,7 @@ export function createTrendChart(q: Query) {
     dim: StackDim,
   ) => {
     stack = stackFor(site.ranges[range], dim)
+    paints = stackPaint(stack)
     const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
     const from = site.ranges[range].from
     const buckets =
@@ -138,11 +153,10 @@ export function createTrendChart(q: Query) {
           if (value <= 0) bar.dataset.zero = ""
           else
             bar.append(
-              ...stack.ids.flatMap((id, i) => {
+              ...stack.ids.flatMap((_, i) => {
                 const share = bucket.segments[i]
                 if (share <= 0) return []
-                const segment = document.createElement("i")
-                segment.dataset.p = id
+                const segment = paint(document.createElement("i"), paints[i])
                 segment.style.flexGrow = String(share)
                 return [segment]
               }),
@@ -175,9 +189,10 @@ export function createTrendChart(q: Query) {
       legend.replaceChildren(
         ...active.map((id) => {
           const item = el("li", "")
-          const chip = el("span", "chip")
-          chip.dataset.p = id
-          item.append(chip, stackLabel(stack.dim, id))
+          item.append(
+            paint(el("span", "chip"), paints[stack.ids.indexOf(id)]),
+            stackLabel(stack.dim, id),
+          )
           return item
         }),
       )

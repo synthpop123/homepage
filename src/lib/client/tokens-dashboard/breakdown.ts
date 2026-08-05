@@ -12,7 +12,6 @@ import {
   formatDate,
   formatExact,
   formatMetric,
-  HIDDEN_MODELS,
   type MetricKey,
   modelLabel,
   providerLabel,
@@ -38,17 +37,22 @@ export function createBreakdown(q: Query, icons: Icons) {
 
     const groups: {
       key: BreakdownKind
-      rows: { id: string; name: string; usage: Usage & UsageSpan }[]
+      rows: {
+        id: string
+        name: string
+        usage: Usage & UsageSpan
+        /** Canonical providers a model was served through, comma-joined. */
+        via?: string
+      }[]
     }[] = [
       {
         key: "model",
-        rows: stats.byModel
-          .filter((entry) => !HIDDEN_MODELS.has(entry.model))
-          .map((entry) => ({
-            id: entry.model,
-            name: modelLabel(entry.model),
-            usage: entry,
-          })),
+        rows: stats.byModel.map((entry) => ({
+          id: entry.model,
+          name: modelLabel(entry.model),
+          usage: entry,
+          via: entry.providers,
+        })),
       },
       {
         key: "client",
@@ -99,6 +103,14 @@ export function createBreakdown(q: Query, icons: Icons) {
         if (row.usage.firstDate) {
           parts.push(`first ${formatDate(row.usage.firstDate)}`)
         }
+        // Which providers served this model — the interesting half of a
+        // multi-client setup, where the same model arrives through a
+        // vendor API and a gateway both.
+        const via = row.via
+          ?.split(",")
+          .filter((id) => id !== "")
+          .map(providerLabel)
+        if (via && via.length > 0) parts.push(`via ${via.join(", ")}`)
         return usageRow(icons, {
           icon: aiIcon(group.key, row.id),
           name: row.name,

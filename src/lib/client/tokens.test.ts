@@ -8,6 +8,8 @@
 import { describe, expect, it } from "bun:test"
 import { weekdayIndex } from "./heatmap"
 import {
+  ACCEPTED_SCHEMA_VERSIONS,
+  activeTotals,
   aiIcon,
   clientLabel,
   computeFacts,
@@ -16,11 +18,15 @@ import {
   formatDelta,
   formatShare,
   hasActivity,
+  hasModelSlices,
   isMessagesOnly,
   isSite,
+  lastReport,
   levelScale,
+  modelBrand,
   modelLabel,
   monthlyBuckets,
+  perHour,
   providerLabel,
   RANGE_KEYS,
   shiftDays,
@@ -28,7 +34,9 @@ import {
   SITE_SCHEMA_VERSION,
   type SiteDay,
   type SiteRange,
+  type StackDim,
   stackFor,
+  stackPaint,
   todayView,
   type Usage,
   type UsageSpan,
@@ -82,13 +90,22 @@ const device = (): Site["devices"][number] => ({
   cost: 1.5,
 })
 
+const modelRows = (...models: [string, number][]): SiteRange["byModel"] =>
+  models.map(([model, tokens]) => ({
+    ...usage(tokens),
+    ...span,
+    model,
+    providers: "anthropic",
+  }))
+
 const rangeStats = (
   byProvider: SiteRange["byProvider"] = [],
   byClient: SiteRange["byClient"] = [],
+  byModel: SiteRange["byModel"] = [],
 ): SiteRange => ({
   from: null,
   totals: { ...usage(), activeDays: 0, firstDate: null, lastDate: null },
-  byModel: [],
+  byModel,
   byClient,
   byProvider,
 })
@@ -241,7 +258,7 @@ describe("stackFor", () => {
     })
   })
 
-  it("skips unknown and empty ids", () => {
+  it("skips placeholder and empty ids", () => {
     const stacked = stackFor(
       rangeStats([
         { ...usage(100), ...span, provider: "unknown" },
@@ -251,6 +268,104 @@ describe("stackFor", () => {
       "provider",
     )
     expect(stacked.ids).toEqual(["openai", "other"])
+    // Same treatment on the model dimension, where the collector also
+    // reports Cursor's <synthetic> placeholder.
+    expect(
+      stackFor(
+        rangeStats(
+          [],
+          [],
+          modelRows(
+            ["unknown", 100],
+            ["<synthetic>", 80],
+            ["claude-opus-5", 25],
+          ),
+        ),
+        "model",
+      ).ids,
+    ).toEqual(["claude-opus-5", "other"])
+  })
+
+  // Three is right for ~8 providers whose top three carry everything;
+  // models are 40-odd and the interesting picture is a handover, which
+  // needs room for what was displaced as well.
+  it("gives the model dimension a wider default cutoff", () => {
+    const stacked = stackFor(
+      rangeStats(
+        [],
+        [],
+        modelRows(
+          ["claude-opus-5", 60],
+          ["claude-fable-5", 50],
+          ["gpt-5.6-sol", 40],
+          ["claude-sonnet-5", 30],
+          ["gemini-3-pro", 20],
+          ["grok-4.5", 10],
+        ),
+      ),
+      "model",
+    )
+    expect(stacked.ids).toEqual([
+      "claude-opus-5",
+      "claude-fable-5",
+      "gpt-5.6-sol",
+      "claude-sonnet-5",
+      "gemini-3-pro",
+      "other",
+    ])
+  })
+})
+
+describe("stackPaint", () => {
+  it("paints provider and client ids with their own hue, unshaded", () => {
+    expect(
+      stackPaint({ dim: "provider", ids: ["anthropic", "other"] }),
+    ).toEqual([
+      { p: "anthropic", shade: 0 },
+      { p: "other", shade: 0 },
+    ])
+  })
+
+  // The point of the shade ramp: a stack of five models must not be five
+  // unrelated colors, nor two identical corals.
+  it("gives models their vendor's hue and separates them by shade", () => {
+    const paints = stackPaint({
+      dim: "model",
+      ids: [
+        "claude-opus-5",
+        "gpt-5.6-sol",
+        "claude-fable-5",
+        "claude-sonnet-5",
+        "other",
+      ],
+    })
+    expect(paints).toEqual([
+      { p: "claude", shade: 0 },
+      { p: "openai", shade: 0 },
+      { p: "claude", shade: 1 },
+      { p: "claude", shade: 2 },
+      { p: "other", shade: 0 },
+    ])
+  })
+
+  it("keeps unplaceable models off the residual's exact grey", () => {
+    const paints = stackPaint({
+      dim: "model",
+      ids: ["brand-new-model", "another-new-model", "other"],
+    })
+    expect(paints).toEqual([
+      { p: "other", shade: 1 },
+      { p: "other", shade: 2 },
+      { p: "other", shade: 0 },
+    ])
+  })
+
+  it("stops the ramp where tints stop being tellable apart", () => {
+    const paints = stackPaint({
+      dim: "model",
+      ids: Array.from({ length: 6 }, (_, i) => `claude-opus-${i}`),
+    })
+    expect(paints.map((paint) => paint.shade)).toEqual([0, 1, 2, 3, 3, 3])
   })
 
   it("reads the client dimension from byClient", () => {
@@ -326,6 +441,108 @@ describe("dailyBuckets", () => {
       "tokens",
     )
     expect(bucket.segments[1]).toBe(0)
+  })
+
+  it("slices by model when that dimension is charted", () => {
+    const [bucket] = dailyBuckets(
+      [
+        day("2026-07-01", 100, {
+          models: {
+            "claude-opus-5": { tokens: 70, cost: 6 },
+            "gpt-5.6-sol": { tokens: 30, cost: 2 },
+          },
+          providers: { anthropic: { tokens: 100, cost: 8 } },
+        }),
+      ],
+      { dim: "model", ids: ["claude-opus-5", "other"] },
+      "tokens",
+    )
+    expect(bucket.segments).toEqual([70, 30])
+  })
+
+  // A payload composed before the collector shipped per-day model slices
+  // has no `models` key at all; charting it must not throw.
+  it("treats a day without model slices as all residual", () => {
+    const [bucket] = dailyBuckets(
+      [day("2026-07-01", 100)],
+      { dim: "model", ids: ["claude-opus-5", "other"] },
+      "tokens",
+    )
+    expect(bucket.segments).toEqual([0, 100])
+  })
+
+  it("carries active time and the usage of the days that reported it", () => {
+    const [bucket] = monthlyBuckets(
+      [
+        day("2026-07-01", 100, { active: 3_600_000 }),
+        day("2026-07-02", 40), // untracked: neither hours nor its tokens
+      ],
+      "2026-07-02",
+      { dim: "provider", ids: ["other"] },
+      "tokens",
+    )
+    expect(bucket.tokens).toBe(140)
+    expect(bucket.active).toBe(3_600_000)
+    expect(bucket.activeMetric).toBe(100)
+    expect(perHour(bucket.activeMetric, bucket.active)).toBe(100)
+  })
+})
+
+describe("hasModelSlices", () => {
+  it("is false only when no day carries the key", () => {
+    const withoutModels = { ...site(), daily: [day("2026-07-19", 5)] }
+    expect(hasModelSlices(withoutModels)).toBe(false)
+    expect(
+      hasModelSlices({
+        ...site(),
+        daily: [day("2026-07-19", 5), day("2026-07-20", 5, { models: {} })],
+      }),
+    ).toBe(true)
+  })
+})
+
+describe("activeTotals", () => {
+  it("sums only the days the CLI timed, usage included", () => {
+    const totals = activeTotals([
+      day("2026-07-01", 100, { cost: 4, active: 3_600_000 }),
+      day("2026-07-02", 50, { cost: 2 }), // no active time reported
+      day("2026-07-03", 20, { cost: 1, active: 1_800_000 }),
+    ])
+    expect(totals).toEqual({ ms: 5_400_000, days: 2, tokens: 120, cost: 5 })
+    // The ratio divides two numbers about the same two days.
+    expect(perHour(totals.tokens, totals.ms)).toBe(80)
+  })
+
+  it("reads nothing out of an untracked series", () => {
+    expect(activeTotals([day("2026-07-01", 100)])).toEqual({
+      ms: 0,
+      days: 0,
+      tokens: 0,
+      cost: 0,
+    })
+    expect(perHour(100, 0)).toBe(0)
+  })
+})
+
+describe("lastReport", () => {
+  it("takes the newest device sync, ignoring devices that never reported", () => {
+    expect(
+      lastReport({
+        ...site(),
+        devices: [
+          { ...device(), lastSeen: 1_784_000_000_000 },
+          { ...device(), lastSeen: null },
+          { ...device(), lastSeen: 1_785_000_000_000 },
+        ],
+      }),
+    ).toBe(1_785_000_000_000)
+  })
+
+  it("is null when nothing has ever reported", () => {
+    expect(lastReport(site())).toBeNull()
+    expect(
+      lastReport({ ...site(), devices: [{ ...device(), lastSeen: null }] }),
+    ).toBeNull()
   })
 })
 
@@ -513,25 +730,28 @@ describe("todayView", () => {
     ])
   })
 
-  it("drops placeholder models and caps the list at five", () => {
+  // Placeholder ids are rendered, not hidden — a list whose shares are
+  // meant to sum to the day cannot silently drop rows. They are labelled
+  // the way the client and provider tables label theirs.
+  it("keeps unattributed usage in the list and caps it at five", () => {
     const view = todayView(
       todaySite({
         totals: { tokens: 100 },
         byModel: [
           modelRow("unknown", 50),
-          modelRow("<synthetic>", 20),
           ...Array.from({ length: 6 }, (_, i) => modelRow(`m-${i}`, 10 - i)),
           modelRow("m-idle", 0),
         ],
       }),
     )
     expect(view.models.map((row) => row.model)).toEqual([
+      "unknown",
       "m-0",
       "m-1",
       "m-2",
       "m-3",
-      "m-4",
     ])
+    expect(modelLabel("unknown")).toBe("Other")
   })
 })
 
@@ -564,6 +784,24 @@ describe("labels and icons", () => {
     expect(aiIcon("model", "claude-opus-5")).toBe("claude")
     expect(aiIcon("model", "deepseek-v4-flash")).toBe("deepseek")
     expect(aiIcon("model", "qwen3.8-max")).toBe("qwen")
+  })
+
+  // The icon slug and the [data-p] palette key are the same brand key,
+  // which is what lets a model band wear its vendor's color without a
+  // CSS rule per model id.
+  it("places models on their vendor's brand key", () => {
+    expect(modelBrand("claude-opus-4-5")).toBe("claude")
+    expect(modelBrand("gpt-5.6-sol")).toBe("openai")
+    expect(modelBrand("o3")).toBe("openai")
+    expect(modelBrand("glm-4.7")).toBe("zai")
+    expect(modelBrand("composer-2.5")).toBe("cursor")
+    expect(modelBrand("brand-new-model")).toBeNull()
+    expect(modelBrand("unknown")).toBeNull()
+  })
+
+  it("labels the collector's placeholder model ids", () => {
+    expect(modelLabel("unknown")).toBe("Other")
+    expect(modelLabel("<synthetic>")).toBe("Synthetic")
   })
 
   it("humanizes model ids into display names", () => {
@@ -743,12 +981,38 @@ describe("isSite", () => {
 
   it("rejects schema versions this build does not accept", () => {
     expect(isSite({ ...site(), schemaVersion: undefined })).toBe(false)
-    expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION - 1 })).toBe(
-      false,
-    )
     expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION + 1 })).toBe(
       false,
     )
+    for (const version of ACCEPTED_SCHEMA_VERSIONS) {
+      expect(isSite({ ...site(), schemaVersion: version })).toBe(true)
+      expect(isSite({ ...site(), schemaVersion: version - 1 })).toBe(
+        ACCEPTED_SCHEMA_VERSIONS.has(version - 1),
+      )
+    }
+  })
+
+  // The rollout window: `daily[].models` went out under schema 7, so a
+  // payload the dashboard accepts may or may not carry it — but a
+  // malformed slice map is still a rejection, not a shrug.
+  it("accepts daily rows with or without model slices", () => {
+    const withModels = site()
+    withModels.daily = [
+      day("2026-07-20", 5, {
+        models: { "claude-opus-5": { tokens: 5, cost: 1 } },
+      }),
+    ]
+    expect(isSite(withModels)).toBe(true)
+
+    const withoutModels = site()
+    withoutModels.daily = [day("2026-07-20", 5)]
+    expect(isSite(withoutModels)).toBe(true)
+
+    const badModels = site()
+    badModels.daily = [
+      { ...day("2026-07-20", 5), models: { "claude-opus-5": { tokens: "5" } } },
+    ] as unknown as SiteDay[]
+    expect(isSite(badModels)).toBe(false)
   })
 
   it("rejects payloads missing the spine the dashboard indexes", () => {
@@ -862,7 +1126,11 @@ describe("/api/site fixture contract", () => {
   // Captured /api/site payload; producer-side assertions live in
   // tokens-worker/test/site.spec.ts.
   it("passes the strict decoder", () => {
-    expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
+    // A captured payload is whatever the collector was serving that day,
+    // so during a rollout window it pins one of the accepted versions,
+    // not necessarily the newest. Recapture it (never hand-edit) when
+    // tokens-worker bumps SITE_VERSION.
+    expect(ACCEPTED_SCHEMA_VERSIONS.has(fixture.schemaVersion)).toBe(true)
     expect(isSite(fixture)).toBe(true)
   })
 
@@ -901,9 +1169,15 @@ describe("/api/site fixture contract", () => {
 
   it("feeds the render paths the dashboard actually runs", () => {
     if (!isSite(fixture)) throw new Error("fixture failed decoding")
-    for (const dim of ["provider", "client"] as const) {
+    // Model stacking only applies once the capture carries the per-day
+    // model slices; until then the chart hides that toggle, and so does
+    // this loop.
+    const dims: StackDim[] = ["provider", "client"]
+    if (hasModelSlices(fixture)) dims.push("model")
+    for (const dim of dims) {
       const stack = stackFor(fixture.ranges.all, dim)
       expect(stack.ids.length).toBeGreaterThan(1)
+      expect(stackPaint(stack)).toHaveLength(stack.ids.length)
       const buckets = dailyBuckets(fixture.daily, stack, "tokens")
       expect(buckets).toHaveLength(fixture.daily.length)
       // Every day's stack segments add back up to the day's total.
