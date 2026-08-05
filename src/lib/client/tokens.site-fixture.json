@@ -1,297 +1,204 @@
 {
-  "schemaVersion": 9,
-  "generatedAt": "2026-08-05T13:24:42.318Z",
-  "today": "2026-08-05",
+  "schemaVersion": 10,
+  "generatedAt": "2026-08-05T18:06:15.677Z",
+  "today": "2026-08-06",
   "ranges": {
     "day": {
-      "from": "2026-08-05",
+      "from": "2026-08-06",
       "totals": {
-        "input": 724537,
-        "output": 400837,
-        "cacheRead": 94902441,
-        "cacheWrite": 1060226,
-        "reasoning": 6934,
-        "tokens": 97094975,
-        "messages": 755,
-        "cost": 58.373315,
+        "input": 58666,
+        "output": 65590,
+        "cacheRead": 7026581,
+        "cacheWrite": 201857,
+        "reasoning": 607,
+        "tokens": 7353301,
+        "messages": 101,
+        "cost": 6.550905,
         "activeDays": 1,
-        "firstDate": "2026-08-05",
-        "lastDate": "2026-08-05"
+        "firstDate": "2026-08-06",
+        "lastDate": "2026-08-06"
       },
       "byModel": [
         {
-          "input": 276037,
-          "output": 322994,
-          "cacheRead": 83764521,
-          "cacheWrite": 1060226,
+          "input": 45363,
+          "output": 64854,
+          "cacheRead": 6971087,
+          "cacheWrite": 188336,
           "reasoning": 0,
-          "tokens": 85423778,
-          "messages": 482,
-          "cost": 57.963708,
+          "tokens": 7269640,
+          "messages": 94,
+          "cost": 6.510809,
           "model": "claude-opus-5",
           "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
+          "firstDate": "2026-08-06",
+          "lastDate": "2026-08-06",
           "providers": ["anthropic"]
         },
         {
-          "input": 370603,
-          "output": 74440,
-          "cacheRead": 10731904,
+          "input": 13248,
+          "output": 622,
+          "cacheRead": 41856,
           "cacheWrite": 0,
-          "reasoning": 6467,
-          "tokens": 11183414,
-          "messages": 228,
-          "cost": 0.104588,
+          "reasoning": 607,
+          "tokens": 56333,
+          "messages": 6,
+          "cost": 0.002316,
           "model": "deepseek-v4-flash",
           "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
+          "firstDate": "2026-08-06",
+          "lastDate": "2026-08-06",
           "providers": ["deepseek"]
         },
         {
-          "input": 49511,
-          "output": 1901,
-          "cacheRead": 237056,
-          "cacheWrite": 0,
-          "reasoning": 467,
-          "tokens": 288935,
-          "messages": 34,
-          "cost": 0.033549,
-          "model": "gpt-5.6-luna",
-          "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
-          "providers": ["openai"]
-        },
-        {
-          "input": 28386,
-          "output": 1502,
-          "cacheRead": 168960,
-          "cacheWrite": 0,
+          "input": 55,
+          "output": 114,
+          "cacheRead": 13638,
+          "cacheWrite": 13521,
           "reasoning": 0,
-          "tokens": 198848,
-          "messages": 9,
-          "cost": 0.27147,
-          "model": "gpt-5.6-sol",
+          "tokens": 27328,
+          "messages": 1,
+          "cost": 0.03778,
+          "model": "claude-sonnet-5",
           "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
-          "providers": ["openai"]
-        },
-        {
-          "input": 0,
-          "output": 0,
-          "cacheRead": 0,
-          "cacheWrite": 0,
-          "reasoning": 0,
-          "tokens": 0,
-          "messages": 2,
-          "cost": 0,
-          "model": "<synthetic>",
-          "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
-          "providers": ["unknown"]
+          "firstDate": "2026-08-06",
+          "lastDate": "2026-08-06",
+          "providers": ["anthropic"]
         }
       ],
       "byClient": [
         {
-          "input": 560508,
-          "output": 383328,
-          "cacheRead": 93403177,
-          "cacheWrite": 1060226,
+          "input": 45418,
+          "output": 64968,
+          "cacheRead": 6984725,
+          "cacheWrite": 201857,
           "reasoning": 0,
-          "tokens": 95407239,
-          "messages": 599,
-          "cost": 58.047416,
+          "tokens": 7296968,
+          "messages": 95,
+          "cost": 6.548589,
           "client": "claude",
           "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
+          "firstDate": "2026-08-06",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "claude-opus-5",
-              "tokens": 85423778,
-              "cost": 57.963708,
-              "messages": 482
+              "tokens": 7269640,
+              "cost": 6.510809,
+              "messages": 94
             },
             {
-              "model": "deepseek-v4-flash",
-              "tokens": 9983461,
-              "cost": 0.083708,
-              "messages": 115
-            },
-            { "model": "<synthetic>", "tokens": 0, "cost": 0, "messages": 2 }
+              "model": "claude-sonnet-5",
+              "tokens": 27328,
+              "cost": 0.03778,
+              "messages": 1
+            }
           ]
         },
         {
-          "input": 98852,
-          "output": 10316,
-          "cacheRead": 1200000,
+          "input": 13248,
+          "output": 622,
+          "cacheRead": 41856,
           "cacheWrite": 0,
-          "reasoning": 6508,
-          "tokens": 1315676,
-          "messages": 139,
-          "cost": 0.047201,
+          "reasoning": 607,
+          "tokens": 56333,
+          "messages": 6,
+          "cost": 0.002316,
           "client": "hermes",
           "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
+          "firstDate": "2026-08-06",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "deepseek-v4-flash",
-              "tokens": 1026741,
-              "cost": 0.013652,
-              "messages": 105
-            },
-            {
-              "model": "gpt-5.6-luna",
-              "tokens": 288935,
-              "cost": 0.033549,
-              "messages": 34
-            }
-          ]
-        },
-        {
-          "input": 57625,
-          "output": 5328,
-          "cacheRead": 251776,
-          "cacheWrite": 0,
-          "reasoning": 0,
-          "tokens": 314729,
-          "messages": 14,
-          "cost": 0.276867,
-          "client": "pi",
-          "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
-          "models": [
-            {
-              "model": "gpt-5.6-sol",
-              "tokens": 198848,
-              "cost": 0.27147,
-              "messages": 9
-            },
-            {
-              "model": "deepseek-v4-flash",
-              "tokens": 115881,
-              "cost": 0.005397,
-              "messages": 5
-            }
-          ]
-        },
-        {
-          "input": 7552,
-          "output": 1865,
-          "cacheRead": 47488,
-          "cacheWrite": 0,
-          "reasoning": 426,
-          "tokens": 57331,
-          "messages": 3,
-          "cost": 0.001832,
-          "client": "opencode",
-          "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05",
-          "models": [
-            {
-              "model": "deepseek-v4-flash",
-              "tokens": 57331,
-              "cost": 0.001832,
-              "messages": 3
+              "tokens": 56333,
+              "cost": 0.002316,
+              "messages": 6
             }
           ]
         }
       ],
       "byProvider": [
         {
-          "input": 276037,
-          "output": 322994,
-          "cacheRead": 83764521,
-          "cacheWrite": 1060226,
+          "input": 45418,
+          "output": 64968,
+          "cacheRead": 6984725,
+          "cacheWrite": 201857,
           "reasoning": 0,
-          "tokens": 85423778,
-          "messages": 482,
-          "cost": 57.963708,
+          "tokens": 7296968,
+          "messages": 95,
+          "cost": 6.548589,
           "provider": "anthropic",
           "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05"
+          "firstDate": "2026-08-06",
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "claude-opus-5",
+              "tokens": 7269640,
+              "cost": 6.510809,
+              "messages": 94
+            },
+            {
+              "model": "claude-sonnet-5",
+              "tokens": 27328,
+              "cost": 0.03778,
+              "messages": 1
+            }
+          ]
         },
         {
-          "input": 370603,
-          "output": 74440,
-          "cacheRead": 10731904,
+          "input": 13248,
+          "output": 622,
+          "cacheRead": 41856,
           "cacheWrite": 0,
-          "reasoning": 6467,
-          "tokens": 11183414,
-          "messages": 228,
-          "cost": 0.104588,
+          "reasoning": 607,
+          "tokens": 56333,
+          "messages": 6,
+          "cost": 0.002316,
           "provider": "deepseek",
           "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05"
-        },
-        {
-          "input": 77897,
-          "output": 3403,
-          "cacheRead": 406016,
-          "cacheWrite": 0,
-          "reasoning": 467,
-          "tokens": 487783,
-          "messages": 43,
-          "cost": 0.305019,
-          "provider": "openai",
-          "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05"
-        },
-        {
-          "input": 0,
-          "output": 0,
-          "cacheRead": 0,
-          "cacheWrite": 0,
-          "reasoning": 0,
-          "tokens": 0,
-          "messages": 2,
-          "cost": 0,
-          "provider": "unknown",
-          "days": 1,
-          "firstDate": "2026-08-05",
-          "lastDate": "2026-08-05"
+          "firstDate": "2026-08-06",
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 56333,
+              "cost": 0.002316,
+              "messages": 6
+            }
+          ]
         }
       ]
     },
     "week": {
-      "from": "2026-07-30",
+      "from": "2026-07-31",
       "totals": {
-        "input": 6926515,
-        "output": 1416153,
-        "cacheRead": 314796196,
-        "cacheWrite": 2617924,
-        "reasoning": 153245,
-        "tokens": 325910033,
-        "messages": 2824,
-        "cost": 209.418968,
+        "input": 6851781,
+        "output": 1270668,
+        "cacheRead": 274960596,
+        "cacheWrite": 2053519,
+        "reasoning": 154397,
+        "tokens": 285290961,
+        "messages": 2702,
+        "cost": 181.735238,
         "activeDays": 7,
-        "firstDate": "2026-07-30",
-        "lastDate": "2026-08-05"
+        "firstDate": "2026-07-31",
+        "lastDate": "2026-08-06"
       },
       "byModel": [
         {
-          "input": 526779,
-          "output": 738444,
-          "cacheRead": 195050494,
-          "cacheWrite": 2380303,
+          "input": 438358,
+          "output": 591648,
+          "cacheRead": 155049576,
+          "cacheWrite": 1802377,
           "reasoning": 0,
-          "tokens": 198696020,
-          "messages": 1113,
-          "cost": 133.497136,
+          "tokens": 157881959,
+          "messages": 972,
+          "cost": 105.772634,
           "model": "claude-opus-5",
           "days": 4,
-          "firstDate": "2026-07-30",
-          "lastDate": "2026-08-05",
+          "firstDate": "2026-07-31",
+          "lastDate": "2026-08-06",
           "providers": ["anthropic"]
         },
         {
@@ -310,18 +217,18 @@
           "providers": ["openai"]
         },
         {
-          "input": 1660576,
-          "output": 214350,
-          "cacheRead": 20212480,
+          "input": 1674208,
+          "output": 215547,
+          "cacheRead": 20364160,
           "cacheWrite": 0,
-          "reasoning": 24844,
-          "tokens": 22112250,
-          "messages": 557,
-          "cost": 0.35605,
+          "reasoning": 25996,
+          "tokens": 22279911,
+          "messages": 575,
+          "cost": 0.359041,
           "model": "deepseek-v4-flash",
-          "days": 3,
+          "days": 4,
           "firstDate": "2026-08-03",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "providers": ["deepseek"]
         },
         {
@@ -400,6 +307,21 @@
           "providers": ["alibaba"]
         },
         {
+          "input": 55,
+          "output": 114,
+          "cacheRead": 13638,
+          "cacheWrite": 13521,
+          "reasoning": 0,
+          "tokens": 27328,
+          "messages": 1,
+          "cost": 0.03778,
+          "model": "claude-sonnet-5",
+          "days": 1,
+          "firstDate": "2026-08-06",
+          "lastDate": "2026-08-06",
+          "providers": ["anthropic"]
+        },
+        {
           "input": 0,
           "output": 0,
           "cacheRead": 0,
@@ -417,30 +339,36 @@
       ],
       "byClient": [
         {
-          "input": 1548298,
-          "output": 885718,
-          "cacheRead": 210406014,
-          "cacheWrite": 2380303,
+          "input": 1459932,
+          "output": 739036,
+          "cacheRead": 170418734,
+          "cacheWrite": 1815898,
           "reasoning": 0,
-          "tokens": 215220333,
-          "messages": 1385,
-          "cost": 133.724381,
+          "tokens": 174433600,
+          "messages": 1245,
+          "cost": 106.037659,
           "client": "claude",
           "days": 5,
-          "firstDate": "2026-07-30",
-          "lastDate": "2026-08-05",
+          "firstDate": "2026-07-31",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "claude-opus-5",
-              "tokens": 198696020,
-              "cost": 133.497136,
-              "messages": 1113
+              "tokens": 157881959,
+              "cost": 105.772634,
+              "messages": 972
             },
             {
               "model": "deepseek-v4-flash",
               "tokens": 16524313,
               "cost": 0.227245,
               "messages": 268
+            },
+            {
+              "model": "claude-sonnet-5",
+              "tokens": 27328,
+              "cost": 0.03778,
+              "messages": 1
             },
             { "model": "<synthetic>", "tokens": 0, "cost": 0, "messages": 4 }
           ]
@@ -536,6 +464,34 @@
           ]
         },
         {
+          "input": 355522,
+          "output": 24987,
+          "cacheRead": 2606976,
+          "cacheWrite": 0,
+          "reasoning": 13775,
+          "tokens": 3001260,
+          "messages": 258,
+          "cost": 0.093217,
+          "client": "hermes",
+          "days": 4,
+          "firstDate": "2026-08-03",
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 2712325,
+              "cost": 0.059668,
+              "messages": 224
+            },
+            {
+              "model": "gpt-5.6-luna",
+              "tokens": 288935,
+              "cost": 0.033549,
+              "messages": 34
+            }
+          ]
+        },
+        {
           "input": 183834,
           "output": 20546,
           "cacheRead": 2524641,
@@ -568,50 +524,36 @@
               "messages": 10
             }
           ]
-        },
-        {
-          "input": 341890,
-          "output": 23790,
-          "cacheRead": 2455296,
-          "cacheWrite": 0,
-          "reasoning": 12623,
-          "tokens": 2833599,
-          "messages": 240,
-          "cost": 0.090226,
-          "client": "hermes",
-          "days": 3,
-          "firstDate": "2026-08-03",
-          "lastDate": "2026-08-05",
-          "models": [
-            {
-              "model": "deepseek-v4-flash",
-              "tokens": 2544664,
-              "cost": 0.056677,
-              "messages": 206
-            },
-            {
-              "model": "gpt-5.6-luna",
-              "tokens": 288935,
-              "cost": 0.033549,
-              "messages": 34
-            }
-          ]
         }
       ],
       "byProvider": [
         {
-          "input": 526779,
-          "output": 738444,
-          "cacheRead": 195050494,
-          "cacheWrite": 2380303,
+          "input": 438413,
+          "output": 591762,
+          "cacheRead": 155063214,
+          "cacheWrite": 1815898,
           "reasoning": 0,
-          "tokens": 198696020,
-          "messages": 1113,
-          "cost": 133.497136,
+          "tokens": 157909287,
+          "messages": 973,
+          "cost": 105.810414,
           "provider": "anthropic",
           "days": 4,
-          "firstDate": "2026-07-30",
-          "lastDate": "2026-08-05"
+          "firstDate": "2026-07-31",
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "claude-opus-5",
+              "tokens": 157881959,
+              "cost": 105.772634,
+              "messages": 972
+            },
+            {
+              "model": "claude-sonnet-5",
+              "tokens": 27328,
+              "cost": 0.03778,
+              "messages": 1
+            }
+          ]
         },
         {
           "input": 4224534,
@@ -625,21 +567,49 @@
           "provider": "openai",
           "days": 6,
           "firstDate": "2026-07-31",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-05",
+          "models": [
+            {
+              "model": "gpt-5.6-sol",
+              "tokens": 90937447,
+              "cost": 73.992438,
+              "messages": 895
+            },
+            {
+              "model": "gpt-5.6-luna",
+              "tokens": 9331223,
+              "cost": 0.35421,
+              "messages": 179
+            },
+            {
+              "model": "codex-auto-review",
+              "tokens": 1124664,
+              "cost": 0.129635,
+              "messages": 43
+            }
+          ]
         },
         {
-          "input": 1660576,
-          "output": 214350,
-          "cacheRead": 20212480,
+          "input": 1674208,
+          "output": 215547,
+          "cacheRead": 20364160,
           "cacheWrite": 0,
-          "reasoning": 24844,
-          "tokens": 22112250,
-          "messages": 557,
-          "cost": 0.35605,
+          "reasoning": 25996,
+          "tokens": 22279911,
+          "messages": 575,
+          "cost": 0.359041,
           "provider": "deepseek",
-          "days": 3,
+          "days": 4,
           "firstDate": "2026-08-03",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 22279911,
+              "cost": 0.359041,
+              "messages": 575
+            }
+          ]
         },
         {
           "input": 514572,
@@ -653,7 +623,21 @@
           "provider": "cursor",
           "days": 3,
           "firstDate": "2026-07-31",
-          "lastDate": "2026-08-03"
+          "lastDate": "2026-08-03",
+          "models": [
+            {
+              "model": "auto",
+              "tokens": 2100476,
+              "cost": 0.385714,
+              "messages": 16
+            },
+            {
+              "model": "composer-2.5",
+              "tokens": 1330354,
+              "cost": 0.331279,
+              "messages": 7
+            }
+          ]
         },
         {
           "input": 54,
@@ -667,7 +651,15 @@
           "provider": "alibaba",
           "days": 1,
           "firstDate": "2026-08-04",
-          "lastDate": "2026-08-04"
+          "lastDate": "2026-08-04",
+          "models": [
+            {
+              "model": "qwen3.8-max",
+              "tokens": 277599,
+              "cost": 0.372505,
+              "messages": 10
+            }
+          ]
         },
         {
           "input": 0,
@@ -681,54 +673,57 @@
           "provider": "unknown",
           "days": 2,
           "firstDate": "2026-08-03",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-05",
+          "models": [
+            { "model": "<synthetic>", "tokens": 0, "cost": 0, "messages": 4 }
+          ]
         }
       ]
     },
     "month": {
-      "from": "2026-07-07",
+      "from": "2026-07-08",
       "totals": {
-        "input": 11460194,
-        "output": 9098622,
-        "cacheRead": 1029536494,
-        "cacheWrite": 32490118,
-        "reasoning": 221419,
-        "tokens": 1082806847,
-        "messages": 4136,
-        "cost": 1639.417687,
+        "input": 11428051,
+        "output": 8923087,
+        "cacheRead": 1042357635,
+        "cacheWrite": 31602012,
+        "reasoning": 222571,
+        "tokens": 1094533356,
+        "messages": 4300,
+        "cost": 1622.716607,
         "activeDays": 29,
-        "firstDate": "2026-07-07",
-        "lastDate": "2026-08-05"
+        "firstDate": "2026-07-09",
+        "lastDate": "2026-08-06"
       },
       "byModel": [
         {
-          "input": 292855,
-          "output": 7130861,
-          "cacheRead": 639182144,
-          "cacheWrite": 28487680,
+          "input": 292745,
+          "output": 6897211,
+          "cacheRead": 633340773,
+          "cacheWrite": 27635913,
           "reasoning": 0,
-          "tokens": 675093540,
-          "messages": 507,
-          "cost": 1354.749744,
+          "tokens": 668166642,
+          "messages": 503,
+          "cost": 1326.577685,
           "model": "claude-fable-5",
-          "days": 19,
-          "firstDate": "2026-07-07",
+          "days": 18,
+          "firstDate": "2026-07-09",
           "lastDate": "2026-07-28",
           "providers": ["anthropic"]
         },
         {
-          "input": 526883,
-          "output": 824677,
-          "cacheRead": 200866363,
-          "cacheWrite": 2964653,
+          "input": 579754,
+          "output": 921253,
+          "cacheRead": 225426882,
+          "cacheWrite": 3209896,
           "reasoning": 0,
-          "tokens": 205182576,
-          "messages": 1118,
-          "cost": 142.213603,
+          "tokens": 230137785,
+          "messages": 1275,
+          "cost": 158.705386,
           "model": "claude-opus-5",
-          "days": 5,
+          "days": 6,
           "firstDate": "2026-07-25",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "providers": ["anthropic"]
         },
         {
@@ -747,33 +742,33 @@
           "providers": ["openai"]
         },
         {
-          "input": 1712846,
-          "output": 215240,
-          "cacheRead": 20260096,
+          "input": 1726478,
+          "output": 216437,
+          "cacheRead": 20411776,
           "cacheWrite": 0,
-          "reasoning": 24916,
-          "tokens": 22213098,
-          "messages": 570,
-          "cost": 0.36377,
+          "reasoning": 26068,
+          "tokens": 22380759,
+          "messages": 588,
+          "cost": 0.366761,
           "model": "deepseek-v4-flash",
-          "days": 4,
+          "days": 5,
           "firstDate": "2026-07-26",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "providers": ["deepseek", "openai"]
         },
         {
-          "input": 9321,
-          "output": 31221,
-          "cacheRead": 10830183,
-          "cacheWrite": 219398,
+          "input": 9376,
+          "output": 31335,
+          "cacheRead": 10843821,
+          "cacheWrite": 232919,
           "reasoning": 0,
-          "tokens": 11090123,
-          "messages": 81,
-          "cost": 3.047736,
+          "tokens": 11117451,
+          "messages": 82,
+          "cost": 3.085517,
           "model": "claude-sonnet-5",
-          "days": 3,
+          "days": 4,
           "firstDate": "2026-07-09",
-          "lastDate": "2026-07-15",
+          "lastDate": "2026-08-06",
           "providers": ["anthropic"]
         },
         {
@@ -792,32 +787,17 @@
           "providers": ["openai"]
         },
         {
-          "input": 31463,
-          "output": 50550,
-          "cacheRead": 5687032,
-          "cacheWrite": 510840,
-          "reasoning": 0,
-          "tokens": 6279885,
-          "messages": 13,
-          "cost": 7.457331,
-          "model": "claude-opus-4-6",
-          "days": 3,
-          "firstDate": "2026-07-07",
-          "lastDate": "2026-07-12",
-          "providers": ["anthropic"]
-        },
-        {
-          "input": 429600,
-          "output": 51652,
-          "cacheRead": 5504781,
+          "input": 331079,
+          "output": 39018,
+          "cacheRead": 3591026,
           "cacheWrite": 0,
           "reasoning": 0,
-          "tokens": 5986033,
-          "messages": 18,
-          "cost": 1.444886,
+          "tokens": 3961123,
+          "messages": 15,
+          "cost": 0.98129,
           "model": "composer-2.5",
-          "days": 4,
-          "firstDate": "2026-07-07",
+          "days": 3,
+          "firstDate": "2026-07-12",
           "lastDate": "2026-08-03",
           "providers": ["cursor"]
         },
@@ -850,6 +830,21 @@
           "firstDate": "2026-07-28",
           "lastDate": "2026-07-28",
           "providers": ["moonshotai"]
+        },
+        {
+          "input": 31393,
+          "output": 23412,
+          "cacheRead": 1537462,
+          "cacheWrite": 215737,
+          "reasoning": 0,
+          "tokens": 1808004,
+          "messages": 8,
+          "cost": 2.859352,
+          "model": "claude-opus-4-6",
+          "days": 2,
+          "firstDate": "2026-07-09",
+          "lastDate": "2026-07-12",
+          "providers": ["anthropic"]
         },
         {
           "input": 456126,
@@ -929,24 +924,24 @@
       ],
       "byClient": [
         {
-          "input": 1416511,
-          "output": 7255369,
-          "cacheRead": 636700166,
-          "cacheWrite": 28581241,
+          "input": 1317810,
+          "output": 6981947,
+          "cacheRead": 624795470,
+          "cacheWrite": 27434371,
           "reasoning": 0,
-          "tokens": 673953287,
-          "messages": 339,
-          "cost": 1329.793831,
+          "tokens": 660529598,
+          "messages": 327,
+          "cost": 1296.560197,
           "client": "cursor",
-          "days": 23,
-          "firstDate": "2026-07-07",
+          "days": 22,
+          "firstDate": "2026-07-09",
           "lastDate": "2026-08-03",
           "models": [
             {
               "model": "claude-fable-5",
-              "tokens": 650157565,
-              "cost": 1310.146749,
-              "messages": 278
+              "tokens": 643230667,
+              "cost": 1281.974691,
+              "messages": 274
             },
             {
               "model": "claude-opus-5",
@@ -955,16 +950,10 @@
               "messages": 5
             },
             {
-              "model": "claude-opus-4-6",
-              "tokens": 6279885,
-              "cost": 7.457331,
-              "messages": 13
-            },
-            {
               "model": "composer-2.5",
-              "tokens": 5986033,
-              "cost": 1.444886,
-              "messages": 18
+              "tokens": 3961123,
+              "cost": 0.98129,
+              "messages": 15
             },
             {
               "model": "auto",
@@ -977,6 +966,12 @@
               "tokens": 1971330,
               "cost": 1.358135,
               "messages": 2
+            },
+            {
+              "model": "claude-opus-4-6",
+              "tokens": 1808004,
+              "cost": 2.859352,
+              "messages": 8
             },
             {
               "model": "grok-4.5",
@@ -993,24 +988,24 @@
           ]
         },
         {
-          "input": 1707981,
-          "output": 1076261,
-          "cacheRead": 245433223,
-          "cacheWrite": 3665314,
+          "input": 1760907,
+          "output": 1172951,
+          "cacheRead": 270007380,
+          "cacheWrite": 3924078,
           "reasoning": 0,
-          "tokens": 251882779,
-          "messages": 1707,
-          "cost": 182.600009,
+          "tokens": 276865316,
+          "messages": 1865,
+          "cost": 199.129573,
           "client": "claude",
-          "days": 10,
+          "days": 11,
           "firstDate": "2026-07-09",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "claude-opus-5",
-              "tokens": 198696020,
-              "cost": 133.497136,
-              "messages": 1113
+              "tokens": 223651229,
+              "cost": 149.988919,
+              "messages": 1270
             },
             {
               "model": "claude-fable-5",
@@ -1026,9 +1021,9 @@
             },
             {
               "model": "claude-sonnet-5",
-              "tokens": 11083312,
-              "cost": 3.021855,
-              "messages": 80
+              "tokens": 11110640,
+              "cost": 3.059635,
+              "messages": 81
             },
             {
               "model": "claude-opus-4-8",
@@ -1102,24 +1097,24 @@
           ]
         },
         {
-          "input": 713515,
-          "output": 34070,
-          "cacheRead": 4602112,
+          "input": 727147,
+          "output": 35267,
+          "cacheRead": 4753792,
           "cacheWrite": 0,
-          "reasoning": 17065,
-          "tokens": 5366762,
-          "messages": 352,
-          "cost": 6.009896,
+          "reasoning": 18217,
+          "tokens": 5534423,
+          "messages": 370,
+          "cost": 6.012887,
           "client": "hermes",
-          "days": 4,
+          "days": 5,
           "firstDate": "2026-07-26",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "deepseek-v4-flash",
-              "tokens": 2645512,
-              "cost": 0.064397,
-              "messages": 219
+              "tokens": 2813173,
+              "cost": 0.067388,
+              "messages": 237
             },
             {
               "model": "gpt-5.6-sol",
@@ -1216,18 +1211,50 @@
       ],
       "byProvider": [
         {
-          "input": 875509,
-          "output": 8056653,
-          "cacheRead": 857105536,
-          "cacheWrite": 32252497,
+          "input": 928255,
+          "output": 7892555,
+          "cacheRead": 871688752,
+          "cacheWrite": 31364391,
           "reasoning": 0,
-          "tokens": 898290195,
-          "messages": 1733,
-          "cost": 1508.733894,
+          "tokens": 911873953,
+          "messages": 1882,
+          "cost": 1492.49342,
           "provider": "anthropic",
           "days": 23,
-          "firstDate": "2026-07-07",
-          "lastDate": "2026-08-05"
+          "firstDate": "2026-07-09",
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "claude-fable-5",
+              "tokens": 668166642,
+              "cost": 1326.577685,
+              "messages": 503
+            },
+            {
+              "model": "claude-opus-5",
+              "tokens": 230137785,
+              "cost": 158.705386,
+              "messages": 1275
+            },
+            {
+              "model": "claude-sonnet-5",
+              "tokens": 11117451,
+              "cost": 3.085517,
+              "messages": 82
+            },
+            {
+              "model": "claude-opus-4-6",
+              "tokens": 1808004,
+              "cost": 2.859352,
+              "messages": 8
+            },
+            {
+              "model": "claude-opus-4-8",
+              "tokens": 644071,
+              "cost": 1.265479,
+              "messages": 14
+            }
+          ]
         },
         {
           "input": 7296009,
@@ -1241,35 +1268,83 @@
           "provider": "openai",
           "days": 16,
           "firstDate": "2026-07-10",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-05",
+          "models": [
+            {
+              "model": "gpt-5.6-sol",
+              "tokens": 140130310,
+              "cost": 125.139074,
+              "messages": 1543
+            },
+            {
+              "model": "gpt-5.6-luna",
+              "tokens": 9331223,
+              "cost": 0.35421,
+              "messages": 179
+            },
+            {
+              "model": "codex-auto-review",
+              "tokens": 1124664,
+              "cost": 0.129635,
+              "messages": 43
+            },
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 100848,
+              "cost": 0.00772,
+              "messages": 13
+            }
+          ]
         },
         {
-          "input": 1660576,
-          "output": 214350,
-          "cacheRead": 20212480,
+          "input": 1674208,
+          "output": 215547,
+          "cacheRead": 20364160,
           "cacheWrite": 0,
-          "reasoning": 24844,
-          "tokens": 22112250,
-          "messages": 557,
-          "cost": 0.35605,
+          "reasoning": 25996,
+          "tokens": 22279911,
+          "messages": 575,
+          "cost": 0.359041,
           "provider": "deepseek",
-          "days": 3,
+          "days": 4,
           "firstDate": "2026-08-03",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 22279911,
+              "cost": 0.359041,
+              "messages": 575
+            }
+          ]
         },
         {
-          "input": 1065215,
-          "output": 102906,
-          "cacheRead": 7870989,
+          "input": 966694,
+          "output": 90272,
+          "cacheRead": 5957234,
           "cacheWrite": 0,
           "reasoning": 0,
-          "tokens": 9039110,
-          "messages": 39,
-          "cost": 2.064603,
+          "tokens": 7014200,
+          "messages": 36,
+          "cost": 1.601006,
           "provider": "cursor",
-          "days": 7,
-          "firstDate": "2026-07-07",
-          "lastDate": "2026-08-03"
+          "days": 6,
+          "firstDate": "2026-07-12",
+          "lastDate": "2026-08-03",
+          "models": [
+            {
+              "model": "composer-2.5",
+              "tokens": 3961123,
+              "cost": 0.98129,
+              "messages": 15
+            },
+            {
+              "model": "auto",
+              "tokens": 3053077,
+              "cost": 0.619716,
+              "messages": 21
+            }
+          ]
         },
         {
           "input": 144495,
@@ -1283,7 +1358,15 @@
           "provider": "moonshotai",
           "days": 1,
           "firstDate": "2026-07-28",
-          "lastDate": "2026-07-28"
+          "lastDate": "2026-07-28",
+          "models": [
+            {
+              "model": "kimi-k3",
+              "tokens": 1971330,
+              "cost": 1.358135,
+              "messages": 2
+            }
+          ]
         },
         {
           "input": 418336,
@@ -1297,7 +1380,15 @@
           "provider": "xai",
           "days": 3,
           "firstDate": "2026-07-12",
-          "lastDate": "2026-07-29"
+          "lastDate": "2026-07-29",
+          "models": [
+            {
+              "model": "grok-4.5",
+              "tokens": 429318,
+              "cost": 0.90186,
+              "messages": 13
+            }
+          ]
         },
         {
           "input": 54,
@@ -1311,7 +1402,15 @@
           "provider": "alibaba",
           "days": 1,
           "firstDate": "2026-08-04",
-          "lastDate": "2026-08-04"
+          "lastDate": "2026-08-04",
+          "models": [
+            {
+              "model": "qwen3.8-max",
+              "tokens": 277599,
+              "cost": 0.372505,
+              "messages": 10
+            }
+          ]
         },
         {
           "input": 0,
@@ -1325,24 +1424,27 @@
           "provider": "unknown",
           "days": 2,
           "firstDate": "2026-08-03",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-05",
+          "models": [
+            { "model": "<synthetic>", "tokens": 0, "cost": 0, "messages": 4 }
+          ]
         }
       ]
     },
     "quarter": {
-      "from": "2026-05-08",
+      "from": "2026-05-09",
       "totals": {
-        "input": 20460333,
-        "output": 19416649,
-        "cacheRead": 1753321326,
-        "cacheWrite": 75684417,
-        "reasoning": 435224,
-        "tokens": 1869317949,
-        "messages": 6387,
-        "cost": 2816.604905,
-        "activeDays": 74,
+        "input": 20526891,
+        "output": 19514536,
+        "cacheRead": 1778047163,
+        "cacheWrite": 75943181,
+        "reasoning": 436376,
+        "tokens": 1894468147,
+        "messages": 6563,
+        "cost": 2833.137459,
+        "activeDays": 75,
         "firstDate": "2026-05-09",
-        "lastDate": "2026-08-05"
+        "lastDate": "2026-08-06"
       },
       "byModel": [
         {
@@ -1376,18 +1478,18 @@
           "providers": ["anthropic"]
         },
         {
-          "input": 526883,
-          "output": 824677,
-          "cacheRead": 200866363,
-          "cacheWrite": 2964653,
+          "input": 579754,
+          "output": 921253,
+          "cacheRead": 225426882,
+          "cacheWrite": 3209896,
           "reasoning": 0,
-          "tokens": 205182576,
-          "messages": 1118,
-          "cost": 142.213603,
+          "tokens": 230137785,
+          "messages": 1275,
+          "cost": 158.705386,
           "model": "claude-opus-5",
-          "days": 5,
+          "days": 6,
           "firstDate": "2026-07-25",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "providers": ["anthropic"]
         },
         {
@@ -1421,33 +1523,33 @@
           "providers": ["openai"]
         },
         {
-          "input": 1712846,
-          "output": 215240,
-          "cacheRead": 20260096,
+          "input": 1726478,
+          "output": 216437,
+          "cacheRead": 20411776,
           "cacheWrite": 0,
-          "reasoning": 24916,
-          "tokens": 22213098,
-          "messages": 570,
-          "cost": 0.36377,
+          "reasoning": 26068,
+          "tokens": 22380759,
+          "messages": 588,
+          "cost": 0.366761,
           "model": "deepseek-v4-flash",
-          "days": 4,
+          "days": 5,
           "firstDate": "2026-07-26",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "providers": ["deepseek", "openai"]
         },
         {
-          "input": 9321,
-          "output": 31221,
-          "cacheRead": 10830183,
-          "cacheWrite": 219398,
+          "input": 9376,
+          "output": 31335,
+          "cacheRead": 10843821,
+          "cacheWrite": 232919,
           "reasoning": 0,
-          "tokens": 11090123,
-          "messages": 81,
-          "cost": 3.047736,
+          "tokens": 11117451,
+          "messages": 82,
+          "cost": 3.085517,
           "model": "claude-sonnet-5",
-          "days": 3,
+          "days": 4,
           "firstDate": "2026-07-09",
-          "lastDate": "2026-07-15",
+          "lastDate": "2026-08-06",
           "providers": ["anthropic"]
         },
         {
@@ -1736,24 +1838,24 @@
           ]
         },
         {
-          "input": 2262226,
-          "output": 1860032,
-          "cacheRead": 348335687,
-          "cacheWrite": 6951123,
+          "input": 2315152,
+          "output": 1956722,
+          "cacheRead": 372909844,
+          "cacheWrite": 7209887,
           "reasoning": 0,
-          "tokens": 359409068,
-          "messages": 2467,
-          "cost": 316.191285,
+          "tokens": 384391605,
+          "messages": 2625,
+          "cost": 332.720849,
           "client": "claude",
-          "days": 21,
+          "days": 22,
           "firstDate": "2026-06-01",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "claude-opus-5",
-              "tokens": 198696020,
-              "cost": 133.497136,
-              "messages": 1113
+              "tokens": 223651229,
+              "cost": 149.988919,
+              "messages": 1270
             },
             {
               "model": "claude-fable-5",
@@ -1775,9 +1877,9 @@
             },
             {
               "model": "claude-sonnet-5",
-              "tokens": 11083312,
-              "cost": 3.021855,
-              "messages": 80
+              "tokens": 11110640,
+              "cost": 3.059635,
+              "messages": 81
             },
             {
               "model": "claude-haiku-4-5",
@@ -1857,24 +1959,24 @@
           ]
         },
         {
-          "input": 713515,
-          "output": 34070,
-          "cacheRead": 4602112,
+          "input": 727147,
+          "output": 35267,
+          "cacheRead": 4753792,
           "cacheWrite": 0,
-          "reasoning": 17065,
-          "tokens": 5366762,
-          "messages": 352,
-          "cost": 6.009896,
+          "reasoning": 18217,
+          "tokens": 5534423,
+          "messages": 370,
+          "cost": 6.012887,
           "client": "hermes",
-          "days": 4,
+          "days": 5,
           "firstDate": "2026-07-26",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "deepseek-v4-flash",
-              "tokens": 2645512,
-              "cost": 0.064397,
-              "messages": 219
+              "tokens": 2813173,
+              "cost": 0.067388,
+              "messages": 237
             },
             {
               "model": "gpt-5.6-sol",
@@ -1971,18 +2073,68 @@
       ],
       "byProvider": [
         {
-          "input": 4736799,
-          "output": 17857081,
-          "cacheRead": 1501146690,
-          "cacheWrite": 75446796,
+          "input": 4789725,
+          "output": 17953771,
+          "cacheRead": 1525720847,
+          "cacheWrite": 75705560,
           "reasoning": 0,
-          "tokens": 1599187366,
-          "messages": 2858,
-          "cost": 2599.130237,
+          "tokens": 1624169903,
+          "messages": 3016,
+          "cost": 2615.6598,
           "provider": "anthropic",
-          "days": 63,
+          "days": 64,
           "firstDate": "2026-05-09",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "claude-fable-5",
+              "tokens": 895893345,
+              "cost": 1824.375293,
+              "messages": 770
+            },
+            {
+              "model": "claude-opus-4-8",
+              "tokens": 476086159,
+              "cost": 612.698077,
+              "messages": 852
+            },
+            {
+              "model": "claude-opus-5",
+              "tokens": 230137785,
+              "cost": 158.705386,
+              "messages": 1275
+            },
+            {
+              "model": "claude-sonnet-5",
+              "tokens": 11117451,
+              "cost": 3.085517,
+              "messages": 82
+            },
+            {
+              "model": "claude-opus-4-6",
+              "tokens": 7754837,
+              "cost": 10.903446,
+              "messages": 22
+            },
+            {
+              "model": "claude-opus-4-7",
+              "tokens": 2687208,
+              "cost": 5.82673,
+              "messages": 13
+            },
+            {
+              "model": "claude-sonnet-4-5",
+              "tokens": 473728,
+              "cost": 0.040827,
+              "messages": 1
+            },
+            {
+              "model": "claude-haiku-4-5",
+              "tokens": 19390,
+              "cost": 0.024525,
+              "messages": 1
+            }
+          ]
         },
         {
           "input": 12354426,
@@ -1996,21 +2148,61 @@
           "provider": "openai",
           "days": 36,
           "firstDate": "2026-05-13",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-05",
+          "models": [
+            {
+              "model": "gpt-5.6-sol",
+              "tokens": 140130310,
+              "cost": 125.139074,
+              "messages": 1543
+            },
+            {
+              "model": "gpt-5.5",
+              "tokens": 85124188,
+              "cost": 86.647423,
+              "messages": 1118
+            },
+            {
+              "model": "gpt-5.6-luna",
+              "tokens": 9331223,
+              "cost": 0.35421,
+              "messages": 179
+            },
+            {
+              "model": "codex-auto-review",
+              "tokens": 1124664,
+              "cost": 0.129635,
+              "messages": 43
+            },
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 100848,
+              "cost": 0.00772,
+              "messages": 13
+            }
+          ]
         },
         {
-          "input": 1660576,
-          "output": 214350,
-          "cacheRead": 20212480,
+          "input": 1674208,
+          "output": 215547,
+          "cacheRead": 20364160,
           "cacheWrite": 0,
-          "reasoning": 24844,
-          "tokens": 22112250,
-          "messages": 557,
-          "cost": 0.35605,
+          "reasoning": 25996,
+          "tokens": 22279911,
+          "messages": 575,
+          "cost": 0.359041,
           "provider": "deepseek",
-          "days": 3,
+          "days": 4,
           "firstDate": "2026-08-03",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 22279911,
+              "cost": 0.359041,
+              "messages": 575
+            }
+          ]
         },
         {
           "input": 1145647,
@@ -2024,7 +2216,27 @@
           "provider": "cursor",
           "days": 10,
           "firstDate": "2026-05-14",
-          "lastDate": "2026-08-03"
+          "lastDate": "2026-08-03",
+          "models": [
+            {
+              "model": "composer-2.5",
+              "tokens": 5997019,
+              "cost": 1.462411,
+              "messages": 19
+            },
+            {
+              "model": "auto",
+              "tokens": 3469312,
+              "cost": 0.654165,
+              "messages": 23
+            },
+            {
+              "model": "composer-2",
+              "tokens": 62522,
+              "cost": 0.091479,
+              "messages": 1
+            }
+          ]
         },
         {
           "input": 144495,
@@ -2038,7 +2250,15 @@
           "provider": "moonshotai",
           "days": 1,
           "firstDate": "2026-07-28",
-          "lastDate": "2026-07-28"
+          "lastDate": "2026-07-28",
+          "models": [
+            {
+              "model": "kimi-k3",
+              "tokens": 1971330,
+              "cost": 1.358135,
+              "messages": 2
+            }
+          ]
         },
         {
           "input": 418336,
@@ -2052,7 +2272,15 @@
           "provider": "xai",
           "days": 3,
           "firstDate": "2026-07-12",
-          "lastDate": "2026-07-29"
+          "lastDate": "2026-07-29",
+          "models": [
+            {
+              "model": "grok-4.5",
+              "tokens": 429318,
+              "cost": 0.90186,
+              "messages": 13
+            }
+          ]
         },
         {
           "input": 54,
@@ -2066,7 +2294,15 @@
           "provider": "alibaba",
           "days": 1,
           "firstDate": "2026-08-04",
-          "lastDate": "2026-08-04"
+          "lastDate": "2026-08-04",
+          "models": [
+            {
+              "model": "qwen3.8-max",
+              "tokens": 277599,
+              "cost": 0.372505,
+              "messages": 10
+            }
+          ]
         },
         {
           "input": 0,
@@ -2080,24 +2316,27 @@
           "provider": "unknown",
           "days": 5,
           "firstDate": "2026-06-07",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-05",
+          "models": [
+            { "model": "<synthetic>", "tokens": 0, "cost": 0, "messages": 8 }
+          ]
         }
       ]
     },
     "all": {
       "from": null,
       "totals": {
-        "input": 27233851,
-        "output": 21827172,
-        "cacheRead": 2057747770,
-        "cacheWrite": 90424162,
-        "reasoning": 605516,
-        "tokens": 2197838471,
-        "messages": 8040,
-        "cost": 3099.591189,
-        "activeDays": 175,
+        "input": 27300409,
+        "output": 21925059,
+        "cacheRead": 2082473607,
+        "cacheWrite": 90682926,
+        "reasoning": 606668,
+        "tokens": 2222988669,
+        "messages": 8216,
+        "cost": 3116.123743,
+        "activeDays": 176,
         "firstDate": "2025-04-28",
-        "lastDate": "2026-08-05"
+        "lastDate": "2026-08-06"
       },
       "byModel": [
         {
@@ -2131,18 +2370,18 @@
           "providers": ["anthropic"]
         },
         {
-          "input": 526883,
-          "output": 824677,
-          "cacheRead": 200866363,
-          "cacheWrite": 2964653,
+          "input": 579754,
+          "output": 921253,
+          "cacheRead": 225426882,
+          "cacheWrite": 3209896,
           "reasoning": 0,
-          "tokens": 205182576,
-          "messages": 1118,
-          "cost": 142.213603,
+          "tokens": 230137785,
+          "messages": 1275,
+          "cost": 158.705386,
           "model": "claude-opus-5",
-          "days": 5,
+          "days": 6,
           "firstDate": "2026-07-25",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "providers": ["anthropic"]
         },
         {
@@ -2221,18 +2460,18 @@
           "providers": ["openai"]
         },
         {
-          "input": 1712846,
-          "output": 215240,
-          "cacheRead": 20260096,
+          "input": 1726478,
+          "output": 216437,
+          "cacheRead": 20411776,
           "cacheWrite": 0,
-          "reasoning": 24916,
-          "tokens": 22213098,
-          "messages": 570,
-          "cost": 0.36377,
+          "reasoning": 26068,
+          "tokens": 22380759,
+          "messages": 588,
+          "cost": 0.366761,
           "model": "deepseek-v4-flash",
-          "days": 4,
+          "days": 5,
           "firstDate": "2026-07-26",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "providers": ["deepseek", "openai"]
         },
         {
@@ -2266,18 +2505,18 @@
           "providers": ["openai"]
         },
         {
-          "input": 9321,
-          "output": 31221,
-          "cacheRead": 10830183,
-          "cacheWrite": 219398,
+          "input": 9376,
+          "output": 31335,
+          "cacheRead": 10843821,
+          "cacheWrite": 232919,
           "reasoning": 0,
-          "tokens": 11090123,
-          "messages": 81,
-          "cost": 3.047736,
+          "tokens": 11117451,
+          "messages": 82,
+          "cost": 3.085517,
           "model": "claude-sonnet-5",
-          "days": 3,
+          "days": 4,
           "firstDate": "2026-07-09",
-          "lastDate": "2026-07-15",
+          "lastDate": "2026-08-06",
           "providers": ["anthropic"]
         },
         {
@@ -2941,24 +3180,24 @@
           ]
         },
         {
-          "input": 2262226,
-          "output": 1860032,
-          "cacheRead": 348335687,
-          "cacheWrite": 6951123,
+          "input": 2315152,
+          "output": 1956722,
+          "cacheRead": 372909844,
+          "cacheWrite": 7209887,
           "reasoning": 0,
-          "tokens": 359409068,
-          "messages": 2467,
-          "cost": 316.191285,
+          "tokens": 384391605,
+          "messages": 2625,
+          "cost": 332.720849,
           "client": "claude",
-          "days": 21,
+          "days": 22,
           "firstDate": "2026-06-01",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "claude-opus-5",
-              "tokens": 198696020,
-              "cost": 133.497136,
-              "messages": 1113
+              "tokens": 223651229,
+              "cost": 149.988919,
+              "messages": 1270
             },
             {
               "model": "claude-fable-5",
@@ -2980,9 +3219,9 @@
             },
             {
               "model": "claude-sonnet-5",
-              "tokens": 11083312,
-              "cost": 3.021855,
-              "messages": 80
+              "tokens": 11110640,
+              "cost": 3.059635,
+              "messages": 81
             },
             {
               "model": "claude-haiku-4-5",
@@ -3081,24 +3320,24 @@
           ]
         },
         {
-          "input": 713515,
-          "output": 34070,
-          "cacheRead": 4602112,
+          "input": 727147,
+          "output": 35267,
+          "cacheRead": 4753792,
           "cacheWrite": 0,
-          "reasoning": 17065,
-          "tokens": 5366762,
-          "messages": 352,
-          "cost": 6.009896,
+          "reasoning": 18217,
+          "tokens": 5534423,
+          "messages": 370,
+          "cost": 6.012887,
           "client": "hermes",
-          "days": 4,
+          "days": 5,
           "firstDate": "2026-07-26",
-          "lastDate": "2026-08-05",
+          "lastDate": "2026-08-06",
           "models": [
             {
               "model": "deepseek-v4-flash",
-              "tokens": 2645512,
-              "cost": 0.064397,
-              "messages": 219
+              "tokens": 2813173,
+              "cost": 0.067388,
+              "messages": 237
             },
             {
               "model": "gpt-5.6-sol",
@@ -3208,18 +3447,104 @@
       ],
       "byProvider": [
         {
-          "input": 7135392,
-          "output": 19772634,
-          "cacheRead": 1730258550,
-          "cacheWrite": 90128561,
+          "input": 7188318,
+          "output": 19869324,
+          "cacheRead": 1754832707,
+          "cacheWrite": 90387325,
           "reasoning": 0,
-          "tokens": 1847295137,
-          "messages": 3485,
-          "cost": 2857.53082,
+          "tokens": 1872277674,
+          "messages": 3643,
+          "cost": 2874.060383,
           "provider": "anthropic",
-          "days": 147,
+          "days": 148,
           "firstDate": "2025-04-28",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "claude-fable-5",
+              "tokens": 895893345,
+              "cost": 1824.375293,
+              "messages": 770
+            },
+            {
+              "model": "claude-opus-4-8",
+              "tokens": 476086159,
+              "cost": 612.698077,
+              "messages": 852
+            },
+            {
+              "model": "claude-opus-5",
+              "tokens": 230137785,
+              "cost": 158.705386,
+              "messages": 1275
+            },
+            {
+              "model": "claude-opus-4-6",
+              "tokens": 128636457,
+              "cost": 147.128541,
+              "messages": 193
+            },
+            {
+              "model": "claude-opus-4-7",
+              "tokens": 99398078,
+              "cost": 88.267724,
+              "messages": 57
+            },
+            {
+              "model": "claude-opus-4-5",
+              "tokens": 19289651,
+              "cost": 29.527534,
+              "messages": 69
+            },
+            {
+              "model": "claude-sonnet-5",
+              "tokens": 11117451,
+              "cost": 3.085517,
+              "messages": 82
+            },
+            {
+              "model": "claude-sonnet-4-6",
+              "tokens": 6822442,
+              "cost": 5.775487,
+              "messages": 11
+            },
+            {
+              "model": "claude-sonnet-4-5",
+              "tokens": 2638180,
+              "cost": 2.91263,
+              "messages": 20
+            },
+            {
+              "model": "claude-sonnet-4",
+              "tokens": 2076685,
+              "cost": 0.71793,
+              "messages": 273
+            },
+            {
+              "model": "claude-opus-4",
+              "tokens": 162051,
+              "cost": 0.84174,
+              "messages": 9
+            },
+            {
+              "model": "claude-haiku-4-5",
+              "tokens": 19390,
+              "cost": 0.024525,
+              "messages": 1
+            },
+            {
+              "model": "claude-3-5-sonnet",
+              "tokens": 0,
+              "cost": 0,
+              "messages": 1
+            },
+            {
+              "model": "claude-3-7-sonnet",
+              "tokens": 0,
+              "cost": 0,
+              "messages": 30
+            }
+          ]
         },
         {
           "input": 16125773,
@@ -3233,21 +3558,94 @@
           "provider": "openai",
           "days": 58,
           "firstDate": "2025-05-12",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-05",
+          "models": [
+            {
+              "model": "gpt-5.6-sol",
+              "tokens": 140130310,
+              "cost": 125.139074,
+              "messages": 1543
+            },
+            {
+              "model": "gpt-5.5",
+              "tokens": 85856319,
+              "cost": 87.601573,
+              "messages": 1134
+            },
+            {
+              "model": "gpt-5-codex",
+              "tokens": 51050005,
+              "cost": 12.154109,
+              "messages": 836
+            },
+            {
+              "model": "gpt-5.2-codex",
+              "tokens": 15502289,
+              "cost": 2.688364,
+              "messages": 87
+            },
+            {
+              "model": "gpt-5.6-luna",
+              "tokens": 9331223,
+              "cost": 0.35421,
+              "messages": 179
+            },
+            {
+              "model": "gpt-5.3-codex",
+              "tokens": 4540577,
+              "cost": 2.669836,
+              "messages": 12
+            },
+            {
+              "model": "gpt-5.4",
+              "tokens": 2886978,
+              "cost": 3.246922,
+              "messages": 11
+            },
+            {
+              "model": "codex-auto-review",
+              "tokens": 1124664,
+              "cost": 0.129635,
+              "messages": 43
+            },
+            {
+              "model": "gpt-5",
+              "tokens": 372354,
+              "cost": 0.271874,
+              "messages": 6
+            },
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 100848,
+              "cost": 0.00772,
+              "messages": 13
+            },
+            { "model": "unknown", "tokens": 6761, "cost": 0, "messages": 1 },
+            { "model": "gpt-4.1", "tokens": 0, "cost": 0, "messages": 3 },
+            { "model": "o3", "tokens": 0, "cost": 0, "messages": 2 }
+          ]
         },
         {
-          "input": 1660576,
-          "output": 214350,
-          "cacheRead": 20212480,
+          "input": 1674208,
+          "output": 215547,
+          "cacheRead": 20364160,
           "cacheWrite": 0,
-          "reasoning": 24844,
-          "tokens": 22112250,
-          "messages": 557,
-          "cost": 0.35605,
+          "reasoning": 25996,
+          "tokens": 22279911,
+          "messages": 575,
+          "cost": 0.359041,
           "provider": "deepseek",
-          "days": 3,
+          "days": 4,
           "firstDate": "2026-08-03",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-06",
+          "models": [
+            {
+              "model": "deepseek-v4-flash",
+              "tokens": 22279911,
+              "cost": 0.359041,
+              "messages": 575
+            }
+          ]
         },
         {
           "input": 1720067,
@@ -3261,7 +3659,40 @@
           "provider": "cursor",
           "days": 20,
           "firstDate": "2025-04-28",
-          "lastDate": "2026-08-03"
+          "lastDate": "2026-08-03",
+          "models": [
+            {
+              "model": "composer-2.5",
+              "tokens": 5997019,
+              "cost": 1.462411,
+              "messages": 19
+            },
+            {
+              "model": "auto",
+              "tokens": 3482801,
+              "cost": 0.665744,
+              "messages": 44
+            },
+            {
+              "model": "composer-2",
+              "tokens": 3079265,
+              "cost": 1.602066,
+              "messages": 12
+            },
+            {
+              "model": "agent_review",
+              "tokens": 1985336,
+              "cost": 0.63,
+              "messages": 3
+            },
+            {
+              "model": "composer-1.5",
+              "tokens": 203749,
+              "cost": 0.415983,
+              "messages": 1
+            },
+            { "model": "cursor-small", "tokens": 0, "cost": 0, "messages": 2 }
+          ]
         },
         {
           "input": 144495,
@@ -3275,7 +3706,21 @@
           "provider": "moonshotai",
           "days": 3,
           "firstDate": "2025-11-09",
-          "lastDate": "2026-07-28"
+          "lastDate": "2026-07-28",
+          "models": [
+            {
+              "model": "kimi-k3",
+              "tokens": 1971330,
+              "cost": 1.358135,
+              "messages": 2
+            },
+            {
+              "model": "kimi-k2",
+              "tokens": 5968,
+              "cost": 0.00069,
+              "messages": 2
+            }
+          ]
         },
         {
           "input": 422401,
@@ -3289,7 +3734,21 @@
           "provider": "xai",
           "days": 4,
           "firstDate": "2025-12-30",
-          "lastDate": "2026-07-29"
+          "lastDate": "2026-07-29",
+          "models": [
+            {
+              "model": "grok-4.5",
+              "tokens": 429318,
+              "cost": 0.90186,
+              "messages": 13
+            },
+            {
+              "model": "grok-code-fast-1",
+              "tokens": 30465,
+              "cost": 0.001673,
+              "messages": 1
+            }
+          ]
         },
         {
           "input": 54,
@@ -3303,7 +3762,15 @@
           "provider": "alibaba",
           "days": 1,
           "firstDate": "2026-08-04",
-          "lastDate": "2026-08-04"
+          "lastDate": "2026-08-04",
+          "models": [
+            {
+              "model": "qwen3.8-max",
+              "tokens": 277599,
+              "cost": 0.372505,
+              "messages": 10
+            }
+          ]
         },
         {
           "input": 3576,
@@ -3317,7 +3784,15 @@
           "provider": "opencode",
           "days": 1,
           "firstDate": "2026-03-17",
-          "lastDate": "2026-03-17"
+          "lastDate": "2026-03-17",
+          "models": [
+            {
+              "model": "big-pickle",
+              "tokens": 43704,
+              "cost": 0.005525,
+              "messages": 3
+            }
+          ]
         },
         {
           "input": 11700,
@@ -3331,7 +3806,10 @@
           "provider": "zai",
           "days": 1,
           "firstDate": "2026-01-04",
-          "lastDate": "2026-01-04"
+          "lastDate": "2026-01-04",
+          "models": [
+            { "model": "glm-4.7", "tokens": 11987, "cost": 0, "messages": 1 }
+          ]
         },
         {
           "input": 9817,
@@ -3345,7 +3823,16 @@
           "provider": "google",
           "days": 4,
           "firstDate": "2025-05-09",
-          "lastDate": "2025-11-20"
+          "lastDate": "2025-11-20",
+          "models": [
+            {
+              "model": "gemini-3-pro",
+              "tokens": 10215,
+              "cost": 0.02441,
+              "messages": 1
+            },
+            { "model": "gemini-2.5-pro", "tokens": 0, "cost": 0, "messages": 6 }
+          ]
         },
         {
           "input": 0,
@@ -3359,7 +3846,10 @@
           "provider": "unknown",
           "days": 5,
           "firstDate": "2026-06-07",
-          "lastDate": "2026-08-05"
+          "lastDate": "2026-08-05",
+          "models": [
+            { "model": "<synthetic>", "tokens": 0, "cost": 0, "messages": 8 }
+          ]
         }
       ]
     }
@@ -5460,74 +5950,94 @@
     },
     {
       "date": "2026-08-05",
-      "tokens": 97094975,
-      "cost": 58.373315,
-      "messages": 755,
+      "tokens": 114891872,
+      "cost": 68.354964,
+      "messages": 830,
       "providers": {
-        "anthropic": { "tokens": 85423778, "cost": 57.963708 },
-        "deepseek": { "tokens": 11183414, "cost": 0.104588 },
+        "anthropic": { "tokens": 103109347, "cost": 67.944683 },
+        "deepseek": { "tokens": 11294742, "cost": 0.105263 },
         "openai": { "tokens": 487783, "cost": 0.305019 }
       },
       "clients": {
-        "claude": { "tokens": 95407239, "cost": 58.047416 },
-        "hermes": { "tokens": 1315676, "cost": 0.047201 },
+        "claude": { "tokens": 113092808, "cost": 68.02839 },
+        "hermes": { "tokens": 1427004, "cost": 0.047876 },
         "opencode": { "tokens": 57331, "cost": 0.001832 },
         "pi": { "tokens": 314729, "cost": 0.276867 }
       },
       "models": {
-        "claude-opus-5": { "tokens": 85423778, "cost": 57.963708 },
-        "deepseek-v4-flash": { "tokens": 11183414, "cost": 0.104588 },
+        "claude-opus-5": { "tokens": 103109347, "cost": 67.944683 },
+        "deepseek-v4-flash": { "tokens": 11294742, "cost": 0.105263 },
         "gpt-5.6-luna": { "tokens": 288935, "cost": 0.033549 },
         "gpt-5.6-sol": { "tokens": 198848, "cost": 0.27147 }
       },
-      "active": 8397141
+      "active": 9202971
+    },
+    {
+      "date": "2026-08-06",
+      "tokens": 7353301,
+      "cost": 6.550905,
+      "messages": 101,
+      "providers": {
+        "anthropic": { "tokens": 7296968, "cost": 6.548589 },
+        "deepseek": { "tokens": 56333, "cost": 0.002316 }
+      },
+      "clients": {
+        "claude": { "tokens": 7296968, "cost": 6.548589 },
+        "hermes": { "tokens": 56333, "cost": 0.002316 }
+      },
+      "models": {
+        "claude-opus-5": { "tokens": 7269640, "cost": 6.510809 },
+        "claude-sonnet-5": { "tokens": 27328, "cost": 0.03778 },
+        "deepseek-v4-flash": { "tokens": 56333, "cost": 0.002316 }
+      },
+      "active": 1390218
     }
   ],
   "devices": [
     {
       "name": "MacbookPro",
       "firstSeen": 1784199105234,
-      "lastSeen": 1785936031323,
+      "lastSeen": 1785952134578,
       "cliVersion": "27.0.1",
-      "sessions": 1581,
-      "activeMs": 54530010,
+      "sessions": 1582,
+      "activeMs": 55357029,
       "longestMs": 2745081,
       "maxConcurrent": 6,
       "mcpServers": ["context7"],
-      "activeDays": 174,
-      "tokens": 1915690896,
-      "messages": 5586,
-      "cost": 2841.347696
+      "activeDays": 175,
+      "tokens": 1933525625,
+      "messages": 5653,
+      "cost": 2851.63055
     },
     {
       "name": "OracleARM",
       "firstSeen": 1784199107887,
-      "lastSeen": 1785935525875,
+      "lastSeen": 1785952108971,
       "cliVersion": "27.0.1",
-      "sessions": 66,
+      "sessions": 75,
       "activeMs": 3030724,
       "longestMs": 664234,
       "maxConcurrent": 3,
       "mcpServers": null,
-      "activeDays": 5,
-      "tokens": 17873725,
-      "messages": 534,
-      "cost": 22.614889
+      "activeDays": 6,
+      "tokens": 18041386,
+      "messages": 552,
+      "cost": 22.617879
     },
     {
       "name": "UbuntuPC",
       "firstSeen": 1784513632313,
-      "lastSeen": 1785920965374,
+      "lastSeen": 1785951099585,
       "cliVersion": "27.0.1",
-      "sessions": 47,
-      "activeMs": 21652059,
+      "sessions": 52,
+      "activeMs": 23021088,
       "longestMs": 2405962,
       "maxConcurrent": 3,
       "mcpServers": ["context7"],
-      "activeDays": 18,
-      "tokens": 264273850,
-      "messages": 1920,
-      "cost": 235.628604
+      "activeDays": 19,
+      "tokens": 271421658,
+      "messages": 2011,
+      "cost": 241.875314
     }
   ]
 }

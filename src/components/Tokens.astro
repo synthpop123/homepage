@@ -1060,7 +1060,7 @@ const skeletonRows = (count: number) =>
     color: var(--muted-foreground);
   }
 
-  /* A client row that opens onto the models it drove. The row itself is
+  /* A row that opens onto the models behind it. The row itself is
      the button — the whole width is the hit target, and it keeps the
      four-column grid, so an expandable row and a plain one still line
      up. The chevron rides inside the name cell. */
@@ -1101,7 +1101,7 @@ const skeletonRows = (count: number) =>
     color: var(--foreground);
   }
 
-  /* The models under a client: same row grid, indented and quieter, so
+  /* The models under a client or vendor: same row grid, indented and quieter, so
      the parent still reads as the total they add up to. */
   .tk-rows :global(.tk-sub) {
     margin-inline-start: calc(1.1em + var(--space-2xs));

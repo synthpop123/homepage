@@ -1,19 +1,20 @@
 /**
  * Breakdown section renderer: the top models / clients / providers
- * lists with proportional row fills, usage-span tooltips, and the
- * show-more toggle. A factory, because the expanded/collapsed state
- * must survive re-renders when the range or metric changes.
+ * lists with proportional row fills, usage-span tooltips, the
+ * per-row model disclosures, and the show-more toggle. A factory,
+ * because the expanded/collapsed state must survive re-renders when the
+ * range or metric changes.
  */
 
 import {
   aiIcon,
-  type ClientModel,
   clientLabel,
   formatCostExact,
   formatDate,
   formatExact,
   formatMetric,
   type MetricKey,
+  type ModelCell,
   modelLabel,
   providerLabel,
   type RangeKey,
@@ -37,8 +38,9 @@ type BreakdownKind = "model" | "client" | "provider"
 export function createBreakdown(q: Query, icons: Icons) {
   /** Lists the visitor has expanded past the top rows. */
   const expanded = new Set<BreakdownKind>()
-  /** Client rows opened onto their models; survives a re-render. */
-  const openClients = new Set<string>()
+  /** Rows opened onto their models, as `kind:id` — the id spaces overlap
+   *  (Cursor is both a client and a provider). Survives a re-render. */
+  const openRows = new Set<string>()
   let last: { site: Site; range: RangeKey; metric: MetricKey } | null = null
 
   const render = (site: Site, range: RangeKey, metric: MetricKey) => {
@@ -53,8 +55,9 @@ export function createBreakdown(q: Query, icons: Icons) {
         usage: Usage & UsageSpan
         /** Canonical providers a model was served through. */
         via?: string[]
-        /** The models behind a client row — the disclosure's contents. */
-        models?: ClientModel[]
+        /** The models behind a client or provider row — the disclosure's
+         *  contents. Model rows have no split of their own. */
+        models?: ModelCell[]
       }[]
     }[] = [
       {
@@ -81,6 +84,7 @@ export function createBreakdown(q: Query, icons: Icons) {
           id: entry.provider,
           name: providerLabel(entry.provider),
           usage: entry,
+          models: entry.models,
         })),
       },
     ]
@@ -128,24 +132,20 @@ export function createBreakdown(q: Query, icons: Icons) {
           share: total > 0 ? row.usage[metric] / total : NaN,
           title: `${row.name} — ${parts.join(" · ")}`,
         }
-        // One model still earns a disclosure: the row names the client,
-        // never the model behind it. Only an empty list stays plain.
+        // One model still earns a disclosure: the row names the client or
+        // the vendor, never the model behind it. Only an empty list —
+        // a model row, or nothing above zero — stays plain.
         const subRows = modelSubRows(
           row.models ?? [],
           row.usage[metric],
           metric,
         )
         if (subRows.length === 0) return usageRow(icons, spec)
-        return expandableRow(
-          icons,
-          spec,
-          subRows,
-          openClients.has(row.id),
-          () => {
-            if (openClients.has(row.id)) openClients.delete(row.id)
-            else openClients.add(row.id)
-          },
-        )
+        const key = `${group.key}:${row.id}`
+        return expandableRow(icons, spec, subRows, openRows.has(key), () => {
+          if (openRows.has(key)) openRows.delete(key)
+          else openRows.add(key)
+        })
       })
 
       if (rest.length > 0) {

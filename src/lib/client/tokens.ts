@@ -27,10 +27,11 @@ export type UsageSpan = {
   lastDate: string | null
 }
 
-/** One cell of the client × model matrix: what a client spent on a
- *  single model, inside one range. Leaner than a breakdown row on
- *  purpose — a disclosure shows a share, not a second full breakdown. */
-export type ClientModel = {
+/** One cell of the client × model or provider × model matrix: what a
+ *  client or a vendor spent on a single model, inside one range. Leaner
+ *  than a breakdown row on purpose — a disclosure shows a share, not a
+ *  second full breakdown. */
+export type ModelCell = {
   model: string
   tokens: number
   cost: number
@@ -45,8 +46,8 @@ export type SiteRange = {
     lastDate: string | null
   }
   byModel: (Usage & UsageSpan & { model: string; providers: string[] })[]
-  byClient: (Usage & UsageSpan & { client: string; models: ClientModel[] })[]
-  byProvider: (Usage & UsageSpan & { provider: string })[]
+  byClient: (Usage & UsageSpan & { client: string; models: ModelCell[] })[]
+  byProvider: (Usage & UsageSpan & { provider: string; models: ModelCell[] })[]
 }
 
 export type DaySlice = { tokens: number; cost: number }
@@ -100,7 +101,7 @@ export type Site = {
  * number is also the sessionStorage cache key, so a deploy never reads
  * the previous build's entries.
  */
-export const SITE_SCHEMA_VERSION = 9
+export const SITE_SCHEMA_VERSION = 10
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -221,9 +222,9 @@ const isDevice = (value: unknown): boolean =>
 const isStringArray = (value: unknown): boolean =>
   Array.isArray(value) && value.every((item) => typeof item === "string")
 
-/** The models a client row splits into — rendered by the disclosure, so
- *  the shape matters as much as the numbers. */
-const isClientModels = (value: unknown): boolean =>
+/** The models a client or provider row splits into — rendered by the
+ *  disclosure, so the shape matters as much as the numbers. */
+const isModelCells = (value: unknown): boolean =>
   Array.isArray(value) &&
   value.every(
     (cell) =>
@@ -252,10 +253,14 @@ const isRange = (value: unknown): boolean =>
   value.byClient.every(
     (row) =>
       isSpanRow(row, "client") &&
-      isClientModels((row as Record<string, unknown>).models),
+      isModelCells((row as Record<string, unknown>).models),
   ) &&
   Array.isArray(value.byProvider) &&
-  value.byProvider.every((row) => isSpanRow(row, "provider"))
+  value.byProvider.every(
+    (row) =>
+      isSpanRow(row, "provider") &&
+      isModelCells((row as Record<string, unknown>).models),
+  )
 
 /**
  * Runtime decoder for the /api/site payload, strict over every field
@@ -767,7 +772,7 @@ export type TodayView = {
     label: string
     tokens: number
     share: number
-    models: ClientModel[]
+    models: ModelCell[]
   }[]
   models: SiteRange["byModel"]
 }

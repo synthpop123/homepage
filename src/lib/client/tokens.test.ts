@@ -10,7 +10,6 @@ import { weekdayIndex } from "./heatmap"
 import {
   activeTotals,
   aiIcon,
-  type ClientModel,
   clientLabel,
   computeFacts,
   dailyBuckets,
@@ -22,6 +21,7 @@ import {
   isSite,
   lastReport,
   levelScale,
+  type ModelCell,
   modelBrand,
   modelLabel,
   monthlyBuckets,
@@ -99,6 +99,16 @@ const modelRows = (
     cost,
     model,
     providers: ["anthropic"],
+  }))
+
+const providerRows = (
+  ...providers: [provider: string, tokens: number][]
+): SiteRange["byProvider"] =>
+  providers.map(([provider, tokens]) => ({
+    ...usage(tokens),
+    ...span,
+    provider,
+    models: [],
   }))
 
 const rangeStats = (
@@ -247,12 +257,14 @@ describe("windowTotals", () => {
 describe("stackFor", () => {
   it("keeps the top ids and appends the residual sentinel", () => {
     const stacked = stackFor(
-      rangeStats([
-        { ...usage(100), ...span, provider: "anthropic" },
-        { ...usage(50), ...span, provider: "openai" },
-        { ...usage(25), ...span, provider: "google" },
-        { ...usage(10), ...span, provider: "xai" },
-      ]),
+      rangeStats(
+        providerRows(
+          ["anthropic", 100],
+          ["openai", 50],
+          ["google", 25],
+          ["xai", 10],
+        ),
+      ),
       "provider",
       "tokens",
     )
@@ -264,11 +276,7 @@ describe("stackFor", () => {
 
   it("skips placeholder and empty ids", () => {
     const stacked = stackFor(
-      rangeStats([
-        { ...usage(100), ...span, provider: "unknown" },
-        { ...usage(50), ...span, provider: "" },
-        { ...usage(25), ...span, provider: "openai" },
-      ]),
+      rangeStats(providerRows(["unknown", 100], ["", 50], ["openai", 25])),
       "provider",
       "tokens",
     )
@@ -387,10 +395,7 @@ describe("stackPaint", () => {
   // colored slot in a shorter window that someone else is driving.
   it("ranks within the range it is given, not all time", () => {
     const stacked = stackFor(
-      rangeStats([
-        { ...usage(10), ...span, provider: "deepseek" },
-        { ...usage(1), ...span, provider: "cursor" },
-      ]),
+      rangeStats(providerRows(["deepseek", 10], ["cursor", 1])),
       "provider",
       "tokens",
     )
@@ -629,7 +634,7 @@ describe("todayView", () => {
   const clientRow = (
     client: string,
     tokens: number,
-    models: ClientModel[] = [],
+    models: ModelCell[] = [],
   ) => ({
     ...usage(tokens),
     ...span,
@@ -1121,7 +1126,7 @@ describe("isSite", () => {
     badFrom.ranges.week.from = "last monday"
     expect(isSite(badFrom)).toBe(false)
 
-    const badSpan = site([{ ...usage(10), ...span, provider: "anthropic" }])
+    const badSpan = site(providerRows(["anthropic", 10]))
     badSpan.ranges.all.byProvider[0].firstDate = "n/a"
     expect(isSite(badSpan)).toBe(false)
 
@@ -1147,7 +1152,7 @@ describe("isSite", () => {
 
     const spanless = site([
       // @ts-expect-error deliberately breaking the shape
-      { ...usage(10), provider: "anthropic" },
+      { ...usage(10), provider: "anthropic", models: [] },
     ])
     expect(isSite(spanless)).toBe(false)
 
@@ -1156,31 +1161,31 @@ describe("isSite", () => {
     expect(isSite(namelessDevice)).toBe(false)
   })
 
-  // Schema 9's two shape changes. Both are read straight into a
-  // renderer — the models into a disclosure, the providers into a
+  // The model cells (on client rows since schema 9, on provider rows
+  // since 10) and the model rows' provider arrays are read straight into
+  // a renderer — the cells into a disclosure, the providers into a
   // .join() — so a wrong type here is a crash, not a blank.
-  it("requires client models and provider arrays", () => {
+  it("requires model cells on client and provider rows", () => {
     const models = [{ model: "claude-opus-5", tokens: 5, cost: 1, messages: 2 }]
-    const good = site([], [{ ...usage(5), ...span, client: "claude", models }])
+    const good = site(
+      [{ ...usage(5), ...span, provider: "anthropic", models }],
+      [{ ...usage(5), ...span, client: "claude", models }],
+    )
     expect(isSite(good)).toBe(true)
 
-    const noModels = site(
-      [],
-      [
+    for (const broken of [
+      // @ts-expect-error deliberately breaking the shape
+      site([], [{ ...usage(5), ...span, client: "claude" }]),
+      // @ts-expect-error deliberately breaking the shape
+      site([{ ...usage(5), ...span, provider: "anthropic" }]),
+      site(
+        [],
         // @ts-expect-error deliberately breaking the shape
-        { ...usage(5), ...span, client: "claude" },
-      ],
-    )
-    expect(isSite(noModels)).toBe(false)
-
-    const badCell = site(
-      [],
-      [
-        // @ts-expect-error deliberately breaking the shape
-        { ...usage(5), ...span, client: "claude", models: [{ model: "m" }] },
-      ],
-    )
-    expect(isSite(badCell)).toBe(false)
+        [{ ...usage(5), ...span, client: "claude", models: [{ model: "m" }] }],
+      ),
+    ]) {
+      expect(isSite(broken)).toBe(false)
+    }
 
     // The pre-9 encoding: a comma-joined string would reach .filter().
     const joined = site()

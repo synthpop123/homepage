@@ -10,12 +10,12 @@
 import { el } from "../dom"
 import {
   aiIcon,
-  type ClientModel,
   formatCostExact,
   formatExact,
   formatMetric,
   formatShare,
   type MetricKey,
+  type ModelCell,
   modelLabel,
   type StackPaint,
 } from "../tokens"
@@ -122,14 +122,14 @@ export const usageRow = (icons: Icons, row: RowSpec) =>
   fillRow(el("li", "tk-row"), icons, row)
 
 /**
- * The models a client drove, as sub-rows of that client. Ranked and
- * filtered by the metric on screen for the same reason the trend stack
- * is: in Cost, a model that is a rounding error by volume can be most
- * of the bill. Shares are of the client's own total.
+ * The models behind a row, as its sub-rows. Ranked and filtered by the
+ * metric on screen for the same reason the trend stack is: in Cost, a
+ * model that is a rounding error by volume can be most of the bill.
+ * Shares are of the parent row's own total.
  */
 export const modelSubRows = (
-  models: ClientModel[],
-  clientTotal: number,
+  models: ModelCell[],
+  rowTotal: number,
   metric: MetricKey,
 ): RowSpec[] =>
   models
@@ -141,7 +141,7 @@ export const modelSubRows = (
         icon: aiIcon("model", cell.model),
         name,
         value: formatMetric(cell[metric], metric),
-        share: clientTotal > 0 ? cell[metric] / clientTotal : Number.NaN,
+        share: rowTotal > 0 ? cell[metric] / rowTotal : Number.NaN,
         title: `${name} — ${formatExact(cell.tokens)} tokens · ${formatCostExact(
           cell.cost,
         )} · ${formatExact(cell.messages)} messages`,
@@ -149,11 +149,11 @@ export const modelSubRows = (
     })
 
 /**
- * A row that opens onto sub-rows — a client and the models it drove.
- * The row itself becomes the button (the whole thing is the hit target,
- * which a chevron in a fifth column would not be), and the sub-rows
- * carry their share of *this* row rather than of the section, so the
- * fills read as a split of the bar directly above them.
+ * A row that opens onto sub-rows — a client or a vendor and the models
+ * behind it. The row itself becomes the button (the whole thing is the
+ * hit target, which a chevron in a fifth column would not be), and the
+ * sub-rows carry their share of *this* row rather than of the section,
+ * so the fills read as a split of the bar directly above them.
  */
 export const expandableRow = (
   icons: Icons,
