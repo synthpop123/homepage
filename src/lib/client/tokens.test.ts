@@ -227,7 +227,7 @@ describe("windowTotals", () => {
 describe("stackFor", () => {
   it("keeps the top ids and appends the residual sentinel", () => {
     const stacked = stackFor(
-      site([
+      rangeStats([
         { ...usage(100), ...span, provider: "anthropic" },
         { ...usage(50), ...span, provider: "openai" },
         { ...usage(25), ...span, provider: "google" },
@@ -243,7 +243,7 @@ describe("stackFor", () => {
 
   it("skips unknown and empty ids", () => {
     const stacked = stackFor(
-      site([
+      rangeStats([
         { ...usage(100), ...span, provider: "unknown" },
         { ...usage(50), ...span, provider: "" },
         { ...usage(25), ...span, provider: "openai" },
@@ -255,11 +255,26 @@ describe("stackFor", () => {
 
   it("reads the client dimension from byClient", () => {
     const stacked = stackFor(
-      site([], [{ ...usage(10), ...span, client: "cursor" }]),
+      rangeStats([], [{ ...usage(10), ...span, client: "cursor" }]),
       "client",
       2,
     )
     expect(stacked).toEqual({ dim: "client", ids: ["cursor", "other"] })
+  })
+
+  // The regression the range-scoped signature exists to prevent: a
+  // provider that dominates all time but has gone quiet must not hold a
+  // colored slot in a shorter window that someone else is driving.
+  it("ranks within the range it is given, not all time", () => {
+    const stacked = stackFor(
+      rangeStats([
+        { ...usage(10), ...span, provider: "deepseek" },
+        { ...usage(1), ...span, provider: "cursor" },
+      ]),
+      "provider",
+      1,
+    )
+    expect(stacked.ids).toEqual(["deepseek", "other"])
   })
 })
 
@@ -887,7 +902,7 @@ describe("/api/site fixture contract", () => {
   it("feeds the render paths the dashboard actually runs", () => {
     if (!isSite(fixture)) throw new Error("fixture failed decoding")
     for (const dim of ["provider", "client"] as const) {
-      const stack = stackFor(fixture, dim)
+      const stack = stackFor(fixture.ranges.all, dim)
       expect(stack.ids.length).toBeGreaterThan(1)
       const buckets = dailyBuckets(fixture.daily, stack, "tokens")
       expect(buckets).toHaveLength(fixture.daily.length)

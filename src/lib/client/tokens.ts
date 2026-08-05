@@ -457,14 +457,17 @@ export type Stack = { dim: StackDim; ids: string[] }
 
 /**
  * The ids worth their own color when stacking the trend chart by `dim`:
- * the top few by all-time tokens; everything else collapses into "other".
+ * the top few by tokens *within the range being charted*, so the colored
+ * segments are whoever actually drove that window — reading all-time
+ * ranks instead would fold a currently-busy provider into "other" to
+ * keep a slot for one that has gone quiet. Everything below the cutoff
+ * collapses into "other".
  */
-export function stackFor(site: Site, dim: StackDim, limit = 3): Stack {
-  const all = site.ranges.all
+export function stackFor(range: SiteRange, dim: StackDim, limit = 3): Stack {
   const named = (
     dim === "provider"
-      ? all.byProvider.map((entry) => entry.provider)
-      : all.byClient.map((entry) => entry.client)
+      ? range.byProvider.map((entry) => entry.provider)
+      : range.byClient.map((entry) => entry.client)
   )
     .filter((id) => id && id !== "unknown")
     .slice(0, limit)

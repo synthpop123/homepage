@@ -32,7 +32,9 @@ import { el, placeTip, type Query } from "./dom"
 /* Trend: bars stacked by provider/client; monthly buckets for all time */
 
 export function createTrendChart(q: Query) {
+  const chart = q(".tk-chart")
   const tip = q(".tk-tip")
+  const barsArea = q(".tk-chart-bars")
   let stack: Stack = { dim: "provider", ids: [] }
   let tipBuckets: Bucket[] = []
   let tipMetric: MetricKey = "tokens"
@@ -78,7 +80,6 @@ export function createTrendChart(q: Query) {
   }
 
   const showTip = (bar: HTMLElement) => {
-    const chart = q(".tk-chart")
     const bucket = tipBuckets[Number(bar.dataset.i)]
     if (!tip || !chart || !bucket) return
     buildTip(bucket)
@@ -86,7 +87,6 @@ export function createTrendChart(q: Query) {
     placeTip(tip, bar, chart)
   }
 
-  const barsArea = q(".tk-chart-bars")
   barsArea?.addEventListener("pointerover", (event) => {
     const bar = (event.target as Element).closest<HTMLElement>("span[data-i]")
     if (bar) showTip(bar)
@@ -99,7 +99,7 @@ export function createTrendChart(q: Query) {
     metric: MetricKey,
     dim: StackDim,
   ) => {
-    stack = stackFor(site, dim)
+    stack = stackFor(site.ranges[range], dim)
     const meta = RANGES.find((entry) => entry.key === range) ?? RANGES[1]
     const from = site.ranges[range].from
     const buckets =
@@ -128,9 +128,8 @@ export function createTrendChart(q: Query) {
     tipMetric = metric
     hideTip()
 
-    const bars = q(".tk-chart-bars")
-    if (bars) {
-      bars.replaceChildren(
+    if (barsArea) {
+      barsArea.replaceChildren(
         ...buckets.map((bucket, index) => {
           const bar = el("span", "")
           const value = bucket[metric]
@@ -151,7 +150,7 @@ export function createTrendChart(q: Query) {
           return bar
         }),
       )
-      bars.removeAttribute("data-skeleton")
+      barsArea.removeAttribute("data-skeleton")
     }
 
     const axis = q(".tk-chart-axis")
@@ -184,7 +183,7 @@ export function createTrendChart(q: Query) {
       )
     }
 
-    q(".tk-chart")?.setAttribute(
+    chart?.setAttribute(
       "aria-label",
       total > 0 && peakBucket
         ? `${scopeText}: ${formatMetric(total, metric)} in total, peaking at ${formatMetric(max, metric)} (${peakBucket.title})`
