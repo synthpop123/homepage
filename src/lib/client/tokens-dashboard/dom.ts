@@ -17,6 +17,7 @@ import {
   type MetricKey,
   type ModelCell,
   modelLabel,
+  PLACEHOLDER_IDS,
   type StackPaint,
 } from "../tokens"
 
@@ -133,7 +134,7 @@ export const modelSubRows = (
   metric: MetricKey,
 ): RowSpec[] =>
   models
-    .filter((cell) => cell[metric] > 0)
+    .filter((cell) => cell[metric] > 0 && !PLACEHOLDER_IDS.has(cell.model))
     .sort((a, b) => b[metric] - a[metric])
     .map((cell) => {
       const name = modelLabel(cell.model)

@@ -794,7 +794,9 @@ export function todayView(site: Site): TodayView {
   const dayOf = (date: string) => site.daily.find((day) => day.date === date)
   const active = dayOf(site.today)?.active ?? 0
 
-  const clients = byClient.filter((row) => row.tokens > 0)
+  const clients = byClient.filter(
+    (row) => row.tokens > 0 && !PLACEHOLDER_IDS.has(row.client),
+  )
   const tail = clients
     .slice(MIX_SEGMENTS)
     .reduce((sum, row) => sum + row.tokens, 0)
@@ -829,7 +831,9 @@ export function todayView(site: Site): TodayView {
       active: dayOf(eve)?.active ?? 0,
     },
     mix,
-    models: byModel.filter((row) => row.tokens > 0).slice(0, TOP_MODELS),
+    models: byModel
+      .filter((row) => row.tokens > 0 && !PLACEHOLDER_IDS.has(row.model))
+      .slice(0, TOP_MODELS),
   }
 }
 
@@ -1041,8 +1045,8 @@ const MODEL_ACRONYMS = new Map<string, string>([
  *  Add new custom spellings here. */
 const MODEL_NAMES = new Map<string, string>([
   ["deepseek-v4-flash", "DeepSeek V4 Flash"],
-  // Placeholders, labelled the way the client and provider tables label
-  // theirs — a row for usage nothing could attribute, not a hidden one.
+  // Placeholders. Nothing renders them any more (PLACEHOLDER_IDS), but
+  // the labels stay honest for anything that reaches modelLabel directly.
   ["unknown", "Other"],
   ["<synthetic>", "Synthetic"],
 ])
@@ -1073,12 +1077,13 @@ export const modelLabel = (id: string) =>
 /* Brand icons ---------------------------------------------------------- */
 
 /**
- * Ids the collector reports for usage it could not attribute. They are
- * *rendered*, labelled "Other" like their client and provider
- * counterparts — hiding a row silently drops its tokens out of a list
- * whose shares are supposed to sum to the range. What they are excluded
- * from is anything that counts distinct things ("models tried") or gives
- * one its own color band, where "unattributed" is not an answer.
+ * Ids the collector reports for usage it could not attribute. Nothing on
+ * the page renders them: a row reading "Other — 6.8K" answers no
+ * question a visitor has, and every place one could appear (breakdown
+ * rows, the model disclosures, Today's top models, a color band, the
+ * "models tried" count) is somewhere "unattributed" is not an answer.
+ * The cost is that shares no longer quite sum to their range — which the
+ * collector's own totals still do, and which is the smaller lie.
  */
 export const PLACEHOLDER_IDS = new Set(["unknown", "<synthetic>"])
 

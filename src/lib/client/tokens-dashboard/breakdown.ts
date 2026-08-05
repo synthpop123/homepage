@@ -16,6 +16,7 @@ import {
   type MetricKey,
   type ModelCell,
   modelLabel,
+  PLACEHOLDER_IDS,
   providerLabel,
   type RangeKey,
   type Site,
@@ -94,7 +95,7 @@ export function createBreakdown(q: Query, icons: Icons) {
       if (!list) continue
       const total = stats.totals[metric]
       const live = group.rows
-        .filter((row) => row.usage[metric] > 0)
+        .filter((row) => row.usage[metric] > 0 && !PLACEHOLDER_IDS.has(row.id))
         .sort((a, b) => b.usage[metric] - a.usage[metric])
       const isOpen = expanded.has(group.key)
       const shown = isOpen ? live : live.slice(0, TOP_ROWS)

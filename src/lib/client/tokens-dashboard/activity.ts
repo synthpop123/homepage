@@ -105,8 +105,8 @@ export function renderFacts(q: Query, site: Site) {
     facts.current ? `since ${formatDay(facts.current.since)}` : "—",
   )
 
-  // "Models tried" counts distinct models, so the unattributed rows the
-  // lists still render are exactly what this must leave out.
+  // Counted off the payload rather than off what the lists render, so
+  // the unattributed ids have to be dropped here too.
   const models = site.ranges.all.byModel.filter(
     (entry) => !PLACEHOLDER_IDS.has(entry.model),
   )

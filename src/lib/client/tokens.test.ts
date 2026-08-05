@@ -798,7 +798,10 @@ describe("todayView", () => {
   // Placeholder ids are rendered, not hidden — a list whose shares are
   // meant to sum to the day cannot silently drop rows. They are labelled
   // the way the client and provider tables label theirs.
-  it("keeps unattributed usage in the list and caps it at five", () => {
+  it("drops unattributed usage from the list and caps it at five", () => {
+    // A row reading "Other" answers no question, so it is left out here
+    // the same way it is left out of the breakdown lists and the stacks —
+    // even when, as here, it would have topped the list.
     const view = todayView(
       todaySite({
         totals: { tokens: 100 },
@@ -810,13 +813,12 @@ describe("todayView", () => {
       }),
     )
     expect(view.models.map((row) => row.model)).toEqual([
-      "unknown",
       "m-0",
       "m-1",
       "m-2",
       "m-3",
+      "m-4",
     ])
-    expect(modelLabel("unknown")).toBe("Other")
   })
 })
 
