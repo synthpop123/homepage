@@ -5,9 +5,9 @@
  * /api/site payload stale-while-revalidate (a session-cached copy
  * paints instantly, the revalidated answer follows and re-renders only
  * if `generatedAt` moved — every renderer is replaceChildren-idempotent,
- * so a refresh is just rendering again), then re-render the dynamic
- * sections (overview, trend, rhythm, breakdown) whenever the range /
- * metric / stacking controls change.
+ * so a refresh is just rendering again), then repaint whichever dynamic
+ * sections a change to the range / metric / stacking controls can
+ * actually affect. The controls themselves persist for the session.
  */
 
 import {
@@ -25,6 +25,42 @@ import { renderOverview } from "./overview"
 import { renderToday } from "./today"
 import { createRhythmChart, createTrendChart } from "./trend"
 
+type Controls = { range: RangeKey; metric: MetricKey; stackDim: StackDim }
+
+const CONTROLS_KEY = "tokens:controls"
+
+/**
+ * Radio groups are the source of truth for the controls, so persistence
+ * is just re-checking inputs on mount. Stored values are compared, never
+ * interpolated into a selector, and anything unrecognised simply matches
+ * no input and leaves the markup's default checked.
+ */
+function restoreControls(root: HTMLElement) {
+  let saved: Record<string, unknown> | null
+  try {
+    saved = JSON.parse(sessionStorage.getItem(CONTROLS_KEY) ?? "{}")
+  } catch {
+    return
+  }
+  const names = { range: "range", metric: "metric", stackDim: "stack" }
+  for (const [field, name] of Object.entries(names)) {
+    for (const input of root.querySelectorAll<HTMLInputElement>(
+      `input[name="${name}"]`,
+    )) {
+      if (input.value === saved?.[field]) input.checked = true
+    }
+  }
+}
+
+const saveControls = (controls: Controls) => {
+  try {
+    sessionStorage.setItem(CONTROLS_KEY, JSON.stringify(controls))
+  } catch {
+    // Storage full or unavailable (private mode) — the controls just
+    // start from their defaults next time.
+  }
+}
+
 export function mountTokensDashboard(root: HTMLElement) {
   const endpoint = root.dataset.endpoint
   const body = root.querySelector<HTMLElement>(".tk-body")
@@ -39,8 +75,12 @@ export function mountTokensDashboard(root: HTMLElement) {
   const breakdown = createBreakdown(q, icons)
 
   let site: Site | null = null
+  /** The control state the sections on screen were rendered from; null
+   *  until a render completes, which is what makes a fresh payload (or a
+   *  recovery after a throw) repaint everything. */
+  let shown: Controls | null = null
 
-  const readState = () => {
+  const readState = (): Controls => {
     const values = new FormData(form)
     const stackInput = root.querySelector<HTMLInputElement>(
       'input[name="stack"]:checked',
@@ -52,15 +92,34 @@ export function mountTokensDashboard(root: HTMLElement) {
     }
   }
 
+  /**
+   * Each section reads only some of the controls — the overview ignores
+   * the metric, only the trend cares how bars are stacked — so a change
+   * repaints just what it can actually alter. Re-deriving the rest means
+   * re-running fillDaily over the whole series and re-sorting every
+   * breakdown for output identical to what is already on screen.
+   */
   const renderDynamic = () => {
     if (!site) return
-    const { range, metric, stackDim } = readState()
-    renderOverview(q, site, range)
-    trend.render(site, range, metric, stackDim)
-    rhythm.render(site, range, metric)
-    breakdown.render(site, range, metric)
+    const next = readState()
+    const moved = (...keys: (keyof Controls)[]) =>
+      !shown || keys.some((key) => shown?.[key] !== next[key])
+
+    if (moved("range")) renderOverview(q, site, next.range)
+    if (moved("range", "metric", "stackDim")) {
+      trend.render(site, next.range, next.metric, next.stackDim)
+    }
+    if (moved("range", "metric")) {
+      rhythm.render(site, next.range, next.metric)
+      breakdown.render(site, next.range, next.metric)
+    }
+    // Committed only once every section above has drawn: a half-render
+    // must not be recorded as the state on screen.
+    shown = next
+    saveControls(next)
   }
 
+  restoreControls(root)
   form.addEventListener("submit", (event) => event.preventDefault())
   form.addEventListener("change", renderDynamic)
   // The stack toggle lives in the chart footer, outside the form.
@@ -74,6 +133,8 @@ export function mountTokensDashboard(root: HTMLElement) {
     // block the recovery render.
     const previous = site
     site = loaded
+    // New numbers behind unchanged controls: every section is stale.
+    shown = null
     try {
       renderToday(q, loaded, icons)
       renderHeatmap(q, loaded)
