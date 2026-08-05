@@ -200,9 +200,10 @@ export function createToday(q: Query, icons: Icons) {
             share: entry.share,
             title: `${entry.label} — ${formatExact(entry.tokens)} tokens`,
           }
+          // Only the merged "Other" tail carries no per-model split.
           const subRows = modelSubRows(entry.models, entry.tokens, "tokens")
           const row =
-            subRows.length < 2
+            subRows.length === 0
               ? usageRow(icons, spec)
               : expandableRow(icons, spec, subRows, open.has(entry.id), () => {
                   if (open.has(entry.id)) open.delete(entry.id)

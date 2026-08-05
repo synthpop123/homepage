@@ -128,14 +128,14 @@ export function createBreakdown(q: Query, icons: Icons) {
           share: total > 0 ? row.usage[metric] / total : NaN,
           title: `${row.name} — ${parts.join(" · ")}`,
         }
-        // A client that only ever ran one model has nothing to open
-        // onto — the disclosure would restate the row it hangs off.
+        // One model still earns a disclosure: the row names the client,
+        // never the model behind it. Only an empty list stays plain.
         const subRows = modelSubRows(
           row.models ?? [],
           row.usage[metric],
           metric,
         )
-        if (subRows.length < 2) return usageRow(icons, spec)
+        if (subRows.length === 0) return usageRow(icons, spec)
         return expandableRow(
           icons,
           spec,
