@@ -1194,9 +1194,11 @@ const skeletonRows = (count: number) =>
     cursor: pointer;
   }
 
-  .tk-devices :global(button.dev-row:hover .dev-name) {
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
+  /* Hover brightens the chevron rather than underlining the name — the
+     same affordance the expandable client rows use, and a device name
+     is not a link. */
+  .tk-devices :global(button.dev-row:hover svg) {
+    color: var(--foreground);
   }
 
   .tk-devices :global(button.dev-row:focus-visible) {
