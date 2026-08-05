@@ -71,13 +71,11 @@ const overviewCards = [
   { key: "activeDays", label: "Active days" },
 ]
 
-/** Dimensions the trend chart stacks by. `model` starts hidden: only a
- *  payload carrying the per-day model slices can be stacked by it, and
- *  the controller unhides the option when one arrives. */
+/** Dimensions the trend chart stacks by. */
 const stackOptions = [
   { key: "provider", label: "By provider" },
   { key: "client", label: "By client" },
-  { key: "model", label: "By model", hidden: true },
+  { key: "model", label: "By model" },
 ]
 
 const factCards = [
@@ -214,8 +212,8 @@ const skeletonRows = (count: number) =>
       </div>
       <div class="tk-chart-foot">
         <fieldset class="tk-seg tk-seg-sm" aria-label="Stack trend bars by">
-          {stackOptions.map(({ key, label, hidden }) => (
-            <label data-stack={key} hidden={hidden}>
+          {stackOptions.map(({ key, label }) => (
+            <label data-stack={key}>
               <input
                 type="radio"
                 name="stack"

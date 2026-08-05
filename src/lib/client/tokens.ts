@@ -52,12 +52,8 @@ export type SiteDay = {
   providers: Record<string, DaySlice>
   clients: Record<string, DaySlice>
   /** Keyed by *canonical* model id, so the slices agree with
-   *  `ranges.*.byModel`. Optional only for the schema-7 window: the
-   *  collector added it under the current version, so a payload composed
-   *  before that deploy (or a session cache holding one) simply has no
-   *  model slicing — `hasModelSlices` gates the chart's model stacking on
-   *  it. Make it required when 7 leaves ACCEPTED_SCHEMA_VERSIONS. */
-  models?: Record<string, DaySlice>
+   *  `ranges.*.byModel`. */
+  models: Record<string, DaySlice>
 }
 
 export type SiteDevice = {
@@ -93,21 +89,13 @@ export type Site = {
  * cache or a mid-deploy mismatch falls back to a refetch (or the
  * fallback UI) instead of a renderer crash. This number is also the
  * sessionStorage cache key, so a deploy never reads the previous build's
- * entries. What the decoder actually accepts is the set below.
+ * entries.
  */
 export const SITE_SCHEMA_VERSION = 8
 
-/**
- * The two repos deploy independently, so a bump has no atomic moment.
- * `daily[].models` is a shape the *previous* reader survives whole (it
- * white-listed the fields it read), which is why the collector shipped it
- * under 7 and left the bump to this side: widening the accepted set here
- * and deploying first means neither version mismatch is ever visible.
- * Rollout — this repo with {7, 8} → tokens-worker to SITE_VERSION 8 →
- * this repo drops 7, makes `SiteDay.models` required, and recaptures the
- * fixture (`curl https://tokens.lkwplus.com/api/site`).
- */
-export const ACCEPTED_SCHEMA_VERSIONS = new Set([7, SITE_SCHEMA_VERSION])
+/** The schema versions this build accepts — exactly the current one.
+ *  Keep in lockstep with tokens-worker's SITE_VERSION. */
+export const ACCEPTED_SCHEMA_VERSIONS = new Set([SITE_SCHEMA_VERSION])
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -191,7 +179,7 @@ const isDay = (value: unknown): boolean =>
   (value.active === undefined || isCount(value.active)) &&
   isSlices(value.providers) &&
   isSlices(value.clients) &&
-  (value.models === undefined || isSlices(value.models))
+  isSlices(value.models)
 
 const isCountOrNull = (value: unknown): boolean =>
   value === null || isCount(value)
@@ -244,8 +232,8 @@ const isRange = (value: unknown): boolean =>
  * the renderers actually read: the schema version (anything this build
  * does not accept is rejected outright), all five ranges with their
  * totals and breakdown rows (metrics + usage spans), every daily row
- * including the providers/clients slice maps the trend chart iterates,
- * and the device list down to its nullable metadata —
+ * including the provider/client/model slice maps the trend chart
+ * iterates, and the device list down to its nullable metadata —
  * render-site truthiness guards handle absence, not wrong types. Dates
  * are held to the calendar-day shape and `generatedAt` to something
  * Date can actually parse: both are arithmetic inputs, not labels.
@@ -459,6 +447,7 @@ export function fillDaily(
         messages: 0,
         providers: {},
         clients: {},
+        models: {},
       },
     )
   }
@@ -555,16 +544,11 @@ export function stackPaint(stack: Stack): StackPaint[] {
 }
 
 const daySlices = (day: SiteDay, dim: StackDim) =>
-  (dim === "provider"
+  dim === "provider"
     ? day.providers
     : dim === "client"
       ? day.clients
-      : day.models) ?? {}
-
-/** Whether the payload carries the per-day model slicing at all — false
- *  for anything the collector composed before it shipped that key. */
-export const hasModelSlices = (site: Site) =>
-  site.daily.some((day) => day.models !== undefined)
+      : day.models
 
 export type Bucket = {
   label: string

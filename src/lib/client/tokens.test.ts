@@ -18,7 +18,6 @@ import {
   formatDelta,
   formatShare,
   hasActivity,
-  hasModelSlices,
   isMessagesOnly,
   isSite,
   lastReport,
@@ -58,6 +57,7 @@ const day = (
   messages: 0,
   providers: {},
   clients: {},
+  models: {},
   ...extra,
 })
 
@@ -485,19 +485,6 @@ describe("dailyBuckets", () => {
     expect(bucket.active).toBe(3_600_000)
     expect(bucket.activeMetric).toBe(100)
     expect(perHour(bucket.activeMetric, bucket.active)).toBe(100)
-  })
-})
-
-describe("hasModelSlices", () => {
-  it("is false only when no day carries the key", () => {
-    const withoutModels = { ...site(), daily: [day("2026-07-19", 5)] }
-    expect(hasModelSlices(withoutModels)).toBe(false)
-    expect(
-      hasModelSlices({
-        ...site(),
-        daily: [day("2026-07-19", 5), day("2026-07-20", 5, { models: {} })],
-      }),
-    ).toBe(true)
   })
 })
 
@@ -992,10 +979,9 @@ describe("isSite", () => {
     }
   })
 
-  // The rollout window: `daily[].models` went out under schema 7, so a
-  // payload the dashboard accepts may or may not carry it — but a
-  // malformed slice map is still a rejection, not a shrug.
-  it("accepts daily rows with or without model slices", () => {
+  // Model slices are part of the schema now — a missing or malformed
+  // map is a rejection, not a shrug.
+  it("requires per-day model slices", () => {
     const withModels = site()
     withModels.daily = [
       day("2026-07-20", 5, {
@@ -1005,8 +991,17 @@ describe("isSite", () => {
     expect(isSite(withModels)).toBe(true)
 
     const withoutModels = site()
-    withoutModels.daily = [day("2026-07-20", 5)]
-    expect(isSite(withoutModels)).toBe(true)
+    withoutModels.daily = [
+      {
+        date: "2026-07-20",
+        tokens: 5,
+        cost: 0,
+        messages: 0,
+        providers: {},
+        clients: {},
+      } as SiteDay,
+    ]
+    expect(isSite(withoutModels)).toBe(false)
 
     const badModels = site()
     badModels.daily = [
@@ -1169,11 +1164,7 @@ describe("/api/site fixture contract", () => {
 
   it("feeds the render paths the dashboard actually runs", () => {
     if (!isSite(fixture)) throw new Error("fixture failed decoding")
-    // Model stacking only applies once the capture carries the per-day
-    // model slices; until then the chart hides that toggle, and so does
-    // this loop.
-    const dims: StackDim[] = ["provider", "client"]
-    if (hasModelSlices(fixture)) dims.push("model")
+    const dims: StackDim[] = ["provider", "client", "model"]
     for (const dim of dims) {
       const stack = stackFor(fixture.ranges.all, dim)
       expect(stack.ids.length).toBeGreaterThan(1)
