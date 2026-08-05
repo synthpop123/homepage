@@ -40,7 +40,37 @@ import {
 export function createToday(q: Query, icons: Icons) {
   /** Client rows opened onto their models; survives a re-render. */
   const open = new Set<string>()
+  /** The bar's segments by client id, so a legend row can point back at
+   *  the slice it stands for. */
+  const segments = new Map<string, HTMLElement>()
+
+  // The legend rows lead with a brand icon, like every other list on the
+  // page — which leaves the bar above them unkeyed. Pointing at (or
+  // tabbing to) a row mutes every segment but its own instead: the same
+  // statement a color chip made permanently, on demand, and without a
+  // second color language running down the rows.
+  const highlight = (id: string | null) => {
+    for (const [key, segment] of segments) {
+      segment.toggleAttribute("data-mute", id !== null && key !== id)
+    }
+  }
+  const clientOf = (target: EventTarget | null) =>
+    target instanceof Element
+      ? (target.closest<HTMLElement>("[data-client]")?.dataset.client ?? null)
+      : null
+  const legend = q(".tk-today-legend")
+  legend?.addEventListener("pointerover", (event) => {
+    // A tap has no matching "leave", so the highlight would stick.
+    if (event.pointerType !== "touch") highlight(clientOf(event.target))
+  })
+  legend?.addEventListener("pointerleave", () => highlight(null))
+  legend?.addEventListener("focusin", (event) =>
+    highlight(clientOf(event.target)),
+  )
+  legend?.addEventListener("focusout", () => highlight(null))
+
   const render = (site: Site) => {
+    segments.clear()
     const { idle, totals, active, before, mix, models } = todayView(site)
 
     // The date itself is redundant next to a heading that says "Today";
@@ -148,35 +178,38 @@ export function createToday(q: Query, icons: Icons) {
           segment.title = `${entry.label} — ${formatTokens(entry.tokens)} (${formatShare(
             entry.share,
           )})`
+          segments.set(entry.id, segment)
           return segment
         }),
       )
       bar.removeAttribute("data-skeleton")
     }
 
-    // The legend under the bar is also the client breakdown: a chip (so
-    // it keys back to the segment above), the day's tokens, and the
-    // models that client drove behind a disclosure. Same rows as the
-    // Breakdown section, which has no today window of its own.
-    const legend = q(".tk-today-legend")
+    // The legend under the bar is also the client breakdown: the brand
+    // mark, the day's tokens, and the models that client drove behind a
+    // disclosure. Same rows as the Breakdown section, which has no today
+    // window of its own. `data-client` is what ties a row back to its
+    // segment for `highlight`.
     if (legend) {
       legend.replaceChildren(
         ...mix.map((entry) => {
           const spec = {
-            icon: null,
-            chip: entry.id,
+            icon: aiIcon("client", entry.id),
             name: entry.label,
             value: formatTokens(entry.tokens),
             share: entry.share,
             title: `${entry.label} — ${formatExact(entry.tokens)} tokens`,
           }
           const subRows = modelSubRows(entry.models, entry.tokens, "tokens")
-          return subRows.length < 2
-            ? usageRow(icons, spec)
-            : expandableRow(icons, spec, subRows, open.has(entry.id), () => {
-                if (open.has(entry.id)) open.delete(entry.id)
-                else open.add(entry.id)
-              })
+          const row =
+            subRows.length < 2
+              ? usageRow(icons, spec)
+              : expandableRow(icons, spec, subRows, open.has(entry.id), () => {
+                  if (open.has(entry.id)) open.delete(entry.id)
+                  else open.add(entry.id)
+                })
+          row.dataset.client = entry.id
+          return row
         }),
       )
     }

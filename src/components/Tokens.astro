@@ -438,10 +438,10 @@ const skeletonRows = (count: number) =>
   }
 
   /* The legend under the client-mix bar is the client breakdown: the
-     same rows as the Breakdown section, keyed to the bar by a chip
-     instead of a brand icon, each opening onto the models that client
-     drove. The Breakdown section has no today window of its own, so
-     this is where the day's client → model join is readable. */
+     same brand-marked rows as the Breakdown section, each opening onto
+     the models that client drove. The Breakdown section has no today
+     window of its own, so this is where the day's client → model join
+     is readable. */
   .tk-today-legend {
     margin-block-start: calc(-1 * var(--space-3xs));
   }
@@ -603,6 +603,17 @@ const skeletonRows = (count: number) =>
      colors the segment instead of the --c shade ramp below. */
   .tk-mix-bar :global(span[data-p]) {
     background-color: var(--p);
+  }
+
+  /* Its legend leads with brand icons rather than color chips, so the
+     bar is keyed on demand instead: hovering or focusing a client row
+     mutes every segment but that client's (today.ts sets [data-mute]). */
+  .tk-today-bar :global(span) {
+    transition: opacity 0.15s ease;
+  }
+
+  .tk-today-bar :global(span[data-mute]) {
+    opacity: 0.25;
   }
 
   .tk-mix :global([data-k="0"]) {
@@ -1019,16 +1030,6 @@ const skeletonRows = (count: number) =>
     justify-content: center;
     inline-size: 1.1em;
     block-size: 1.1em;
-  }
-
-  /* Rows keyed to a colored bar lead with a chip instead of a brand
-     icon; the margins make it occupy the same 1.1em the icon does, so
-     the two kinds of row still align down the name column. */
-  .tk-rows :global(.chip) {
-    inline-size: 0.7em;
-    block-size: 0.7em;
-    margin-inline: 0.2em;
-    border-radius: var(--radius-xs);
   }
 
   .tk-rows :global(.ico svg) {

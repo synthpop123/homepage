@@ -89,9 +89,6 @@ export const setDelta = (
 /** One breakdown row: a brand mark, name, metric value, share. */
 export type RowSpec = {
   icon: string | null
-  /** Renders a palette chip instead of the brand icon — for rows that
-   *  have to key back to a colored bar above them. */
-  chip?: string
   name: string
   value: string
   /** Share of the section total (0–1, NaN when there is no total): it
@@ -112,12 +109,8 @@ const fillRow = <T extends HTMLElement>(
     "--w",
     String(Number.isFinite(row.share) ? row.share : 0),
   )
-  const lead =
-    row.chip === undefined
-      ? icons.slot(row.icon)
-      : paint(el("span", "chip"), { p: row.chip, shade: 0 })
   node.append(
-    lead,
+    icons.slot(row.icon),
     el("span", "name", row.name),
     el("span", "val", row.value),
     el("span", "share", formatShare(row.share)),
