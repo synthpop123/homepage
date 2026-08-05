@@ -1,11 +1,13 @@
 /**
- * Shared DOM plumbing for the Tokens dashboard renderers: element
- * creation, the scoped query helper, stat-card filling, delta lines,
- * breakdown rows, the vendored brand-icon defs, and tooltip
- * positioning. Kept separate so the section renderers don't have to
- * import each other.
+ * Shared DOM plumbing for the Tokens dashboard renderers: the scoped
+ * query helper, stat-card filling, delta lines, breakdown rows, the
+ * vendored brand-icon defs, and tooltip positioning — plus a re-export
+ * of the site-wide element factory, so the renderers here import their
+ * DOM helpers from one place. Kept separate so the section renderers
+ * don't have to import each other.
  */
 
+import { el } from "../dom"
 import {
   aiIcon,
   type ClientModel,
@@ -31,12 +33,7 @@ export const paint = <T extends HTMLElement>(node: T, spec?: StackPaint) => {
   return node
 }
 
-export const el = (tag: string, className: string, text?: string) => {
-  const node = document.createElement(tag)
-  node.className = className
-  if (text !== undefined) node.textContent = text
-  return node
-}
+export { el }
 
 /** Query helper bound to one <tokens-dashboard> root. */
 export function scopedQuery(root: HTMLElement) {

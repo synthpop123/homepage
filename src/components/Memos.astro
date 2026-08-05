@@ -38,6 +38,10 @@ const profileUrl = `${instance}/@${username}`
         </li>
       ))}
   </ol>
+  <p class="memos-empty" hidden>
+    No notes here yet — say hi on
+    <a href={profileUrl} target="_blank" rel="noopener noreferrer">Mastodon</a>.
+  </p>
   <p class="memos-fallback" hidden>
     Couldn’t load memos right now — read them on
     <a href={profileUrl} target="_blank" rel="noopener noreferrer">Mastodon</a>.
@@ -45,229 +49,9 @@ const profileUrl = `${instance}/@${username}`
 </memos-feed>
 
 <script>
-  import { cached, dateFormatter, fetchJson } from "@/lib/client/feed"
-  import {
-    isStatusList,
-    type MastodonStatus,
-    type Memo,
-    type MemoImage,
-    splitEmojiText,
-    timeLabel,
-    toMemo,
-  } from "@/lib/client/memos"
+  import { mountMemos } from "@/lib/client/memos-feed"
 
-  const ALLOWED = new Set([
-    "P",
-    "BR",
-    "A",
-    "SPAN",
-    "STRONG",
-    "B",
-    "EM",
-    "I",
-    "DEL",
-    "CODE",
-    "PRE",
-    "BLOCKQUOTE",
-    "UL",
-    "OL",
-    "LI",
-  ])
-
-  const el = (tag: string, className?: string) => {
-    const node = document.createElement(tag)
-    if (className) node.className = className
-    return node
-  }
-
-  const emojify = (text: string, emojis: Record<string, string>) =>
-    splitEmojiText(text, emojis).map((token) => {
-      if (token.type === "text") return document.createTextNode(token.value)
-      const img = el("img", "emoji") as HTMLImageElement
-      img.src = token.url
-      img.alt = token.shortcode
-      img.draggable = false
-      return img
-    })
-
-  /** Allow-list sanitizer: unknown elements are unwrapped, hrefs must be
-   *  plain http(s), and only Mastodon's presentation classes survive
-   *  (span.invisible / span.ellipsis for shortened links). */
-  const sanitize = (
-    node: Node,
-    emojis: Record<string, string>,
-  ): DocumentFragment => {
-    const fragment = document.createDocumentFragment()
-    node.childNodes.forEach((child) => {
-      if (child.nodeType === Node.TEXT_NODE) {
-        fragment.append(...emojify(child.textContent ?? "", emojis))
-      } else if (child.nodeType === Node.ELEMENT_NODE) {
-        const source = child as Element
-        if (!ALLOWED.has(source.tagName)) {
-          fragment.append(sanitize(source, emojis))
-          return
-        }
-        const clone = el(source.tagName.toLowerCase())
-        if (source.tagName === "A") {
-          const href = source.getAttribute("href") ?? ""
-          if (/^https?:\/\//i.test(href)) {
-            clone.setAttribute("href", href)
-            clone.setAttribute("target", "_blank")
-            clone.setAttribute("rel", "nofollow noopener noreferrer")
-          }
-        }
-        if (source.tagName === "A" || source.tagName === "SPAN") {
-          const cls = source.getAttribute("class")
-          if (cls) clone.setAttribute("class", cls)
-        }
-        clone.append(sanitize(source, emojis))
-        fragment.append(clone)
-      }
-    })
-    return fragment
-  }
-
-  const toFragment = (html: string, emojis: Record<string, string>) =>
-    sanitize(new DOMParser().parseFromString(html, "text/html").body, emojis)
-
-  /** Rendered widths for srcset selection. A single image renders at a
-   *  fixed height with its own ratio (see the CSS), so its width is
-   *  known from the attachment dimensions; grid cells use the ~30rem
-   *  main column left of the date rail. */
-  const sizesFor = (images: MemoImage[], index: number) => {
-    const count = images.length
-    if (count === 1) {
-      const { width, height } = images[0] ?? {}
-      if (width && height) {
-        const rem = Math.min((22 * width) / height, 30)
-        return `min(${rem.toFixed(1)}rem, 92vw)`
-      }
-      return "(min-width: 40rem) 30rem, 92vw"
-    }
-    if (count === 3) {
-      return index === 0
-        ? "(min-width: 40rem) 20rem, 61vw"
-        : "(min-width: 40rem) 10rem, 31vw"
-    }
-    return "(min-width: 40rem) 15rem, 46vw"
-  }
-
-  const renderMedia = (images: MemoImage[]) => {
-    const grid = el("div", "memo-media")
-    grid.dataset.count = String(Math.min(images.length, 4))
-    images.forEach((image, index) => {
-      const figure = el("figure", "memo-shot")
-      const link = el("a") as HTMLAnchorElement
-      link.href = image.href
-      link.target = "_blank"
-      link.rel = "noopener noreferrer"
-      const img = el("img") as HTMLImageElement
-      img.src = image.src
-      if (image.srcset) {
-        img.srcset = image.srcset
-        img.sizes = sizesFor(images, index)
-      }
-      img.alt = image.alt
-      img.loading = "lazy"
-      img.decoding = "async"
-      if (image.width && image.height) {
-        img.width = image.width
-        img.height = image.height
-      }
-      const reveal = () => img.classList.add("is-loaded")
-      img.addEventListener("load", reveal)
-      img.addEventListener("error", () => {
-        // Retry once with the plain preview src before giving up.
-        if (img.srcset) {
-          img.removeAttribute("srcset")
-          img.removeAttribute("sizes")
-        } else {
-          reveal()
-        }
-      })
-      if (img.complete && img.naturalWidth > 0) reveal()
-      link.append(img)
-      figure.append(link)
-      grid.append(figure)
-    })
-    return grid
-  }
-
-  const renderMemo = (memo: Memo) => {
-    const item = el("li", "memo")
-    const article = el("article")
-
-    const rail = el("p", "memo-rail")
-    const permalink = el("a", "memo-time") as HTMLAnchorElement
-    permalink.href = memo.url
-    permalink.target = "_blank"
-    permalink.rel = "noopener noreferrer"
-    permalink.title = timeLabel(memo.createdAt)
-    const date = new Date(memo.createdAt)
-    const time = el("time") as HTMLTimeElement
-    time.dateTime = date.toISOString()
-    time.textContent = dateFormatter.format(date)
-    permalink.append(time)
-    rail.append(permalink)
-    if (memo.edited) {
-      const edited = el("span", "memo-edited")
-      edited.textContent = "edited"
-      rail.append(edited)
-    }
-    article.append(rail)
-
-    const main = el("div", "memo-main")
-    if (memo.text) {
-      const content = el("prose-content", "memo-content")
-      if (memo.language) content.setAttribute("lang", memo.language)
-      content.append(toFragment(memo.html, memo.emojis))
-      main.append(content)
-    }
-    if (memo.images.length > 0) main.append(renderMedia(memo.images))
-    article.append(main)
-
-    item.append(article)
-    return item
-  }
-
-  document.querySelectorAll<HTMLElement>("memos-feed").forEach((feed) => {
-    const list = feed.querySelector<HTMLOListElement>(".memos-list")
-    const fallback = feed.querySelector<HTMLElement>(".memos-fallback")
-    const { instance, accountId } = feed.dataset
-    if (!instance || !accountId || !list) return
-
-    const limit = Number(feed.dataset.limit) || 20
-    const cacheKey = `memos:${instance}:${accountId}:${limit}`
-
-    const load = () =>
-      cached(
-        cacheKey,
-        () =>
-          fetchJson<MastodonStatus[]>(
-            `${instance}/api/v1/accounts/${accountId}/statuses?exclude_replies=true&exclude_reblogs=true&limit=${limit}`,
-          ),
-        isStatusList,
-      )
-
-    load()
-      .then((statuses) => {
-        const memos = statuses.flatMap((status) => {
-          const memo = toMemo(status)
-          return memo ? [memo] : []
-        })
-        if (memos.length === 0) throw new Error("No memos")
-
-        const fragment = document.createDocumentFragment()
-        for (const memo of memos) fragment.append(renderMemo(memo))
-        list.replaceChildren(fragment)
-        feed.setAttribute("aria-busy", "false")
-      })
-      .catch(() => {
-        list.hidden = true
-        if (fallback) fallback.hidden = false
-        feed.setAttribute("aria-busy", "false")
-      })
-  })
+  document.querySelectorAll<HTMLElement>("memos-feed").forEach(mountMemos)
 </script>
 
 <style>
@@ -283,11 +67,13 @@ const profileUrl = `${instance}/@${username}`
     color: var(--muted-foreground);
   }
 
+  .memos-empty,
   .memos-fallback {
     color: var(--muted-foreground);
   }
 
   .memos-intro a,
+  .memos-empty a,
   .memos-fallback a {
     color: var(--foreground);
     text-decoration: underline;
@@ -385,6 +171,38 @@ const profileUrl = `${instance}/@${username}`
     vertical-align: text-bottom;
   }
 
+  /* Content warnings: the note (or just its media) folded behind the
+     warning text, with the disclosure state spelled out after it —
+     a bare triangle doesn't say what opening it costs. */
+
+  memos-feed :global(.memo-cw) {
+    padding: var(--space-2xs) var(--space-xs);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  memos-feed :global(.memo-cw summary) {
+    cursor: pointer;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  memos-feed :global(.memo-cw summary::after) {
+    content: " · Show";
+    color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+  }
+
+  memos-feed :global(.memo-cw[open] summary::after) {
+    content: " · Hide";
+  }
+
+  memos-feed :global(.memo-cw-body) {
+    display: grid;
+    gap: var(--space-xs);
+    margin-block-start: var(--space-xs);
+  }
+
   /* Media grid: one rounded card, hairline seams between cells. */
 
   memos-feed :global(.memo-media) {
@@ -424,11 +242,16 @@ const profileUrl = `${instance}/@${username}`
     block-size: 100%;
   }
 
-  memos-feed :global(.memo-shot img) {
+  memos-feed :global(.memo-shot :is(img, video)) {
     display: block;
     inline-size: 100%;
     block-size: 100%;
     object-fit: cover;
+  }
+
+  /* Only images fade in: a video paints its poster frame immediately,
+     and a gifv starts playing on its own. */
+  memos-feed :global(.memo-shot img) {
     opacity: 0;
     transition: opacity 0.4s ease;
   }
@@ -437,20 +260,26 @@ const profileUrl = `${instance}/@${username}`
     opacity: 1;
   }
 
-  /* A single image keeps a fixed height and takes its width from its
-     own ratio (the width/height attributes), so one shot never fills
-     the column; the card shrink-wraps it. */
+  /* A single attachment keeps a fixed height and takes its width from
+     its own ratio (the width/height attributes), so one shot never
+     fills the column; the card shrink-wraps it. */
   memos-feed :global(.memo-media[data-count="1"]) {
     display: block;
     inline-size: fit-content;
     max-inline-size: 100%;
   }
 
-  memos-feed :global(.memo-media[data-count="1"] img) {
+  memos-feed :global(.memo-media[data-count="1"] :is(img, video)) {
     inline-size: auto;
     block-size: auto;
     max-inline-size: 100%;
     max-block-size: 22rem;
+  }
+
+  /* Audio has no thumbnail worth a grid cell, so it plays on its own
+     row under whatever else the memo attached. */
+  memos-feed :global(.memo-audio) {
+    inline-size: 100%;
   }
 
   /* Skeletons */
