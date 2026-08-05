@@ -10,6 +10,7 @@ import { weekdayIndex } from "./heatmap"
 import {
   activeTotals,
   aiIcon,
+  type ClientModel,
   clientLabel,
   computeFacts,
   dailyBuckets,
@@ -97,7 +98,7 @@ const modelRows = (
     ...span,
     cost,
     model,
-    providers: "anthropic",
+    providers: ["anthropic"],
   }))
 
 const rangeStats = (
@@ -291,10 +292,10 @@ describe("stackFor", () => {
     ).toEqual(["claude-opus-5", "other"])
   })
 
-  // Three is right for ~8 providers whose top three carry everything;
-  // models are 40-odd and the interesting picture is a handover, which
-  // needs room for what was displaced as well.
-  it("gives the model dimension a wider default cutoff", () => {
+  // One cutoff for every dimension: four legend entries is what fits on
+  // a single line under the chart, and the top three carry almost
+  // everything in all three id spaces.
+  it("cuts every dimension at the same three", () => {
     const stacked = stackFor(
       rangeStats(
         [],
@@ -315,8 +316,6 @@ describe("stackFor", () => {
       "claude-opus-5",
       "claude-fable-5",
       "gpt-5.6-sol",
-      "claude-sonnet-5",
-      "gemini-3-pro",
       "other",
     ])
   })
@@ -376,7 +375,7 @@ describe("stackPaint", () => {
 
   it("reads the client dimension from byClient", () => {
     const stacked = stackFor(
-      rangeStats([], [{ ...usage(10), ...span, client: "cursor" }]),
+      rangeStats([], [{ ...usage(10), ...span, client: "cursor", models: [] }]),
       "client",
       "tokens",
     )
@@ -421,8 +420,6 @@ describe("stackPaint", () => {
       "deepseek-v4-flash",
       "gpt-5.6-sol",
       "claude-opus-5",
-      "claude-sonnet-5",
-      "gemini-3-pro",
       "other",
     ])
     const byCost = stackFor(range, "model", "cost").ids
@@ -629,17 +626,22 @@ describe("todayView", () => {
   const TODAY = "2026-07-20"
   const EVE = "2026-07-19"
 
-  const clientRow = (client: string, tokens: number) => ({
+  const clientRow = (
+    client: string,
+    tokens: number,
+    models: ClientModel[] = [],
+  ) => ({
     ...usage(tokens),
     ...span,
     client,
+    models,
   })
 
   const modelRow = (model: string, tokens: number) => ({
     ...usage(tokens),
     ...span,
     model,
-    providers: "anthropic",
+    providers: ["anthropic"],
   })
 
   /** A site whose only populated range is `day`, plus a daily series. */
@@ -753,6 +755,39 @@ describe("todayView", () => {
       "constructor",
       "__proto__",
     ])
+  })
+
+  it("carries each client's models, and none for the merged tail", () => {
+    const cells = (...models: [string, number][]) =>
+      models.map(([model, tokens]) => ({
+        model,
+        tokens,
+        cost: 0,
+        messages: 0,
+      }))
+    const view = todayView(
+      todaySite({
+        totals: { tokens: 100 },
+        byClient: [
+          clientRow(
+            "claude",
+            60,
+            cells(["claude-opus-5", 40], ["deepseek-v4-flash", 20]),
+          ),
+          clientRow("codex", 20, cells(["gpt-5.6-sol", 20])),
+          clientRow("cursor", 10, cells(["composer-2", 10])),
+          clientRow("pi", 6, cells(["gpt-5.6-luna", 6])),
+          clientRow("zed", 4, cells(["claude-sonnet-5", 4])),
+        ],
+      }),
+    )
+    expect(view.mix[0].models.map((cell) => cell.model)).toEqual([
+      "claude-opus-5",
+      "deepseek-v4-flash",
+    ])
+    // "Other" is several clients at once; a disclosure of it could not
+    // say whose models it was listing.
+    expect(view.mix.at(-1)).toMatchObject({ id: "other", models: [] })
   })
 
   // Placeholder ids are rendered, not hidden — a list whose shares are
@@ -1119,6 +1154,41 @@ describe("isSite", () => {
     const namelessDevice = site()
     namelessDevice.devices = [{ activeDays: 1 } as Site["devices"][number]]
     expect(isSite(namelessDevice)).toBe(false)
+  })
+
+  // Schema 9's two shape changes. Both are read straight into a
+  // renderer — the models into a disclosure, the providers into a
+  // .join() — so a wrong type here is a crash, not a blank.
+  it("requires client models and provider arrays", () => {
+    const models = [{ model: "claude-opus-5", tokens: 5, cost: 1, messages: 2 }]
+    const good = site([], [{ ...usage(5), ...span, client: "claude", models }])
+    expect(isSite(good)).toBe(true)
+
+    const noModels = site(
+      [],
+      [
+        // @ts-expect-error deliberately breaking the shape
+        { ...usage(5), ...span, client: "claude" },
+      ],
+    )
+    expect(isSite(noModels)).toBe(false)
+
+    const badCell = site(
+      [],
+      [
+        // @ts-expect-error deliberately breaking the shape
+        { ...usage(5), ...span, client: "claude", models: [{ model: "m" }] },
+      ],
+    )
+    expect(isSite(badCell)).toBe(false)
+
+    // The pre-9 encoding: a comma-joined string would reach .filter().
+    const joined = site()
+    joined.ranges.all.byModel = [
+      // @ts-expect-error deliberately breaking the shape
+      { ...usage(5), ...span, model: "m", providers: "anthropic,openai" },
+    ]
+    expect(isSite(joined)).toBe(false)
   })
 
   it("rejects device metadata whose types would crash the renderer", () => {

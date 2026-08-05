@@ -6,7 +6,17 @@
  * import each other.
  */
 
-import { formatShare, type StackPaint } from "../tokens"
+import {
+  aiIcon,
+  type ClientModel,
+  formatCostExact,
+  formatExact,
+  formatMetric,
+  formatShare,
+  type MetricKey,
+  modelLabel,
+  type StackPaint,
+} from "../tokens"
 
 /**
  * Color a stack segment or chip: `data-p` picks the brand hue out of the
@@ -79,9 +89,12 @@ export const setDelta = (
   else target.removeAttribute("title")
 }
 
-/** One breakdown row: brand icon, name, metric value, share. */
+/** One breakdown row: a brand mark, name, metric value, share. */
 export type RowSpec = {
   icon: string | null
+  /** Renders a palette chip instead of the brand icon — for rows that
+   *  have to key back to a colored bar above them. */
+  chip?: string
   name: string
   value: string
   /** Share of the section total (0–1, NaN when there is no total): it
@@ -91,19 +104,103 @@ export type RowSpec = {
   title?: string
 }
 
-export const usageRow = (icons: Icons, row: RowSpec) => {
-  const item = el("li", "tk-row")
-  if (row.title) item.title = row.title
-  item.style.setProperty(
+/** Fill a row's four columns into `node`, whatever element it is. */
+const fillRow = <T extends HTMLElement>(
+  node: T,
+  icons: Icons,
+  row: RowSpec,
+) => {
+  if (row.title) node.title = row.title
+  node.style.setProperty(
     "--w",
     String(Number.isFinite(row.share) ? row.share : 0),
   )
-  item.append(
-    icons.slot(row.icon),
+  const lead =
+    row.chip === undefined
+      ? icons.slot(row.icon)
+      : paint(el("span", "chip"), { p: row.chip, shade: 0 })
+  node.append(
+    lead,
     el("span", "name", row.name),
     el("span", "val", row.value),
     el("span", "share", formatShare(row.share)),
   )
+  return node
+}
+
+export const usageRow = (icons: Icons, row: RowSpec) =>
+  fillRow(el("li", "tk-row"), icons, row)
+
+/**
+ * The models a client drove, as sub-rows of that client. Ranked and
+ * filtered by the metric on screen for the same reason the trend stack
+ * is: in Cost, a model that is a rounding error by volume can be most
+ * of the bill. Shares are of the client's own total.
+ */
+export const modelSubRows = (
+  models: ClientModel[],
+  clientTotal: number,
+  metric: MetricKey,
+): RowSpec[] =>
+  models
+    .filter((cell) => cell[metric] > 0)
+    .sort((a, b) => b[metric] - a[metric])
+    .map((cell) => {
+      const name = modelLabel(cell.model)
+      return {
+        icon: aiIcon("model", cell.model),
+        name,
+        value: formatMetric(cell[metric], metric),
+        share: clientTotal > 0 ? cell[metric] / clientTotal : Number.NaN,
+        title: `${name} — ${formatExact(cell.tokens)} tokens · ${formatCostExact(
+          cell.cost,
+        )} · ${formatExact(cell.messages)} messages`,
+      }
+    })
+
+/**
+ * A row that opens onto sub-rows — a client and the models it drove.
+ * The row itself becomes the button (the whole thing is the hit target,
+ * which a chevron in a fifth column would not be), and the sub-rows
+ * carry their share of *this* row rather than of the section, so the
+ * fills read as a split of the bar directly above them.
+ */
+export const expandableRow = (
+  icons: Icons,
+  row: RowSpec,
+  subRows: RowSpec[],
+  open: boolean,
+  onToggle: () => void,
+) => {
+  const item = el("li", "tk-group")
+  const button = fillRow(document.createElement("button"), icons, row)
+  button.type = "button"
+  button.className = "tk-row tk-row-toggle"
+  button.setAttribute("aria-expanded", String(open))
+
+  // The chevron goes *inside* the name cell rather than in a column of
+  // its own, so an expandable row keeps the same four-column rhythm as
+  // the plain ones next to it. The label keeps its own box, which is
+  // what preserves the ellipsis on a long name.
+  const name = button.querySelector<HTMLElement>(".name")
+  const chevron = icons.icon("chevron")
+  if (name && chevron) {
+    chevron.setAttribute("aria-hidden", "true")
+    name.replaceChildren(el("span", "", name.textContent ?? ""), chevron)
+  }
+
+  const sub = el("ul", "tk-sub")
+  sub.hidden = !open
+  sub.append(...subRows.map((spec) => usageRow(icons, spec)))
+
+  button.addEventListener("click", () => {
+    const next = button.getAttribute("aria-expanded") !== "true"
+    button.setAttribute("aria-expanded", String(next))
+    sub.hidden = !next
+    onToggle()
+  })
+
+  item.append(button, sub)
   return item
 }
 

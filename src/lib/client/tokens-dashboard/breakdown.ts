@@ -7,6 +7,7 @@
 
 import {
   aiIcon,
+  type ClientModel,
   clientLabel,
   formatCostExact,
   formatDate,
@@ -20,7 +21,14 @@ import {
   type Usage,
   type UsageSpan,
 } from "../tokens"
-import { el, type Icons, type Query, usageRow } from "./dom"
+import {
+  el,
+  expandableRow,
+  type Icons,
+  modelSubRows,
+  type Query,
+  usageRow,
+} from "./dom"
 
 const TOP_ROWS = 8
 
@@ -29,6 +37,8 @@ type BreakdownKind = "model" | "client" | "provider"
 export function createBreakdown(q: Query, icons: Icons) {
   /** Lists the visitor has expanded past the top rows. */
   const expanded = new Set<BreakdownKind>()
+  /** Client rows opened onto their models; survives a re-render. */
+  const openClients = new Set<string>()
   let last: { site: Site; range: RangeKey; metric: MetricKey } | null = null
 
   const render = (site: Site, range: RangeKey, metric: MetricKey) => {
@@ -41,8 +51,10 @@ export function createBreakdown(q: Query, icons: Icons) {
         id: string
         name: string
         usage: Usage & UsageSpan
-        /** Canonical providers a model was served through, comma-joined. */
-        via?: string
+        /** Canonical providers a model was served through. */
+        via?: string[]
+        /** The models behind a client row — the disclosure's contents. */
+        models?: ClientModel[]
       }[]
     }[] = [
       {
@@ -60,6 +72,7 @@ export function createBreakdown(q: Query, icons: Icons) {
           id: entry.client,
           name: clientLabel(entry.client),
           usage: entry,
+          models: entry.models,
         })),
       },
       {
@@ -106,18 +119,33 @@ export function createBreakdown(q: Query, icons: Icons) {
         // Which providers served this model — the interesting half of a
         // multi-client setup, where the same model arrives through a
         // vendor API and a gateway both.
-        const via = row.via
-          ?.split(",")
-          .filter((id) => id !== "")
-          .map(providerLabel)
+        const via = row.via?.filter((id) => id !== "").map(providerLabel)
         if (via && via.length > 0) parts.push(`via ${via.join(", ")}`)
-        return usageRow(icons, {
+        const spec = {
           icon: aiIcon(group.key, row.id),
           name: row.name,
           value: formatMetric(row.usage[metric], metric),
           share: total > 0 ? row.usage[metric] / total : NaN,
           title: `${row.name} — ${parts.join(" · ")}`,
-        })
+        }
+        // A client that only ever ran one model has nothing to open
+        // onto — the disclosure would restate the row it hangs off.
+        const subRows = modelSubRows(
+          row.models ?? [],
+          row.usage[metric],
+          metric,
+        )
+        if (subRows.length < 2) return usageRow(icons, spec)
+        return expandableRow(
+          icons,
+          spec,
+          subRows,
+          openClients.has(row.id),
+          () => {
+            if (openClients.has(row.id)) openClients.delete(row.id)
+            else openClients.add(row.id)
+          },
+        )
       })
 
       if (rest.length > 0) {

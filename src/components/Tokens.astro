@@ -128,7 +128,7 @@ const skeletonRows = (count: number) =>
           <h3 class="tk-label">Clients</h3>
           <div class="tk-mix">
             <div class="tk-mix-bar tk-today-bar" data-skeleton></div>
-            <ul class="tk-today-legend"></ul>
+            <ul class="tk-rows tk-today-legend"></ul>
           </div>
           <h3 class="tk-label">Models</h3>
           <ol class="tk-rows" data-list="today-model">
@@ -437,34 +437,13 @@ const skeletonRows = (count: number) =>
     display: none;
   }
 
-  /* Inline legend under the client-mix bar: chip, name, share. */
+  /* The legend under the client-mix bar is the client breakdown: the
+     same rows as the Breakdown section, keyed to the bar by a chip
+     instead of a brand icon, each opening onto the models that client
+     drove. The Breakdown section has no today window of its own, so
+     this is where the day's client → model join is readable. */
   .tk-today-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-3xs) var(--space-s);
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
-
-  .tk-today-legend :global(li) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
-  }
-
-  .tk-today-legend :global(.chip) {
-    flex-shrink: 0;
-    inline-size: 0.625rem;
-    block-size: 0.625rem;
-    border-radius: var(--radius-xs);
-  }
-
-  .tk-today-legend :global(.name) {
-    color: var(--foreground);
-  }
-
-  .tk-today-legend :global(.share) {
-    font-variant-numeric: tabular-nums;
+    margin-block-start: calc(-1 * var(--space-3xs));
   }
 
   /* Controls */
@@ -1042,6 +1021,16 @@ const skeletonRows = (count: number) =>
     block-size: 1.1em;
   }
 
+  /* Rows keyed to a colored bar lead with a chip instead of a brand
+     icon; the margins make it occupy the same 1.1em the icon does, so
+     the two kinds of row still align down the name column. */
+  .tk-rows :global(.chip) {
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    margin-inline: 0.2em;
+    border-radius: var(--radius-xs);
+  }
+
   .tk-rows :global(.ico svg) {
     inline-size: 100%;
     block-size: 100%;
@@ -1068,6 +1057,61 @@ const skeletonRows = (count: number) =>
     padding-block: var(--space-3xs);
     font-size: var(--step--1);
     color: var(--muted-foreground);
+  }
+
+  /* A client row that opens onto the models it drove. The row itself is
+     the button — the whole width is the hit target, and it keeps the
+     four-column grid, so an expandable row and a plain one still line
+     up. The chevron rides inside the name cell. */
+  .tk-rows :global(.tk-row-toggle) {
+    inline-size: 100%;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .tk-rows :global(.tk-row-toggle .name) {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    min-inline-size: 0;
+  }
+
+  /* The label keeps its own box so a long model name still ellipsises
+     against the value column instead of shoving the chevron out. */
+  .tk-rows :global(.tk-row-toggle .name > span) {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .tk-rows :global(.tk-row-toggle .name svg) {
+    flex-shrink: 0;
+    inline-size: 0.85em;
+    block-size: 0.85em;
+    color: var(--muted-foreground);
+    transition: rotate 0.15s;
+  }
+
+  .tk-rows :global(.tk-row-toggle[aria-expanded="true"] .name svg) {
+    rotate: 180deg;
+  }
+
+  .tk-rows :global(.tk-row-toggle:hover .name svg) {
+    color: var(--foreground);
+  }
+
+  /* The models under a client: same row grid, indented and quieter, so
+     the parent still reads as the total they add up to. */
+  .tk-rows :global(.tk-sub) {
+    margin-inline-start: calc(1.1em + var(--space-2xs));
+  }
+
+  .tk-rows :global(.tk-sub .tk-row) {
+    color: var(--muted-foreground);
+  }
+
+  .tk-rows :global(.tk-sub .name) {
+    color: var(--foreground);
   }
 
   .tk-rows :global(.tk-more) {

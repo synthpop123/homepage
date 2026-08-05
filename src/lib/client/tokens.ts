@@ -27,6 +27,16 @@ export type UsageSpan = {
   lastDate: string | null
 }
 
+/** One cell of the client × model matrix: what a client spent on a
+ *  single model, inside one range. Leaner than a breakdown row on
+ *  purpose — a disclosure shows a share, not a second full breakdown. */
+export type ClientModel = {
+  model: string
+  tokens: number
+  cost: number
+  messages: number
+}
+
 export type SiteRange = {
   from: string | null
   totals: Usage & {
@@ -34,8 +44,8 @@ export type SiteRange = {
     firstDate: string | null
     lastDate: string | null
   }
-  byModel: (Usage & UsageSpan & { model: string; providers: string })[]
-  byClient: (Usage & UsageSpan & { client: string })[]
+  byModel: (Usage & UsageSpan & { model: string; providers: string[] })[]
+  byClient: (Usage & UsageSpan & { client: string; models: ClientModel[] })[]
   byProvider: (Usage & UsageSpan & { provider: string })[]
 }
 
@@ -90,7 +100,7 @@ export type Site = {
  * number is also the sessionStorage cache key, so a deploy never reads
  * the previous build's entries.
  */
-export const SITE_SCHEMA_VERSION = 8
+export const SITE_SCHEMA_VERSION = 9
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -208,6 +218,22 @@ const isDevice = (value: unknown): boolean =>
   isCount(value.messages) &&
   isCount(value.cost)
 
+const isStringArray = (value: unknown): boolean =>
+  Array.isArray(value) && value.every((item) => typeof item === "string")
+
+/** The models a client row splits into — rendered by the disclosure, so
+ *  the shape matters as much as the numbers. */
+const isClientModels = (value: unknown): boolean =>
+  Array.isArray(value) &&
+  value.every(
+    (cell) =>
+      isRecord(cell) &&
+      typeof cell.model === "string" &&
+      isCount(cell.tokens) &&
+      isCount(cell.cost) &&
+      isCount(cell.messages),
+  )
+
 const isRange = (value: unknown): boolean =>
   isRecord(value) &&
   isDateOrNull(value.from) &&
@@ -220,10 +246,14 @@ const isRange = (value: unknown): boolean =>
   value.byModel.every(
     (row) =>
       isSpanRow(row, "model") &&
-      typeof (row as Record<string, unknown>).providers === "string",
+      isStringArray((row as Record<string, unknown>).providers),
   ) &&
   Array.isArray(value.byClient) &&
-  value.byClient.every((row) => isSpanRow(row, "client")) &&
+  value.byClient.every(
+    (row) =>
+      isSpanRow(row, "client") &&
+      isClientModels((row as Record<string, unknown>).models),
+  ) &&
   Array.isArray(value.byProvider) &&
   value.byProvider.every((row) => isSpanRow(row, "provider"))
 
@@ -463,17 +493,13 @@ export type StackDim = "provider" | "client" | "model"
 export type Stack = { dim: StackDim; ids: string[] }
 
 /**
- * How many ids keep their own color per dimension. Three is right where
- * the id space is small and stable (~8 providers, ~8 clients, and the
- * top three carry almost everything); models are 40-odd and the question
- * there is a *handover* — which model displaced which — so the stack
- * needs room for the two or three in play plus what they replaced.
+ * How many ids keep their own color, in every dimension. Three plus the
+ * residual is what the legend fits on one line under the chart, and the
+ * top three carry almost everything in all three id spaces; a wider
+ * model stack bought a little more of the handover story and cost a
+ * legend that wrapped to three rows.
  */
-const STACK_LIMITS: Record<StackDim, number> = {
-  provider: 3,
-  client: 3,
-  model: 5,
-}
+const STACK_LIMIT = 3
 
 const rangeRows = (
   range: SiteRange,
@@ -504,7 +530,7 @@ export function stackFor(
   const named = rangeRows(range, dim)
     .filter(({ id }) => id && !PLACEHOLDER_IDS.has(id))
     .sort((a, b) => b.usage[metric] - a.usage[metric])
-    .slice(0, STACK_LIMITS[dim])
+    .slice(0, STACK_LIMIT)
     .map(({ id }) => id)
   return { dim, ids: [...named, OTHER] }
 }
@@ -733,8 +759,16 @@ export type TodayView = {
   before: ReturnType<typeof windowTotals> & { active: number }
   /** Client mix as bar segments; empty when the day has no tokens to
    *  apportion (a message- or active-time-only day is not idle, but it
-   *  has no breakdown either). */
-  mix: { id: string; label: string; tokens: number; share: number }[]
+   *  has no breakdown either). Each carries the models that client
+   *  drove today; the merged tail carries none, since "other" is
+   *  several clients and a disclosure of it would say whose. */
+  mix: {
+    id: string
+    label: string
+    tokens: number
+    share: number
+    models: ClientModel[]
+  }[]
   models: SiteRange["byModel"]
 }
 
@@ -765,13 +799,15 @@ export function todayView(site: Site): TodayView {
           ...clients.slice(0, MIX_SEGMENTS).map((row) => ({
             id: row.client,
             tokens: row.tokens,
+            models: row.models,
           })),
-          ...(tail > 0 ? [{ id: OTHER, tokens: tail }] : []),
-        ].map(({ id, tokens }) => ({
+          ...(tail > 0 ? [{ id: OTHER, tokens: tail, models: [] }] : []),
+        ].map(({ id, tokens, models }) => ({
           id,
           label: clientLabel(id),
           tokens,
           share: tokens / totals.tokens,
+          models,
         }))
       : []
 
