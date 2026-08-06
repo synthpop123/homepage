@@ -3,8 +3,8 @@
  * window is spent, and when it comes back.
  *
  * This is the only section drawn from *reported* data — one card per
- * subscription, each read from its own vendor by its own collector every
- * 30 minutes (see tokens-worker's `src/quota.ts`) — which shapes the
+ * subscription, each read from its own vendor by its own collector on
+ * its own timer (see tokens-worker's `src/quota.ts`) — which shapes the
  * whole design. Every number here can be silently stale, so nothing is
  * presented as simply current: each card dates itself from its own
  * `capturedAt` (one can be a minute old while the other has been stuck
