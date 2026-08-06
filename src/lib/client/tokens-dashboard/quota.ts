@@ -87,11 +87,21 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   const item = el("li", "tk-plan")
 
   // Mark, name and tier are one phrase — "Codex · Team" — not a name
-  // with a badge stuck to it, so the separator is part of the text.
+  // with a badge stuck to it, so the separator is part of the text. The
+  // age trails at the far end: each plan is read by its own collector on
+  // its own timer, so it is a fact about this card, not about the page.
   const head = el("div", "plan-head")
   head.append(icons.slot(aiIcon("provider", plan.provider)))
   head.append(el("span", "plan-name", plan.label))
   if (plan.plan) head.append(el("span", "plan-tier", `· ${plan.plan}`))
+
+  const capturedAt = Date.parse(plan.capturedAt)
+  const age = el("span", "plan-age", formatAgo(capturedAt, now))
+  age.title = `Read ${new Date(capturedAt).toLocaleString()}`
+  // Beyond the threshold the age is the headline, not a footnote: the
+  // numbers beside it may describe a window that has since ended.
+  age.toggleAttribute("data-stale", now - capturedAt > STALE_AFTER_MS)
+  head.append(age)
 
   const windows = el("ol", "tk-windows")
   windows.append(
@@ -135,13 +145,12 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
 export function renderQuota(q: Query, site: Site, icons: Icons) {
   const section = q(".tk-quota-section")
   const list = q(".tk-plans")
-  const meta = q(".tk-quota-meta")
   if (!section || !list) return
 
   // No collector has ever reported, or the account has none to report:
   // the section is absent rather than empty. An empty state here would
   // explain a piece of plumbing the reader has no stake in.
-  const absent = !site.quota || site.quota.plans.length === 0
+  const absent = site.quota.length === 0
   section.hidden = absent
   // The table of contents is rendered by the page shell, outside this
   // component, so a hidden section would otherwise leave a live link
@@ -150,19 +159,10 @@ export function renderQuota(q: Query, site: Site, icons: Icons) {
     .querySelector('nav a[href="#quota"]')
     ?.closest("li")
     ?.toggleAttribute("hidden", absent)
-  if (absent || !site.quota) return
+  if (absent) return
 
   const now = Date.now()
-  const capturedAt = Date.parse(site.quota.capturedAt)
   list.replaceChildren(
-    ...site.quota.plans.map((plan) => renderPlan(plan, icons, now)),
+    ...site.quota.map((plan) => renderPlan(plan, icons, now)),
   )
-
-  if (meta) {
-    meta.textContent = `read ${formatAgo(capturedAt, now)}`
-    meta.title = new Date(capturedAt).toLocaleString()
-    // Beyond the threshold the age is the headline, not a footnote: the
-    // numbers above it may be describing a week that has since ended.
-    meta.toggleAttribute("data-stale", now - capturedAt > STALE_AFTER_MS)
-  }
 }

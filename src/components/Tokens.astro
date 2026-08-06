@@ -302,29 +302,26 @@ const skeletonRows = (count: number) =>
       </div>
     </section>
     <section class="tk-quota-section">
-      <div class="tk-head">
-        <h2 id="quota">Quota</h2>
-        <p class="tk-quota-meta">
-          <span class="sk-line sk-sub" aria-hidden="true" />
-        </p>
-      </div>
+      <h2 id="quota">Quota</h2>
       <ol class="tk-plans">
-        <li class="tk-plan" data-skeleton aria-hidden="true">
-          <div class="plan-head">
-            <span class="ico sk-ico" />
-            <span class="sk-line" style="inline-size: 4em" />
-          </div>
-          <ol class="tk-windows">
-            <li class="tk-window">
-              <div class="win-head">
-                <span class="sk-line" style="inline-size: 4em" />
-                <span class="sk-line sk-num" />
-              </div>
-              <div class="tk-mix-bar" data-skeleton></div>
-              <p class="win-foot"><span class="sk-line sk-sub" /></p>
-            </li>
-          </ol>
-        </li>
+        {skeletonRows(2).map(() => (
+          <li class="tk-plan" data-skeleton aria-hidden="true">
+            <div class="plan-head">
+              <span class="ico sk-ico" />
+              <span class="sk-line" style="inline-size: 4em" />
+            </div>
+            <ol class="tk-windows">
+              <li class="tk-window">
+                <div class="win-head">
+                  <span class="sk-line" style="inline-size: 4em" />
+                  <span class="sk-line sk-num" />
+                </div>
+                <div class="tk-mix-bar" data-skeleton></div>
+                <p class="win-foot"><span class="sk-line sk-sub" /></p>
+              </li>
+            </ol>
+          </li>
+        ))}
       </ol>
     </section>
     <section>
@@ -725,25 +722,21 @@ const skeletonRows = (count: number) =>
     display: none;
   }
 
-  .tk-quota-meta {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Past the staleness threshold the numbers may be describing a week
-     that has already ended, so their age stops reading as a footnote. */
-  .tk-quota-meta[data-stale] {
-    color: var(--destructive);
-  }
-
   /* Everything below .tk-plans is built by the renderer, so it is
      addressed through :global — only the list itself is in this
      template. The skeleton in the markup carries the same class names
-     so it lands in the same geometry. */
+     so it lands in the same geometry.
+
+     Side by side once there is room, like the Breakdown split: the
+     subscriptions are peers being compared, not a sequence to read. */
   .tk-plans {
     display: grid;
+    grid-template-columns: 1fr;
     gap: var(--space-m);
+
+    @media (width >= 40rem) {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 
   /* Name, windows and credits are three levels of the same statement,
@@ -755,11 +748,26 @@ const skeletonRows = (count: number) =>
 
   /* Mark, name and tier read as one phrase on one line — "Codex · Team"
      — so the row never wraps and the mark sits on the text's centre
-     rather than its baseline. */
+     rather than its baseline. The age is pushed to the far end. */
   .tk-plans :global(.plan-head) {
     display: flex;
     align-items: center;
     gap: 0.4em;
+  }
+
+  .tk-plans :global(.plan-age) {
+    margin-inline-start: auto;
+    padding-inline-start: var(--space-2xs);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Past the staleness threshold the age is the headline, not a
+     footnote: this card's numbers may describe a window that ended. */
+  .tk-plans :global(.plan-age[data-stale]) {
+    color: var(--destructive);
   }
 
   .tk-plans :global(.plan-name) {

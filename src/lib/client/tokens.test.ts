@@ -28,7 +28,7 @@ import {
   monthlyBuckets,
   perHour,
   providerLabel,
-  type Quota,
+  type QuotaPlan,
   RANGE_KEYS,
   shiftDays,
   type Site,
@@ -132,7 +132,7 @@ const site = (
   schemaVersion: SITE_SCHEMA_VERSION,
   generatedAt: "2026-07-20T00:00:00Z",
   today: "2026-07-20",
-  quota: null,
+  quota: [],
   ranges: {
     day: rangeStats(),
     week: rangeStats(),
@@ -144,19 +144,15 @@ const site = (
   devices: [],
 })
 
-const quota = (): Quota => ({
+const quotaPlan = (): QuotaPlan => ({
+  provider: "openai",
+  label: "Codex",
+  plan: "Team",
   capturedAt: "2026-07-20T00:00:00Z",
-  plans: [
-    {
-      provider: "openai",
-      label: "Codex",
-      plan: "Team",
-      windows: [
-        { label: "Weekly", usedPercent: 28, resetsAt: "2026-07-22T00:00:00Z" },
-      ],
-      resetCredits: ["2026-07-25T00:00:00Z"],
-    },
+  windows: [
+    { label: "Weekly", usedPercent: 28, resetsAt: "2026-07-22T00:00:00Z" },
   ],
+  resetCredits: ["2026-07-25T00:00:00Z"],
 })
 
 /* Dates ---------------------------------------------------------------- */
@@ -1107,38 +1103,42 @@ describe("isSite", () => {
     }
   })
 
-  // Quota is optional (no collector has reported yet) but not loose: it
-  // is reported data, and the renderer does arithmetic on every instant
-  // in it. `capturedAt` decides whether the card is presented as current
-  // at all, so a decorative string there is the failure worth catching.
-  it("accepts an absent quota snapshot but not a malformed one", () => {
-    expect(isSite({ ...site(), quota: null })).toBe(true)
-    expect(isSite({ ...site(), quota: quota() })).toBe(true)
-    // Plans may legitimately be empty; the renderer hides the section.
-    expect(isSite({ ...site(), quota: { ...quota(), plans: [] } })).toBe(true)
+  // Quota is a list, empty until a collector has reported, but not
+  // loose: it is reported data and the renderer does arithmetic on every
+  // instant in it.
+  it("accepts an empty quota list but not a malformed one", () => {
+    expect(isSite({ ...site(), quota: [] })).toBe(true)
+    expect(isSite({ ...site(), quota: [quotaPlan()] })).toBe(true)
 
-    for (const capturedAt of [undefined, null, "recently", 1_753_000_000_000]) {
-      expect(isSite({ ...site(), quota: { ...quota(), capturedAt } })).toBe(
-        false,
-      )
-    }
+    // A bare plan where a list belongs, and the shapes schema 11 used.
     for (const quotaValue of [
       undefined,
+      null,
       "yes",
-      { capturedAt: "2026-07-20T00:00:00Z" },
+      quotaPlan(),
+      { capturedAt: "2026-07-20T00:00:00Z", plans: [] },
     ]) {
       expect(isSite({ ...site(), quota: quotaValue })).toBe(false)
     }
   })
 
-  it("rejects a quota plan the renderer could not draw", () => {
-    const withPlan = (patch: Record<string, unknown>) => {
-      const snapshot = quota()
-      return {
-        ...site(),
-        quota: { ...snapshot, plans: [{ ...snapshot.plans[0], ...patch }] },
-      }
+  // capturedAt is per plan: each is read by its own collector on its own
+  // timer, and its card is aged by it, so a decorative string there is
+  // the failure worth catching — it decides whether numbers that may
+  // describe an ended window are presented as current.
+  it("requires every plan to date itself", () => {
+    for (const capturedAt of [undefined, null, "recently", 1_753_000_000_000]) {
+      expect(
+        isSite({ ...site(), quota: [{ ...quotaPlan(), capturedAt }] }),
+      ).toBe(false)
     }
+  })
+
+  it("rejects a quota plan the renderer could not draw", () => {
+    const withPlan = (patch: Record<string, unknown>) => ({
+      ...site(),
+      quota: [{ ...quotaPlan(), ...patch }],
+    })
     // A plan with no windows is a heading over nothing.
     expect(isSite(withPlan({ windows: [] }))).toBe(false)
     expect(isSite(withPlan({ provider: undefined }))).toBe(false)
@@ -1343,11 +1343,10 @@ describe("/api/site fixture contract", () => {
   // The one reported field, so it is also the one that can be silently
   // stale — the renderer needs `capturedAt` to be arithmetic, not a
   // label, and a plan with no windows would draw a heading over nothing.
-  it("carries a decodable quota snapshot", () => {
+  it("carries a decodable quota plan per subscription", () => {
     if (!isSite(fixture)) throw new Error("fixture failed decoding")
-    if (fixture.quota === null) return
-    expect(Number.isFinite(Date.parse(fixture.quota.capturedAt))).toBe(true)
-    for (const plan of fixture.quota.plans) {
+    for (const plan of fixture.quota) {
+      expect(Number.isFinite(Date.parse(plan.capturedAt))).toBe(true)
       expect(plan.windows.length).toBeGreaterThan(0)
       for (const window of plan.windows) {
         expect(window.usedPercent).toBeGreaterThanOrEqual(0)
@@ -1358,6 +1357,9 @@ describe("/api/site fixture contract", () => {
         expect(Number.isFinite(Date.parse(at))).toBe(true)
       }
     }
+    // Each provider appears once — the renderer draws one card each.
+    const providers = fixture.quota.map((plan) => plan.provider)
+    expect(new Set(providers).size).toBe(providers.length)
   })
 
   it("is composed as of its own `today`", () => {

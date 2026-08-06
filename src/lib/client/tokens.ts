@@ -92,32 +92,31 @@ export type QuotaWindow = {
   resetsAt: string | null
 }
 
+/**
+ * One subscription's quota — the part of the payload the collector is
+ * *told* rather than deriving from session logs. Each plan is read from
+ * a different vendor on its own timer, so each dates itself: one card
+ * can be a minute old while the other has been stuck for hours, and
+ * `capturedAt` is what lets the section say so.
+ */
 export type QuotaPlan = {
   provider: string
   label: string
   plan: string | null
-  windows: QuotaWindow[]
-  /** Expiry of each unspent manual reset, ascending. */
-  resetCredits: string[]
-}
-
-/**
- * The subscription quota, the one part of the payload the collector is
- * *told* rather than deriving from session logs — a single host reports
- * it every 30 minutes. That makes it the one part that can silently
- * stop moving, so `capturedAt` dates it and the section shows the age.
- */
-export type Quota = {
   capturedAt: string
-  plans: QuotaPlan[]
+  windows: QuotaWindow[]
+  /** Expiry of each unspent manual reset, ascending. Empty for plans
+   *  with no such thing — Claude has none. */
+  resetCredits: string[]
 }
 
 export type Site = {
   schemaVersion: number
   generatedAt: string
   today: string
-  /** Null until a collector has reported one. */
-  quota: Quota | null
+  /** One entry per subscription a collector has reported; empty until
+   *  one has. */
+  quota: QuotaPlan[]
   ranges: Record<RangeKey, SiteRange>
   daily: SiteDay[]
   devices: SiteDevice[]
@@ -132,7 +131,7 @@ export type Site = {
  * number is also the sessionStorage cache key, so a deploy never reads
  * the previous build's entries.
  */
-export const SITE_SCHEMA_VERSION = 11
+export const SITE_SCHEMA_VERSION = 12
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -258,32 +257,28 @@ const isInstant = (value: unknown): boolean =>
   typeof value === "string" && Number.isFinite(Date.parse(value))
 
 /**
- * The quota snapshot. A plan with no windows would render as a heading
+ * One reported plan. A plan with no windows would render as a heading
  * over nothing, so the list is required to be non-empty — the collector
  * rejects such a snapshot at the door, and this is the same rule on the
- * reading side.
+ * reading side. `capturedAt` has to parse: the card is aged by it, and
+ * an undated card would present a stale number as current.
  */
-const isQuota = (value: unknown): boolean =>
-  isRecord(value) &&
-  isInstant(value.capturedAt) &&
-  Array.isArray(value.plans) &&
-  value.plans.every(
-    (plan) =>
-      isRecord(plan) &&
-      typeof plan.provider === "string" &&
-      typeof plan.label === "string" &&
-      (plan.plan === null || typeof plan.plan === "string") &&
-      Array.isArray(plan.windows) &&
-      plan.windows.length > 0 &&
-      plan.windows.every(
-        (window: unknown) =>
-          isRecord(window) &&
-          typeof window.label === "string" &&
-          isCount(window.usedPercent) &&
-          (window.resetsAt === null || isInstant(window.resetsAt)),
-      ) &&
-      isStringArray(plan.resetCredits),
-  )
+const isQuotaPlan = (plan: unknown): boolean =>
+  isRecord(plan) &&
+  typeof plan.provider === "string" &&
+  typeof plan.label === "string" &&
+  (plan.plan === null || typeof plan.plan === "string") &&
+  isInstant(plan.capturedAt) &&
+  Array.isArray(plan.windows) &&
+  plan.windows.length > 0 &&
+  plan.windows.every(
+    (window: unknown) =>
+      isRecord(window) &&
+      typeof window.label === "string" &&
+      isCount(window.usedPercent) &&
+      (window.resetsAt === null || isInstant(window.resetsAt)),
+  ) &&
+  isStringArray(plan.resetCredits)
 
 /** The models a client or provider row splits into — rendered by the
  *  disclosure, so the shape matters as much as the numbers. */
@@ -328,8 +323,8 @@ const isRange = (value: unknown): boolean =>
 /**
  * Runtime decoder for the /api/site payload, strict over every field
  * the renderers actually read: the schema version (anything this build
- * does not accept is rejected outright), the reported quota snapshot if
- * there is one, all five ranges with their
+ * does not accept is rejected outright), every reported quota plan, all
+ * five ranges with their
  * totals and breakdown rows (metrics + usage spans), every daily row
  * including the provider/client/model slice maps the trend chart
  * iterates, and the device list down to its nullable metadata —
@@ -345,7 +340,8 @@ export function isSite(data: unknown): data is Site {
     typeof data.generatedAt === "string" &&
     Number.isFinite(Date.parse(data.generatedAt)) &&
     isCalendarDay(data.today) &&
-    (data.quota === null || isQuota(data.quota)) &&
+    Array.isArray(data.quota) &&
+    data.quota.every(isQuotaPlan) &&
     isRecord(ranges) &&
     RANGE_KEYS.every((key) => isRange(ranges[key])) &&
     Array.isArray(data.daily) &&
