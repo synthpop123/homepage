@@ -2,13 +2,15 @@
  * Quota section renderer: how much of each subscription's rate-limit
  * window is spent, and when it comes back.
  *
- * This is the only section drawn from *reported* data — a collector on
- * one host asks the vendor every 30 minutes (see tokens-worker's
- * `src/quota.ts`) — which shapes the whole design. Every number here can
- * be silently stale, so nothing is presented as simply current: the
- * section dates itself from `capturedAt`, and a window whose reset time
- * has passed says it reset instead of showing a percentage that is no
- * longer true. Rendered once per load; no control applies to it.
+ * This is the only section drawn from *reported* data — one card per
+ * subscription, each read from its own vendor by its own collector every
+ * 30 minutes (see tokens-worker's `src/quota.ts`) — which shapes the
+ * whole design. Every number here can be silently stale, so nothing is
+ * presented as simply current: each card dates itself from its own
+ * `capturedAt` (one can be a minute old while the other has been stuck
+ * for hours), and a window whose reset time has passed says it reset
+ * instead of showing a percentage that is no longer true. Rendered once
+ * per load; no control applies to it.
  */
 
 import {

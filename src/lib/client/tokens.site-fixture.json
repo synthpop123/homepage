@@ -1,6 +1,6 @@
 {
   "schemaVersion": 12,
-  "generatedAt": "2026-08-06T08:22:17.576Z",
+  "generatedAt": "2026-08-06T08:27:57.450Z",
   "today": "2026-08-06",
   "quota": [
     {
@@ -20,18 +20,18 @@
     {
       "provider": "anthropic",
       "label": "Claude",
-      "capturedAt": "2026-08-06T08:22:13.997Z",
-      "plan": "pro",
+      "capturedAt": "2026-08-06T08:27:56.013Z",
+      "plan": "Pro",
       "windows": [
         {
           "label": "5h",
-          "usedPercent": 81,
-          "resetsAt": "2026-08-06T11:49:59.711Z"
+          "usedPercent": 86,
+          "resetsAt": "2026-08-06T11:50:00.629Z"
         },
         {
           "label": "Weekly",
-          "usedPercent": 8,
-          "resetsAt": "2026-08-13T03:59:59.711Z"
+          "usedPercent": 9,
+          "resetsAt": "2026-08-13T04:00:00.629Z"
         }
       ],
       "resetCredits": []
