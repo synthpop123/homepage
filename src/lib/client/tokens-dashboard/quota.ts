@@ -71,17 +71,25 @@ function renderWindow(
     el("span", "win-used", `${Math.round(window.usedPercent)}%`),
   )
 
-  // The share bar from the Overview and Today mixes, with one segment:
-  // same geometry, same brand palette, so a quota bar reads as the same
-  // kind of object as every other proportion on the page.
-  const bar = el("div", "tk-mix-bar")
-  const fill = el("span")
-  fill.dataset.p = provider
-  // A window barely touched should still show that it was touched; the
-  // bar's own min-inline-size keeps the sliver visible.
-  fill.style.inlineSize = `${Math.min(100, Math.max(0, window.usedPercent))}%`
-  if (window.usedPercent >= HIGH_USE) fill.dataset.high = ""
-  bar.append(fill)
+  // A gauge, not a share: the other bars on the page cut one number
+  // into its parts, this one measures a number against a ceiling that
+  // is never drawn anywhere else. So it gets its own form — a thin
+  // track carrying one rounded head — rather than the mix bar's
+  // geometry, which sized a barely-spent week like a stalled
+  // composition. The vendor's hue is set on the track, so the head
+  // inherits it and the track can wash itself in the same colour.
+  const bar = el("div", "tk-meter")
+  bar.dataset.p = provider
+  if (window.usedPercent >= HIGH_USE) bar.dataset.high = ""
+  // A window barely touched should still show that it was touched — the
+  // head's own min-inline-size keeps the sliver visible — but an
+  // untouched one shows nothing at all, or that floor would report a
+  // spend of zero as a spend.
+  if (window.usedPercent > 0) {
+    const fill = el("span")
+    fill.style.inlineSize = `${Math.min(100, window.usedPercent)}%`
+    bar.append(fill)
+  }
 
   item.append(head, bar)
   // A window whose vendor reported no reset time has nothing left to

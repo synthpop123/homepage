@@ -127,7 +127,7 @@ const skeletonRows = (count: number) =>
         <div class="tk-today-breakdown">
           <h3 class="tk-label">Clients</h3>
           <div class="tk-mix">
-            <div class="tk-mix-bar tk-today-bar" data-skeleton></div>
+            <div class="tk-today-bar" data-skeleton></div>
             <ul class="tk-rows tk-today-legend"></ul>
           </div>
           <h3 class="tk-label">Models</h3>
@@ -316,7 +316,7 @@ const skeletonRows = (count: number) =>
                   <span class="sk-line" style="inline-size: 4em" />
                   <span class="sk-line sk-num" />
                 </div>
-                <div class="tk-mix-bar" data-skeleton></div>
+                <div class="tk-meter" data-skeleton></div>
                 <p class="win-foot"><span class="sk-line sk-sub" /></p>
               </li>
             </ol>
@@ -366,6 +366,13 @@ const skeletonRows = (count: number) =>
   tokens-dashboard {
     /* Level-3 green of the shared heatmap palette (see Heatmap.astro). */
     --tk-accent: light-dark(#30a14e, #26a641);
+
+    /* One height for the two instrument bars — the Today client pills
+       and the quota meters. Thin enough that a bar reads as a reading
+       rather than as a block of colour, and thick enough that the
+       smallest segment still has a shape. It doubles as the minimum
+       segment width, so a sliver lands as a dot rather than a hair. */
+    --tk-meter: 0.375rem;
 
     /* Brand palette for stacked segments and chips. Client ids map onto
        their vendor's hue (see the [data-p] rules below). */
@@ -594,22 +601,22 @@ const skeletonRows = (count: number) =>
     color: var(--foreground);
   }
 
-  /* Share bars — geometry only, shared by the Overview token
-     composition (.tk-mix-composition, shaded by --c) and the Today
-     client mix (.tk-today-bar, brand-keyed by [data-p]); those hook
-     classes are also what the renderers query, so neither section can
-     pick up the other's bar. */
+  /* Three proportions on this page, three forms. A composition
+     (.tk-mix-composition) is one quantity cut into its parts, so it
+     stays one solid block; a client mix (.tk-today-bar) is separate
+     actors sharing a day, so its segments are separate pills; a quota
+     window (.tk-meter) is a gauge against a ceiling, so it is a thin
+     track with a rounded head. Sizing all three alike was what made a
+     10%-spent week read as a stalled composition, and a day carried by
+     one client read as a colour slab with hairlines at its end. */
 
   .tk-mix {
     display: grid;
     gap: var(--space-xs);
   }
 
-  /* The Overview and Today bars are in this template, so they are
-     scoped; the quota bars are built by their renderer, so the same
-     rules have to reach them through :global. One bar, two routes. */
-  .tk-mix-bar,
-  .tk-plans :global(.tk-mix-bar) {
+  /* Composition: contiguous parts, shaded by the --c ramp below. */
+  .tk-mix-bar {
     display: flex;
     block-size: 0.875rem;
     overflow: hidden;
@@ -617,8 +624,7 @@ const skeletonRows = (count: number) =>
     background-color: var(--gray-4);
   }
 
-  .tk-mix-bar :global(span),
-  .tk-plans :global(.tk-mix-bar span) {
+  .tk-mix-bar :global(span) {
     min-inline-size: 3px;
     background-color: var(--c, var(--gray-6));
   }
@@ -627,20 +633,28 @@ const skeletonRows = (count: number) =>
     border-inline-start: 2px solid var(--background);
   }
 
-  /* Brand-keyed variant (the Today client mix): the [data-p] palette
-     colors the segment instead of the --c shade ramp below. */
-  .tk-mix-bar :global(span[data-p]),
-  .tk-plans :global(.tk-mix-bar span[data-p]) {
+  /* Client mix: brand-keyed pills with real air between them. A day is
+     usually carried by one client, and separate capsules let the tail
+     read as its own small marks rather than as hairline cracks in a
+     slab — which is also the honest shape, since these are different
+     agents rather than parts of one number. */
+  .tk-today-bar {
+    display: flex;
+    gap: 3px;
+    block-size: var(--tk-meter);
+    border-radius: var(--radius-full);
+  }
+
+  .tk-today-bar :global(span) {
+    min-inline-size: var(--tk-meter);
+    border-radius: var(--radius-full);
     background-color: var(--p);
+    transition: opacity 0.15s ease;
   }
 
   /* Its legend leads with brand icons rather than color chips, so the
      bar is keyed on demand instead: hovering or focusing a client row
      mutes every segment but that client's (today.ts sets [data-mute]). */
-  .tk-today-bar :global(span) {
-    transition: opacity 0.15s ease;
-  }
-
   .tk-today-bar :global(span[data-mute]) {
     opacity: 0.25;
   }
@@ -743,7 +757,8 @@ const skeletonRows = (count: number) =>
      so they sit further apart than the lines inside a window do. */
   .tk-plans :global(.tk-plan) {
     display: grid;
-    gap: var(--space-xs);
+    gap: var(--space-s);
+    align-content: start;
   }
 
   /* Mark, name and tier read as one phrase on one line — "Codex · Team"
@@ -793,6 +808,9 @@ const skeletonRows = (count: number) =>
     white-space: nowrap;
   }
 
+  /* Three nested gaps that have to stay in that order, or the grouping
+     inverts: the lines of a window sit closer than two windows do, and
+     two windows closer than a plan's head, windows and credits. */
   .tk-plans :global(.tk-windows) {
     display: grid;
     gap: var(--space-xs);
@@ -800,11 +818,11 @@ const skeletonRows = (count: number) =>
 
   .tk-plans :global(.tk-window) {
     display: grid;
-    gap: var(--space-3xs);
+    gap: var(--space-2xs);
   }
 
   /* Label and figure share a baseline, like a stat card turned on its
-     side — the bar underneath is the same share bar as everywhere else. */
+     side, with the meter reading underneath them. */
   .tk-plans :global(.win-head) {
     display: flex;
     align-items: baseline;
@@ -822,6 +840,31 @@ const skeletonRows = (count: number) =>
     font-weight: var(--font-weight-medium);
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
+  }
+
+  /* A quota window is a gauge against a ceiling, not a share of a whole,
+     so it gets a gauge: a thin track carrying one rounded head, with a
+     floor under the head's width so a barely-touched week still shows
+     that it was touched. The track is a wash of the same hue as the
+     head — the vendor's own — so an empty window still says whose
+     ceiling it measures, and the ceiling itself stays visible at a
+     glance instead of being implied by an unfilled remainder. */
+  .tk-plans :global(.tk-meter) {
+    block-size: var(--tk-meter);
+    border-radius: var(--radius-full);
+    background-color: var(--gray-4);
+  }
+
+  .tk-plans :global(.tk-meter[data-p]) {
+    background-color: color-mix(in oklab, var(--p) 22%, var(--gray-3));
+  }
+
+  .tk-plans :global(.tk-meter span) {
+    display: block;
+    block-size: 100%;
+    min-inline-size: var(--tk-meter);
+    border-radius: inherit;
+    background-color: var(--p, var(--gray-8));
   }
 
   .tk-plans :global(.win-foot),
@@ -852,9 +895,11 @@ const skeletonRows = (count: number) =>
 
   /* The brand hue says which subscription is being measured; red is
      reserved for the one case where the reading is a warning rather
-     than a measurement. */
-  .tk-plans :global(.tk-mix-bar span[data-p][data-high]) {
-    background-color: var(--red-9);
+     than a measurement. It is swapped in as --p, so the track's wash
+     turns with the head — a red head on a coral wash would read as two
+     subjects in one gauge. */
+  .tk-plans :global(.tk-meter[data-high]) {
+    --p: var(--red-9);
   }
 
   /* Trend chart */
@@ -1499,6 +1544,8 @@ const skeletonRows = (count: number) =>
   .sk-line,
   .sk-ico,
   .tk-mix-bar[data-skeleton],
+  .tk-today-bar[data-skeleton],
+  .tk-plans :global(.tk-meter[data-skeleton]),
   .tk-chart-bars[data-skeleton],
   .tk-device[data-skeleton] .dot {
     background-color: var(--gray-5);
