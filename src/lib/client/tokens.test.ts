@@ -15,6 +15,7 @@ import {
   dailyBuckets,
   fillDaily,
   formatDelta,
+  formatIn,
   formatShare,
   hasActivity,
   isMessagesOnly,
@@ -27,6 +28,7 @@ import {
   monthlyBuckets,
   perHour,
   providerLabel,
+  type Quota,
   RANGE_KEYS,
   shiftDays,
   type Site,
@@ -130,6 +132,7 @@ const site = (
   schemaVersion: SITE_SCHEMA_VERSION,
   generatedAt: "2026-07-20T00:00:00Z",
   today: "2026-07-20",
+  quota: null,
   ranges: {
     day: rangeStats(),
     week: rangeStats(),
@@ -139,6 +142,21 @@ const site = (
   },
   daily: [],
   devices: [],
+})
+
+const quota = (): Quota => ({
+  capturedAt: "2026-07-20T00:00:00Z",
+  plans: [
+    {
+      provider: "openai",
+      label: "Codex",
+      plan: "Team",
+      windows: [
+        { label: "Weekly", usedPercent: 28, resetsAt: "2026-07-22T00:00:00Z" },
+      ],
+      resetCredits: ["2026-07-25T00:00:00Z"],
+    },
+  ],
 })
 
 /* Dates ---------------------------------------------------------------- */
@@ -1031,6 +1049,25 @@ describe("formatDelta", () => {
   })
 })
 
+// The quota renderer branches on the null: a window whose reset time
+// has passed is a different statement, not a negative countdown.
+describe("formatIn", () => {
+  const now = Date.parse("2026-07-20T12:00:00Z")
+  const at = (iso: string) => formatIn(Date.parse(iso), now)
+
+  it("counts down in the coarsest useful unit", () => {
+    expect(at("2026-07-20T12:40:00Z")).toBe("in 40m")
+    expect(at("2026-07-20T15:00:00Z")).toBe("in 3h")
+    expect(at("2026-07-22T12:00:00Z")).toBe("in 2d")
+  })
+
+  it("returns null once the instant has passed", () => {
+    expect(at("2026-07-20T11:59:00Z")).toBeNull()
+    expect(at("2026-07-20T12:00:00Z")).toBeNull()
+    expect(at("2026-07-19T12:00:00Z")).toBeNull()
+  })
+})
+
 describe("formatShare", () => {
   it("clamps the readable edges", () => {
     expect(formatShare(0.0005)).toBe("<0.1%")
@@ -1056,6 +1093,56 @@ describe("isSite", () => {
     ]) {
       expect(isSite({ ...site(), schemaVersion: version })).toBe(false)
     }
+  })
+
+  // Quota is optional (no collector has reported yet) but not loose: it
+  // is reported data, and the renderer does arithmetic on every instant
+  // in it. `capturedAt` decides whether the card is presented as current
+  // at all, so a decorative string there is the failure worth catching.
+  it("accepts an absent quota snapshot but not a malformed one", () => {
+    expect(isSite({ ...site(), quota: null })).toBe(true)
+    expect(isSite({ ...site(), quota: quota() })).toBe(true)
+    // Plans may legitimately be empty; the renderer hides the section.
+    expect(isSite({ ...site(), quota: { ...quota(), plans: [] } })).toBe(true)
+
+    for (const capturedAt of [undefined, null, "recently", 1_753_000_000_000]) {
+      expect(isSite({ ...site(), quota: { ...quota(), capturedAt } })).toBe(
+        false,
+      )
+    }
+    for (const quotaValue of [
+      undefined,
+      "yes",
+      { capturedAt: "2026-07-20T00:00:00Z" },
+    ]) {
+      expect(isSite({ ...site(), quota: quotaValue })).toBe(false)
+    }
+  })
+
+  it("rejects a quota plan the renderer could not draw", () => {
+    const withPlan = (patch: Record<string, unknown>) => {
+      const snapshot = quota()
+      return {
+        ...site(),
+        quota: { ...snapshot, plans: [{ ...snapshot.plans[0], ...patch }] },
+      }
+    }
+    // A plan with no windows is a heading over nothing.
+    expect(isSite(withPlan({ windows: [] }))).toBe(false)
+    expect(isSite(withPlan({ provider: undefined }))).toBe(false)
+    expect(isSite(withPlan({ resetCredits: [1, 2] }))).toBe(false)
+    // A null plan tier is fine — not every subscription names one.
+    expect(isSite(withPlan({ plan: null }))).toBe(true)
+
+    const badWindow = (patch: Record<string, unknown>) =>
+      withPlan({
+        windows: [
+          { label: "Weekly", usedPercent: 28, resetsAt: null, ...patch },
+        ],
+      })
+    expect(isSite(badWindow({}))).toBe(true)
+    expect(isSite(badWindow({ usedPercent: "28" }))).toBe(false)
+    expect(isSite(badWindow({ resetsAt: "soon" }))).toBe(false)
   })
 
   // Model slices are part of the schema now — a missing or malformed
@@ -1239,6 +1326,26 @@ describe("/api/site fixture contract", () => {
     // when tokens-worker bumps SITE_VERSION.
     expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
     expect(isSite(fixture)).toBe(true)
+  })
+
+  // The one reported field, so it is also the one that can be silently
+  // stale — the renderer needs `capturedAt` to be arithmetic, not a
+  // label, and a plan with no windows would draw a heading over nothing.
+  it("carries a decodable quota snapshot", () => {
+    if (!isSite(fixture)) throw new Error("fixture failed decoding")
+    if (fixture.quota === null) return
+    expect(Number.isFinite(Date.parse(fixture.quota.capturedAt))).toBe(true)
+    for (const plan of fixture.quota.plans) {
+      expect(plan.windows.length).toBeGreaterThan(0)
+      for (const window of plan.windows) {
+        expect(window.usedPercent).toBeGreaterThanOrEqual(0)
+        expect(window.usedPercent).toBeLessThanOrEqual(100)
+      }
+      // Reset credits are instants the renderer compares against now.
+      for (const at of plan.resetCredits) {
+        expect(Number.isFinite(Date.parse(at))).toBe(true)
+      }
+    }
   })
 
   it("is composed as of its own `today`", () => {

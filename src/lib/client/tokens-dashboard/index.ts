@@ -22,6 +22,7 @@ import { createBreakdown } from "./breakdown"
 import { renderDevices } from "./devices"
 import { createIcons, scopedQuery } from "./dom"
 import { renderOverview } from "./overview"
+import { renderQuota } from "./quota"
 import { createToday } from "./today"
 import { createRhythmChart, createTrendChart } from "./trend"
 
@@ -139,6 +140,7 @@ export function mountTokensDashboard(root: HTMLElement) {
     shown = null
     try {
       today.render(loaded)
+      renderQuota(q, loaded, icons)
       renderHeatmap(q, loaded)
       renderFacts(q, loaded)
       renderDevices(q, loaded, icons)

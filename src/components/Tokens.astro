@@ -145,6 +145,34 @@ const skeletonRows = (count: number) =>
       </div>
       <p class="tk-today-empty" hidden>Zero-byte kind of day.</p>
     </section>
+    <section class="tk-quota-section">
+      <div class="tk-head">
+        <h2 id="quota">Quota</h2>
+        <p class="tk-quota-meta">
+          <span class="sk-line sk-sub" aria-hidden="true" />
+        </p>
+      </div>
+      <ol class="tk-plans">
+        <li class="tk-plan" data-skeleton aria-hidden="true">
+          <div class="plan-head">
+            <span class="plan-name">
+              <span class="ico sk-ico" />
+              <span class="sk-line" style="inline-size: 4em" />
+            </span>
+          </div>
+          <ol class="tk-windows">
+            <li class="tk-window">
+              <div class="win-head">
+                <span class="sk-line" style="inline-size: 4em" />
+                <span class="sk-line sk-num" />
+              </div>
+              <div class="tk-mix-bar" data-skeleton></div>
+              <p class="win-foot"><span class="sk-line sk-sub" /></p>
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </section>
     <section>
       <h2 id="overview">Overview</h2>
       <form class="tk-controls">
@@ -582,7 +610,11 @@ const skeletonRows = (count: number) =>
     gap: var(--space-xs);
   }
 
-  .tk-mix-bar {
+  /* The Overview and Today bars are in this template, so they are
+     scoped; the quota bars are built by their renderer, so the same
+     rules have to reach them through :global. One bar, two routes. */
+  .tk-mix-bar,
+  .tk-plans :global(.tk-mix-bar) {
     display: flex;
     block-size: 0.875rem;
     overflow: hidden;
@@ -590,7 +622,8 @@ const skeletonRows = (count: number) =>
     background-color: var(--gray-4);
   }
 
-  .tk-mix-bar :global(span) {
+  .tk-mix-bar :global(span),
+  .tk-plans :global(.tk-mix-bar span) {
     min-inline-size: 3px;
     background-color: var(--c, var(--gray-6));
   }
@@ -601,7 +634,8 @@ const skeletonRows = (count: number) =>
 
   /* Brand-keyed variant (the Today client mix): the [data-p] palette
      colors the segment instead of the --c shade ramp below. */
-  .tk-mix-bar :global(span[data-p]) {
+  .tk-mix-bar :global(span[data-p]),
+  .tk-plans :global(.tk-mix-bar span[data-p]) {
     background-color: var(--p);
   }
 
@@ -684,6 +718,120 @@ const skeletonRows = (count: number) =>
 
   .tk-mix-legend .sk-line {
     max-inline-size: 100%;
+  }
+
+  /* Quota — the one reported section, so everything here is built to
+     admit its own age (see tokens-dashboard/quota.ts). */
+
+  .tk-quota-section[hidden] {
+    display: none;
+  }
+
+  .tk-quota-meta {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Past the staleness threshold the numbers may be describing a week
+     that has already ended, so their age stops reading as a footnote. */
+  .tk-quota-meta[data-stale] {
+    color: var(--destructive);
+  }
+
+  /* Everything below .tk-plans is built by the renderer, so it is
+     addressed through :global — only the list itself is in this
+     template. The skeleton in the markup carries the same class names
+     so it lands in the same geometry. */
+  .tk-plans {
+    display: grid;
+    gap: var(--space-m);
+  }
+
+  /* Name, windows and credits are three levels of the same statement,
+     so they sit further apart than the lines inside a window do. */
+  .tk-plans :global(.tk-plan) {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  /* Brand mark and plan name lead, the tier trails as an aside — the
+     same name/detail rhythm the device rows use. */
+  .tk-plans :global(.plan-head) {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-2xs);
+  }
+
+  .tk-plans :global(.plan-name) {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    font-weight: var(--font-weight-medium);
+  }
+
+  .tk-plans :global(.plan-name .ico) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.1em;
+    block-size: 1.1em;
+  }
+
+  .tk-plans :global(.plan-name .ico svg) {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .tk-plans :global(.plan-tier) {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .tk-plans :global(.tk-windows) {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .tk-plans :global(.tk-window) {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  /* Label and figure share a baseline, like a stat card turned on its
+     side — the bar underneath is the same share bar as everywhere else. */
+  .tk-plans :global(.win-head) {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  .tk-plans :global(.win-label) {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .tk-plans :global(.win-used) {
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .tk-plans :global(.win-foot),
+  .tk-plans :global(.plan-credits) {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The brand hue says which subscription is being measured; red is
+     reserved for the one case where the reading is a warning rather
+     than a measurement. */
+  .tk-plans :global(.tk-mix-bar span[data-p][data-high]) {
+    background-color: var(--red-9);
   }
 
   /* Trend chart */

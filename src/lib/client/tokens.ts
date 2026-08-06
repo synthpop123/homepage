@@ -83,10 +83,41 @@ export type SiteDevice = {
   cost: number
 }
 
+/** One rate-limit window of a subscription. `resetsAt` is absolute, so a
+ *  window that has since rolled over is recognisable as reset rather
+ *  than read as a stale percentage. */
+export type QuotaWindow = {
+  label: string
+  usedPercent: number
+  resetsAt: string | null
+}
+
+export type QuotaPlan = {
+  provider: string
+  label: string
+  plan: string | null
+  windows: QuotaWindow[]
+  /** Expiry of each unspent manual reset, ascending. */
+  resetCredits: string[]
+}
+
+/**
+ * The subscription quota, the one part of the payload the collector is
+ * *told* rather than deriving from session logs — a single host reports
+ * it every 30 minutes. That makes it the one part that can silently
+ * stop moving, so `capturedAt` dates it and the section shows the age.
+ */
+export type Quota = {
+  capturedAt: string
+  plans: QuotaPlan[]
+}
+
 export type Site = {
   schemaVersion: number
   generatedAt: string
   today: string
+  /** Null until a collector has reported one. */
+  quota: Quota | null
   ranges: Record<RangeKey, SiteRange>
   daily: SiteDay[]
   devices: SiteDevice[]
@@ -101,7 +132,7 @@ export type Site = {
  * number is also the sessionStorage cache key, so a deploy never reads
  * the previous build's entries.
  */
-export const SITE_SCHEMA_VERSION = 10
+export const SITE_SCHEMA_VERSION = 11
 
 export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -222,6 +253,38 @@ const isDevice = (value: unknown): boolean =>
 const isStringArray = (value: unknown): boolean =>
   Array.isArray(value) && value.every((item) => typeof item === "string")
 
+/** An instant the renderer does arithmetic on, so it has to parse. */
+const isInstant = (value: unknown): boolean =>
+  typeof value === "string" && Number.isFinite(Date.parse(value))
+
+/**
+ * The quota snapshot. A plan with no windows would render as a heading
+ * over nothing, so the list is required to be non-empty — the collector
+ * rejects such a snapshot at the door, and this is the same rule on the
+ * reading side.
+ */
+const isQuota = (value: unknown): boolean =>
+  isRecord(value) &&
+  isInstant(value.capturedAt) &&
+  Array.isArray(value.plans) &&
+  value.plans.every(
+    (plan) =>
+      isRecord(plan) &&
+      typeof plan.provider === "string" &&
+      typeof plan.label === "string" &&
+      (plan.plan === null || typeof plan.plan === "string") &&
+      Array.isArray(plan.windows) &&
+      plan.windows.length > 0 &&
+      plan.windows.every(
+        (window: unknown) =>
+          isRecord(window) &&
+          typeof window.label === "string" &&
+          isCount(window.usedPercent) &&
+          (window.resetsAt === null || isInstant(window.resetsAt)),
+      ) &&
+      isStringArray(plan.resetCredits),
+  )
+
 /** The models a client or provider row splits into — rendered by the
  *  disclosure, so the shape matters as much as the numbers. */
 const isModelCells = (value: unknown): boolean =>
@@ -265,7 +328,8 @@ const isRange = (value: unknown): boolean =>
 /**
  * Runtime decoder for the /api/site payload, strict over every field
  * the renderers actually read: the schema version (anything this build
- * does not accept is rejected outright), all five ranges with their
+ * does not accept is rejected outright), the reported quota snapshot if
+ * there is one, all five ranges with their
  * totals and breakdown rows (metrics + usage spans), every daily row
  * including the provider/client/model slice maps the trend chart
  * iterates, and the device list down to its nullable metadata —
@@ -281,6 +345,7 @@ export function isSite(data: unknown): data is Site {
     typeof data.generatedAt === "string" &&
     Number.isFinite(Date.parse(data.generatedAt)) &&
     isCalendarDay(data.today) &&
+    (data.quota === null || isQuota(data.quota)) &&
     isRecord(ranges) &&
     RANGE_KEYS.every((key) => isRange(ranges[key])) &&
     Array.isArray(data.daily) &&
@@ -416,6 +481,21 @@ export const formatAgo = (epochMs: number, now = Date.now()) => {
   if (minutes < 60) return `${minutes}m ago`
   if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`
   return `${Math.round(minutes / (60 * 24))}d ago`
+}
+
+/**
+ * "in 4m" / "in 3h" / "in 2d" — the mirror of formatAgo, for the quota
+ * windows and reset credits, which are the only instants on this page
+ * that lie ahead. An instant that has already passed returns null: a
+ * rate-limit window that reset is not "in -1h", it is a different state,
+ * and the caller says so in words.
+ */
+export const formatIn = (epochMs: number, now = Date.now()) => {
+  const minutes = Math.round((epochMs - now) / 60_000)
+  if (minutes < 1) return null
+  if (minutes < 60) return `in ${minutes}m`
+  if (minutes < 60 * 24) return `in ${Math.round(minutes / 60)}h`
+  return `in ${Math.round(minutes / (60 * 24))}d`
 }
 
 /** "42 min" / "9.5 h" — for CLI-reported active time. */
