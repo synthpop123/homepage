@@ -39,21 +39,23 @@ const HIGH_USE = 90
 const STALE_AFTER_MS = 2 * 60 * 60 * 1000
 
 /**
- * "72% left · resets Aug 8, 21:28 · in 2d", or what is true instead.
- * The wall-clock time is the fact worth planning around and the
- * countdown is what reads at a glance, so both ship — neither is left
- * to a `title` no touch device can reach.
+ * "resets Aug 8, 21:28 · in 2d", or what is true instead.
+ *
+ * Only the reset. What is left is already on the card twice over — as
+ * the figure and as the bar — and saying "72% left" beside a bar that is
+ * 28% full is the same fact a third time, in the opposite direction.
+ * The wall-clock time is what you plan around and the countdown is what
+ * reads at a glance, so both of those ship, and neither is left to a
+ * `title` no touch device can reach.
  */
 function windowFoot(window: QuotaWindow, now: number): string {
-  const remaining = Math.max(0, 100 - window.usedPercent)
-  const left = `${Math.round(remaining)}% left`
-  if (window.resetsAt === null) return left
+  if (window.resetsAt === null) return ""
   // The vendor's own reset time, so a window that rolled over since the
   // last report is stated as reset rather than drawn as a full bar.
   const until = formatIn(Date.parse(window.resetsAt), now)
   return until === null
     ? "window reset — awaiting next report"
-    : `${left} · resets ${formatInstant(window.resetsAt)} · ${until}`
+    : `resets ${formatInstant(window.resetsAt)} · ${until}`
 }
 
 function renderWindow(
@@ -81,7 +83,11 @@ function renderWindow(
   if (window.usedPercent >= HIGH_USE) fill.dataset.high = ""
   bar.append(fill)
 
-  item.append(head, bar, el("p", "win-foot", windowFoot(window, now)))
+  item.append(head, bar)
+  // A window whose vendor reported no reset time has nothing left to
+  // say; an empty line would just add space between the bars.
+  const foot = windowFoot(window, now)
+  if (foot !== "") item.append(el("p", "win-foot", foot))
   return item
 }
 
@@ -92,8 +98,17 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   // with a badge stuck to it, so the separator is part of the text. The
   // age trails at the far end: each plan is read by its own collector on
   // its own timer, so it is a fact about this card, not about the page.
+  // Claude's card wears the model star rather than Anthropic's corporate
+  // mark: the subscription is "Claude", and the star is what this page
+  // already gives Claude models. The exception is listed rather than
+  // derived, because every other plan does want its vendor's mark —
+  // Codex is OpenAI's product and wears OpenAI's.
   const head = el("div", "plan-head")
-  head.append(icons.slot(aiIcon("provider", plan.provider)))
+  const mark =
+    plan.provider === "anthropic"
+      ? aiIcon("model", "claude")
+      : aiIcon("provider", plan.provider)
+  head.append(icons.slot(mark))
   head.append(el("span", "plan-name", plan.label))
   if (plan.plan) head.append(el("span", "plan-tier", `· ${plan.plan}`))
 
