@@ -14,8 +14,8 @@
 import {
   aiIcon,
   formatAgo,
-  formatDate,
   formatIn,
+  formatInstant,
   type QuotaPlan,
   type QuotaWindow,
   type Site,
@@ -36,18 +36,22 @@ const HIGH_USE = 90
  */
 const STALE_AFTER_MS = 2 * 60 * 60 * 1000
 
-/** "72% left · resets in 2d", or what is true instead. */
+/**
+ * "72% left · resets Aug 8, 21:28 · in 2d", or what is true instead.
+ * The wall-clock time is the fact worth planning around and the
+ * countdown is what reads at a glance, so both ship — neither is left
+ * to a `title` no touch device can reach.
+ */
 function windowFoot(window: QuotaWindow, now: number): string {
   const remaining = Math.max(0, 100 - window.usedPercent)
   const left = `${Math.round(remaining)}% left`
   if (window.resetsAt === null) return left
-  const resetsAt = Date.parse(window.resetsAt)
   // The vendor's own reset time, so a window that rolled over since the
   // last report is stated as reset rather than drawn as a full bar.
-  const until = formatIn(resetsAt, now)
+  const until = formatIn(Date.parse(window.resetsAt), now)
   return until === null
     ? "window reset — awaiting next report"
-    : `${left} · resets ${until}`
+    : `${left} · resets ${formatInstant(window.resetsAt)} · ${until}`
 }
 
 function renderWindow(
@@ -75,24 +79,19 @@ function renderWindow(
   if (window.usedPercent >= HIGH_USE) fill.dataset.high = ""
   bar.append(fill)
 
-  const foot = el("p", "win-foot", windowFoot(window, now))
-  if (window.resetsAt !== null) foot.title = formatDate(window.resetsAt)
-
-  item.append(head, bar, foot)
+  item.append(head, bar, el("p", "win-foot", windowFoot(window, now)))
   return item
 }
 
 function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   const item = el("li", "tk-plan")
 
+  // Mark, name and tier are one phrase — "Codex · Team" — not a name
+  // with a badge stuck to it, so the separator is part of the text.
   const head = el("div", "plan-head")
-  const name = el("span", "plan-name")
-  name.append(
-    icons.slot(aiIcon("provider", plan.provider)),
-    el("span", "", plan.label),
-  )
-  head.append(name)
-  if (plan.plan) head.append(el("span", "plan-tier", plan.plan))
+  head.append(icons.slot(aiIcon("provider", plan.provider)))
+  head.append(el("span", "plan-name", plan.label))
+  if (plan.plan) head.append(el("span", "plan-tier", `· ${plan.plan}`))
 
   const windows = el("ol", "tk-windows")
   windows.append(
@@ -102,19 +101,31 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   item.append(head, windows)
 
   // Manual resets are a property of the plan, not of any one window, and
-  // they expire whether or not they are spent — so the next expiry is
-  // the fact worth surfacing beside the count.
+  // they expire whether or not they are spent — so each expiry is listed
+  // in full rather than summarised as "next expires in 6d". They are
+  // spent one at a time, and which one to spend depends on when the
+  // others lapse.
   const unspent = plan.resetCredits.filter((at) => Date.parse(at) > now)
   if (unspent.length > 0) {
-    const next = formatIn(Date.parse(unspent[0]), now)
-    const credits = el(
-      "p",
-      "plan-credits",
-      `${unspent.length} manual ${unspent.length === 1 ? "reset" : "resets"}${
-        next ? ` · next expires ${next}` : ""
-      }`,
+    const credits = el("div", "plan-credits")
+    credits.append(
+      el(
+        "p",
+        "credits-head",
+        `${unspent.length} manual ${unspent.length === 1 ? "reset" : "resets"}`,
+      ),
     )
-    credits.title = unspent.map((at) => formatDate(at)).join(" · ")
+    const list = el("ol", "credits-list")
+    list.append(
+      ...unspent.map((at) =>
+        el(
+          "li",
+          "",
+          `expires ${formatInstant(at)} · ${formatIn(Date.parse(at), now)}`,
+        ),
+      ),
+    )
+    credits.append(list)
     item.append(credits)
   }
 

@@ -145,34 +145,6 @@ const skeletonRows = (count: number) =>
       </div>
       <p class="tk-today-empty" hidden>Zero-byte kind of day.</p>
     </section>
-    <section class="tk-quota-section">
-      <div class="tk-head">
-        <h2 id="quota">Quota</h2>
-        <p class="tk-quota-meta">
-          <span class="sk-line sk-sub" aria-hidden="true" />
-        </p>
-      </div>
-      <ol class="tk-plans">
-        <li class="tk-plan" data-skeleton aria-hidden="true">
-          <div class="plan-head">
-            <span class="plan-name">
-              <span class="ico sk-ico" />
-              <span class="sk-line" style="inline-size: 4em" />
-            </span>
-          </div>
-          <ol class="tk-windows">
-            <li class="tk-window">
-              <div class="win-head">
-                <span class="sk-line" style="inline-size: 4em" />
-                <span class="sk-line sk-num" />
-              </div>
-              <div class="tk-mix-bar" data-skeleton></div>
-              <p class="win-foot"><span class="sk-line sk-sub" /></p>
-            </li>
-          </ol>
-        </li>
-      </ol>
-    </section>
     <section>
       <h2 id="overview">Overview</h2>
       <form class="tk-controls">
@@ -328,6 +300,32 @@ const skeletonRows = (count: number) =>
           </ol>
         </div>
       </div>
+    </section>
+    <section class="tk-quota-section">
+      <div class="tk-head">
+        <h2 id="quota">Quota</h2>
+        <p class="tk-quota-meta">
+          <span class="sk-line sk-sub" aria-hidden="true" />
+        </p>
+      </div>
+      <ol class="tk-plans">
+        <li class="tk-plan" data-skeleton aria-hidden="true">
+          <div class="plan-head">
+            <span class="ico sk-ico" />
+            <span class="sk-line" style="inline-size: 4em" />
+          </div>
+          <ol class="tk-windows">
+            <li class="tk-window">
+              <div class="win-head">
+                <span class="sk-line" style="inline-size: 4em" />
+                <span class="sk-line sk-num" />
+              </div>
+              <div class="tk-mix-bar" data-skeleton></div>
+              <p class="win-foot"><span class="sk-line sk-sub" /></p>
+            </li>
+          </ol>
+        </li>
+      </ol>
     </section>
     <section>
       <h2 id="devices">Devices</h2>
@@ -755,38 +753,36 @@ const skeletonRows = (count: number) =>
     gap: var(--space-xs);
   }
 
-  /* Brand mark and plan name lead, the tier trails as an aside — the
-     same name/detail rhythm the device rows use. */
+  /* Mark, name and tier read as one phrase on one line — "Codex · Team"
+     — so the row never wraps and the mark sits on the text's centre
+     rather than its baseline. */
   .tk-plans :global(.plan-head) {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: var(--space-3xs) var(--space-2xs);
-  }
-
-  .tk-plans :global(.plan-name) {
     display: flex;
     align-items: center;
     gap: 0.4em;
+  }
+
+  .tk-plans :global(.plan-name) {
     font-weight: var(--font-weight-medium);
   }
 
-  .tk-plans :global(.plan-name .ico) {
+  .tk-plans :global(.plan-head .ico) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     inline-size: 1.1em;
     block-size: 1.1em;
   }
 
-  .tk-plans :global(.plan-name .ico svg) {
+  .tk-plans :global(.plan-head .ico svg) {
     inline-size: 100%;
     block-size: 100%;
   }
 
   .tk-plans :global(.plan-tier) {
-    font-size: var(--step--1);
     color: var(--muted-foreground);
+    white-space: nowrap;
   }
 
   .tk-plans :global(.tk-windows) {
@@ -825,6 +821,25 @@ const skeletonRows = (count: number) =>
     font-size: var(--step--1);
     color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Each credit expires on its own date, so they are a list under a
+     count rather than one summarised line. */
+  .tk-plans :global(.plan-credits) {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .tk-plans :global(.credits-list) {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .tk-plans :global(.credits-list li) {
+    /* Aligned under the count, marked by the same rail the breakdown
+       rows use rather than by a bullet glyph. */
+    padding-inline-start: var(--space-xs);
+    border-inline-start: 1px solid var(--gray-4);
   }
 
   /* The brand hue says which subscription is being measured; red is

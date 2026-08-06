@@ -1061,6 +1061,18 @@ describe("formatIn", () => {
     expect(at("2026-07-22T12:00:00Z")).toBe("in 2d")
   })
 
+  // A deadline rounded up hands the reader time they do not have: a
+  // credit lapsing in five and a half days must not read "in 6d".
+  it("rounds down, never up", () => {
+    expect(at("2026-07-26T01:08:00Z")).toBe("in 5d")
+    expect(at("2026-07-20T15:59:00Z")).toBe("in 3h")
+    expect(at("2026-07-20T12:59:00Z")).toBe("in 59m")
+  })
+
+  it("never reads as expired while it still has seconds left", () => {
+    expect(at("2026-07-20T12:00:30Z")).toBe("in 1m")
+  })
+
   it("returns null once the instant has passed", () => {
     expect(at("2026-07-20T11:59:00Z")).toBeNull()
     expect(at("2026-07-20T12:00:00Z")).toBeNull()

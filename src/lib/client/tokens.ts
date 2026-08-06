@@ -425,6 +425,31 @@ const dateLabel = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   timeZone: "UTC",
 })
+/**
+ * Quota instants are real moments, not the day strings the formatters
+ * above anchor at noon UTC — so they are the one thing on this page that
+ * needs a real zone. It is the collector's (tokens-worker's TIME_ZONE),
+ * which is also the zone every calendar day here is bucketed in: a reset
+ * time rendered in the visitor's zone would disagree with the day
+ * boundaries drawn right above it.
+ */
+const COLLECTOR_ZONE = "Asia/Shanghai"
+
+const zonedDay = new Intl.DateTimeFormat("en-US", {
+  timeZone: COLLECTOR_ZONE,
+  month: "short",
+  day: "numeric",
+})
+
+// Split from the day rather than asked for in one call, which would
+// render as "Aug 8 at 21:28".
+const zonedTime = new Intl.DateTimeFormat("en-GB", {
+  timeZone: COLLECTOR_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+})
+
 const monthName = new Intl.DateTimeFormat("en-US", {
   month: "short",
   timeZone: "UTC",
@@ -466,6 +491,12 @@ export const formatDay = (day: string) => dayLabel.format(noon(day))
 /** "Jul 12, 2026" */
 export const formatDate = (day: string) => dateLabel.format(noon(day))
 
+/** "Aug 8, 21:28" — an absolute instant, in the collector's zone. */
+export const formatInstant = (iso: string) => {
+  const at = new Date(iso)
+  return `${zonedDay.format(at)}, ${zonedTime.format(at)}`
+}
+
 /** "May ’25" — compact axis label for monthly buckets. */
 export const formatMonth = (month: string) =>
   `${monthName.format(noon(`${month}-15`))} ’${month.slice(2, 4)}`
@@ -489,13 +520,20 @@ export const formatAgo = (epochMs: number, now = Date.now()) => {
  * that lie ahead. An instant that has already passed returns null: a
  * rate-limit window that reset is not "in -1h", it is a different state,
  * and the caller says so in words.
+ *
+ * Rounds *down*, unlike formatAgo. These are deadlines, and rounding a
+ * credit that lapses in five and a half days up to "in 6d" tells the
+ * reader they have a day they do not have. Under a minute still reads
+ * "in 1m" rather than "in 0m" — it has not expired yet, which is the
+ * only thing null is allowed to mean here.
  */
 export const formatIn = (epochMs: number, now = Date.now()) => {
-  const minutes = Math.round((epochMs - now) / 60_000)
-  if (minutes < 1) return null
-  if (minutes < 60) return `in ${minutes}m`
-  if (minutes < 60 * 24) return `in ${Math.round(minutes / 60)}h`
-  return `in ${Math.round(minutes / (60 * 24))}d`
+  const ms = epochMs - now
+  if (ms <= 0) return null
+  const minutes = Math.floor(ms / 60_000)
+  if (minutes < 60) return `in ${Math.max(1, minutes)}m`
+  const hours = Math.floor(minutes / 60)
+  return hours < 24 ? `in ${hours}h` : `in ${Math.floor(hours / 24)}d`
 }
 
 /** "42 min" / "9.5 h" — for CLI-reported active time. */
