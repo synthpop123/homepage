@@ -62,13 +62,11 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
   const entryTime = (entry: LetterboxdEntry) =>
     entry.date?.watched ?? entry.date?.published ?? 0
 
-  const createRewatchIcon = () => {
-    const icon = document.createElement("span")
-    icon.className = "rewatch-icon"
-    icon.setAttribute("role", "img")
-    icon.setAttribute("aria-label", "Rewatch")
-    icon.textContent = "\u267A"
-    return icon
+  const createRewatchTag = () => {
+    const tag = document.createElement("span")
+    tag.className = "rewatch"
+    tag.textContent = "rewatched"
+    return tag
   }
 
   const buildCard = (entry: LetterboxdEntry, href: string) => {
@@ -115,15 +113,15 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
 
     const watched = entry.date?.watched ?? entry.date?.published
     if (watched || entry.isRewatch) {
-      const time = document.createElement("time")
-      time.className = "date"
-      if (entry.isRewatch) time.append(createRewatchIcon())
       if (watched) {
         const value = new Date(watched)
+        const time = document.createElement("time")
+        time.className = "date"
         time.dateTime = value.toISOString()
-        time.append(dateFormatter.format(value))
+        time.textContent = dateFormatter.format(value)
+        meta.append(time)
       }
-      meta.append(time)
+      if (entry.isRewatch) meta.append(createRewatchTag())
     }
 
     if (typeof entry.rating?.score === "number") {
@@ -260,17 +258,18 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
   }
 
   movies-feed :global(.date) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3em;
     font-size: var(--step--1);
     color: var(--muted-foreground);
   }
 
-  movies-feed :global(.rewatch-icon) {
-    flex-shrink: 0;
-    font-size: 1em;
-    line-height: 1;
+  /* A word rather than a glyph, echoing the EDITED marker on /memos,
+     on its own line under the date it qualifies. */
+  movies-feed :global(.rewatch) {
+    font-size: 0.6875rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
   }
 
   movies-feed :global(.rating) {
