@@ -705,6 +705,7 @@ describe("todayView", () => {
     expect(view.active).toBe(1_800_000)
     // No tokens means no breakdown to draw.
     expect(view.mix).toEqual([])
+    expect(view.clients).toEqual([])
     expect(view.models).toEqual([])
   })
 
@@ -758,6 +759,30 @@ describe("todayView", () => {
       1,
       10,
     )
+    // The cutoff is the bar's alone: the legend names every client that
+    // spent anything today, so nobody is filed under "Other".
+    expect(view.clients.map((entry) => entry.id)).toEqual([
+      "claude",
+      "codex",
+      "cursor",
+      "pi",
+      "zed",
+      "gemini",
+    ])
+    expect(view.clients.map((entry) => entry.share)).toEqual([
+      0.4, 0.3, 0.15, 0.1, 0.03, 0.02,
+    ])
+  })
+
+  it("draws no residual segment when every client has one of its own", () => {
+    const view = todayView(
+      todaySite({
+        totals: { tokens: 100 },
+        byClient: [clientRow("claude", 60), clientRow("codex", 40)],
+      }),
+    )
+    expect(view.mix.map((entry) => entry.id)).toEqual(["claude", "codex"])
+    expect(view.clients.map((entry) => entry.id)).toEqual(["claude", "codex"])
   })
 
   it("labels client ids that shadow Object members as themselves", () => {
@@ -770,13 +795,13 @@ describe("todayView", () => {
         byClient: [clientRow("constructor", 6), clientRow("__proto__", 4)],
       }),
     )
-    expect(view.mix.map((entry) => entry.label)).toEqual([
+    expect(view.clients.map((entry) => entry.label)).toEqual([
       "constructor",
       "__proto__",
     ])
   })
 
-  it("carries each client's models, and none for the merged tail", () => {
+  it("carries each client's models, the merged-out ones included", () => {
     const cells = (...models: [string, number][]) =>
       models.map(([model, tokens]) => ({
         model,
@@ -800,13 +825,19 @@ describe("todayView", () => {
         ],
       }),
     )
-    expect(view.mix[0].models.map((cell) => cell.model)).toEqual([
+    expect(view.clients[0].models.map((cell) => cell.model)).toEqual([
       "claude-opus-5",
       "deepseek-v4-flash",
     ])
-    // "Other" is several clients at once; a disclosure of it could not
-    // say whose models it was listing.
-    expect(view.mix.at(-1)).toMatchObject({ id: "other", models: [] })
+    // Zed is past the bar's cutoff and inside the residual segment, but
+    // its legend row still opens onto the model it drove.
+    expect(view.clients.at(-1)).toMatchObject({
+      id: "zed",
+      models: [{ model: "claude-sonnet-5", tokens: 4 }],
+    })
+    // The residual slice is several clients at once, so it is a width and
+    // a share and nothing else — there is no disclosure to hang on it.
+    expect(view.mix.at(-1)).toMatchObject({ id: "other", tokens: 4 })
   })
 
   // Placeholder ids are rendered, not hidden — a list whose shares are
@@ -1389,8 +1420,12 @@ describe("/api/site fixture contract", () => {
     expect(view.totals.tokens).toBe(today?.tokens ?? 0)
     expect(view.totals.messages).toBe(today?.messages ?? 0)
     expect(view.totals.cost).toBeCloseTo(today?.cost ?? 0, 6)
-    // The mix apportions the whole day, whatever the client count.
+    // The mix apportions the whole day, whatever the client count — and
+    // the legend, which is not capped, apportions the same day.
     expect(view.mix.reduce((sum, entry) => sum + entry.tokens, 0)).toBe(
+      view.totals.tokens,
+    )
+    expect(view.clients.reduce((sum, entry) => sum + entry.tokens, 0)).toBe(
       view.totals.tokens,
     )
   })

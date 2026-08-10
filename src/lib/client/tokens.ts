@@ -863,9 +863,21 @@ export const lastReport = (site: Site): number | null => {
 
 /* Today --------------------------------------------------------------- */
 
-/** Clients that keep their own segment in the Today mix; the tail merges. */
+/** Clients that keep their own bar segment; the tail merges. The legend
+ *  is not capped — see TodayView.clients. */
 const MIX_SEGMENTS = 4
 const TOP_MODELS = 5
+
+/** A slice of the day's tokens: one client, or the merged tail. */
+export type TodaySlice = {
+  id: string
+  label: string
+  tokens: number
+  share: number
+}
+
+/** A client of the day, plus the models it drove today. */
+export type TodayClient = TodaySlice & { models: ModelCell[] }
 
 export type TodayView = {
   /** Nothing recorded yet — the section collapses to a single line
@@ -876,18 +888,17 @@ export type TodayView = {
   active: number
   /** Yesterday, the baseline every delta is measured against. */
   before: ReturnType<typeof windowTotals> & { active: number }
-  /** Client mix as bar segments; empty when the day has no tokens to
-   *  apportion (a message- or active-time-only day is not idle, but it
-   *  has no breakdown either). Each carries the models that client
-   *  drove today; the merged tail carries none, since "other" is
-   *  several clients and a disclosure of it would say whose. */
-  mix: {
-    id: string
-    label: string
-    tokens: number
-    share: number
-    models: ModelCell[]
-  }[]
+  /** The bar's segments: the day's top clients, with everything below
+   *  the cutoff merged into one residual slice so the bar still sums to
+   *  the day. A cap belongs to the bar alone — past a few slices the
+   *  segments stop being tellable apart — which is why the legend reads
+   *  `clients` instead. */
+  mix: TodaySlice[]
+  /** Every client of the day, in rank order, each with the models
+   *  behind it. Empty when the day has no tokens to apportion (a
+   *  message- or active-time-only day is not idle, but it has no
+   *  breakdown either). */
+  clients: TodayClient[]
   models: SiteRange["byModel"]
 }
 
@@ -908,29 +919,40 @@ export function todayView(site: Site): TodayView {
   const dayOf = (date: string) => site.daily.find((day) => day.date === date)
   const active = dayOf(site.today)?.active ?? 0
 
-  const clients = byClient.filter(
+  const slice = (id: string, tokens: number): TodaySlice => ({
+    id,
+    label: clientLabel(id),
+    tokens,
+    share: tokens / totals.tokens,
+  })
+
+  const rows = byClient.filter(
     (row) => row.tokens > 0 && !PLACEHOLDER_IDS.has(row.client),
   )
-  const tail = clients
+  const clients =
+    totals.tokens > 0
+      ? rows.map((row) => ({
+          ...slice(row.client, row.tokens),
+          models: row.models,
+        }))
+      : []
+  // Only the *bar* merges its tail, and only because a 1%-wide segment
+  // is not a segment. Every client still gets its own legend row: the
+  // row is where the name, the models behind it and the exact share
+  // are, and folding a named client into an iconless "Other" there read
+  // as usage the collector could not attribute.
+  const tail = rows
     .slice(MIX_SEGMENTS)
     .reduce((sum, row) => sum + row.tokens, 0)
   const mix =
-    totals.tokens > 0
-      ? [
-          ...clients.slice(0, MIX_SEGMENTS).map((row) => ({
-            id: row.client,
-            tokens: row.tokens,
-            models: row.models,
-          })),
-          ...(tail > 0 ? [{ id: OTHER, tokens: tail, models: [] }] : []),
-        ].map(({ id, tokens, models }) => ({
-          id,
-          label: clientLabel(id),
-          tokens,
-          share: tokens / totals.tokens,
-          models,
-        }))
-      : []
+    clients.length === 0
+      ? []
+      : [
+          ...clients
+            .slice(0, MIX_SEGMENTS)
+            .map((row) => slice(row.id, row.tokens)),
+          ...(tail > 0 ? [slice(OTHER, tail)] : []),
+        ]
 
   return {
     idle:
@@ -945,6 +967,7 @@ export function todayView(site: Site): TodayView {
       active: dayOf(eve)?.active ?? 0,
     },
     mix,
+    clients,
     models: byModel
       .filter((row) => row.tokens > 0 && !PLACEHOLDER_IDS.has(row.model))
       .slice(0, TOP_MODELS),

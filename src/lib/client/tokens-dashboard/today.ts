@@ -24,6 +24,7 @@ import {
   formatTokens,
   lastReport,
   modelLabel,
+  OTHER,
   type Site,
   todayView,
 } from "../tokens"
@@ -49,9 +50,14 @@ export function createToday(q: Query, icons: Icons) {
   // tabbing to) a row mutes every segment but its own instead: the same
   // statement a color chip made permanently, on demand, and without a
   // second color language running down the rows.
+  //
+  // The legend is longer than the bar has segments, so a row past the
+  // cutoff lights the residual slice it was merged into — which is
+  // where its tokens actually are.
   const highlight = (id: string | null) => {
+    const lit = id === null ? null : segments.has(id) ? id : OTHER
     for (const [key, segment] of segments) {
-      segment.toggleAttribute("data-mute", id !== null && key !== id)
+      segment.toggleAttribute("data-mute", lit !== null && key !== lit)
     }
   }
   const clientOf = (target: EventTarget | null) =>
@@ -71,7 +77,8 @@ export function createToday(q: Query, icons: Icons) {
 
   const render = (site: Site) => {
     segments.clear()
-    const { idle, totals, active, before, mix, models } = todayView(site)
+    const { idle, totals, active, before, mix, clients, models } =
+      todayView(site)
 
     // The date itself is redundant next to a heading that says "Today";
     // how long ago a machine last reported is not — and that is what the
@@ -163,8 +170,8 @@ export function createToday(q: Query, icons: Icons) {
     // No tokens yet (a message- or active-time-only day) means nothing to
     // apportion: the breakdown would be an empty bar over a "—" legend.
     const breakdown = q(".tk-today-breakdown")
-    if (breakdown) breakdown.hidden = mix.length === 0
-    if (mix.length === 0) return
+    if (breakdown) breakdown.hidden = clients.length === 0
+    if (clients.length === 0) return
 
     // Client mix: the day's top clients keep their vendor hue, the tail
     // merges into one neutral segment so the bar always sums to the day.
@@ -188,11 +195,15 @@ export function createToday(q: Query, icons: Icons) {
     // The legend under the bar is also the client breakdown: the brand
     // mark, the day's tokens, and the models that client drove behind a
     // disclosure. Same rows as the Breakdown section, which has no today
-    // window of its own. `data-client` is what ties a row back to its
-    // segment for `highlight`.
+    // window of its own. It lists *every* client of the day, however
+    // small — the bar's cutoff is a drawing limit, not an editorial one,
+    // and a client dropped from the legend loses its name, its icon and
+    // its models to a grey row that reads like unattributed usage.
+    // `data-client` is what ties a row back to its segment for
+    // `highlight`.
     if (legend) {
       legend.replaceChildren(
-        ...mix.map((entry) => {
+        ...clients.map((entry) => {
           const spec = {
             icon: aiIcon("client", entry.id),
             name: entry.label,
@@ -200,7 +211,7 @@ export function createToday(q: Query, icons: Icons) {
             share: entry.share,
             title: `${entry.label} — ${formatExact(entry.tokens)} tokens`,
           }
-          // Only the merged "Other" tail carries no per-model split.
+          // A client whose models the payload did not split out.
           const subRows = modelSubRows(entry.models, entry.tokens, "tokens")
           const row =
             subRows.length === 0
