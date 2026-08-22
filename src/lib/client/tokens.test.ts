@@ -889,10 +889,14 @@ describe("labels and icons", () => {
     expect(clientLabel("brand-new-cli")).toBe("brand-new-cli")
     expect(providerLabel("zed.dev")).toBe("Zed")
     expect(providerLabel("alibaba")).toBe("Alibaba")
+    expect(providerLabel("meta")).toBe("Meta")
+    expect(providerLabel("openrouter")).toBe("OpenRouter")
     expect(aiIcon("client", "claude")).toBe("claudecode")
     expect(aiIcon("provider", "moonshotai")).toBe("moonshot")
     expect(aiIcon("provider", "deepseek")).toBe("deepseek")
     expect(aiIcon("provider", "alibaba")).toBe("alibaba")
+    expect(aiIcon("provider", "meta")).toBe("meta")
+    expect(aiIcon("provider", "openrouter")).toBe("openrouter")
     expect(aiIcon("model", "claude-opus-5")).toBe("claude")
     expect(aiIcon("model", "deepseek-v4-flash")).toBe("deepseek")
     expect(aiIcon("model", "qwen3.8-max")).toBe("qwen")
@@ -907,6 +911,8 @@ describe("labels and icons", () => {
     expect(modelBrand("o3")).toBe("openai")
     expect(modelBrand("glm-4.7")).toBe("zai")
     expect(modelBrand("composer-2.5")).toBe("cursor")
+    expect(modelBrand("muse-spark-1.2")).toBe("meta")
+    expect(modelBrand("ox-alpha")).toBe("openrouter")
     expect(modelBrand("brand-new-model")).toBeNull()
     expect(modelBrand("unknown")).toBeNull()
   })
@@ -919,6 +925,7 @@ describe("labels and icons", () => {
   it("humanizes model ids into display names", () => {
     // Exact overrides keep their canonical brand spelling.
     expect(modelLabel("deepseek-v4-flash")).toBe("DeepSeek V4 Flash")
+    expect(modelLabel("muse-spark-1.2")).toBe("Muse Spark 1.2")
     // Generic path: split into words, Title Case, dot-join versions.
     expect(modelLabel("claude-fable-5")).toBe("Claude Fable 5")
     expect(modelLabel("claude-opus-4-5")).toBe("Claude Opus 4.5")

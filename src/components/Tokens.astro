@@ -14,9 +14,11 @@ import Google from "@/assets/icons/ai/google.svg"
 import Grok from "@/assets/icons/ai/grok.svg"
 import HermesAgent from "@/assets/icons/ai/hermesagent.svg"
 import Kimi from "@/assets/icons/ai/kimi.svg"
+import Meta from "@/assets/icons/ai/meta.svg"
 import Moonshot from "@/assets/icons/ai/moonshot.svg"
 import OpenAI from "@/assets/icons/ai/openai.svg"
 import OpenCode from "@/assets/icons/ai/opencode.svg"
+import OpenRouter from "@/assets/icons/ai/openrouter.svg"
 import Pi from "@/assets/icons/ai/pi.svg"
 import Qwen from "@/assets/icons/ai/qwen.svg"
 import XAI from "@/assets/icons/ai/xai.svg"
@@ -47,9 +49,11 @@ const AI_ICONS: Record<string, SvgComponent> = {
   grok: Grok,
   hermesagent: HermesAgent,
   kimi: Kimi,
+  meta: Meta,
   moonshot: Moonshot,
   openai: OpenAI,
   opencode: OpenCode,
+  openrouter: OpenRouter,
   pi: Pi,
   qwen: Qwen,
   xai: XAI,
@@ -383,6 +387,8 @@ const skeletonRows = (count: number) =>
     --tk-p-xai: light-dark(#52525b, #a1a1aa);
     --tk-p-cursor: light-dark(#8b5cf6, #a78bfa);
     --tk-p-deepseek: light-dark(#4d6bfe, #8ba0ff);
+    --tk-p-meta: light-dark(#0866ff, #4d9fff);
+    --tk-p-openrouter: light-dark(#6366f1, #818cf8);
     --tk-p-zed: light-dark(#084ccf, #7a9bff);
     --tk-p-opencode: light-dark(#78716c, #a8a29e);
     /* Nous ships a cream-on-black brand; a parchment tan keeps it apart
@@ -1177,6 +1183,14 @@ const skeletonRows = (count: number) =>
 
   tokens-dashboard :global([data-p="deepseek"]) {
     --p: var(--tk-p-deepseek);
+  }
+
+  tokens-dashboard :global([data-p="meta"]) {
+    --p: var(--tk-p-meta);
+  }
+
+  tokens-dashboard :global([data-p="openrouter"]) {
+    --p: var(--tk-p-openrouter);
   }
 
   /* Kimi is Moonshot's model line: same vendor, same hue. */

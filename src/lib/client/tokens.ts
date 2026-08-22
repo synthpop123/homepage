@@ -1148,6 +1148,8 @@ const PROVIDER_LABELS = new Map<string, string>([
   ["zai", "Z.ai"],
   ["deepseek", "DeepSeek"],
   ["alibaba", "Alibaba"],
+  ["meta", "Meta"],
+  ["openrouter", "OpenRouter"],
   // Serving gateways: the collector re-attributes their rows to model
   // vendors; these ids remain only for models the rules can't place.
   ["opencode", "OpenCode"],
@@ -1182,6 +1184,7 @@ const MODEL_ACRONYMS = new Map<string, string>([
  *  Add new custom spellings here. */
 const MODEL_NAMES = new Map<string, string>([
   ["deepseek-v4-flash", "DeepSeek V4 Flash"],
+  ["muse-spark-1.2", "Muse Spark 1.2"],
   // Placeholders. Nothing renders them any more (PLACEHOLDER_IDS), but
   // the labels stay honest for anything that reaches modelLabel directly.
   ["unknown", "Other"],
@@ -1237,6 +1240,8 @@ const PROVIDER_ICONS = new Map<string, string>([
   ["zai", "zai"],
   ["deepseek", "deepseek"],
   ["alibaba", "alibaba"],
+  ["meta", "meta"],
+  ["openrouter", "openrouter"],
   ["opencode", "opencode"],
   ["zed.dev", "zed"],
 ])
@@ -1265,6 +1270,8 @@ const MODEL_ICONS: [RegExp, string][] = [
   [/^deepseek/, "deepseek"],
   [/^qwen/, "qwen"],
   [/^glm/, "zai"],
+  [/^muse/, "meta"],
+  [/^ox-/, "openrouter"],
   [/^big-pickle/, "opencode"],
 ]
 
