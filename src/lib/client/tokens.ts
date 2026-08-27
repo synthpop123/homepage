@@ -85,7 +85,9 @@ export type SiteDevice = {
 
 /** One rate-limit window of a subscription. `resetsAt` is absolute, so a
  *  window that has since rolled over is recognisable as reset rather
- *  than read as a stale percentage. */
+ *  than read as a stale percentage. Vendors may still send a timestamp
+ *  at 0% spend (OpenAI reports `now + window`); the quota card treats
+ *  that as unset until `usedPercent > 0`. */
 export type QuotaWindow = {
   label: string
   usedPercent: number

@@ -47,9 +47,15 @@ const STALE_AFTER_MS = 2 * 60 * 60 * 1000
  * The wall-clock time is what you plan around and the countdown is what
  * reads at a glance, so both of those ship, and neither is left to a
  * `title` no touch device can reach.
+ *
+ * An untouched window (0%) never shows a reset, even when the vendor
+ * sent one. OpenAI's unused 5h/weekly windows report `resetsAt ≈ now +
+ * window`, which drifts forward on every poll and is not a real open
+ * window; Anthropic already omits the field. Hide both, so the foot only
+ * appears once spend has anchored a window.
  */
-function windowFoot(window: QuotaWindow, now: number): string {
-  if (window.resetsAt === null) return ""
+export function windowFoot(window: QuotaWindow, now: number): string {
+  if (window.usedPercent <= 0 || window.resetsAt === null) return ""
   // The vendor's own reset time, so a window that rolled over since the
   // last report is stated as reset rather than drawn as a full bar.
   const until = formatIn(Date.parse(window.resetsAt), now)
@@ -92,8 +98,8 @@ function renderWindow(
   }
 
   item.append(head, bar)
-  // A window whose vendor reported no reset time has nothing left to
-  // say; an empty line would just add space between the bars.
+  // Untouched windows and vendor-null resets leave no foot; an empty
+  // line would just add space between the bars.
   const foot = windowFoot(window, now)
   if (foot !== "") item.append(el("p", "win-foot", foot))
   return item
