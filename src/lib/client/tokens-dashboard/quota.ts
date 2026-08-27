@@ -39,6 +39,56 @@ const HIGH_USE = 90
 const STALE_AFTER_MS = 2 * 60 * 60 * 1000
 
 /**
+ * How close `resetsAt − capturedAt` may sit to the full window before we
+ * treat it as OpenAI's unused placeholder (`now + window`) rather than a
+ * real open window. Absorbs unix-second truncation and the gap between
+ * the vendor clock and the Worker's `capturedAt`.
+ */
+const PLACEHOLDER_SLACK_MS = 2 * 60 * 1000
+
+const MS = { d: 86_400_000, h: 3_600_000, m: 60_000, s: 1_000 } as const
+
+/**
+ * Length of the rate-limit window named by `label`. Session/Weekly are
+ * the names `/api/site` publishes; a trailing `5h` / `7d` covers Codex
+ * additional limits the Worker leaves unmapped. Unknown labels return
+ * null — without a length we cannot tell a placeholder from an open
+ * window at 0% spend.
+ */
+export function windowDurationMs(label: string): number | null {
+  if (label === "Session") return 5 * MS.h
+  if (label === "Weekly") return 7 * MS.d
+  const match = /(?:^|\s)(\d+)([dhms])$/i.exec(label)
+  if (!match) return null
+  const n = Number(match[1])
+  const unit = match[2].toLowerCase() as keyof typeof MS
+  return n > 0 ? n * MS[unit] : null
+}
+
+/**
+ * Whether the reset foot should appear. OpenAI reports integer
+ * `used_percent: 0` even after a real spend has opened the window, and
+ * fills unused windows with `resetsAt ≈ capturedAt + duration` that
+ * drifts on every poll. An anchored window is already shorter than the
+ * full duration (minus slack); Anthropic simply omits `resetsAt` until
+ * spend starts.
+ */
+export function windowIsOpen(
+  window: QuotaWindow,
+  capturedAtMs: number,
+): boolean {
+  if (window.resetsAt === null) return false
+  if (window.usedPercent > 0) return true
+  const duration = windowDurationMs(window.label)
+  if (duration === null) return false
+  const remaining = Date.parse(window.resetsAt) - capturedAtMs
+  // Past the vendor's reset with no recorded spend: still say so, so a
+  // stale 0% card does not look untouched.
+  if (!Number.isFinite(remaining) || remaining <= 0) return true
+  return remaining < duration - PLACEHOLDER_SLACK_MS
+}
+
+/**
  * "resets Aug 8, 21:28 · in 2d", or what is true instead.
  *
  * Only the reset. What is left is already on the card twice over — as
@@ -47,15 +97,15 @@ const STALE_AFTER_MS = 2 * 60 * 60 * 1000
  * The wall-clock time is what you plan around and the countdown is what
  * reads at a glance, so both of those ship, and neither is left to a
  * `title` no touch device can reach.
- *
- * An untouched window (0%) never shows a reset, even when the vendor
- * sent one. OpenAI's unused 5h/weekly windows report `resetsAt ≈ now +
- * window`, which drifts forward on every poll and is not a real open
- * window; Anthropic already omits the field. Hide both, so the foot only
- * appears once spend has anchored a window.
  */
-export function windowFoot(window: QuotaWindow, now: number): string {
-  if (window.usedPercent <= 0 || window.resetsAt === null) return ""
+export function windowFoot(
+  window: QuotaWindow,
+  now: number,
+  capturedAtMs: number,
+): string {
+  if (!windowIsOpen(window, capturedAtMs) || window.resetsAt === null) {
+    return ""
+  }
   // The vendor's own reset time, so a window that rolled over since the
   // last report is stated as reset rather than drawn as a full bar.
   const until = formatIn(Date.parse(window.resetsAt), now)
@@ -68,6 +118,7 @@ function renderWindow(
   window: QuotaWindow,
   provider: string,
   now: number,
+  capturedAtMs: number,
 ): HTMLElement {
   const item = el("li", "tk-window")
 
@@ -98,9 +149,9 @@ function renderWindow(
   }
 
   item.append(head, bar)
-  // Untouched windows and vendor-null resets leave no foot; an empty
-  // line would just add space between the bars.
-  const foot = windowFoot(window, now)
+  // Placeholder resets and vendor-null leave no foot; an empty line
+  // would just add space between the bars.
+  const foot = windowFoot(window, now, capturedAtMs)
   if (foot !== "") item.append(el("p", "win-foot", foot))
   return item
 }
@@ -136,7 +187,9 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
 
   const windows = el("ol", "tk-windows")
   windows.append(
-    ...plan.windows.map((window) => renderWindow(window, plan.provider, now)),
+    ...plan.windows.map((window) =>
+      renderWindow(window, plan.provider, now, capturedAt),
+    ),
   )
 
   item.append(head, windows)
