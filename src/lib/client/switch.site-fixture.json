@@ -1,25 +1,14 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-28T16:00:00.000Z",
-  "today": "2026-08-29",
+  "generatedAt": "2026-08-28T14:56:06.542Z",
+  "today": "2026-08-28",
   "stats": {
-    "totalMinutes": 12345,
-    "gameCount": 42,
-    "daysActive": 180,
-    "avgDailyMinutes": 68,
-    "longestStreak": 14
+    "totalMinutes": 0,
+    "gameCount": 0,
+    "daysActive": 0,
+    "avgDailyMinutes": 0,
+    "longestStreak": 0
   },
-  "activity": [
-    { "date": "2026-08-27", "minutes": 90 },
-    { "date": "2026-08-28", "minutes": 120 }
-  ],
-  "recent": [
-    {
-      "applicationId": "0100f2c0115b6000",
-      "title": "ゼルダの伝説 ティアーズ オブ ザ キングダム",
-      "imageUrl": "https://cdn-image.nintendo.com/example.jpg",
-      "lastPlayedAt": "2026-08-28T10:30:00.000Z",
-      "totalMinutes": 456
-    }
-  ]
+  "activity": [{ "date": "2026-08-28", "minutes": 0 }],
+  "recent": []
 }

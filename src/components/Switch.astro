@@ -180,7 +180,11 @@ const stats: { key: string; label: string }[] = [
     loadSite(endpoint)
       .then((site) => {
         const items = site.recent.filter((game) => game.title)
-        if (items.length === 0 && site.stats.gameCount === 0) {
+        if (
+          items.length === 0 &&
+          site.stats.gameCount === 0 &&
+          site.activity.length === 0
+        ) {
           throw new Error("No play data")
         }
         fillStats(feed, site.stats)
@@ -188,7 +192,8 @@ const stats: { key: string; label: string }[] = [
         const fragment = document.createDocumentFragment()
         for (const item of items.slice(0, limit))
           fragment.append(buildRow(item))
-        list.replaceChildren(fragment)
+        if (items.length === 0) list.hidden = true
+        else list.replaceChildren(fragment)
         feed.setAttribute("aria-busy", "false")
       })
       .catch(() => {
