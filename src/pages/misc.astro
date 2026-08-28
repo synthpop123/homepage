@@ -4,6 +4,7 @@ import Globe from "@/components/Globe.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import Movies from "@/components/Movies.astro"
 import Music from "@/components/Music.astro"
+import Switch from "@/components/Switch.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getCollection } from "astro:content"
@@ -17,6 +18,7 @@ const sections = [
   { id: "footprint", label: "Footprint" },
   { id: "movies", label: "Movies" },
   { id: "music", label: "Music" },
+  { id: "switch", label: "Switch" },
 ]
 const toc = [
   {
@@ -64,6 +66,10 @@ const toc = [
   <section>
     <h2 id="music">Music</h2>
     <Music limit={10} />
+  </section>
+  <section>
+    <h2 id="switch">Switch</h2>
+    <Switch limit={10} />
   </section>
 </Layout>
 

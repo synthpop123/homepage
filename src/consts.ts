@@ -59,6 +59,11 @@ export const TOKENS = {
   endpoint: "https://tokens.lkwplus.com",
 } as const
 
+export const SWITCH = {
+  endpoint: "https://switch.lkwplus.com",
+  limit: 10,
+} as const
+
 export const GLOBE_LOCATIONS: { location: [number, number]; size: number }[] = [
   { location: [39.904989, 116.405285], size: 0.02 }, // 北京
   { location: [22.547, 114.085947], size: 0.02 }, // 深圳

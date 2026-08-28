@@ -1,0 +1,356 @@
+---
+import Heatmap from "@/components/Heatmap.astro"
+import { SWITCH } from "@/consts"
+
+type Props = {
+  endpoint?: string
+  limit?: number
+}
+
+const { endpoint = SWITCH.endpoint, limit = SWITCH.limit } = Astro.props
+
+const stats: { key: string; label: string }[] = [
+  { key: "totalMinutes", label: "Minutes" },
+  { key: "gameCount", label: "Games" },
+  { key: "daysActive", label: "Days active" },
+  { key: "avgDailyMinutes", label: "Avg. daily minutes" },
+  { key: "longestStreak", label: "Day streak" },
+]
+---
+
+<p class="switch-intro">
+  Games I've been playing on my Nintendo Switch, synced daily from Nintendo's
+  Parental Controls API via my self-hosted
+  <a href={endpoint} target="_blank" rel="noopener noreferrer">switch-play</a>
+  worker.
+</p>
+<switch-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
+  <div class="switch-body">
+    <h3 class="switch-label">All-time stats</h3>
+    <dl class="switch-stats">
+      {stats.map(({ key, label }) => (
+        <div class="stat" data-key={key}>
+          <dt class="label">{label}</dt>
+          <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
+        </div>
+      ))}
+    </dl>
+    <h3 class="switch-label">Activity</h3>
+    <Heatmap />
+    <h3 class="switch-label">Recently played</h3>
+    <ol class="switch-list">
+      {Array.from({ length: limit }).map(() => (
+        <li class="switch-item" data-skeleton aria-hidden="true">
+          <div class="switch-row">
+            <span class="cover" />
+            <span class="meta">
+              <span class="sk-line sk-title" />
+              <span class="sk-line sk-subtitle" />
+            </span>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+  <p class="switch-fallback" hidden>
+    Couldn't load right now — play activity is synced to
+    <a href={endpoint} target="_blank" rel="noopener noreferrer">switch-play</a
+    >.
+  </p>
+</switch-feed>
+
+<script>
+  import { safeHttpUrl, TIME_ZONE } from "@/lib/client/feed"
+  import { mountHeatmap } from "@/lib/client/heatmap"
+  import { loadSite, type Site, type SiteRecentGame } from "@/lib/client/switch"
+
+  const numberFormatter = new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 1,
+  })
+  const dayFormatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: TIME_ZONE,
+  })
+  const timeFormatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: TIME_ZONE,
+  })
+  const relativeFormatter = new Intl.RelativeTimeFormat("en-US", {
+    numeric: "always",
+  })
+
+  const formatWhen = (iso: string | null) => {
+    if (!iso) return "—"
+    const value = new Date(iso)
+    const minutes = Math.round((Date.now() - value.getTime()) / 60_000)
+    if (minutes < 1) return "just now"
+    if (minutes < 60) return relativeFormatter.format(-minutes, "minute")
+    if (minutes < 60 * 24)
+      return relativeFormatter.format(-Math.round(minutes / 60), "hour")
+    return timeFormatter.format(value)
+  }
+
+  const fillStats = (feed: HTMLElement, stats: Site["stats"]) => {
+    feed.querySelectorAll<HTMLElement>(".stat").forEach((stat) => {
+      const key = stat.dataset.key as keyof Site["stats"] | undefined
+      const value = key ? stats[key] : undefined
+      const target = stat.querySelector<HTMLElement>(".value")
+      if (target && typeof value === "number") {
+        target.textContent = numberFormatter.format(value)
+      }
+    })
+  }
+
+  const buildHeatmap = (feed: HTMLElement, site: Site) => {
+    const grid = feed.querySelector<HTMLElement>(".heat-grid")
+    const days = site.activity.map((day) => ({
+      date: day.date,
+      listens: day.minutes,
+    }))
+    if (!grid || days.length === 0) throw new Error("No activity data")
+
+    mountHeatmap(grid, days, (shown) => {
+      const max = Math.max(...shown.map((day) => day.listens), 1)
+      return shown.map((day) => ({
+        level:
+          day.listens === 0
+            ? 0
+            : Math.max(1, Math.ceil((day.listens / max) * 4)),
+        title: `${day.listens} ${day.listens === 1 ? "minute" : "minutes"} on ${dayFormatter.format(new Date(`${day.date}T12:00:00Z`))}`,
+      }))
+    })
+  }
+
+  const buildRow = (game: SiteRecentGame) => {
+    const row = document.createElement("li")
+    row.className = "switch-item"
+
+    const link = document.createElement("div")
+    link.className = "switch-row"
+
+    const cover = document.createElement("span")
+    cover.className = "cover"
+    const src = safeHttpUrl(game.imageUrl)
+    if (src) {
+      const img = document.createElement("img")
+      img.src = src
+      img.alt = `${game.title} cover art`
+      img.loading = "lazy"
+      img.decoding = "async"
+      img.width = 40
+      img.height = 40
+      cover.append(img)
+    }
+    link.append(cover)
+
+    const meta = document.createElement("span")
+    meta.className = "meta"
+    const title = document.createElement("span")
+    title.className = "title"
+    title.textContent = game.title
+    const subtitle = document.createElement("span")
+    subtitle.className = "subtitle"
+    subtitle.textContent = `${numberFormatter.format(game.totalMinutes)} min played`
+    meta.append(title, subtitle)
+    link.append(meta)
+
+    const when = document.createElement("time")
+    when.className = "when"
+    if (game.lastPlayedAt) when.dateTime = game.lastPlayedAt
+    when.textContent = formatWhen(game.lastPlayedAt)
+    link.append(when)
+
+    row.append(link)
+    return row
+  }
+
+  document.querySelectorAll<HTMLElement>("switch-feed").forEach((feed) => {
+    const endpoint = feed.dataset.endpoint
+    const body = feed.querySelector<HTMLElement>(".switch-body")
+    const list = feed.querySelector<HTMLOListElement>(".switch-list")
+    const fallback = feed.querySelector<HTMLElement>(".switch-fallback")
+    if (!endpoint || !body || !list) return
+
+    const limit = Number(feed.dataset.limit) || 10
+
+    loadSite(endpoint)
+      .then((site) => {
+        const items = site.recent.filter((game) => game.title)
+        if (items.length === 0 && site.stats.gameCount === 0) {
+          throw new Error("No play data")
+        }
+        fillStats(feed, site.stats)
+        if (site.activity.length > 0) buildHeatmap(feed, site)
+        const fragment = document.createDocumentFragment()
+        for (const item of items.slice(0, limit))
+          fragment.append(buildRow(item))
+        list.replaceChildren(fragment)
+        feed.setAttribute("aria-busy", "false")
+      })
+      .catch(() => {
+        body.hidden = true
+        if (fallback) fallback.hidden = false
+        feed.setAttribute("aria-busy", "false")
+      })
+  })
+</script>
+
+<style>
+  .switch-intro {
+    margin-block-end: var(--space-s);
+    color: var(--muted-foreground);
+  }
+
+  .switch-fallback {
+    margin-block-end: 0;
+    color: var(--muted-foreground);
+  }
+
+  .switch-intro a,
+  .switch-fallback a {
+    color: var(--foreground);
+    text-decoration: underline;
+  }
+
+  switch-feed {
+    display: block;
+  }
+
+  .switch-label {
+    margin-block: var(--space-m) var(--space-2xs);
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .switch-label:first-child {
+    margin-block-start: 0;
+  }
+
+  .switch-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-xs) var(--space-s);
+    margin: 0;
+
+    @media (width < 40rem) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--space-3xs);
+  }
+
+  .stat .value {
+    margin: 0;
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .stat .label {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .switch-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  switch-feed :global(.switch-item + .switch-item) {
+    border-block-start: 1px solid var(--border);
+  }
+
+  switch-feed :global(.switch-row) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-block: var(--space-2xs);
+    color: var(--foreground);
+  }
+
+  switch-feed :global(.cover) {
+    flex-shrink: 0;
+    inline-size: 2.5rem;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+  }
+
+  switch-feed :global(.cover img) {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  switch-feed :global(.meta) {
+    display: flex;
+    min-inline-size: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-3xs);
+  }
+
+  switch-feed :global(.title) {
+    overflow: hidden;
+    font-size: var(--step-0);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.25;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  switch-feed :global(.subtitle) {
+    overflow: hidden;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  switch-feed :global(.when) {
+    flex-shrink: 0;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  switch-feed :global(.sk-line) {
+    display: block;
+    block-size: 0.85em;
+    border-radius: var(--radius-sm);
+  }
+
+  switch-feed :global(.sk-stat) {
+    inline-size: 3.5em;
+    block-size: 1em;
+  }
+
+  switch-feed :global(.sk-title) {
+    inline-size: 60%;
+  }
+
+  switch-feed :global(.sk-subtitle) {
+    inline-size: 35%;
+    block-size: 0.7em;
+  }
+
+  switch-feed :global([data-skeleton] .cover),
+  switch-feed :global(.sk-line) {
+    background-color: var(--gray-5);
+    animation: var(--sk-pulse);
+  }
+</style>
