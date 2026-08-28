@@ -6,11 +6,17 @@
  * must match an id in the target page. External URLs are out of
  * scope: this guards the site's own routing, not the internet.
  *
+ * The Markdown artifacts (`/blog/<id>.md`, `/llms*.txt`) get the same
+ * treatment against their own link syntax. They are served a directory
+ * shallower than the sources they are built from, so a `./assets/…`
+ * that survives into one is a broken picture no HTML page would show.
+ *
  * Exits non-zero listing every broken link with the page it came from.
  */
 import { existsSync, readFileSync, statSync } from "node:fs"
 import path from "node:path"
 import { Glob } from "bun"
+import config from "../astro.config.ts"
 
 const dist = path.join(process.cwd(), "dist")
 
@@ -103,6 +109,42 @@ for (const page of pages) {
   }
 }
 
+/* Markdown artifacts: `[text](target)`, images included. Targets are
+   written absolute against the configured site, so anything on that
+   origin is ours to resolve; anything relative is a leftover source
+   path that will not resolve from the artifact's own URL. */
+const MD_LINK = /\]\(([^)\s]+)/g
+const origin = config.site ? new URL(config.site).origin : null
+
+const artifacts = [
+  ...new Glob("**/*.md").scanSync({ cwd: dist }),
+  ...new Glob("llms*.txt").scanSync({ cwd: dist }),
+].sort()
+
+for (const artifact of artifacts) {
+  // Code samples carry link-shaped text that is not a link.
+  const text = readFileSync(path.join(dist, artifact), "utf8")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`[^`\n]*`/g, "")
+  const route = `/${artifact}`
+
+  for (const match of text.matchAll(MD_LINK)) {
+    const link = match[1]
+    if (!link || link.startsWith("#")) continue
+    const url = new URL(link, `https://site.invalid${route}`)
+    const external = EXTERNAL.test(link)
+    if (external && url.origin !== origin) continue
+    checked++
+    if (!resolveTarget(url.pathname)) {
+      broken.push({
+        page: artifact,
+        link,
+        reason: external ? "no such page or asset" : "relative to the source",
+      })
+    }
+  }
+}
+
 if (broken.length > 0) {
   console.error(`[check-links] ${broken.length} broken internal link(s):`)
   for (const { page, link, reason } of broken) {
@@ -112,5 +154,5 @@ if (broken.length > 0) {
 }
 
 console.log(
-  `[check-links] ok — ${checked} internal links across ${pages.length} pages`,
+  `[check-links] ok — ${checked} internal links across ${pages.length} pages and ${artifacts.length} markdown artifacts`,
 )

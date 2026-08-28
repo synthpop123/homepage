@@ -2,12 +2,14 @@
 title: "通过 Komodo + Renovate 构建 Docker Compose GitOps 流水线"
 description: "Implement self-hosted GitOps and version control Docker Compose infrastructure through Git repositories"
 date: 2026-06-16
+updatedDate: 2026-08-20
 authors:
   - lkw123
 tags:
   - gitops
   - komodo
   - docker
+ai: true
 ---
 
 假如一台服务器上跑着十几二十个自托管服务：订阅记账、电子书库、照片备份、媒体服务器，外加一堆小工具，全靠手动维护，用不了多久就会变成一件头疼事。把它们交给 Git 管理会省心很多：
@@ -263,16 +265,16 @@ Docker Compose 的环境变量机制是密钥注入的基础。`${VAR}` 这个�
 1. **插值**：Compose 解析 `compose.yaml` 时，把文件里出现的 `${VAR}` 就地替换成具体值。值从两个地方取：执行 `docker compose` 时的 shell 环境变量，以及项目目录下名为 `.env` 的文件；两者都有同名变量时，shell 环境变量优先。这一步发生在容器创建之前，只是文本替换。
 2. **给容器设环境变量**：靠 `environment:` 和 `env_file:` 两个字段：
 
-    ```yaml
-    services:
-      app:
-        environment: # set directly as env vars of the container process
-          - TZ=Asia/Shanghai
-          - DB_HOST=postgres
-          - DB_PASS=${DB_PASS} # interpolated first, then set into the container
-        env_file:
-          - ./app.env # read KEY=VAL lines from this file into the container
-    ```
+   ```yaml
+   services:
+     app:
+       environment: # set directly as env vars of the container process
+         - TZ=Asia/Shanghai
+         - DB_HOST=postgres
+         - DB_PASS=${DB_PASS} # interpolated first, then set into the container
+       env_file:
+         - ./app.env # read KEY=VAL lines from this file into the container
+   ```
 
 两者的区别在于：项目目录那个 `.env` 文件只为插值服务，自己不会自动进入容器。在 `.env` 里写了 `FOO=bar`，容器里默认看不到 `FOO`，除非在 `environment:` 里显式写 `FOO=${FOO}`，或者把它列进 `env_file:`。`env_file` 指向的文件则相反，里面每一行都会成为容器的环境变量。
 
@@ -333,13 +335,13 @@ GitOps 管住了部署机制，让几十个服务长期不乱，还需要一组�
 
 3. **数据用绝对路径 bind 到固定根目录。** 这条约定和 Komodo 的工作方式有关：它把仓库 clone 到主机上自己的工作目录，每次重新部署都可能重新 clone，数据放在相对路径或命名卷里，就有跟着 clone 一起被清掉的风险。所以持久数据 bind 到仓库克隆之外的固定根目录，比如 `/srv/<service>/`，用绝对路径：
 
-    ```yaml
-    volumes:
-      - /srv/wallos/db:/var/www/html/db
-      - /srv/wallos/logos:/var/www/html/images/uploads/logos
-    ```
+   ```yaml
+   volumes:
+     - /srv/wallos/db:/var/www/html/db
+     - /srv/wallos/logos:/var/www/html/images/uploads/logos
+   ```
 
-    这样数据独立于仓库克隆存在，重新 clone、重新部署都不动它。备份也因此简单：备份 `/srv` 就备份了全部应用数据。命名卷只在镜像对 bind 挂载权限特别挑剔、或数据纯属可丢弃的缓存时才用：命名卷藏在 Docker 自己的目录里，不方便备份，`docker compose down -v` 还可能误删。
+   这样数据独立于仓库克隆存在，重新 clone、重新部署都不动它。备份也因此简单：备份 `/srv` 就备份了全部应用数据。命名卷只在镜像对 bind 挂载权限特别挑剔、或数据纯属可丢弃的缓存时才用：命名卷藏在 Docker 自己的目录里，不方便备份，`docker compose down -v` 还可能误删。
 
 4. **数据目录属主跟着各自镜像的用户走。** 不同镜像以不同用户运行：LinuxServer 系的镜像认 `PUID`/`PGID` 环境变量，有的应用镜像以 `www-data`（uid 82）运行，Postgres 数据目录归 uid `999`。让宿主上的数据目录属主跟随每个镜像自己的用户即可；统一设置一个全局 UID 不仅麻烦，还可能违背应用本身的设计。迁移数据时用 `cp -a` 保留属主和权限。
 
@@ -376,30 +378,30 @@ stat -c '%n  %U:%G  %a' /srv/<service>/*
 
 - **共享数据库最好拆成每个 Stack 自带。** 给每个 Stack 配一个自带的 Postgres 更清爽：隔离性更好、每个应用独立的版本和备份、没有共享的单点、host 的 `5432` 也不用再对外发布，只需将应用配置里连接的 host 从 `host.docker.internal` 改成自带服务的名字（比如 `app-postgres`）。
 
-    ```bash
-    # Export only this one database from the shared instance
-    docker exec <shared-pg> pg_dump -U postgres -Fc --no-owner --no-acl -d <db> > <db>.dump
+  ```bash
+  # Export only this one database from the shared instance
+  docker exec <shared-pg> pg_dump -U postgres -Fc --no-owner --no-acl -d <db> > <db>.dump
 
-    # Initialize the new data directory and restore with a throwaway
-    # container; remove it afterwards, the data stays on disk
-    docker run -d --name tmp-pg -e POSTGRES_USER=<u> -e POSTGRES_PASSWORD=<pw> \
-      -e POSTGRES_DB=<db> -v /srv/<svc>/postgres:/var/lib/postgresql postgres:18-alpine
-    # Wait until ready, run pg_restore, then docker rm -f tmp-pg
-    ```
+  # Initialize the new data directory and restore with a throwaway
+  # container; remove it afterwards, the data stays on disk
+  docker run -d --name tmp-pg -e POSTGRES_USER=<u> -e POSTGRES_PASSWORD=<pw> \
+    -e POSTGRES_DB=<db> -v /srv/<svc>/postgres:/var/lib/postgresql postgres:18-alpine
+  # Wait until ready, run pg_restore, then docker rm -f tmp-pg
+  ```
 
-    顺带一提，`postgres:18` 起数据目录布局变了：挂载点是 `/var/lib/postgresql` 这个父目录，数据在其下的 `18/docker`；18 之前的镜像（包括 `pgvector` 系）还是老的 `/var/lib/postgresql/data`。
+  顺带一提，`postgres:18` 起数据目录布局变了：挂载点是 `/var/lib/postgresql` 这个父目录，数据在其下的 `18/docker`；18 之前的镜像（包括 `pgvector` 系）还是老的 `/var/lib/postgresql/data`。
 
 - **需要小工具，就起一个 sidecar。** 别往应用的官方容器里手装东西，那些东西每次拉新镜像就没了。把额外逻辑挪进一个本地构建的小服务，和官方镜像并排放：
 
-    ```yaml
-    services:
-      app:
-        image: ghcr.io/vendor/app:v1.80.0 # official image, kept clean
-      app-notify:
-        build: ./notify # locally built helper, reachable via service name
-    ```
+  ```yaml
+  services:
+    app:
+      image: ghcr.io/vendor/app:v1.80.0 # official image, kept clean
+    app-notify:
+      build: ./notify # locally built helper, reachable via service name
+  ```
 
-    再给这个 Stack 加 `extra_args = "--build"`，部署时就会 `docker compose up -d --build` 把 sidecar 一起构建出来。官方镜像不被污染，Renovate 还能继续 bump 它的 tag 和 sidecar Dockerfile 的 `FROM`。有一点要注意：只改 Dockerfile 的 PR 不会动 compose 文件，`BatchDeployStackIfChanged` 不会选中这个 Stack，合并这类 PR 后得手动 redeploy 一次，`--build` 才会拿到新的基础镜像。
+  再给这个 Stack 加 `extra_args = "--build"`，部署时就会 `docker compose up -d --build` 把 sidecar 一起构建出来。官方镜像不被污染，Renovate 还能继续 bump 它的 tag 和 sidecar Dockerfile 的 `FROM`。有一点要注意：只改 Dockerfile 的 PR 不会动 compose 文件，`BatchDeployStackIfChanged` 不会选中这个 Stack，合并这类 PR 后得手动 redeploy 一次，`--build` 才会拿到新的基础镜像。
 
 还有些零碎的细节：
 
@@ -461,11 +463,11 @@ _Docker 发布的端口走 DNAT 加 forward，在 DOCKER-USER 链上拦截；SSH
 
 Git 里有全部声明，但光靠 `git clone` 重建不出一台服务器：真正的状态分散在三层，各有不同的归属和备份方式，要从彻底丢失中恢复，三层都得在手上。
 
-| 层                | 内容                                                       | 在哪              | 谁来备份          | 丢了会怎样                 |
-| ----------------- | ---------------------------------------------------------- | ----------------- | ----------------- | -------------------------- |
-| 1. 代码 / IaC     | compose、sync.toml、文档                                   | Git 仓库          | 推到远端（异地）  | `git clone` 找回           |
+| 层                | 内容                                                       | 在哪              | 谁来备份          | 丢了会怎样                   |
+| ----------------- | ---------------------------------------------------------- | ----------------- | ----------------- | ---------------------------- |
+| 1. 代码 / IaC     | compose、sync.toml、文档                                   | Git 仓库          | 推到远端（异地）  | `git clone` 找回             |
 | 2. 控制平面元数据 | 资源定义、变量 / 密钥、用户、API key、Git 和 registry 账号 | Komodo 的数据库   | 内置 dump（每天） | 密钥和账号丢失，需要手工重配 |
-| 3. 应用数据       | 各服务的库、上传文件、应用自持的 key                       | 数据根目录 `/srv` | 自己安排          | 用户数据丢失           |
+| 3. 应用数据       | 各服务的库、上传文件、应用自持的 key                       | 数据根目录 `/srv` | 自己安排          | 用户数据丢失                 |
 
 仓库定义了每个 Stack 是什么，但每个密钥要么是 Komodo 里的变量、要么在 `/srv` 里，Git 中只有占位符。恢复时三层各有来源：Git 重建定义，数据库 dump 找回密钥和账号，`/srv` 备份找回数据。
 
@@ -475,25 +477,25 @@ Git 里有全部声明，但光靠 `git clone` 重建不出一台服务器：真
 
 - 第三层容易被忽略，得自己安排。给数据库做一致性备份有两种安全办法：对每个 Postgres 容器跑 `pg_dumpall` 做逻辑 dump（跨大版本可移植），或者把 Stack 停掉做冷拷贝。一个参考脚本的骨架：
 
-    ```bash title="backup-script.sh"
-    #!/usr/bin/env bash
-    set -euo pipefail
-    dest="/srv/_backups/$(date +%F_%H-%M-%S)"; mkdir -p "$dest/pgdump"
+  ```bash title="backup-script.sh"
+  #!/usr/bin/env bash
+  set -euo pipefail
+  dest="/srv/_backups/$(date +%F_%H-%M-%S)"; mkdir -p "$dest/pgdump"
 
-    # Logical dump for every Postgres container
-    # (official images trust local socket connections, no password needed)
-    for c in $(docker ps --format '{{.Names}}'); do
-      docker inspect "$c" --format '{{.Config.Image}}' | grep -q postgres || continue
-      docker exec "$c" pg_dumpall -U postgres | gzip > "$dest/pgdump/$c.sql.gz"
-    done
+  # Logical dump for every Postgres container
+  # (official images trust local socket connections, no password needed)
+  for c in $(docker ps --format '{{.Names}}'); do
+    docker inspect "$c" --format '{{.Config.Image}}' | grep -q postgres || continue
+    docker exec "$c" pg_dumpall -U postgres | gzip > "$dest/pgdump/$c.sql.gz"
+  done
 
-    # File-level snapshot of /srv (uploads, app configs, app-held keys),
-    # excluding rebuildable search indexes
-    tar --exclude='/srv/_backups' --exclude='/srv/*/elasticsearch' \
-        -czf "$dest/srv.tar.gz" /srv
-    ```
+  # File-level snapshot of /srv (uploads, app configs, app-held keys),
+  # excluding rebuildable search indexes
+  tar --exclude='/srv/_backups' --exclude='/srv/*/elasticsearch' \
+      -czf "$dest/srv.tar.gz" /srv
+  ```
 
-    把它配成每天定时（Komodo Action 或主机 cron），排在数据库 dump 之后，一次异地推送能同时处理两份备份。一个例外：带扩展的 Postgres（比如 immich 用的 VectorChord）逻辑 dump 只能灌回同一个镜像，文件级拷贝要留作后手。
+  把它配成每天定时（Komodo Action 或主机 cron），排在数据库 dump 之后，一次异地推送能同时处理两份备份。一个例外：带扩展的 Postgres（比如 immich 用的 VectorChord）逻辑 dump 只能灌回同一个镜像，文件级拷贝要留作后手。
 
 第三层的重点是异地。所有备份都存在和数据同一块磁盘上的话，一次磁盘或服务器故障会把数据连着备份一起带走。3-2-1 原则是底线：3 份副本、2 种介质、1 份异地。还要记得 Komodo 的变量在它的 MongoDB 里是明文存放的，`is_secret` 只负责在 UI 和日志里打码，dump 文件本身就等于密钥，推到异地之前必须客户端加密：用 `restic` 或 `rclone crypt` 这类内置加密的工具，目标可以是任意对象存储。
 
@@ -521,15 +523,15 @@ _两种连接方向：有公网地址的机器由 Core 连进去，NAT 后的家
 
 2. **Periphery 主动连 Core**（较新版本的 outbound 模式）。Periphery 用 onboarding key 主动拨向 Core 的地址，建立一条双向 websocket。家里的机器多半在 NAT 后面、没有公网入口，主动外拨正好解决这个问题，省去开端口、做端口映射的麻烦。先在 Komodo 的 Server 设置里生成一个 onboarding key，再到新机器上安装：
 
-    ```bash
-    curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py \
-      | python3 - \
-      --core-address="https://<core-address>" \
-      --connect-as="$(hostname)" \
-      --onboarding-key="O-..."
-    ```
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py \
+     | python3 - \
+     --core-address="https://<core-address>" \
+     --connect-as="$(hostname)" \
+     --onboarding-key="O-..."
+   ```
 
-    安装脚本执行完，这台机器就以 `connect-as` 指定的名称出现在 Komodo 的 Servers 列表里。
+   安装脚本执行完，这台机器就以 `connect-as` 指定的名称出现在 Komodo 的 Servers 列表里。
 
 服务清单能写进 `sync.toml`，服务器清单也可以，加一个 `[[server]]` 块：
 

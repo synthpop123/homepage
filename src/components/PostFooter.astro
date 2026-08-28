@@ -1,0 +1,39 @@
+---
+type Props = { tags?: string[] }
+
+const { tags } = Astro.props
+---
+
+{tags && tags.length > 0 && (
+    <post-footer>
+      <post-tags>
+        {tags.map((tag) => (
+          <a href={`/tags/${tag}`}>#{tag}</a>
+        ))}
+      </post-tags>
+    </post-footer>
+  )}
+
+<style>
+  post-footer {
+    display: block;
+    margin-block-start: var(--space-m);
+  }
+
+  post-tags {
+    --underline: transparent;
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    font-size: var(--step--1);
+
+    a {
+      color: color-mix(in oklab, var(--muted-foreground) 50%, transparent);
+
+      &:hover {
+        color: var(--foreground);
+      }
+    }
+  }
+</style>

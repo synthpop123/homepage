@@ -9,6 +9,7 @@ tags:
   - gitops
   - k3s
   - kubernetes
+ai: true
 ---
 
 上一篇[通过 Komodo + Renovate 构建 Docker Compose GitOps 流水线](https://lkwplus.com/blog/komodo-gitops)写的是 Docker Compose 那套：主机上常驻一个 Komodo，收到 push webhook 就拉取仓库、重新部署，Renovate 盯着上游镜像提升级 PR。它的核心是有一个常驻服务，替你把 Git 里的状态搬到机器上。

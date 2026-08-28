@@ -11,6 +11,7 @@ tags:
   - self-hosting
 draft: false
 mermaid: true
+ai: true
 ---
 
 ## Plex 元数据的工作原理

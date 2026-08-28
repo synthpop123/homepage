@@ -32,7 +32,7 @@ src/
 ├── content/             # Collections: blog, authors, friends
 │   └── blog/<slug>/     # index.md + sibling subposts + colocated assets/
 ├── components/          # .astro components (markup + scoped styles)
-├── layouts/Layout.astro # Single shared layout, imports all styles
+├── layouts/Layout.astro # Single shared layout, imports all styles, skip link
 ├── lib/                 # Markdown plugins, content helpers
 │   └── client/          # Browser-side code for the live feeds
 │       ├── feed.ts      # sessionStorage cache, fetch timeout, safeHttpUrl
@@ -48,7 +48,9 @@ scripts/                 # prebuild, OG font subsetting, link check
 
 A post is either a bare `src/content/blog/your-post.md` or a folder with an `index.md`. Sibling `.md` files inside a post folder are **subposts**: the whole folder renders as one continuous series with a unified table of contents, while every part keeps its own URL. Prefix a file or folder with `_` to hide it from the loader.
 
-Frontmatter: `title`, `description`, `date`, `authors` are required; `updatedDate`, `order`, `tags`, `image`, `draft`, `mermaid` are optional. `mermaid: true` opts a post into client-side Mermaid rendering for its ```` ```mermaid ```` fences.
+Frontmatter: `title`, `description`, `date`, `authors` are required; `updatedDate`, `order`, `tags`, `image`, `draft`, `mermaid`, `ai` are optional. `mermaid: true` opts a post into client-side Mermaid rendering for its ```` ```mermaid ```` fences. `ai: true` shows a "Made with AI" badge on the post and its list card.
+
+Every post also serves its own source at `/blog/<id>.md` — reconstructed frontmatter plus the source body, with colocated asset URLs normalized to their published locations — which is what the post header's **Copy Markdown** control copies and links to. `/llms.txt` indexes those files, `/llms-full.txt` is all of them in one document.
 
 Markdown extras: `:::note[Title]` GitHub-style callouts, `$…$`/`$$…$$` math rendered at build time, and inline code highlighting via `` `code{:lang}` `` annotations.
 

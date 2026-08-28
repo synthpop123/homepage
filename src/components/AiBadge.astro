@@ -1,0 +1,29 @@
+---
+import OpenAiIcon from "@/assets/icons/ai/openai.svg"
+
+type Props = { title?: string }
+
+const { title = "Drafted with an AI assistant, reviewed by hand" } = Astro.props
+---
+
+<ai-badge title={title}><OpenAiIcon aria-hidden="true" />Made with AI</ai-badge>
+
+<style>
+  ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+    cursor: default;
+
+    &::before {
+      content: "·";
+    }
+
+    svg {
+      inline-size: 0.9em;
+      block-size: 0.9em;
+    }
+  }
+</style>

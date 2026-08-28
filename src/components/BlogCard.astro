@@ -1,4 +1,5 @@
 ---
+import AiBadge from "@/components/AiBadge.astro"
 import { formatDate } from "@/lib/utils"
 import { Image } from "astro:assets"
 import { getEntries, type CollectionEntry } from "astro:content"
@@ -47,6 +48,7 @@ const authors = await getEntries(post.data.authors)
             ))}
           </entry-tags>
         )}
+      {post.data.ai && <AiBadge />}
     </entry-meta>
     <p>{post.data.description}</p>
   </entry-info>

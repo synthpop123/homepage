@@ -41,6 +41,12 @@ const jsonLd = {
 <title>{pageTitle(title)}</title>
 <meta name="description" content={description}>
 <link rel="canonical" href={canonical}>
+<link
+  rel="alternate"
+  type="text/markdown"
+  href={new URL(`/blog/${post.id}.md`, base)}
+  title={`${title} (Markdown)`}
+>
 
 <meta property="og:title" content={title}>
 <meta property="og:description" content={description}>

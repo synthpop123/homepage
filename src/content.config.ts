@@ -44,6 +44,7 @@ const blog = defineCollection({
       image: image().optional(),
       draft: z.boolean().optional(),
       mermaid: z.boolean().optional(),
+      ai: z.boolean().optional(),
     }),
 })
 

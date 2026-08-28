@@ -1,5 +1,9 @@
 ---
+import FilePenIcon from "@/assets/icons/file-pen.svg"
+import AiBadge from "@/components/AiBadge.astro"
+import CopyMarkdown from "@/components/CopyMarkdown.astro"
 import Lightbox from "@/components/Lightbox.astro"
+import PostFooter from "@/components/PostFooter.astro"
 import Mermaid from "@/components/Mermaid.astro"
 import MetaPost from "@/components/MetaPost.astro"
 import PostActions from "@/components/PostActions.astro"
@@ -101,13 +105,19 @@ const hasMermaid = chain.some((entry) => entry.data.mermaid)
             <time datetime={entry.data.date.toISOString()}
               >{formatDate(entry.data.date)}</time
             >
-            {entry.data.tags && (
-              <post-tags>
-                {entry.data.tags.map((tag) => (
-                  <a href={`/tags/${tag}`}>#{tag}</a>
-                ))}
-              </post-tags>
+            {entry.data.updatedDate && (
+              <time
+                datetime={entry.data.updatedDate.toISOString()}
+                aria-label={`Updated ${formatDate(entry.data.updatedDate)}`}
+                title={`Updated ${formatDate(entry.data.updatedDate)}`}
+                data-revised
+              >
+                <FilePenIcon aria-hidden="true" />
+                {formatDate(entry.data.updatedDate)}
+              </time>
             )}
+            {entry.data.ai && <AiBadge />}
+            <CopyMarkdown href={`/blog/${entry.id}.md`} />
           </post-meta>
         </header>
         {entry.data.image && (
@@ -124,6 +134,7 @@ const hasMermaid = chain.some((entry) => entry.data.mermaid)
         <prose-content>
           <Content />
         </prose-content>
+        <PostFooter tags={entry.data.tags} />
       </article>
     ))}
   {chain.length > 1 && <SeriesReader />}
@@ -188,24 +199,15 @@ const hasMermaid = chain.some((entry) => entry.data.mermaid)
         margin-inline-end: var(--space-3xs);
       }
 
-      post-tags {
-        --underline: transparent;
+      time[data-revised] {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
 
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3xs);
-
-        a {
-          color: color-mix(in oklab, var(--muted-foreground) 50%, transparent);
-
-          &:hover {
-            color: var(--foreground);
-          }
+        svg {
+          inline-size: 0.875em;
+          block-size: 0.875em;
         }
-      }
-
-      time ~ post-tags::before {
-        content: "·";
       }
 
       a {
