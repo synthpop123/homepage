@@ -16,6 +16,10 @@ export type SiteStats = {
   currentStreak: number
   firstDate: string | null
   lastPlayedDate: string | null
+  /** List price of the played catalog in CNY, null while nothing is priced. */
+  libraryValueCny: number | null
+  /** How many titles carry a price — the value above is a floor, not a total. */
+  pricedGameCount: number
 }
 
 export type SiteActivity = {
@@ -31,8 +35,6 @@ export type SiteGame = {
   totalMinutes: number
   /** Minutes inside the payload's own `recentDays` window. */
   recentMinutes: number
-  days: number
-  firstPlayedDate: string | null
   lastPlayedDate: string | null
 }
 
@@ -59,7 +61,7 @@ export type Site = {
 }
 
 /** Lockstep with switch-worker SITE_VERSION in src/site.ts. */
-export const SITE_SCHEMA_VERSION = 2
+export const SITE_SCHEMA_VERSION = 3
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -78,6 +80,9 @@ const isNullableDay = (value: unknown): value is string | null =>
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === "string"
 
+const isNullableCount = (value: unknown): value is number | null =>
+  value === null || isCount(value)
+
 const isStats = (value: unknown): value is SiteStats =>
   isRecord(value) &&
   isCount(value.totalMinutes) &&
@@ -88,7 +93,9 @@ const isStats = (value: unknown): value is SiteStats =>
   isCount(value.longestStreak) &&
   isCount(value.currentStreak) &&
   isNullableDay(value.firstDate) &&
-  isNullableDay(value.lastPlayedDate)
+  isNullableDay(value.lastPlayedDate) &&
+  isNullableCount(value.libraryValueCny) &&
+  isCount(value.pricedGameCount)
 
 const isActivity = (value: unknown): value is SiteActivity =>
   isRecord(value) && isCalendarDay(value.date) && isCount(value.minutes)
@@ -101,8 +108,6 @@ const isGame = (value: unknown): value is SiteGame =>
   isNullableString(value.shopUrl) &&
   isCount(value.totalMinutes) &&
   isCount(value.recentMinutes) &&
-  isCount(value.days) &&
-  isNullableDay(value.firstPlayedDate) &&
   isNullableDay(value.lastPlayedDate)
 
 const isDevice = (value: unknown): value is SiteDevice =>
@@ -156,6 +161,27 @@ export function heatmapWindow(
     const date = shiftDay(today, index - days + 1)
     return { date, minutes: minutes.get(date) ?? 0 }
   })
+}
+
+/**
+ * How lately a title was played, relative to the payload's own `today`.
+ * Days rather than a date: on a list ranked by lifetime hours the question
+ * is whether something is still in rotation, not when it happened.
+ */
+export function lastPlayedLabel(
+  lastPlayedDate: string | null,
+  today: string,
+): string | null {
+  if (!lastPlayedDate) return null
+  const days = Math.round(
+    (Date.parse(`${today}T00:00:00Z`) -
+      Date.parse(`${lastPlayedDate}T00:00:00Z`)) /
+      86_400_000,
+  )
+  if (!Number.isFinite(days) || days < 0) return null
+  if (days === 0) return "Played today"
+  if (days === 1) return "Played yesterday"
+  return `Played ${days} days ago`
 }
 
 /** Minutes as `12h 30m`, or `45m` below the hour. */

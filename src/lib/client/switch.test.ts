@@ -3,6 +3,7 @@ import {
   formatPlaytime,
   heatmapWindow,
   isSite,
+  lastPlayedLabel,
   SITE_SCHEMA_VERSION,
 } from "./switch"
 import fixture from "./switch.site-fixture.json"
@@ -50,6 +51,21 @@ describe("heatmapWindow", () => {
 
   it("crosses month boundaries", () => {
     expect(heatmapWindow([], "2026-09-01", 2)[0].date).toBe("2026-08-31")
+  })
+})
+
+describe("lastPlayedLabel", () => {
+  it("counts days back from the payload's own today", () => {
+    expect(lastPlayedLabel("2026-08-29", "2026-08-29")).toBe("Played today")
+    expect(lastPlayedLabel("2026-08-28", "2026-08-29")).toBe("Played yesterday")
+    expect(lastPlayedLabel("2026-07-30", "2026-08-29")).toBe(
+      "Played 30 days ago",
+    )
+  })
+
+  it("says nothing without a day, or for one that hasn't happened", () => {
+    expect(lastPlayedLabel(null, "2026-08-29")).toBeNull()
+    expect(lastPlayedLabel("2026-08-30", "2026-08-29")).toBeNull()
   })
 })
 
