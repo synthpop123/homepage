@@ -10,8 +10,12 @@ export type SiteStats = {
   totalMinutes: number
   gameCount: number
   daysActive: number
+  daysTracked: number
   avgDailyMinutes: number
   longestStreak: number
+  currentStreak: number
+  firstDate: string | null
+  lastPlayedDate: string | null
 }
 
 export type SiteActivity = {
@@ -19,25 +23,43 @@ export type SiteActivity = {
   minutes: number
 }
 
-export type SiteRecentGame = {
+export type SiteGame = {
   applicationId: string
   title: string
   imageUrl: string | null
-  lastPlayedAt: string | null
+  shopUrl: string | null
   totalMinutes: number
+  /** Minutes inside the payload's own `recentDays` window. */
+  recentMinutes: number
+  days: number
+  firstPlayedDate: string | null
+  lastPlayedDate: string | null
+}
+
+export type SiteDevice = {
+  label: string
+  region: string | null
+  platformGeneration: string | null
+  iconLightUrl: string | null
+  iconDarkUrl: string | null
+  pairedAt: string | null
 }
 
 export type Site = {
   schemaVersion: number
   generatedAt: string
   today: string
+  /** Nintendo's recalculation clock — the age of the data, not the cache. */
+  observedAt: string | null
+  recentDays: number
   stats: SiteStats
   activity: SiteActivity[]
-  recent: SiteRecentGame[]
+  games: SiteGame[]
+  devices: SiteDevice[]
 }
 
 /** Lockstep with switch-worker SITE_VERSION in src/site.ts. */
-export const SITE_SCHEMA_VERSION = 1
+export const SITE_SCHEMA_VERSION = 2
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -50,24 +72,47 @@ const isCount = (value: unknown): value is number =>
 const isCalendarDay = (value: unknown): value is string =>
   typeof value === "string" && DATE_RE.test(value)
 
+const isNullableDay = (value: unknown): value is string | null =>
+  value === null || isCalendarDay(value)
+
+const isNullableString = (value: unknown): value is string | null =>
+  value === null || typeof value === "string"
+
 const isStats = (value: unknown): value is SiteStats =>
   isRecord(value) &&
   isCount(value.totalMinutes) &&
   isCount(value.gameCount) &&
   isCount(value.daysActive) &&
+  isCount(value.daysTracked) &&
   isCount(value.avgDailyMinutes) &&
-  isCount(value.longestStreak)
+  isCount(value.longestStreak) &&
+  isCount(value.currentStreak) &&
+  isNullableDay(value.firstDate) &&
+  isNullableDay(value.lastPlayedDate)
 
 const isActivity = (value: unknown): value is SiteActivity =>
   isRecord(value) && isCalendarDay(value.date) && isCount(value.minutes)
 
-const isRecentGame = (value: unknown): value is SiteRecentGame =>
+const isGame = (value: unknown): value is SiteGame =>
   isRecord(value) &&
   typeof value.applicationId === "string" &&
   typeof value.title === "string" &&
-  (value.imageUrl === null || typeof value.imageUrl === "string") &&
-  (value.lastPlayedAt === null || typeof value.lastPlayedAt === "string") &&
-  isCount(value.totalMinutes)
+  isNullableString(value.imageUrl) &&
+  isNullableString(value.shopUrl) &&
+  isCount(value.totalMinutes) &&
+  isCount(value.recentMinutes) &&
+  isCount(value.days) &&
+  isNullableDay(value.firstPlayedDate) &&
+  isNullableDay(value.lastPlayedDate)
+
+const isDevice = (value: unknown): value is SiteDevice =>
+  isRecord(value) &&
+  typeof value.label === "string" &&
+  isNullableString(value.region) &&
+  isNullableString(value.platformGeneration) &&
+  isNullableString(value.iconLightUrl) &&
+  isNullableString(value.iconDarkUrl) &&
+  isNullableString(value.pairedAt)
 
 export function isSite(data: unknown): data is Site {
   if (!isRecord(data)) return false
@@ -76,12 +121,49 @@ export function isSite(data: unknown): data is Site {
     typeof data.generatedAt === "string" &&
     Number.isFinite(Date.parse(data.generatedAt)) &&
     isCalendarDay(data.today) &&
+    isNullableString(data.observedAt) &&
+    isCount(data.recentDays) &&
     isStats(data.stats) &&
     Array.isArray(data.activity) &&
     data.activity.every(isActivity) &&
-    Array.isArray(data.recent) &&
-    data.recent.every(isRecentGame)
+    Array.isArray(data.games) &&
+    data.games.every(isGame) &&
+    Array.isArray(data.devices) &&
+    data.devices.every(isDevice)
   )
+}
+
+const shiftDay = (day: string, delta: number) => {
+  const [y, m, d] = day.split("-").map(Number)
+  return new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10)
+}
+
+/**
+ * A contiguous `days`-long window ending on `today`, zero-filled.
+ *
+ * The payload's series starts at the first day with play, which is all it
+ * can honestly claim — but the heatmap is a fixed grid, so a short series
+ * draws a handful of cells floating in an empty frame instead of a year of
+ * gray. Padding is a rendering concern, so it happens here and not upstream.
+ */
+export function heatmapWindow(
+  activity: SiteActivity[],
+  today: string,
+  days: number,
+): SiteActivity[] {
+  const minutes = new Map(activity.map((day) => [day.date, day.minutes]))
+  return Array.from({ length: days }, (_, index) => {
+    const date = shiftDay(today, index - days + 1)
+    return { date, minutes: minutes.get(date) ?? 0 }
+  })
+}
+
+/** Minutes as `12h 30m`, or `45m` below the hour. */
+export function formatPlaytime(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  if (hours === 0) return `${rest}m`
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
 }
 
 export const loadSite = (endpoint: string): Promise<Site> =>

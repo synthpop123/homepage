@@ -46,7 +46,7 @@ export const MASTODON = {
 
 export const KOITO = {
   instance: "https://music.lkwplus.com",
-  limit: 10,
+  limit: 8,
 } as const
 
 export const LETTERBOXD = {
@@ -61,7 +61,7 @@ export const TOKENS = {
 
 export const SWITCH = {
   endpoint: "https://switch.lkwplus.com",
-  limit: 10,
+  limit: 8,
 } as const
 
 export const GLOBE_LOCATIONS: { location: [number, number]; size: number }[] = [

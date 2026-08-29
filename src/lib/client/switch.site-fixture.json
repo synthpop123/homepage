@@ -1,14 +1,62 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-08-28T14:56:06.542Z",
-  "today": "2026-08-28",
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-29T07:39:17.833Z",
+  "today": "2026-08-29",
+  "observedAt": "2026-08-29T05:08:09.000Z",
+  "recentDays": 14,
   "stats": {
-    "totalMinutes": 0,
-    "gameCount": 0,
-    "daysActive": 0,
-    "avgDailyMinutes": 0,
-    "longestStreak": 0
+    "totalMinutes": 130,
+    "gameCount": 2,
+    "daysActive": 2,
+    "daysTracked": 2,
+    "avgDailyMinutes": 65,
+    "longestStreak": 2,
+    "currentStreak": 2,
+    "firstDate": "2026-08-28",
+    "lastPlayedDate": "2026-08-29"
   },
-  "activity": [{ "date": "2026-08-28", "minutes": 0 }],
-  "recent": []
+  "activity": [
+    {
+      "date": "2026-08-28",
+      "minutes": 65
+    },
+    {
+      "date": "2026-08-29",
+      "minutes": 65
+    }
+  ],
+  "games": [
+    {
+      "applicationId": "0400984020BE8000",
+      "title": "eFootball™ Kick-Off!",
+      "imageUrl": "https://img.lkwplus.com/switch/games/f17751dcb0b347249d0aaf783edf1ea5_256.jpg",
+      "shopUrl": "https://ec.nintendo.com/apps/0400984020be8000/JP?lang=en-US",
+      "totalMinutes": 65,
+      "recentMinutes": 65,
+      "days": 1,
+      "firstPlayedDate": "2026-08-28",
+      "lastPlayedDate": "2026-08-29"
+    },
+    {
+      "applicationId": "0400DA10226BE000",
+      "title": "NBA 2K26",
+      "imageUrl": "https://img.lkwplus.com/switch/games/d1b7888d203d4798a3b8de385b7396e3_256.jpg",
+      "shopUrl": "https://ec.nintendo.com/apps/0400da10226be000/JP?lang=en-US",
+      "totalMinutes": 40,
+      "recentMinutes": 40,
+      "days": 1,
+      "firstPlayedDate": "2026-08-28",
+      "lastPlayedDate": "2026-08-28"
+    }
+  ],
+  "devices": [
+    {
+      "label": "lkw123的Switch 2",
+      "region": "HONGKONG_TAIWAN_KOREA_SOUTHEASTASIA",
+      "platformGeneration": "P01",
+      "iconLightUrl": "https://img.lkwplus.com/switch/devices/cd6207b0a4932273-light.png",
+      "iconDarkUrl": "https://img.lkwplus.com/switch/devices/cd6207b0a4932273-dark.png",
+      "pairedAt": "2026-08-28T14:28:09.000Z"
+    }
+  ]
 }

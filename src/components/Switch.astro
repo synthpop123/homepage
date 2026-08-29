@@ -1,4 +1,12 @@
 ---
+/**
+ * Switch play activity from the self-hosted switch-play worker.
+ *
+ * The question this answers is "what am I actually playing", not "what did
+ * I touch last" — so the list is the catalog ranked by lifetime play time,
+ * and each row's bar carries the recent window inside the lifetime one.
+ */
+
 import Heatmap from "@/components/Heatmap.astro"
 import { SWITCH } from "@/consts"
 
@@ -10,10 +18,10 @@ type Props = {
 const { endpoint = SWITCH.endpoint, limit = SWITCH.limit } = Astro.props
 
 const stats: { key: string; label: string }[] = [
-  { key: "totalMinutes", label: "Minutes" },
+  { key: "totalMinutes", label: "Playtime" },
   { key: "gameCount", label: "Games" },
   { key: "daysActive", label: "Days active" },
-  { key: "avgDailyMinutes", label: "Avg. daily minutes" },
+  { key: "avgDailyMinutes", label: "Per active day" },
 ]
 ---
 
@@ -35,17 +43,19 @@ const stats: { key: string; label: string }[] = [
     </dl>
     <h3 class="switch-label">Activity</h3>
     <Heatmap />
-    <h3 class="switch-label">Recently played</h3>
+    <div class="switch-head">
+      <h3 class="switch-label">Most played</h3>
+      <p class="switch-note" data-note></p>
+    </div>
     <ol class="switch-list">
       {Array.from({ length: limit }).map(() => (
         <li class="switch-item" data-skeleton aria-hidden="true">
-          <div class="switch-row">
-            <span class="cover" />
-            <span class="meta">
-              <span class="sk-line sk-title" />
-              <span class="sk-line sk-subtitle" />
-            </span>
-          </div>
+          <span class="cover" />
+          <span class="meta">
+            <span class="sk-line sk-title" />
+            <span class="sk-line sk-bar" />
+          </span>
+          <span class="amount"><span class="sk-line sk-amount" /></span>
         </li>
       ))}
     </ol>
@@ -58,111 +68,118 @@ const stats: { key: string; label: string }[] = [
 </switch-feed>
 
 <script>
+  import { el } from "@/lib/client/dom"
   import { safeHttpUrl, TIME_ZONE } from "@/lib/client/feed"
-  import { mountHeatmap } from "@/lib/client/heatmap"
-  import { loadSite, type Site, type SiteRecentGame } from "@/lib/client/switch"
+  import { HEAT_MAX_WEEKS, mountHeatmap } from "@/lib/client/heatmap"
+  import {
+    formatPlaytime,
+    heatmapWindow,
+    loadSite,
+    type Site,
+    type SiteGame,
+  } from "@/lib/client/switch"
 
-  const numberFormatter = new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 1,
-  })
+  const numberFormatter = new Intl.NumberFormat("en-US")
   const dayFormatter = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     timeZone: TIME_ZONE,
   })
-  const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  const monthFormatter = new Intl.DateTimeFormat("en-US", {
     month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
+    year: "numeric",
     timeZone: TIME_ZONE,
   })
-  const relativeFormatter = new Intl.RelativeTimeFormat("en-US", {
-    numeric: "always",
-  })
 
-  const formatWhen = (iso: string | null) => {
-    if (!iso) return "—"
-    const value = new Date(iso)
-    const minutes = Math.round((Date.now() - value.getTime()) / 60_000)
-    if (minutes < 1) return "just now"
-    if (minutes < 60) return relativeFormatter.format(-minutes, "minute")
-    if (minutes < 60 * 24)
-      return relativeFormatter.format(-Math.round(minutes / 60), "hour")
-    return timeFormatter.format(value)
-  }
+  // Calendar days from the payload are Asia/Shanghai already; anchoring at
+  // noon UTC keeps them from sliding a day in either direction.
+  const asDate = (day: string) => new Date(`${day}T12:00:00Z`)
 
   const fillStats = (feed: HTMLElement, stats: Site["stats"]) => {
+    const text: Record<string, string> = {
+      totalMinutes: formatPlaytime(stats.totalMinutes),
+      gameCount: numberFormatter.format(stats.gameCount),
+      daysActive: numberFormatter.format(stats.daysActive),
+      avgDailyMinutes: formatPlaytime(stats.avgDailyMinutes),
+    }
     feed.querySelectorAll<HTMLElement>(".stat").forEach((stat) => {
-      const key = stat.dataset.key as keyof Site["stats"] | undefined
-      const value = key ? stats[key] : undefined
+      const value = stat.dataset.key ? text[stat.dataset.key] : undefined
       const target = stat.querySelector<HTMLElement>(".value")
-      if (target && typeof value === "number") {
-        target.textContent = numberFormatter.format(value)
-      }
+      if (target && value) target.textContent = value
     })
   }
 
   const buildHeatmap = (feed: HTMLElement, site: Site) => {
     const grid = feed.querySelector<HTMLElement>(".heat-grid")
-    const days = site.activity.map((day) => ({
-      date: day.date,
-      listens: day.minutes,
-    }))
-    if (!grid || days.length === 0) throw new Error("No activity data")
+    if (!grid || site.activity.length === 0) return
 
+    const days = heatmapWindow(site.activity, site.today, HEAT_MAX_WEEKS * 7)
     mountHeatmap(grid, days, (shown) => {
-      const max = Math.max(...shown.map((day) => day.listens), 1)
+      const max = Math.max(...shown.map((day) => day.minutes), 1)
       return shown.map((day) => ({
         level:
-          day.listens === 0
+          day.minutes === 0
             ? 0
-            : Math.max(1, Math.ceil((day.listens / max) * 4)),
-        title: `${day.listens} ${day.listens === 1 ? "minute" : "minutes"} on ${dayFormatter.format(new Date(`${day.date}T12:00:00Z`))}`,
+            : Math.max(1, Math.ceil((day.minutes / max) * 4)),
+        title: `${day.minutes === 0 ? "No play" : formatPlaytime(day.minutes)} on ${dayFormatter.format(asDate(day.date))}`,
       }))
     })
   }
 
-  const buildRow = (game: SiteRecentGame) => {
-    const row = document.createElement("li")
-    row.className = "switch-item"
+  /**
+   * One title. The bar's length is its share of the most-played game and
+   * the solid part inside it is the recent window — so the row reads as
+   * "how much, and how much of that was lately" without a second column.
+   */
+  const buildRow = (game: SiteGame, max: number, recentDays: number) => {
+    const row = el("li", "switch-item")
 
-    const link = document.createElement("div")
-    link.className = "switch-row"
-
-    const cover = document.createElement("span")
-    cover.className = "cover"
+    const cover = el("span", "cover")
     const src = safeHttpUrl(game.imageUrl)
     if (src) {
       const img = document.createElement("img")
       img.src = src
-      img.alt = `${game.title} cover art`
+      img.alt = ""
       img.loading = "lazy"
       img.decoding = "async"
       img.width = 40
       img.height = 40
       cover.append(img)
     }
-    link.append(cover)
 
-    const meta = document.createElement("span")
-    meta.className = "meta"
-    const title = document.createElement("span")
-    title.className = "title"
-    title.textContent = game.title
-    const subtitle = document.createElement("span")
-    subtitle.className = "subtitle"
-    subtitle.textContent = `${numberFormatter.format(game.totalMinutes)} min played`
-    meta.append(title, subtitle)
-    link.append(meta)
+    const meta = el("span", "meta")
+    const title = el("span", "title", game.title)
+    // Both fills are measured against the same maximum, so the solid part
+    // is literally a slice of the bar it sits inside.
+    const bar = el("span", "bar")
+    bar.style.setProperty("--total", `${(game.totalMinutes / max) * 100}%`)
+    bar.style.setProperty("--recent", `${(game.recentMinutes / max) * 100}%`)
+    bar.append(el("span", "bar-total"), el("span", "bar-recent"))
 
-    const when = document.createElement("time")
-    when.className = "when"
-    if (game.lastPlayedAt) when.dateTime = game.lastPlayedAt
-    when.textContent = formatWhen(game.lastPlayedAt)
-    link.append(when)
+    const parts = [`${game.days} ${game.days === 1 ? "day" : "days"}`]
+    if (game.firstPlayedDate)
+      parts.push(`since ${monthFormatter.format(asDate(game.firstPlayedDate))}`)
+    // Only worth saying when it is less than the whole: on a title played
+    // entirely inside the window it would restate the amount beside it.
+    if (game.recentMinutes > 0 && game.recentMinutes < game.totalMinutes)
+      parts.push(`${formatPlaytime(game.recentMinutes)} in ${recentDays}d`)
+    meta.append(title, bar, el("span", "sub", parts.join(" · ")))
 
-    row.append(link)
+    const amount = el("span", "amount", formatPlaytime(game.totalMinutes))
+    amount.title = `${numberFormatter.format(game.totalMinutes)} minutes`
+
+    row.append(cover, meta, amount)
+
+    const shop = safeHttpUrl(game.shopUrl)
+    if (shop) {
+      const link = document.createElement("a")
+      link.className = "shop"
+      link.href = shop
+      link.target = "_blank"
+      link.rel = "noopener noreferrer"
+      link.setAttribute("aria-label", `${game.title} on the eShop`)
+      row.append(link)
+    }
     return row
   }
 
@@ -170,28 +187,34 @@ const stats: { key: string; label: string }[] = [
     const endpoint = feed.dataset.endpoint
     const body = feed.querySelector<HTMLElement>(".switch-body")
     const list = feed.querySelector<HTMLOListElement>(".switch-list")
+    const note = feed.querySelector<HTMLElement>("[data-note]")
     const fallback = feed.querySelector<HTMLElement>(".switch-fallback")
     if (!endpoint || !body || !list) return
 
-    const limit = Number(feed.dataset.limit) || 10
+    const limit = Number(feed.dataset.limit) || 8
 
     loadSite(endpoint)
       .then((site) => {
-        const items = site.recent.filter((game) => game.title)
-        if (
-          items.length === 0 &&
-          site.stats.gameCount === 0 &&
-          site.activity.length === 0
-        ) {
+        if (site.games.length === 0 && site.activity.length === 0) {
           throw new Error("No play data")
         }
+
         fillStats(feed, site.stats)
-        if (site.activity.length > 0) buildHeatmap(feed, site)
-        const fragment = document.createDocumentFragment()
-        for (const item of items.slice(0, limit))
-          fragment.append(buildRow(item))
-        if (items.length === 0) list.hidden = true
-        else list.replaceChildren(fragment)
+        buildHeatmap(feed, site)
+
+        const games = site.games.slice(0, limit)
+        const max = Math.max(...games.map((game) => game.totalMinutes), 1)
+        if (games.length === 0) {
+          list.hidden = true
+        } else {
+          list.replaceChildren(
+            ...games.map((game) => buildRow(game, max, site.recentDays)),
+          )
+          // The legend earns its line only once a bar is actually split —
+          // while every title is new, the solid part is the whole bar.
+          if (note && games.some((g) => g.recentMinutes < g.totalMinutes))
+            note.textContent = `Solid = last ${site.recentDays} days`
+        }
         feed.setAttribute("aria-busy", "false")
       })
       .catch(() => {
@@ -236,6 +259,21 @@ const stats: { key: string; label: string }[] = [
     margin-block-start: 0;
   }
 
+  /* The legend belongs on the heading line: it explains the bars below it,
+     and a line of its own would read as content. */
+  .switch-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  .switch-note {
+    margin: 0;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
   .switch-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -243,7 +281,7 @@ const stats: { key: string; label: string }[] = [
     margin: 0;
 
     @media (width < 40rem) {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
@@ -271,20 +309,20 @@ const stats: { key: string; label: string }[] = [
     flex-direction: column;
   }
 
+  switch-feed :global(.switch-item) {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-block: var(--space-2xs);
+  }
+
   switch-feed :global(.switch-item + .switch-item) {
     border-block-start: 1px solid var(--border);
   }
 
-  switch-feed :global(.switch-row) {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2xs);
-    padding-block: var(--space-2xs);
-    color: var(--foreground);
-  }
-
   switch-feed :global(.cover) {
-    flex-shrink: 0;
     inline-size: 2.5rem;
     aspect-ratio: 1;
     overflow: hidden;
@@ -302,7 +340,6 @@ const stats: { key: string; label: string }[] = [
   switch-feed :global(.meta) {
     display: flex;
     min-inline-size: 0;
-    flex: 1;
     flex-direction: column;
     gap: var(--space-3xs);
   }
@@ -316,7 +353,35 @@ const stats: { key: string; label: string }[] = [
     text-overflow: ellipsis;
   }
 
-  switch-feed :global(.subtitle) {
+  /* Two nested fills, one box: --total is the share of the top title,
+     --recent the share of that bar which falls in the recent window. */
+  switch-feed :global(.bar) {
+    position: relative;
+    display: block;
+    block-size: 0.25rem;
+    border-radius: var(--radius-full);
+    background-color: var(--muted);
+  }
+
+  switch-feed :global(.bar-total),
+  switch-feed :global(.bar-recent) {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    border-radius: inherit;
+  }
+
+  switch-feed :global(.bar-total) {
+    inline-size: var(--total);
+    background-color: color-mix(in oklab, var(--foreground) 25%, transparent);
+  }
+
+  switch-feed :global(.bar-recent) {
+    inline-size: var(--recent);
+    background-color: var(--foreground);
+  }
+
+  switch-feed :global(.sub) {
     overflow: hidden;
     font-size: var(--step--1);
     color: var(--muted-foreground);
@@ -324,11 +389,26 @@ const stats: { key: string; label: string }[] = [
     text-overflow: ellipsis;
   }
 
-  switch-feed :global(.when) {
-    flex-shrink: 0;
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
+  switch-feed :global(.amount) {
+    align-self: center;
+    font-size: var(--step-0);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* The eShop link covers the row rather than sitting in it — the whole
+     row is the hit target, and a fourth column would crowd the amount.
+     It stays transparent: a background here would paint over the text it
+     is stacked on top of, so the hover reads on the title instead. */
+  switch-feed :global(.shop) {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-sm);
+  }
+
+  switch-feed :global(.switch-item:has(.shop:hover) .title),
+  switch-feed :global(.switch-item:has(.shop:focus-visible) .title) {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
 
   switch-feed :global(.sk-line) {
@@ -343,12 +423,16 @@ const stats: { key: string; label: string }[] = [
   }
 
   switch-feed :global(.sk-title) {
-    inline-size: 60%;
+    inline-size: 45%;
   }
 
-  switch-feed :global(.sk-subtitle) {
-    inline-size: 35%;
-    block-size: 0.7em;
+  switch-feed :global(.sk-bar) {
+    inline-size: 70%;
+    block-size: 0.25rem;
+  }
+
+  switch-feed :global(.sk-amount) {
+    inline-size: 3em;
   }
 
   switch-feed :global([data-skeleton] .cover),
