@@ -1,15 +1,15 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-08-29T14:12:25.472Z",
+  "generatedAt": "2026-08-29T14:28:40.390Z",
   "today": "2026-08-29",
-  "observedAt": "2026-08-29T12:22:51.000Z",
+  "observedAt": "2026-08-29T14:22:49.000Z",
   "recentDays": 14,
   "stats": {
-    "totalMinutes": 255,
+    "totalMinutes": 170,
     "gameCount": 3,
     "daysActive": 2,
     "daysTracked": 2,
-    "avgDailyMinutes": 128,
+    "avgDailyMinutes": 85,
     "longestStreak": 2,
     "currentStreak": 2,
     "firstDate": "2026-08-28",
@@ -20,28 +20,28 @@
   "activity": [
     {
       "date": "2026-08-28",
-      "minutes": 65
+      "minutes": 40
     },
     {
       "date": "2026-08-29",
-      "minutes": 190
+      "minutes": 130
     }
   ],
   "games": [
     {
-      "applicationId": "0400984020BE8000",
-      "title": "eFootball™ Kick-Off!",
-      "imageUrl": "https://img.lkwplus.com/switch/games/f17751dcb0b347249d0aaf783edf1ea5_256.jpg",
-      "shopUrl": "https://ec.nintendo.com/apps/0400984020be8000/JP?lang=en-US",
+      "applicationId": "01006F8002326000",
+      "title": "Animal Crossing™: New Horizons",
+      "imageUrl": "https://img.lkwplus.com/switch/games/895bfd3530a5496a8dac9d9cd9f043d9_256.jpg",
+      "shopUrl": "https://ec.nintendo.com/apps/01006f8002326000/JP?lang=en-US&acdIndex=1",
       "totalMinutes": 65,
       "recentMinutes": 65,
       "lastPlayedDate": "2026-08-29"
     },
     {
-      "applicationId": "01006F8002326000",
-      "title": "集合啦！动物森友会 Nintendo Switch 2 Edition",
-      "imageUrl": "https://img.lkwplus.com/switch/games/895bfd3530a5496a8dac9d9cd9f043d9_256.jpg",
-      "shopUrl": "https://ec.nintendo.com/apps/01006f8002326000/JP?lang=en-US&acdIndex=1",
+      "applicationId": "0400984020BE8000",
+      "title": "eFootball™ Kick-Off!",
+      "imageUrl": "https://img.lkwplus.com/switch/games/f17751dcb0b347249d0aaf783edf1ea5_256.jpg",
+      "shopUrl": "https://ec.nintendo.com/apps/0400984020be8000/JP?lang=en-US",
       "totalMinutes": 65,
       "recentMinutes": 65,
       "lastPlayedDate": "2026-08-29"

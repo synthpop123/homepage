@@ -1,5 +1,6 @@
 ---
 import { LETTERBOXD } from "@/consts"
+import { SKELETON_ROWS } from "@/lib/utils"
 
 type Props = {
   username?: string
@@ -18,7 +19,7 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
 </p>
 <movies-feed data-endpoint={feedUrl} data-limit={limit} aria-busy="true">
   <ol class="movies-grid">
-    {Array.from({ length: limit }).map(() => (
+    {Array.from({ length: Math.min(limit, SKELETON_ROWS) }).map(() => (
         <li class="movie-card" data-skeleton aria-hidden="true">
           <div class="movie-link">
             <span class="poster" />

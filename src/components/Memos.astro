@@ -1,6 +1,7 @@
 ---
 import MastodonIcon from "@/assets/icons/mastodon.svg"
 import { MASTODON } from "@/consts"
+import { SKELETON_ROWS } from "@/lib/utils"
 
 type Props = {
   limit?: number
@@ -25,7 +26,7 @@ const profileUrl = `${instance}/@${username}`
     instance.
   </p>
   <ol class="memos-list">
-    {Array.from({ length: 3 }).map(() => (
+    {Array.from({ length: SKELETON_ROWS }).map(() => (
         <li class="memo" data-skeleton aria-hidden="true">
           <span class="memo-rail">
             <span class="sk-line sk-meta" />

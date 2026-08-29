@@ -9,6 +9,7 @@
 
 import Heatmap from "@/components/Heatmap.astro"
 import { SWITCH } from "@/consts"
+import { SKELETON_ROWS } from "@/lib/utils"
 
 type Props = {
   endpoint?: string
@@ -45,7 +46,7 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
       <p class="switch-note" data-note></p>
     </div>
     <ol class="switch-list">
-      {Array.from({ length: limit }).map(() => (
+      {Array.from({ length: Math.min(limit, SKELETON_ROWS) }).map(() => (
         <li class="switch-item" data-skeleton aria-hidden="true">
           <span class="cover" />
           <span class="meta">

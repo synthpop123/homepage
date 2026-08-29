@@ -1,6 +1,7 @@
 ---
 import Heatmap from "@/components/Heatmap.astro"
 import { KOITO } from "@/consts"
+import { SKELETON_ROWS } from "@/lib/utils"
 
 type Props = {
   instance?: string
@@ -41,7 +42,7 @@ const stats: { key: string; label: string }[] = [
     <Heatmap />
     <h3 class="music-label">Last played</h3>
     <ol class="music-list">
-      {Array.from({ length: limit }).map(() => (
+      {Array.from({ length: Math.min(limit, SKELETON_ROWS) }).map(() => (
         <li class="music-item" data-skeleton aria-hidden="true">
           <div class="music-link">
             <span class="cover" />
