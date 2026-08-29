@@ -310,11 +310,8 @@ const stats: { key: string; label: string }[] = [
   }
 
   switch-feed :global(.switch-item) {
+    /* Positioned so the eShop link can stretch across the whole row. */
     position: relative;
-    /* Isolate the row so the hover tint can sit between its background
-       and its content at z-index: -1 — the same trick the Tokens rows
-       use for their proportional fills. */
-    z-index: 0;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
@@ -404,27 +401,12 @@ const stats: { key: string; label: string }[] = [
 
   /* The eShop link covers the row rather than sitting in it — the whole
      row is the hit target, and a fourth column would crowd the amount.
-     It stays transparent; the hover tint is painted by the row itself,
-     behind its own content, so nothing is ever covered up. */
+     It carries no hover treatment of its own — like the Music rows, the
+     list stays quiet and the pointer is the affordance. Keyboard focus
+     still has to be visible, which is what the outline below is for. */
   switch-feed :global(.shop) {
     position: absolute;
     inset: 0;
-  }
-
-  switch-feed :global(.switch-item)::before {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    inset-block: 1px;
-    inset-inline: calc(var(--space-2xs) * -1);
-    border-radius: var(--radius-md);
-    background-color: color-mix(in oklab, var(--muted) 60%, transparent);
-    opacity: 0;
-  }
-
-  switch-feed :global(.switch-item:has(.shop:hover))::before,
-  switch-feed :global(.switch-item:has(.shop:focus-visible))::before {
-    opacity: 1;
   }
 
   switch-feed :global(.shop:focus-visible) {
