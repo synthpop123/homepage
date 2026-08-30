@@ -50,11 +50,11 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
         <li class="switch-item" data-skeleton aria-hidden="true">
           <span class="cover" />
           <span class="meta">
-            <span class="head">
-              <span class="sk-line sk-title" />
+            <span class="title"><span class="sk-line sk-title" /></span>
+            <span class="foot">
+              <span class="sk-line sk-sub" />
               <span class="sk-line sk-amount" />
             </span>
-            <span class="sk-line sk-sub" />
             <span class="sk-line sk-bar" />
           </span>
         </li>
@@ -154,11 +154,12 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
   }
 
   /**
-   * One title: cover, name and lifetime hours on the first line, how lately
-   * it was played on the second, and a bar spanning the row underneath. The
-   * bar's length is its share of the most-played game and the solid part
-   * inside it is the recent window — so the row reads as "how much, and how
-   * much of that was lately" without a second column.
+   * One title: a cover, the name over up to two lines, how lately it was
+   * played and its lifetime hours on the line under that, and a bar
+   * spanning the row underneath. The bar's length is its share of the
+   * most-played game and the solid part inside it is the recent window —
+   * so the row reads as "how much, and how much of that was lately"
+   * without a second column.
    */
   const buildRow = (
     game: SiteGame,
@@ -176,16 +177,13 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
       img.alt = ""
       img.loading = "lazy"
       img.decoding = "async"
-      img.width = 88
-      img.height = 88
+      img.width = 112
+      img.height = 112
       cover.append(img)
     }
 
     const amount = el("span", "amount", formatPlaytime(game.totalMinutes))
     amount.title = `${numberFormatter.format(game.totalMinutes)} minutes`
-
-    const head = el("span", "head")
-    head.append(el("span", "title", game.title), amount)
 
     // Both fills are measured against the same maximum, so the solid part
     // is literally a slice of the bar it sits inside.
@@ -200,8 +198,11 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
     if (game.recentMinutes > 0 && game.recentMinutes < game.totalMinutes)
       parts.push(`${formatPlaytime(game.recentMinutes)} in ${recentDays}d`)
 
+    const foot = el("span", "foot")
+    foot.append(el("span", "sub", parts.filter(Boolean).join(" · ")), amount)
+
     const meta = el("span", "meta")
-    meta.append(head, el("span", "sub", parts.filter(Boolean).join(" · ")), bar)
+    meta.append(el("span", "title", game.title), foot, bar)
 
     row.append(cover, meta)
 
@@ -361,7 +362,7 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
   }
 
   switch-feed :global(.cover) {
-    inline-size: 4.5rem;
+    inline-size: 5rem;
     aspect-ratio: 1;
     overflow: hidden;
     border: 1px solid var(--border);
@@ -382,22 +383,26 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
     gap: var(--space-3xs);
   }
 
-  /* Title and hours share a line: the amount is what the title is ranked
-     by, so it belongs beside the name rather than in a column of its own. */
-  switch-feed :global(.head) {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-s);
-  }
-
+  /* Two lines, always: a long title wraps rather than being cut mid-word,
+     and reserving the second line keeps every row the same height — so the
+     hours and the bars below them stay on one baseline down the list. */
   switch-feed :global(.title) {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     overflow: hidden;
+    min-block-size: 2lh;
     font-size: var(--step-0);
     font-weight: var(--font-weight-medium);
     line-height: 1.25;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  }
+
+  /* How lately, and how much. The hours are what the list is ranked by, so
+     they keep the right edge to be read as a column. */
+  switch-feed :global(.foot) {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-s);
   }
 
   /* Two nested fills, one box: --total is the share of the top title,
@@ -442,6 +447,7 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
 
   switch-feed :global(.amount) {
     flex: none;
+    margin-inline-start: auto;
     font-size: var(--step-0);
     font-variant-numeric: tabular-nums;
   }
@@ -489,6 +495,7 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
 
   switch-feed :global(.sk-amount) {
     flex: none;
+    margin-inline-start: auto;
     inline-size: 3em;
   }
 

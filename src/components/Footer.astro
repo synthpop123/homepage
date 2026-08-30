@@ -12,15 +12,20 @@ import { SITE, SOCIALS } from "@/consts"
 </footer>
 
 <style>
+  /* One line for as long as the two of them fit on one — the pair is barely
+     17rem wide, so that is every phone. Wrapping is the fallback rather than
+     the mobile layout, and once a line holds only one of them it reads
+     better centred than pinned to an edge. */
   footer {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3xs) var(--space-s);
     margin-block: var(--space-xs) var(--page-offset-bottom);
 
-    @media (width >= 40rem) {
-      flex-direction: row;
-      justify-content: space-between;
+    @media (width < 22rem) {
+      justify-content: center;
     }
 
     p {
