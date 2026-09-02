@@ -1,5 +1,10 @@
 import { describe, expect, it } from "bun:test"
-import { windowDurationMs, windowFoot, windowIsOpen } from "./quota"
+import {
+  windowDurationMs,
+  windowFoot,
+  windowHasReset,
+  windowIsOpen,
+} from "./quota"
 
 const capturedAt = Date.parse("2026-08-27T06:00:00Z")
 const now = capturedAt
@@ -80,6 +85,47 @@ describe("windowIsOpen", () => {
           usedPercent: 0,
           resetsAt: "2026-08-27T08:00:00Z",
         },
+        capturedAt,
+      ),
+    ).toBe(false)
+  })
+})
+
+describe("windowHasReset", () => {
+  it("is true once the vendor's reset time is behind us", () => {
+    // The live shape: a 5h window that rolled over between two reports.
+    expect(
+      windowHasReset(
+        {
+          label: "Session",
+          usedPercent: 11,
+          resetsAt: "2026-08-27T05:59:00Z",
+        },
+        now,
+        capturedAt,
+      ),
+    ).toBe(true)
+  })
+
+  it("is false while the window is still running", () => {
+    expect(
+      windowHasReset(
+        {
+          label: "Session",
+          usedPercent: 11,
+          resetsAt: "2026-08-27T09:00:00Z",
+        },
+        now,
+        capturedAt,
+      ),
+    ).toBe(false)
+  })
+
+  it("is false for a window the vendor never anchored", () => {
+    expect(
+      windowHasReset(
+        { label: "Weekly", usedPercent: 0, resetsAt: null },
+        now,
         capturedAt,
       ),
     ).toBe(false)

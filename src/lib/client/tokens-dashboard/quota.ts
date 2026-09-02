@@ -89,6 +89,31 @@ export function windowIsOpen(
 }
 
 /**
+ * Whether the window this snapshot describes has since rolled over — the
+ * vendor's own reset time is behind us. Nothing reported about it is
+ * current any more: the figure and the bar both describe a window that
+ * has ended, and the one that replaced it is unread until the next
+ * collector run. So the whole window renders as reset, not just its
+ * foot; a bar drawn at 11% under the words "window reset" is the card
+ * contradicting itself.
+ *
+ * Only windows the vendor actually anchored qualify (windowIsOpen) —
+ * OpenAI's drifting placeholder is always in the future anyway, and a
+ * window with no reset time cannot have passed one.
+ */
+export function windowHasReset(
+  window: QuotaWindow,
+  now: number,
+  capturedAtMs: number,
+): boolean {
+  if (!windowIsOpen(window, capturedAtMs) || window.resetsAt === null) {
+    return false
+  }
+  const resetsAt = Date.parse(window.resetsAt)
+  return Number.isFinite(resetsAt) && resetsAt <= now
+}
+
+/**
  * "resets Aug 8, 21:28 · in 2d", or what is true instead.
  *
  * Only the reset. What is left is already on the card twice over — as
@@ -107,11 +132,11 @@ export function windowFoot(
     return ""
   }
   // The vendor's own reset time, so a window that rolled over since the
-  // last report is stated as reset rather than drawn as a full bar.
-  const until = formatIn(Date.parse(window.resetsAt), now)
-  return until === null
-    ? "window reset — awaiting next report"
-    : `resets ${formatInstant(window.resetsAt)} · ${until}`
+  // last report is stated as reset rather than counted down to.
+  if (windowHasReset(window, now, capturedAtMs)) {
+    return "window reset — awaiting next report"
+  }
+  return `resets ${formatInstant(window.resetsAt)} · ${formatIn(Date.parse(window.resetsAt), now)}`
 }
 
 function renderWindow(
@@ -122,10 +147,21 @@ function renderWindow(
 ): HTMLElement {
   const item = el("li", "tk-window")
 
+  // Past the vendor's reset the reported figure belongs to a window that
+  // has ended, and the current one is unread until the next collector
+  // run — so the window says it does not know rather than restating a
+  // number the foot underneath it contradicts.
+  const hasReset = windowHasReset(window, now, capturedAtMs)
+  if (hasReset) item.toggleAttribute("data-reset", true)
+
   const head = el("div", "win-head")
   head.append(
     el("span", "win-label", window.label),
-    el("span", "win-used", `${Math.round(window.usedPercent)}%`),
+    el(
+      "span",
+      "win-used",
+      hasReset ? "—" : `${Math.round(window.usedPercent)}%`,
+    ),
   )
 
   // A gauge, not a share: the other bars on the page cut one number
@@ -137,12 +173,14 @@ function renderWindow(
   // inherits it and the track can wash itself in the same colour.
   const bar = el("div", "tk-meter")
   bar.dataset.p = provider
-  if (window.usedPercent >= HIGH_USE) bar.dataset.high = ""
+  // A window that has rolled over is never the warning colour: the
+  // ceiling it was pressing against is not the one in force now.
+  if (!hasReset && window.usedPercent >= HIGH_USE) bar.dataset.high = ""
   // A window barely touched should still show that it was touched — the
   // head's own min-inline-size keeps the sliver visible — but an
   // untouched one shows nothing at all, or that floor would report a
   // spend of zero as a spend.
-  if (window.usedPercent > 0) {
+  if (!hasReset && window.usedPercent > 0) {
     const fill = el("span")
     fill.style.inlineSize = `${Math.min(100, window.usedPercent)}%`
     bar.append(fill)

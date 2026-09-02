@@ -848,6 +848,15 @@ const skeletonRows = (count: number) =>
     line-height: 1.2;
   }
 
+  /* A window past its reset has no figure to give: the dash stands in
+     for it at the same size, so the row keeps its baseline, but at the
+     label's weight and colour — it is the absence of a reading, not a
+     reading. Its track stays empty (quota.ts draws no head). */
+  .tk-plans :global(.tk-window[data-reset] .win-used) {
+    font-weight: inherit;
+    color: var(--muted-foreground);
+  }
+
   /* A quota window is a gauge against a ceiling, not a share of a whole,
      so it gets a gauge: a thin track carrying one rounded head, with a
      floor under the head's width so a barely-touched week still shows
