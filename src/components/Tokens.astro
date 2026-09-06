@@ -969,23 +969,59 @@ const skeletonRows = (count: number) =>
       font-variant-numeric: tabular-nums;
     }
 
-    .tk-tip ul {
-      display: grid;
-      gap: var(--space-3xs);
+    .tk-chart > .tk-tip {
+      inline-size: min(22rem, 100%);
+      max-inline-size: 100%;
+      box-sizing: border-box;
+      line-height: 1.5;
+      background-color: var(--background);
     }
 
-    .tk-tip li {
+    .tk-tip .tip-summary {
       display: flex;
-      align-items: center;
-      gap: 0.4em;
+      flex-wrap: wrap;
+      gap: 0.125rem 0.75rem;
       font-variant-numeric: tabular-nums;
     }
 
+    .tk-tip .tip-summary > span {
+      white-space: nowrap;
+    }
+
+    .tk-tip .tip-intensity {
+      color: var(--muted-foreground);
+    }
+
+    .tk-tip ul {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) max-content max-content;
+      align-items: baseline;
+      gap: 0.375rem 0.5rem;
+      margin-block-start: var(--space-3xs);
+      padding-block-start: var(--space-2xs);
+      border-block-start: 1px solid var(--border);
+    }
+
+    .tk-tip li {
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      align-items: baseline;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-tip .tip-label {
+      overflow-wrap: anywhere;
+      text-wrap: pretty;
+    }
+
+    .tk-tip .tip-value,
     .tk-tip .tip-share {
-      margin-inline-start: var(--space-s);
-      margin-inline-end: 0;
-      flex: 1;
       text-align: end;
+      white-space: nowrap;
+    }
+
+    .tk-tip .tip-share {
       color: var(--muted-foreground);
     }
 

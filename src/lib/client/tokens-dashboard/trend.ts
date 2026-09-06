@@ -55,37 +55,55 @@ export function createTrendChart(q: Query) {
       const item = el("li", "")
       item.append(
         paint(el("span", "chip"), row.paint),
-        el("span", "", stackLabel(stack.dim, row.id)),
-        el(
-          "span",
-          "tip-share",
-          `${formatMetric(row.value, tipMetric)} · ${formatShare(row.value / bucket[tipMetric])}`,
-        ),
+        el("span", "tip-label", stackLabel(stack.dim, row.id)),
+        el("span", "tip-value", formatMetric(row.value, tipMetric)),
+        el("span", "tip-share", formatShare(row.value / bucket[tipMetric])),
       )
       list.append(item)
     }
     // Intensity, where the CLI tracked the hours behind the numbers: the
     // ratio is taken over those days alone, so a month that was only
     // half tracked still reports the rate of the half it knows.
-    const intensity =
-      bucket.active > 0
-        ? `${formatDuration(bucket.active)} active · ≈ ${formatMetric(
-            perHour(bucket.activeMetric, bucket.active),
-            tipMetric,
-          )}${tipMetric === "tokens" ? " tokens" : ""} per hour`
-        : ""
+    const summary = el("div", "tip-summary")
+    if (bucket.tokens > 0 || bucket.cost > 0) {
+      summary.append(
+        el("span", "", `${formatTokens(bucket.tokens)} tokens`),
+        el("span", "", formatCost(bucket.cost)),
+        el(
+          "span",
+          "",
+          `${formatCount(bucket.messages)} ${bucket.messages === 1 ? "message" : "messages"}`,
+        ),
+      )
+    } else {
+      summary.append(
+        el(
+          "span",
+          "",
+          bucket.messages > 0
+            ? `${formatCount(bucket.messages)} ${bucket.messages === 1 ? "message" : "messages"}`
+            : "No usage",
+        ),
+        ...(bucket.messages > 0
+          ? [el("span", "", "Token counts unavailable")]
+          : []),
+      )
+    }
+    const intensity = el("div", "tip-summary tip-intensity")
+    if (bucket.active > 0) {
+      intensity.append(
+        el("span", "", `${formatDuration(bucket.active)} active`),
+        el(
+          "span",
+          "",
+          `≈ ${formatMetric(perHour(bucket.activeMetric, bucket.active), tipMetric)}${tipMetric === "tokens" ? " tokens" : ""}/h`,
+        ),
+      )
+    }
     tip.replaceChildren(
       el("strong", "tip-title", bucket.title),
-      el(
-        "span",
-        "tip-total",
-        bucket.tokens > 0 || bucket.cost > 0
-          ? `${formatTokens(bucket.tokens)} tokens · ${formatCost(bucket.cost)} · ${formatCount(bucket.messages)} ${bucket.messages === 1 ? "message" : "messages"}`
-          : bucket.messages > 0
-            ? `${formatCount(bucket.messages)} ${bucket.messages === 1 ? "message" : "messages"} · token counts unavailable`
-            : "No usage",
-      ),
-      ...(intensity ? [el("span", "tip-total", intensity)] : []),
+      summary,
+      ...(bucket.active > 0 ? [intensity] : []),
       ...(rows.length > 0 ? [list] : []),
     )
   }
