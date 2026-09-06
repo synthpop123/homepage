@@ -4,9 +4,27 @@ import {
   heatmapWindow,
   isSite,
   lastPlayedLabel,
+  legendNote,
+  rowFoot,
   SITE_SCHEMA_VERSION,
+  type SiteGame,
+  statCards,
 } from "./switch"
 import fixture from "./switch.site-fixture.json"
+
+const game = (
+  totalMinutes: number,
+  recentMinutes: number,
+  lastPlayedDate: string | null = "2026-08-29",
+): SiteGame => ({
+  applicationId: `G${totalMinutes}`,
+  title: "Game",
+  imageUrl: null,
+  shopUrl: null,
+  totalMinutes,
+  recentMinutes,
+  lastPlayedDate,
+})
 
 describe("isSite", () => {
   it("accepts the pinned production fixture", () => {
@@ -66,6 +84,81 @@ describe("lastPlayedLabel", () => {
   it("says nothing without a day, or for one that hasn't happened", () => {
     expect(lastPlayedLabel(null, "2026-08-29")).toBeNull()
     expect(lastPlayedLabel("2026-08-30", "2026-08-29")).toBeNull()
+  })
+})
+
+describe("statCards", () => {
+  const stats = {
+    totalMinutes: 375,
+    gameCount: 6,
+    daysActive: 3,
+    daysTracked: 3,
+    avgDailyMinutes: 125,
+    longestStreak: 3,
+    currentStreak: 3,
+    firstDate: "2026-08-28",
+    lastPlayedDate: "2026-08-30",
+    libraryValueCny: 1384,
+    pricedGameCount: 4,
+  }
+
+  it("values the library when prices exist, and says how many titles back it", () => {
+    const [playtime, games, third, perDay] = statCards(stats)
+    expect(playtime).toEqual({ label: "Playtime", value: "6h 15m", note: "" })
+    expect(games).toEqual({ label: "Games", value: "6", note: "" })
+    expect(third.label).toBe("Library value")
+    expect(third.value).toBe("¥1,384")
+    expect(third.note).toBe("CNY, at eShop list price for 4 of 6 titles")
+    expect(perDay).toEqual({
+      label: "Per active day",
+      value: "2h 5m",
+      note: "",
+    })
+  })
+
+  it("admits when every title is priced", () => {
+    const [, , third] = statCards({
+      ...stats,
+      libraryValueCny: 1384,
+      pricedGameCount: stats.gameCount,
+    })
+    expect(third.note).toBe("CNY, at eShop list price for every title played")
+  })
+
+  it("falls back to days active — with an empty note — once the prices are gone", () => {
+    const [, , third] = statCards({
+      ...stats,
+      libraryValueCny: null,
+      pricedGameCount: 0,
+    })
+    expect(third).toEqual({ label: "Days active", value: "3", note: "" })
+  })
+})
+
+describe("legendNote", () => {
+  it("stays silent while every bar is solid end to end", () => {
+    expect(legendNote([game(100, 100), game(50, 50)], 14)).toBe("")
+    expect(legendNote([], 14)).toBe("")
+  })
+
+  it("appears once any bar is split", () => {
+    expect(legendNote([game(100, 100), game(50, 20)], 14)).toBe(
+      "Solid = last 14 days",
+    )
+  })
+})
+
+describe("rowFoot", () => {
+  it("adds the recent clause only when it is less than the whole", () => {
+    expect(rowFoot(game(100, 100), 14, "2026-08-29")).toBe("Played today")
+    expect(rowFoot(game(100, 40), 14, "2026-08-29")).toBe(
+      "Played today · 40m in 14d",
+    )
+    expect(rowFoot(game(100, 0), 14, "2026-08-29")).toBe("Played today")
+  })
+
+  it("reads as an empty line when nothing is known", () => {
+    expect(rowFoot(game(100, 0, null), 14, "2026-08-29")).toBe("")
   })
 })
 

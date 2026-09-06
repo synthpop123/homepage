@@ -168,6 +168,84 @@ export function formatPlaytime(minutes: number): string {
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
 }
 
+const numberFormatter = new Intl.NumberFormat("en-US")
+// zh-CN so the sign is a bare ¥ rather than en-US's "CN¥"; the note
+// beside it is where the currency is spelled out.
+const cnyFormatter = new Intl.NumberFormat("zh-CN", {
+  style: "currency",
+  currency: "CNY",
+  maximumFractionDigits: 0,
+})
+
+export type StatCard = { label: string; value: string; note: string }
+
+/**
+ * The four cards, in order. Prices are best-effort, so the third one falls
+ * back to days active rather than showing a dash — and when it does carry a
+ * value it admits how much of the library that value covers. `note` is
+ * always a string so a refresh that lost its prices clears the old tooltip
+ * instead of leaving it on a card that now says something else.
+ */
+export function statCards(stats: SiteStats): StatCard[] {
+  const third: StatCard =
+    stats.libraryValueCny !== null
+      ? {
+          label: "Library value",
+          value: cnyFormatter.format(stats.libraryValueCny),
+          note:
+            stats.pricedGameCount < stats.gameCount
+              ? `CNY, at eShop list price for ${stats.pricedGameCount} of ${stats.gameCount} titles`
+              : "CNY, at eShop list price for every title played",
+        }
+      : {
+          label: "Days active",
+          value: numberFormatter.format(stats.daysActive),
+          note: "",
+        }
+  return [
+    { label: "Playtime", value: formatPlaytime(stats.totalMinutes), note: "" },
+    {
+      label: "Games",
+      value: numberFormatter.format(stats.gameCount),
+      note: "",
+    },
+    third,
+    {
+      label: "Per active day",
+      value: formatPlaytime(stats.avgDailyMinutes),
+      note: "",
+    },
+  ]
+}
+
+/**
+ * The bar legend, or nothing. It earns its line only once a bar is actually
+ * split — while every title's recent minutes are its whole history, the
+ * solid part is the whole bar and a legend would explain nothing.
+ */
+export function legendNote(games: SiteGame[], recentDays: number): string {
+  return games.some((game) => game.recentMinutes < game.totalMinutes)
+    ? `Solid = last ${recentDays} days`
+    : ""
+}
+
+/**
+ * The line under a title: how lately it was played, and — only when it is
+ * less than the whole — how much of it fell in the recent window. On a
+ * title played entirely inside the window the clause would restate the
+ * amount beside it.
+ */
+export function rowFoot(
+  game: SiteGame,
+  recentDays: number,
+  today: string,
+): string {
+  const parts = [lastPlayedLabel(game.lastPlayedDate, today)]
+  if (game.recentMinutes > 0 && game.recentMinutes < game.totalMinutes)
+    parts.push(`${formatPlaytime(game.recentMinutes)} in ${recentDays}d`)
+  return parts.filter(Boolean).join(" · ")
+}
+
 export const loadSite = (
   endpoint: string,
   onData: (site: Site) => void,

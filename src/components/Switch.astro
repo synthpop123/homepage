@@ -75,20 +75,15 @@ const stats = ["Playtime", "Games", "", "Per active day"]
   import {
     formatPlaytime,
     heatmapWindow,
-    lastPlayedLabel,
+    legendNote,
     loadSite,
+    rowFoot,
     type Site,
     type SiteGame,
+    statCards,
   } from "@/lib/client/switch"
 
   const numberFormatter = new Intl.NumberFormat("en-US")
-  // zh-CN so the sign is a bare ¥ rather than en-US's "CN¥"; the note
-  // beside it is where the currency is spelled out.
-  const cnyFormatter = new Intl.NumberFormat("zh-CN", {
-    style: "currency",
-    currency: "CNY",
-    maximumFractionDigits: 0,
-  })
   const dayFormatter = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -99,30 +94,6 @@ const stats = ["Playtime", "Games", "", "Per active day"]
   // noon UTC keeps them from sliding a day in either direction.
   const asDate = (day: string) => new Date(`${day}T12:00:00Z`)
 
-  /**
-   * The four cards, in order. Prices are best-effort, so the third one
-   * falls back to days active rather than showing a dash — and when it does
-   * carry a value it admits how much of the library that value covers.
-   */
-  const statCards = (stats: Site["stats"]) => [
-    { label: "Playtime", value: formatPlaytime(stats.totalMinutes) },
-    { label: "Games", value: numberFormatter.format(stats.gameCount) },
-    stats.libraryValueCny !== null
-      ? {
-          label: "Library value",
-          value: cnyFormatter.format(stats.libraryValueCny),
-          note:
-            stats.pricedGameCount < stats.gameCount
-              ? `CNY, at eShop list price for ${stats.pricedGameCount} of ${stats.gameCount} titles`
-              : "CNY, at eShop list price for every title played",
-        }
-      : {
-          label: "Days active",
-          value: numberFormatter.format(stats.daysActive),
-        },
-    { label: "Per active day", value: formatPlaytime(stats.avgDailyMinutes) },
-  ]
-
   const fillStats = (feed: HTMLElement, stats: Site["stats"]) => {
     const cards = statCards(stats)
     feed.querySelectorAll<HTMLElement>(".stat").forEach((stat, index) => {
@@ -132,7 +103,7 @@ const stats = ["Playtime", "Games", "", "Per active day"]
       if (!card || !label || !value) return
       label.textContent = card.label
       value.textContent = card.value
-      stat.title = "note" in card ? (card.note ?? "") : ""
+      stat.title = card.note
     })
   }
 
@@ -192,14 +163,8 @@ const stats = ["Playtime", "Games", "", "Per active day"]
     bar.style.setProperty("--recent", `${(game.recentMinutes / max) * 100}%`)
     bar.append(el("span", "bar-total"), el("span", "bar-recent"))
 
-    const parts = [lastPlayedLabel(game.lastPlayedDate, today)]
-    // Only worth saying when it is less than the whole: on a title played
-    // entirely inside the window it would restate the amount beside it.
-    if (game.recentMinutes > 0 && game.recentMinutes < game.totalMinutes)
-      parts.push(`${formatPlaytime(game.recentMinutes)} in ${recentDays}d`)
-
     const foot = el("span", "foot")
-    foot.append(el("span", "sub", parts.filter(Boolean).join(" · ")), amount)
+    foot.append(el("span", "sub", rowFoot(game, recentDays, today)), amount)
 
     const meta = el("span", "meta")
     meta.append(el("span", "title", game.title), foot, bar)
@@ -244,18 +209,12 @@ const stats = ["Playtime", "Games", "", "Per active day"]
       const games = site.games.slice(0, limit)
       const max = Math.max(...games.map((game) => game.totalMinutes), 1)
       list.hidden = games.length === 0
-      if (note) note.textContent = ""
-      if (games.length > 0) {
-        list.replaceChildren(
-          ...games.map((game) =>
-            buildRow(game, max, site.recentDays, site.today),
-          ),
-        )
-        // The legend earns its line only once a bar is actually split —
-        // while every title is new, the solid part is the whole bar.
-        if (note && games.some((g) => g.recentMinutes < g.totalMinutes))
-          note.textContent = `Solid = last ${site.recentDays} days`
-      }
+      list.replaceChildren(
+        ...games.map((game) =>
+          buildRow(game, max, site.recentDays, site.today),
+        ),
+      )
+      if (note) note.textContent = legendNote(games, site.recentDays)
       rendered = signature
       feed.setAttribute("aria-busy", "false")
     }).catch(() => {
