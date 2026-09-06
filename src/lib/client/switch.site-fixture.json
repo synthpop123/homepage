@@ -1,45 +1,69 @@
 {
-  "schemaVersion": 3,
-  "generatedAt": "2026-08-30T01:00:19.605Z",
-  "today": "2026-08-30",
-  "observedAt": "2026-08-30T00:10:29.000Z",
+  "schemaVersion": 4,
+  "today": "2026-09-06",
+  "observedAt": "2026-09-06T00:45:00.000Z",
   "recentDays": 14,
   "stats": {
-    "totalMinutes": 375,
+    "totalMinutes": 1226,
     "gameCount": 6,
-    "daysActive": 3,
-    "daysTracked": 3,
-    "avgDailyMinutes": 125,
-    "longestStreak": 3,
-    "currentStreak": 3,
+    "daysActive": 9,
+    "daysTracked": 10,
+    "avgDailyMinutes": 136,
+    "longestStreak": 9,
+    "currentStreak": 9,
     "firstDate": "2026-08-28",
-    "lastPlayedDate": "2026-08-30",
-    "libraryValueCny": 1384,
+    "lastPlayedDate": "2026-09-05",
+    "libraryValueCny": 1382,
     "pricedGameCount": 4
   },
   "activity": [
-    {
-      "date": "2026-08-28",
-      "minutes": 40
-    },
-    {
-      "date": "2026-08-29",
-      "minutes": 215
-    },
-    {
-      "date": "2026-08-30",
-      "minutes": 120
-    }
+    { "date": "2026-08-28", "minutes": 40 },
+    { "date": "2026-08-29", "minutes": 215 },
+    { "date": "2026-08-30", "minutes": 325 },
+    { "date": "2026-08-31", "minutes": 135 },
+    { "date": "2026-09-01", "minutes": 260 },
+    { "date": "2026-09-02", "minutes": 96 },
+    { "date": "2026-09-03", "minutes": 65 },
+    { "date": "2026-09-04", "minutes": 50 },
+    { "date": "2026-09-05", "minutes": 40 },
+    { "date": "2026-09-06", "minutes": 0 }
   ],
   "games": [
+    {
+      "applicationId": "01006F8002326000",
+      "title": "Animal Crossing™: New Horizons",
+      "imageUrl": "https://img.lkwplus.com/switch/games/895bfd3530a5496a8dac9d9cd9f043d9_256.jpg",
+      "shopUrl": "https://ec.nintendo.com/apps/01006f8002326000/JP?lang=en-US&acdIndex=1",
+      "totalMinutes": 535,
+      "recentMinutes": 535,
+      "lastPlayedDate": "2026-09-05"
+    },
     {
       "applicationId": "0400DA10226BE000",
       "title": "NBA 2K26",
       "imageUrl": "https://img.lkwplus.com/switch/games/d1b7888d203d4798a3b8de385b7396e3_256.jpg",
       "shopUrl": "https://ec.nintendo.com/apps/0400da10226be000/JP?lang=en-US",
-      "totalMinutes": 100,
-      "recentMinutes": 100,
-      "lastPlayedDate": "2026-08-29"
+      "totalMinutes": 280,
+      "recentMinutes": 280,
+      "lastPlayedDate": "2026-09-05"
+    },
+    {
+      "applicationId": "01000D3013E8C000",
+      "title": "SpongeBob: Krusty Cook-Off",
+      "imageUrl": "https://img.lkwplus.com/switch/games/8f7a93d291d847b58de6f02a1f5d817c_256.jpg",
+      "shopUrl": "https://ec.nintendo.com/apps/01000d3013e8c000/JP?lang=en-US",
+      "totalMinutes": 131,
+      "recentMinutes": 131,
+      "lastPlayedDate": "2026-09-02"
+    },
+    {
+      "applicationId": "0100AC101BFA2000",
+      "title": "Fit Boxing 3 -Your パーソナルトレーナー Nintendo Switch 2 Edition",
+      "imageUrl": "https://img.lkwplus.com/switch/games/164bf2d2283748ada909b103415b36c4_256.jpg",
+      "shopUrl": "https://ec.nintendo.com/apps/0100ac101bfa2000/JP?lang=en-US&acdIndex=1",
+      "totalMinutes": 130,
+      "recentMinutes": 130,
+      "lastPlayedDate": "2026-09-01"
     },
     {
       "applicationId": "0400DDB020648000",
@@ -51,50 +75,13 @@
       "lastPlayedDate": "2026-08-30"
     },
     {
-      "applicationId": "01006F8002326000",
-      "title": "Animal Crossing™: New Horizons",
-      "imageUrl": "https://img.lkwplus.com/switch/games/895bfd3530a5496a8dac9d9cd9f043d9_256.jpg",
-      "shopUrl": "https://ec.nintendo.com/apps/01006f8002326000/JP?lang=en-US&acdIndex=1",
-      "totalMinutes": 65,
-      "recentMinutes": 65,
-      "lastPlayedDate": "2026-08-29"
-    },
-    {
       "applicationId": "0400984020BE8000",
       "title": "eFootball™ Kick-Off!",
       "imageUrl": "https://img.lkwplus.com/switch/games/f17751dcb0b347249d0aaf783edf1ea5_256.jpg",
       "shopUrl": "https://ec.nintendo.com/apps/0400984020be8000/JP?lang=en-US",
-      "totalMinutes": 65,
-      "recentMinutes": 65,
-      "lastPlayedDate": "2026-08-29"
-    },
-    {
-      "applicationId": "01000D3013E8C000",
-      "title": "SpongeBob: Krusty Cook-Off",
-      "imageUrl": "https://img.lkwplus.com/switch/games/8f7a93d291d847b58de6f02a1f5d817c_256.jpg",
-      "shopUrl": "https://ec.nintendo.com/apps/01000d3013e8c000/JP?lang=en-US",
-      "totalMinutes": 50,
-      "recentMinutes": 50,
-      "lastPlayedDate": "2026-08-30"
-    },
-    {
-      "applicationId": "0100AC101BFA2000",
-      "title": "Fit Boxing 3 -Your パーソナルトレーナー Nintendo Switch 2 Edition",
-      "imageUrl": "https://img.lkwplus.com/switch/games/164bf2d2283748ada909b103415b36c4_256.jpg",
-      "shopUrl": "https://ec.nintendo.com/apps/0100ac101bfa2000/JP?lang=en-US&acdIndex=1",
-      "totalMinutes": 20,
-      "recentMinutes": 20,
-      "lastPlayedDate": "2026-08-29"
-    }
-  ],
-  "devices": [
-    {
-      "label": "lkw123的Switch 2",
-      "region": "HONGKONG_TAIWAN_KOREA_SOUTHEASTASIA",
-      "platformGeneration": "P01",
-      "iconLightUrl": "https://img.lkwplus.com/switch/devices/cd6207b0a4932273-light.png",
-      "iconDarkUrl": "https://img.lkwplus.com/switch/devices/cd6207b0a4932273-dark.png",
-      "pairedAt": "2026-08-28T14:28:09.000Z"
+      "totalMinutes": 75,
+      "recentMinutes": 75,
+      "lastPlayedDate": "2026-08-31"
     }
   ]
 }

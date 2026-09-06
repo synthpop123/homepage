@@ -419,30 +419,6 @@ const skeletonRows = (count: number) =>
     }
   }
 
-  .tk-intro {
-    margin-block-end: var(--space-m);
-    color: var(--muted-foreground);
-  }
-
-  .tk-fallback {
-    color: var(--muted-foreground);
-  }
-
-  .tk-intro a,
-  .tk-fallback a {
-    color: var(--foreground);
-    text-decoration: underline;
-  }
-
-  .tk-label {
-    margin-block: var(--space-m) var(--space-2xs);
-    font-size: var(--step--1);
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
-  }
-
   /* Today */
 
   /* Section heading with its freshness note on the same baseline. */
@@ -1539,17 +1515,6 @@ const skeletonRows = (count: number) =>
 
   /* Skeletons */
 
-  .sk-line {
-    display: block;
-    block-size: 0.85em;
-    border-radius: var(--radius-sm);
-  }
-
-  .sk-stat {
-    inline-size: 4.5em;
-    block-size: 1.1em;
-  }
-
   .sk-sub {
     inline-size: 7em;
     block-size: 0.8em;
@@ -1564,7 +1529,6 @@ const skeletonRows = (count: number) =>
     border-radius: var(--radius-full);
   }
 
-  .sk-line,
   .sk-ico,
   .tk-mix-bar[data-skeleton],
   .tk-today-bar[data-skeleton],

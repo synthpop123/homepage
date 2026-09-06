@@ -63,23 +63,6 @@ const profileUrl = `${instance}/@${username}`
     display: block;
   }
 
-  .memos-intro {
-    margin-block-end: var(--space-m);
-    color: var(--muted-foreground);
-  }
-
-  .memos-empty,
-  .memos-fallback {
-    color: var(--muted-foreground);
-  }
-
-  .memos-intro a,
-  .memos-empty a,
-  .memos-fallback a {
-    color: var(--foreground);
-    text-decoration: underline;
-  }
-
   .memos-mark {
     display: inline-block;
     inline-size: 1.1em;
@@ -285,12 +268,6 @@ const profileUrl = `${instance}/@${username}`
 
   /* Skeletons */
 
-  .sk-line {
-    display: block;
-    block-size: 0.85em;
-    border-radius: var(--radius-sm);
-  }
-
   .sk-meta {
     inline-size: 6.5em;
     block-size: 0.7em;
@@ -303,7 +280,6 @@ const profileUrl = `${instance}/@${username}`
     border-radius: var(--radius-lg);
   }
 
-  .sk-line,
   .sk-media {
     background-color: var(--gray-5);
     animation: var(--sk-pulse);

@@ -4,7 +4,7 @@
  * the Switch.astro renderer validates against. Pure and browser-safe.
  */
 
-import { cached, fetchJson } from "./feed"
+import { swr, fetchJson } from "./feed"
 
 export type SiteStats = {
   totalMinutes: number
@@ -38,18 +38,8 @@ export type SiteGame = {
   lastPlayedDate: string | null
 }
 
-export type SiteDevice = {
-  label: string
-  region: string | null
-  platformGeneration: string | null
-  iconLightUrl: string | null
-  iconDarkUrl: string | null
-  pairedAt: string | null
-}
-
 export type Site = {
   schemaVersion: number
-  generatedAt: string
   today: string
   /** Nintendo's recalculation clock — the age of the data, not the cache. */
   observedAt: string | null
@@ -57,11 +47,10 @@ export type Site = {
   stats: SiteStats
   activity: SiteActivity[]
   games: SiteGame[]
-  devices: SiteDevice[]
 }
 
 /** Lockstep with switch-worker SITE_VERSION in src/site.ts. */
-export const SITE_SCHEMA_VERSION = 3
+export const SITE_SCHEMA_VERSION = 4
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -110,21 +99,10 @@ const isGame = (value: unknown): value is SiteGame =>
   isCount(value.recentMinutes) &&
   isNullableDay(value.lastPlayedDate)
 
-const isDevice = (value: unknown): value is SiteDevice =>
-  isRecord(value) &&
-  typeof value.label === "string" &&
-  isNullableString(value.region) &&
-  isNullableString(value.platformGeneration) &&
-  isNullableString(value.iconLightUrl) &&
-  isNullableString(value.iconDarkUrl) &&
-  isNullableString(value.pairedAt)
-
 export function isSite(data: unknown): data is Site {
   if (!isRecord(data)) return false
   return (
     data.schemaVersion === SITE_SCHEMA_VERSION &&
-    typeof data.generatedAt === "string" &&
-    Number.isFinite(Date.parse(data.generatedAt)) &&
     isCalendarDay(data.today) &&
     isNullableString(data.observedAt) &&
     isCount(data.recentDays) &&
@@ -132,9 +110,7 @@ export function isSite(data: unknown): data is Site {
     Array.isArray(data.activity) &&
     data.activity.every(isActivity) &&
     Array.isArray(data.games) &&
-    data.games.every(isGame) &&
-    Array.isArray(data.devices) &&
-    data.devices.every(isDevice)
+    data.games.every(isGame)
   )
 }
 
@@ -192,9 +168,13 @@ export function formatPlaytime(minutes: number): string {
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
 }
 
-export const loadSite = (endpoint: string): Promise<Site> =>
-  cached(
+export const loadSite = (
+  endpoint: string,
+  onData: (site: Site) => void,
+): Promise<void> =>
+  swr(
     `switch:site:v${SITE_SCHEMA_VERSION}:${endpoint}`,
     () => fetchJson<Site>(`${endpoint}/api/site`),
     isSite,
+    onData,
   )

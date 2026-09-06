@@ -20,7 +20,7 @@ const { endpoint = SWITCH.endpoint, limit = SWITCH.limit } = Astro.props
 
 // Four slots, filled in order by the script — the third one names itself,
 // since a library with no resolved prices has nothing to put there.
-const stats = ["Playtime", "Games", "Library value", "Per active day"]
+const stats = ["Playtime", "Games", "", "Per active day"]
 ---
 
 <p class="switch-intro">
@@ -132,13 +132,13 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
       if (!card || !label || !value) return
       label.textContent = card.label
       value.textContent = card.value
-      if ("note" in card && card.note) stat.title = card.note
+      stat.title = "note" in card ? (card.note ?? "") : ""
     })
   }
 
   const buildHeatmap = (feed: HTMLElement, site: Site) => {
     const grid = feed.querySelector<HTMLElement>(".heat-grid")
-    if (!grid || site.activity.length === 0) return
+    if (!grid) return
 
     const days = heatmapWindow(site.activity, site.today, HEAT_MAX_WEEKS * 7)
     mountHeatmap(grid, days, (shown) => {
@@ -229,72 +229,46 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
 
     const limit = Number(feed.dataset.limit) || 8
 
-    loadSite(endpoint)
-      .then((site) => {
-        if (site.games.length === 0 && site.activity.length === 0) {
-          throw new Error("No play data")
-        }
+    let rendered = ""
+    loadSite(endpoint, (site) => {
+      if (site.games.length === 0 && site.activity.length === 0) {
+        throw new Error("No play data")
+      }
 
-        fillStats(feed, site.stats)
-        buildHeatmap(feed, site)
+      const signature = JSON.stringify(site)
+      if (signature === rendered) return
 
-        const games = site.games.slice(0, limit)
-        const max = Math.max(...games.map((game) => game.totalMinutes), 1)
-        if (games.length === 0) {
-          list.hidden = true
-        } else {
-          list.replaceChildren(
-            ...games.map((game) =>
-              buildRow(game, max, site.recentDays, site.today),
-            ),
-          )
-          // The legend earns its line only once a bar is actually split —
-          // while every title is new, the solid part is the whole bar.
-          if (note && games.some((g) => g.recentMinutes < g.totalMinutes))
-            note.textContent = `Solid = last ${site.recentDays} days`
-        }
-        feed.setAttribute("aria-busy", "false")
-      })
-      .catch(() => {
-        body.hidden = true
-        if (fallback) fallback.hidden = false
-        feed.setAttribute("aria-busy", "false")
-      })
+      fillStats(feed, site.stats)
+      buildHeatmap(feed, site)
+
+      const games = site.games.slice(0, limit)
+      const max = Math.max(...games.map((game) => game.totalMinutes), 1)
+      list.hidden = games.length === 0
+      if (note) note.textContent = ""
+      if (games.length > 0) {
+        list.replaceChildren(
+          ...games.map((game) =>
+            buildRow(game, max, site.recentDays, site.today),
+          ),
+        )
+        // The legend earns its line only once a bar is actually split —
+        // while every title is new, the solid part is the whole bar.
+        if (note && games.some((g) => g.recentMinutes < g.totalMinutes))
+          note.textContent = `Solid = last ${site.recentDays} days`
+      }
+      rendered = signature
+      feed.setAttribute("aria-busy", "false")
+    }).catch(() => {
+      body.hidden = true
+      if (fallback) fallback.hidden = false
+      feed.setAttribute("aria-busy", "false")
+    })
   })
 </script>
 
 <style>
-  .switch-intro {
-    margin-block-end: var(--space-s);
-    color: var(--muted-foreground);
-  }
-
-  .switch-fallback {
-    margin-block-end: 0;
-    color: var(--muted-foreground);
-  }
-
-  .switch-intro a,
-  .switch-fallback a {
-    color: var(--foreground);
-    text-decoration: underline;
-  }
-
   switch-feed {
     display: block;
-  }
-
-  .switch-label {
-    margin-block: var(--space-m) var(--space-2xs);
-    font-size: var(--step--1);
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
-  }
-
-  .switch-label:first-child {
-    margin-block-start: 0;
   }
 
   /* The legend belongs on the heading line: it explains the bars below it,
@@ -321,25 +295,6 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
     @media (width < 40rem) {
       grid-template-columns: repeat(2, 1fr);
     }
-  }
-
-  .stat {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: var(--space-3xs);
-  }
-
-  .stat .value {
-    margin: 0;
-    font-size: var(--step-1);
-    font-weight: var(--font-weight-medium);
-    font-variant-numeric: tabular-nums;
-    line-height: 1.2;
-  }
-
-  .stat .label {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
   }
 
   .switch-list {
@@ -468,17 +423,6 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
     border-radius: var(--radius-md);
   }
 
-  switch-feed :global(.sk-line) {
-    display: block;
-    block-size: 0.85em;
-    border-radius: var(--radius-sm);
-  }
-
-  switch-feed :global(.sk-stat) {
-    inline-size: 3.5em;
-    block-size: 1em;
-  }
-
   switch-feed :global(.sk-title) {
     inline-size: 45%;
   }
@@ -497,11 +441,5 @@ const stats = ["Playtime", "Games", "Library value", "Per active day"]
     flex: none;
     margin-inline-start: auto;
     inline-size: 3em;
-  }
-
-  switch-feed :global([data-skeleton] .cover),
-  switch-feed :global(.sk-line) {
-    background-color: var(--gray-5);
-    animation: var(--sk-pulse);
   }
 </style>

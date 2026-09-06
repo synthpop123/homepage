@@ -1,0 +1,119 @@
+/* Shared feed typography and loading surfaces. Row layouts stay local. */
+
+.music-intro,
+.movies-intro,
+.switch-intro {
+  margin-block-end: var(--space-s);
+  color: var(--muted-foreground);
+}
+
+.music-fallback,
+.movies-fallback,
+.switch-fallback {
+  margin-block-end: 0;
+  color: var(--muted-foreground);
+}
+
+.music-intro a,
+.music-fallback a,
+.movies-intro a,
+.movies-fallback a,
+.memos-intro a,
+.memos-empty a,
+.memos-fallback a,
+.switch-intro a,
+.switch-fallback a,
+.tk-intro a,
+.tk-fallback a {
+  color: var(--foreground);
+  text-decoration: underline;
+}
+
+.music-label,
+.switch-label,
+.tk-label {
+  margin-block: var(--space-m) var(--space-2xs);
+  font-size: var(--step--1);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.music-label:first-child,
+.switch-label:first-child {
+  margin-block-start: 0;
+}
+
+music-feed .stat,
+switch-feed .stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-3xs);
+}
+
+music-feed .stat .value,
+switch-feed .stat .value {
+  margin: 0;
+  font-size: var(--step-1);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+music-feed .stat .label {
+  font-size: var(--step--1);
+  color: var(--muted-foreground);
+}
+
+
+memos-feed .sk-line,
+tokens-dashboard .sk-line,
+music-feed [data-skeleton] .cover,
+music-feed .sk-line,
+movies-feed [data-skeleton] .poster,
+movies-feed .sk-line,
+switch-feed [data-skeleton] .cover,
+switch-feed .sk-line {
+  background-color: var(--gray-5);
+  animation: var(--sk-pulse);
+}
+
+music-feed .sk-line,
+memos-feed .sk-line,
+tokens-dashboard .sk-line,
+movies-feed .sk-line,
+switch-feed .sk-line {
+  display: block;
+  block-size: 0.85em;
+  border-radius: var(--radius-sm);
+}
+
+.memos-intro,
+.tk-intro {
+  margin-block-end: var(--space-m);
+  color: var(--muted-foreground);
+}
+
+.memos-empty,
+.memos-fallback,
+.tk-fallback {
+  color: var(--muted-foreground);
+}
+
+switch-feed .stat .label {
+  min-block-size: 1lh;
+  font-size: var(--step--1);
+  color: var(--muted-foreground);
+}
+
+tokens-dashboard .sk-stat {
+  inline-size: 4.5em;
+  block-size: 1.1em;
+}
+
+music-feed .sk-stat,
+switch-feed .sk-stat {
+  inline-size: 3.5em;
+  block-size: 1em;
+}

@@ -251,37 +251,8 @@ const stats: { key: string; label: string }[] = [
 </script>
 
 <style>
-  .music-intro {
-    margin-block-end: var(--space-s);
-    color: var(--muted-foreground);
-  }
-
-  .music-fallback {
-    margin-block-end: 0;
-    color: var(--muted-foreground);
-  }
-
-  .music-intro a,
-  .music-fallback a {
-    color: var(--foreground);
-    text-decoration: underline;
-  }
-
   music-feed {
     display: block;
-  }
-
-  .music-label {
-    margin-block: var(--space-m) var(--space-2xs);
-    font-size: var(--step--1);
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
-  }
-
-  .music-label:first-child {
-    margin-block-start: 0;
   }
 
   /* Stats */
@@ -295,26 +266,6 @@ const stats: { key: string; label: string }[] = [
     @media (width < 40rem) {
       grid-template-columns: repeat(3, 1fr);
     }
-  }
-
-  .stat {
-    display: flex;
-    /* dt comes first in the DOM for validity, value renders on top */
-    flex-direction: column-reverse;
-    gap: var(--space-3xs);
-  }
-
-  .stat .value {
-    margin: 0;
-    font-size: var(--step-1);
-    font-weight: var(--font-weight-medium);
-    font-variant-numeric: tabular-nums;
-    line-height: 1.2;
-  }
-
-  .stat .label {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
   }
 
   /* Last played list */
@@ -393,17 +344,6 @@ const stats: { key: string; label: string }[] = [
 
   /* Skeletons */
 
-  music-feed :global(.sk-line) {
-    display: block;
-    block-size: 0.85em;
-    border-radius: var(--radius-sm);
-  }
-
-  music-feed :global(.sk-stat) {
-    inline-size: 3.5em;
-    block-size: 1em;
-  }
-
   music-feed :global(.sk-title) {
     inline-size: 60%;
   }
@@ -411,11 +351,5 @@ const stats: { key: string; label: string }[] = [
   music-feed :global(.sk-artists) {
     inline-size: 35%;
     block-size: 0.7em;
-  }
-
-  music-feed :global([data-skeleton] .cover),
-  music-feed :global(.sk-line) {
-    background-color: var(--gray-5);
-    animation: var(--sk-pulse);
   }
 </style>
