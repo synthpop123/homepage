@@ -151,7 +151,7 @@ const skeletonRows = (count: number) =>
     </section>
     <section>
       <h2 id="overview">Overview</h2>
-      <form class="tk-controls">
+      <form id="tk-controls" class="tk-controls">
         <fieldset class="tk-seg" aria-label="Time range">
           {RANGES.map((range) => (
             <label>
@@ -159,7 +159,7 @@ const skeletonRows = (count: number) =>
                 type="radio"
                 name="range"
                 value={range.key}
-                checked={range.key === "month"}
+                checked={range.default}
               />
               <span>{range.label}</span>
             </label>
@@ -221,6 +221,7 @@ const skeletonRows = (count: number) =>
               <input
                 type="radio"
                 name="stack"
+                form="tk-controls"
                 value={key}
                 checked={key === "provider"}
               />
@@ -366,7 +367,7 @@ const skeletonRows = (count: number) =>
     .forEach((root) => mountTokensDashboard(root))
 </script>
 
-<style>
+<style is:global>
   tokens-dashboard {
     /* Level-3 green of the shared heatmap palette (see Heatmap.astro). */
     --tk-accent: light-dark(#30a14e, #26a641);
@@ -402,1145 +403,1141 @@ const skeletonRows = (count: number) =>
     --tk-p-other: var(--gray-8);
 
     display: block;
-  }
 
-  section + section {
-    margin-block-start: var(--space-l);
-  }
-
-  h2 {
-    margin-block-end: var(--space-s);
-    font-size: var(--step-1);
-    line-height: calc(var(--leading-offset) + 1em);
-    font-weight: var(--font-weight-medium);
-
-    @media (width >= 64rem) {
-      scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
+    /* Everything below is nested here so the rules only ever apply
+       inside the dashboard: the renderers build this DOM at runtime,
+       which Astro's scoped styles cannot see. */
+    section + section {
+      margin-block-start: var(--space-l);
     }
-  }
 
-  /* Today */
+    h2 {
+      margin-block-end: var(--space-s);
+      font-size: var(--step-1);
+      line-height: calc(var(--leading-offset) + 1em);
+      font-weight: var(--font-weight-medium);
 
-  /* Section heading with its freshness note on the same baseline. */
-  .tk-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3xs) var(--space-s);
-    margin-block-end: var(--space-s);
-  }
-
-  .tk-head h2 {
-    margin-block-end: 0;
-  }
-
-  .tk-today-meta,
-  .tk-today-empty {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
-
-  /* The clients bar and the model list are one unit: today.ts hides
-     both on a day that has activity but no tokens yet (active time or
-     messages only), where there is nothing to apportion and an empty
-     bar would read as a broken one. */
-  .tk-today-breakdown[hidden] {
-    display: none;
-  }
-
-  /* The legend under the client-mix bar is the client breakdown: the
-     same brand-marked rows as the Breakdown section, each opening onto
-     the models that client drove. The Breakdown section has no today
-     window of its own, so this is where the day's client → model join
-     is readable. */
-  .tk-today-legend {
-    margin-block-start: calc(-1 * var(--space-3xs));
-  }
-
-  /* Controls */
-
-  .tk-controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: var(--space-2xs);
-    margin-block-end: var(--space-s);
-  }
-
-  .tk-seg {
-    display: inline-flex;
-    gap: 2px;
-    padding: 2px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-full);
-  }
-
-  .tk-seg label {
-    position: relative;
-    display: inline-flex;
-  }
-
-  /* An option the loaded payload can't support (model stacking on a
-     collector that predates the per-day model slices). */
-  .tk-seg label[hidden] {
-    display: none;
-  }
-
-  .tk-seg input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .tk-seg span {
-    padding: 0.125rem 0.625rem;
-    border-radius: var(--radius-full);
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .tk-seg input:checked + span {
-    background-color: var(--foreground);
-    color: var(--background);
-  }
-
-  .tk-seg label:hover input:not(:checked) + span {
-    color: var(--foreground);
-  }
-
-  .tk-seg input:focus-visible + span {
-    outline: 2px solid var(--ring);
-    outline-offset: 1px;
-  }
-
-  /* Compact variant for in-chart controls (the trend stack toggle). */
-  .tk-seg-sm span {
-    padding: 0.0625rem 0.5rem;
-    font-size: 0.6875rem;
-  }
-
-  /* Stat cards */
-
-  .tk-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-s);
-    margin: 0;
-
-    @media (width < 40rem) {
-      grid-template-columns: repeat(2, 1fr);
+      @media (width >= 64rem) {
+        scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
+      }
     }
-  }
 
-  .tk-cards.tk-facts {
-    grid-template-columns: repeat(4, 1fr);
+    /* Today */
 
-    @media (width < 40rem) {
-      grid-template-columns: repeat(2, 1fr);
+    /* Section heading with its freshness note on the same baseline. */
+    .tk-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-3xs) var(--space-s);
+      margin-block-end: var(--space-s);
     }
-  }
 
-  .tk-card {
-    display: grid;
-    gap: var(--space-3xs);
-    align-content: start;
-  }
-
-  .tk-card dt {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
-
-  .tk-card .value {
-    margin: 0;
-    font-size: var(--step-2);
-    font-weight: var(--font-weight-medium);
-    font-variant-numeric: tabular-nums;
-    line-height: 1.2;
-  }
-
-  .tk-facts .value {
-    font-size: var(--step-1);
-  }
-
-  .tk-card .sub,
-  .tk-card .delta {
-    margin: 0;
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tk-card .delta:empty {
-    display: none;
-  }
-
-  .tk-card .delta :global(.delta-val) {
-    color: var(--foreground);
-  }
-
-  /* Three proportions on this page, three forms. A composition
-     (.tk-mix-composition) is one quantity cut into its parts, so it
-     stays one solid block; a client mix (.tk-today-bar) is separate
-     actors sharing a day, so its segments are separate pills; a quota
-     window (.tk-meter) is a gauge against a ceiling, so it is a thin
-     track with a rounded head. Sizing all three alike was what made a
-     10%-spent week read as a stalled composition, and a day carried by
-     one client read as a colour slab with hairlines at its end. */
-
-  .tk-mix {
-    display: grid;
-    gap: var(--space-xs);
-  }
-
-  /* Composition: contiguous parts, shaded by the --c ramp below. */
-  .tk-mix-bar {
-    display: flex;
-    block-size: 0.875rem;
-    overflow: hidden;
-    border-radius: var(--radius-full);
-    background-color: var(--gray-4);
-  }
-
-  .tk-mix-bar :global(span) {
-    min-inline-size: 3px;
-    background-color: var(--c, var(--gray-6));
-  }
-
-  .tk-mix-bar :global(span + span) {
-    border-inline-start: 2px solid var(--background);
-  }
-
-  /* Client mix: brand-keyed pills with real air between them. A day is
-     usually carried by one client, and separate capsules let the tail
-     read as its own small marks rather than as hairline cracks in a
-     slab — which is also the honest shape, since these are different
-     agents rather than parts of one number. */
-  .tk-today-bar {
-    display: flex;
-    gap: 3px;
-    block-size: var(--tk-meter);
-    border-radius: var(--radius-full);
-  }
-
-  .tk-today-bar :global(span) {
-    min-inline-size: var(--tk-meter);
-    border-radius: var(--radius-full);
-    background-color: var(--p);
-    transition: opacity 0.15s ease;
-  }
-
-  /* Its legend leads with brand icons rather than color chips, so the
-     bar is keyed on demand instead: hovering or focusing a client row
-     mutes every segment but that client's (today.ts sets [data-mute]). */
-  .tk-today-bar :global(span[data-mute]) {
-    opacity: 0.25;
-  }
-
-  .tk-mix :global([data-k="0"]) {
-    --c: var(--foreground);
-  }
-
-  .tk-mix :global([data-k="1"]) {
-    --c: color-mix(in oklab, var(--foreground) 60%, var(--background));
-  }
-
-  .tk-mix :global([data-k="2"]) {
-    --c: var(--tk-accent);
-  }
-
-  .tk-mix :global([data-k="3"]) {
-    --c: color-mix(in oklab, var(--tk-accent) 50%, var(--background));
-  }
-
-  .tk-mix :global([data-k="4"]) {
-    --c: var(--gray-8);
-  }
-
-  /* One column per category, echoing the stat cards above:
-     muted label, medium value, muted share. */
-  .tk-mix-legend {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: var(--space-xs) var(--space-s);
-    font-size: var(--step--1);
-
-    @media (width < 40rem) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    .tk-head h2 {
+      margin-block-end: 0;
     }
-  }
 
-  .tk-mix-legend li {
-    display: grid;
-    gap: var(--space-3xs);
-    align-content: start;
-  }
-
-  .tk-mix-legend .name {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    color: var(--muted-foreground);
-  }
-
-  .tk-mix-legend .chip {
-    flex-shrink: 0;
-    inline-size: 0.625rem;
-    block-size: 0.625rem;
-    border-radius: var(--radius-xs);
-    background-color: var(--c, var(--gray-6));
-  }
-
-  .tk-mix-legend .value {
-    font-size: var(--step-1);
-    font-weight: var(--font-weight-medium);
-    font-variant-numeric: tabular-nums;
-    line-height: 1.2;
-  }
-
-  .tk-mix-legend .share {
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tk-mix-legend .sk-line {
-    max-inline-size: 100%;
-  }
-
-  /* Quota — the one reported section, so everything here is built to
-     admit its own age (see tokens-dashboard/quota.ts). */
-
-  .tk-quota-section[hidden] {
-    display: none;
-  }
-
-  /* Everything below .tk-plans is built by the renderer, so it is
-     addressed through :global — only the list itself is in this
-     template. The skeleton in the markup carries the same class names
-     so it lands in the same geometry.
-
-     Side by side once there is room, like the Breakdown split: the
-     subscriptions are peers being compared, not a sequence to read. */
-  .tk-plans {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-m);
-
-    @media (width >= 40rem) {
-      grid-template-columns: 1fr 1fr;
+    .tk-today-meta,
+    .tk-today-empty {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
     }
-  }
-
-  /* Name, windows and credits are three levels of the same statement,
-     so they sit further apart than the lines inside a window do. */
-  .tk-plans :global(.tk-plan) {
-    display: grid;
-    gap: var(--space-s);
-    align-content: start;
-  }
-
-  /* Mark, name and tier read as one phrase on one line — "Codex · Team"
-     — so the row never wraps and the mark sits on the text's centre
-     rather than its baseline. The age is pushed to the far end. */
-  .tk-plans :global(.plan-head) {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-  }
-
-  .tk-plans :global(.plan-age) {
-    margin-inline-start: auto;
-    padding-inline-start: var(--space-2xs);
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  /* Past the staleness threshold the age is the headline, not a
-     footnote: this card's numbers may describe a window that ended. */
-  .tk-plans :global(.plan-age[data-stale]) {
-    color: var(--destructive);
-  }
-
-  .tk-plans :global(.plan-name) {
-    font-weight: var(--font-weight-medium);
-  }
-
-  .tk-plans :global(.plan-head .ico) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    inline-size: 1.1em;
-    block-size: 1.1em;
-  }
-
-  .tk-plans :global(.plan-head .ico svg) {
-    inline-size: 100%;
-    block-size: 100%;
-  }
-
-  .tk-plans :global(.plan-tier) {
-    color: var(--muted-foreground);
-    white-space: nowrap;
-  }
-
-  /* Three nested gaps that have to stay in that order, or the grouping
-     inverts: the lines of a window sit closer than two windows do, and
-     two windows closer than a plan's head, windows and credits. */
-  .tk-plans :global(.tk-windows) {
-    display: grid;
-    gap: var(--space-xs);
-  }
-
-  .tk-plans :global(.tk-window) {
-    display: grid;
-    gap: var(--space-2xs);
-  }
-
-  /* Label and figure share a baseline, like a stat card turned on its
-     side, with the meter reading underneath them. */
-  .tk-plans :global(.win-head) {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-s);
-  }
-
-  .tk-plans :global(.win-label) {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
-
-  .tk-plans :global(.win-used) {
-    font-size: var(--step-1);
-    font-weight: var(--font-weight-medium);
-    font-variant-numeric: tabular-nums;
-    line-height: 1.2;
-  }
-
-  /* A window past its reset has no figure to give: the dash stands in
-     for it at the same size, so the row keeps its baseline, but at the
-     label's weight and colour — it is the absence of a reading, not a
-     reading. Its track stays empty (quota.ts draws no head). */
-  .tk-plans :global(.tk-window[data-reset] .win-used) {
-    font-weight: inherit;
-    color: var(--muted-foreground);
-  }
-
-  /* A quota window is a gauge against a ceiling, not a share of a whole,
-     so it gets a gauge: a thin track carrying one rounded head, with a
-     floor under the head's width so a barely-touched week still shows
-     that it was touched. The track is a wash of the same hue as the
-     head — the vendor's own — so an empty window still says whose
-     ceiling it measures, and the ceiling itself stays visible at a
-     glance instead of being implied by an unfilled remainder. */
-  .tk-plans :global(.tk-meter) {
-    block-size: var(--tk-meter);
-    border-radius: var(--radius-full);
-    background-color: var(--gray-4);
-  }
-
-  .tk-plans :global(.tk-meter[data-p]) {
-    background-color: color-mix(in oklab, var(--p) 22%, var(--gray-3));
-  }
-
-  .tk-plans :global(.tk-meter span) {
-    display: block;
-    block-size: 100%;
-    min-inline-size: var(--tk-meter);
-    border-radius: inherit;
-    background-color: var(--p, var(--gray-8));
-  }
-
-  .tk-plans :global(.win-foot),
-  .tk-plans :global(.plan-credits) {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Each credit expires on its own date, so they are a list under a
-     count rather than one summarised line. */
-  .tk-plans :global(.plan-credits) {
-    display: grid;
-    gap: var(--space-3xs);
-  }
-
-  .tk-plans :global(.credits-list) {
-    display: grid;
-    gap: var(--space-3xs);
-  }
-
-  .tk-plans :global(.credits-list li) {
-    /* Aligned under the count, marked by the same rail the breakdown
-       rows use rather than by a bullet glyph. */
-    padding-inline-start: var(--space-xs);
-    border-inline-start: 1px solid var(--gray-4);
-  }
-
-  /* The brand hue says which subscription is being measured; red is
-     reserved for the one case where the reading is a warning rather
-     than a measurement. It is swapped in as --p, so the track's wash
-     turns with the head — a red head on a coral wash would read as two
-     subjects in one gauge. */
-  .tk-plans :global(.tk-meter[data-high]) {
-    --p: var(--red-9);
-  }
-
-  /* Trend chart */
-
-  .tk-chart-head {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-s);
-    margin-block-end: var(--space-2xs);
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
-
-  .tk-chart-peak,
-  .tk-rhythm-peak {
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tk-chart-bars {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    block-size: clamp(8rem, 24vw, 11rem);
-    border-block-end: 1px solid var(--border);
-    background-image: repeating-linear-gradient(
-      to top,
-      color-mix(in oklab, var(--border) 55%, transparent) 0 1px,
-      transparent 1px 25%
-    );
-  }
-
-  .tk-chart-bars :global(span) {
-    display: flex;
-    /* First stack segment (largest provider) sits at the bottom. */
-    flex-direction: column-reverse;
-    flex: 1 1 0;
-    min-inline-size: 0;
-    block-size: max(2px, calc(var(--v) * 100%));
-    overflow: hidden;
-    border-radius: var(--radius-xs) var(--radius-xs) 0 0;
-  }
-
-  .tk-chart-bars :global(span:hover) {
-    filter: brightness(1.12);
-  }
-
-  .tk-chart-bars :global(span[data-zero]) {
-    background-color: var(--gray-6);
-  }
-
-  .tk-chart-bars :global(i) {
-    flex-basis: 0;
-  }
-
-  .tk-chart {
-    position: relative;
-  }
-
-  .tk-tip {
-    position: absolute;
-    inset-block-start: var(--space-3xs);
-    z-index: 5;
-    display: grid;
-    gap: var(--space-3xs);
-    max-inline-size: min(18rem, 100%);
-    padding: var(--space-2xs) var(--space-xs);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background-color: color-mix(in oklab, var(--background) 92%, transparent);
-    backdrop-filter: blur(var(--blur-sm));
-    font-size: var(--step--1);
-    pointer-events: none;
-  }
-
-  .tk-tip :global(.tip-title) {
-    font-weight: var(--font-weight-medium);
-  }
-
-  .tk-tip :global(.tip-total) {
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tk-tip :global(ul) {
-    display: grid;
-    gap: var(--space-3xs);
-  }
-
-  .tk-tip :global(li) {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tk-tip :global(.tip-share) {
-    margin-inline-start: var(--space-s);
-    margin-inline-end: 0;
-    flex: 1;
-    text-align: end;
-    color: var(--muted-foreground);
-  }
-
-  .tk-tip :global(.chip) {
-    flex-shrink: 0;
-    inline-size: 0.625rem;
-    block-size: 0.625rem;
-    border-radius: var(--radius-xs);
-  }
-
-  .tk-chart-axis {
-    display: flex;
-    justify-content: space-between;
-    margin-block-start: var(--space-3xs);
-    font-size: 0.6875rem;
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tk-chart-foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3xs) var(--space-s);
-    margin-block-start: var(--space-2xs);
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
-
-  .tk-chart-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-3xs) var(--space-s);
-  }
-
-  .tk-chart-legend :global(li) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
-  }
-
-  .tk-chart-legend :global(.chip) {
-    inline-size: 0.625rem;
-    block-size: 0.625rem;
-    border-radius: var(--radius-xs);
-  }
-
-  /* Weekly rhythm line chart */
-
-  .tk-rhythm {
-    position: relative;
-  }
-
-  .tk-rhythm-plot {
-    block-size: clamp(6.5rem, 18vw, 8.5rem);
-    border-block-end: 1px solid var(--border);
-  }
-
-  .tk-rhythm-plot :global(svg) {
-    display: block;
-    inline-size: 100%;
-    block-size: 100%;
-    overflow: visible;
-  }
-
-  .tk-rhythm-plot :global(.grid) {
-    stroke: color-mix(in oklab, var(--border) 55%, transparent);
-    stroke-width: 1;
-    shape-rendering: crispedges;
-  }
-
-  .tk-rhythm-plot :global(.area) {
-    fill: color-mix(in oklab, var(--tk-accent) 12%, transparent);
-  }
-
-  .tk-rhythm-plot :global(.line) {
-    fill: none;
-    stroke: var(--tk-accent);
-    stroke-width: 1.5;
-    stroke-linejoin: round;
-    stroke-linecap: round;
-  }
-
-  .tk-rhythm-plot :global(.dot) {
-    fill: var(--tk-accent);
-    stroke: var(--background);
-    stroke-width: 1.5;
-  }
-
-  .tk-rhythm-plot :global(.dot[data-peak]) {
-    stroke: color-mix(in oklab, var(--tk-accent) 35%, var(--background));
-    stroke-width: 2.5;
-  }
-
-  .tk-rhythm-plot :global(.hit) {
-    fill: transparent;
-  }
-
-  .tk-rhythm-axis {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    margin-block-start: var(--space-3xs);
-    font-size: 0.6875rem;
-    color: var(--muted-foreground);
-    text-align: center;
-  }
-
-  .tk-rhythm-plot[data-skeleton] {
-    border-radius: var(--radius-sm);
-    background-color: var(--gray-5);
-    animation: var(--sk-pulse);
-  }
-
-  /* Brand palette, applied through --p to bar segments and chips.
-     Clients take their vendor's hue — Claude Code renders Anthropic
-     coral, Codex the OpenAI green — so both stackings of the same data
-     read in one color language. Keep the bare [data-p] fallback first:
-     the named rules below must win. */
-  tokens-dashboard :global([data-p]) {
-    --p: var(--tk-p-other);
-
-    background-color: var(--p);
-  }
-
-  tokens-dashboard :global([data-p="anthropic"]),
-  tokens-dashboard :global([data-p="claude"]) {
-    --p: var(--tk-p-anthropic);
-  }
-
-  tokens-dashboard :global([data-p="openai"]),
-  tokens-dashboard :global([data-p="codex"]) {
-    --p: var(--tk-p-openai);
-  }
-
-  tokens-dashboard :global([data-p="google"]),
-  tokens-dashboard :global([data-p="gemini"]) {
-    --p: var(--tk-p-google);
-  }
-
-  tokens-dashboard :global([data-p="alibaba"]),
-  tokens-dashboard :global([data-p="qwen"]) {
-    --p: var(--tk-p-alibaba);
-  }
-
-  tokens-dashboard :global([data-p="xai"]),
-  tokens-dashboard :global([data-p="grok"]) {
-    --p: var(--tk-p-xai);
-  }
-
-  tokens-dashboard :global([data-p="cursor"]) {
-    --p: var(--tk-p-cursor);
-  }
-
-  tokens-dashboard :global([data-p="zed"]),
-  tokens-dashboard :global([data-p="zed.dev"]) {
-    --p: var(--tk-p-zed);
-  }
-
-  tokens-dashboard :global([data-p="opencode"]) {
-    --p: var(--tk-p-opencode);
-  }
-
-  tokens-dashboard :global([data-p="hermes"]) {
-    --p: var(--tk-p-hermes);
-  }
-
-  tokens-dashboard :global([data-p="moonshotai"]) {
-    --p: var(--tk-p-moonshot);
-  }
-
-  tokens-dashboard :global([data-p="zai"]) {
-    --p: var(--tk-p-zai);
-  }
-
-  tokens-dashboard :global([data-p="deepseek"]) {
-    --p: var(--tk-p-deepseek);
-  }
-
-  tokens-dashboard :global([data-p="meta"]) {
-    --p: var(--tk-p-meta);
-  }
-
-  tokens-dashboard :global([data-p="openrouter"]) {
-    --p: var(--tk-p-openrouter);
-  }
-
-  /* Kimi is Moonshot's model line: same vendor, same hue. */
-  tokens-dashboard :global([data-p="kimi"]) {
-    --p: var(--tk-p-moonshot);
-  }
-
-  /* Shades of a brand hue, for stacking the trend chart by model: the
-     vendor decides the color and the shade separates its models within
-     it, assigned in stack order, so "everything Anthropic" still reads
-     as one family. Model ids are 40-odd and growing — a rule per model
-     would be a maintenance queue, and an unmapped one would fall back to
-     grey. Must follow the [data-p] rules above: same specificity, and
-     these override the flat background-color they set. */
-  tokens-dashboard :global([data-shade="1"]) {
-    background-color: color-mix(in oklab, var(--p) 78%, var(--background));
-  }
-
-  tokens-dashboard :global([data-shade="2"]) {
-    background-color: color-mix(in oklab, var(--p) 58%, var(--background));
-  }
-
-  tokens-dashboard :global([data-shade="3"]) {
-    background-color: color-mix(in oklab, var(--p) 40%, var(--background));
-  }
-
-  /* Breakdown lists */
-
-  .tk-rows {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3xs);
-  }
-
-  .tk-rows :global(.tk-row) {
-    position: relative;
-    /* Isolate the row so the fill can slot between its background and
-       its content via z-index: -1. */
-    z-index: 0;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) max-content 3.2rem;
-    align-items: center;
-    gap: var(--space-2xs);
-    padding-block: var(--space-3xs);
-    font-size: var(--step--1);
-  }
-
-  /* Proportional fill behind each row — its share of the range total,
-     sized by the --w custom property the script sets. Soft-cornered
-     rectangle, the site's shape for data marks (heatmap cells, trend
-     bars, chips); tiny shares taper to a hairline rather than getting
-     a forced minimum width. */
-  .tk-rows :global(.tk-row:not([data-skeleton]))::before {
-    content: "";
-    position: absolute;
-    inset-block: 2px;
-    inset-inline-start: 0;
-    z-index: -1;
-    inline-size: calc(var(--w, 0) * 100%);
-    border-radius: var(--radius-xs);
-    background-color: color-mix(in oklab, var(--gray-5) 55%, transparent);
-  }
-
-  .tk-rows :global(.ico) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: 1.1em;
-    block-size: 1.1em;
-  }
-
-  .tk-rows :global(.ico svg) {
-    inline-size: 100%;
-    block-size: 100%;
-  }
-
-  .tk-rows :global(.name) {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .tk-rows :global(.val) {
-    justify-self: end;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tk-rows :global(.share) {
-    justify-self: end;
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-  }
-
-  tokens-dashboard :global(.tk-empty) {
-    padding-block: var(--space-3xs);
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
-
-  /* A row that opens onto the models behind it. The row itself is
-     the button — the whole width is the hit target, and it keeps the
-     four-column grid, so an expandable row and a plain one still line
-     up. The chevron rides inside the name cell. */
-  .tk-rows :global(.tk-row-toggle) {
-    inline-size: 100%;
-    text-align: start;
-    cursor: pointer;
-  }
-
-  .tk-rows :global(.tk-row-toggle .name) {
-    display: flex;
-    align-items: center;
-    gap: 0.3em;
-    min-inline-size: 0;
-  }
-
-  /* The label keeps its own box so a long model name still ellipsises
-     against the value column instead of shoving the chevron out. */
-  .tk-rows :global(.tk-row-toggle .name > span) {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .tk-rows :global(.tk-row-toggle .name svg) {
-    flex-shrink: 0;
-    inline-size: 0.85em;
-    block-size: 0.85em;
-    color: var(--muted-foreground);
-    transition: rotate 0.15s;
-  }
-
-  .tk-rows :global(.tk-row-toggle[aria-expanded="true"] .name svg) {
-    rotate: 180deg;
-  }
-
-  .tk-rows :global(.tk-row-toggle:hover .name svg) {
-    color: var(--foreground);
-  }
-
-  /* The models under a client or vendor: same row grid, indented and quieter, so
-     the parent still reads as the total they add up to. */
-  .tk-rows :global(.tk-sub) {
-    margin-inline-start: calc(1.1em + var(--space-2xs));
-  }
-
-  .tk-rows :global(.tk-sub .tk-row) {
-    color: var(--muted-foreground);
-  }
-
-  .tk-rows :global(.tk-sub .name) {
-    color: var(--foreground);
-  }
-
-  .tk-rows :global(.tk-more) {
-    margin-block-start: var(--space-3xs);
-  }
-
-  .tk-rows :global(.tk-more-btn) {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    inline-size: 100%;
-    padding-block: var(--space-2xs);
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-    cursor: pointer;
-  }
-
-  .tk-rows :global(.tk-more-btn:hover) {
-    color: var(--foreground);
-  }
-
-  .tk-rows :global(.tk-more-btn svg) {
-    inline-size: 1em;
-    block-size: 1em;
-    transition: rotate 0.15s;
-  }
-
-  .tk-rows :global(.tk-more-btn[aria-expanded="true"] svg) {
-    rotate: 180deg;
-  }
-
-  .tk-rows :global(.more-amount) {
-    margin-inline-start: auto;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .tk-split {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-s);
-    /* The models list (and its expand button) sits right above; keep the
-       same rhythm a .tk-label would bring. */
-    margin-block-start: var(--space-m);
-
-    @media (width >= 40rem) {
-      grid-template-columns: 1fr 1fr;
+
+    /* The clients bar and the model list are one unit: today.ts hides
+       both on a day that has activity but no tokens yet (active time or
+       messages only), where there is nothing to apportion and an empty
+       bar would read as a broken one. */
+    .tk-today-breakdown[hidden] {
+      display: none;
+    }
+
+    /* The legend under the client-mix bar is the client breakdown: the
+       same brand-marked rows as the Breakdown section, each opening onto
+       the models that client drove. The Breakdown section has no today
+       window of its own, so this is where the day's client → model join
+       is readable. */
+    .tk-today-legend {
+      margin-block-start: calc(-1 * var(--space-3xs));
+    }
+
+    /* Controls */
+
+    .tk-controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: var(--space-2xs);
+      margin-block-end: var(--space-s);
+    }
+
+    .tk-seg {
+      display: inline-flex;
+      gap: 2px;
+      padding: 2px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+    }
+
+    .tk-seg label {
+      position: relative;
+      display: inline-flex;
+    }
+
+    /* An option the loaded payload can't support (model stacking on a
+       collector that predates the per-day model slices). */
+    .tk-seg label[hidden] {
+      display: none;
+    }
+
+    .tk-seg input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tk-seg span {
+      padding: 0.125rem 0.625rem;
+      border-radius: var(--radius-full);
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tk-seg input:checked + span {
+      background-color: var(--foreground);
+      color: var(--background);
+    }
+
+    .tk-seg label:hover input:not(:checked) + span {
+      color: var(--foreground);
+    }
+
+    .tk-seg input:focus-visible + span {
+      outline: 2px solid var(--ring);
+      outline-offset: 1px;
+    }
+
+    /* Compact variant for in-chart controls (the trend stack toggle). */
+    .tk-seg-sm span {
+      padding: 0.0625rem 0.5rem;
+      font-size: 0.6875rem;
+    }
+
+    /* Stat cards */
+
+    .tk-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-s);
+      margin: 0;
+
+      @media (width < 40rem) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .tk-card {
+      display: grid;
+      gap: var(--space-3xs);
+      align-content: start;
+    }
+
+    .tk-card dt {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
+
+    .tk-card .value {
+      margin: 0;
+      font-size: var(--step-2);
+      font-weight: var(--font-weight-medium);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .tk-facts .value {
+      font-size: var(--step-1);
+    }
+
+    .tk-card .sub,
+    .tk-card .delta {
+      margin: 0;
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-card .delta:empty {
+      display: none;
+    }
+
+    .tk-card .delta .delta-val {
+      color: var(--foreground);
+    }
+
+    /* Three proportions on this page, three forms. A composition
+       (.tk-mix-composition) is one quantity cut into its parts, so it
+       stays one solid block; a client mix (.tk-today-bar) is separate
+       actors sharing a day, so its segments are separate pills; a quota
+       window (.tk-meter) is a gauge against a ceiling, so it is a thin
+       track with a rounded head. Sizing all three alike was what made a
+       10%-spent week read as a stalled composition, and a day carried by
+       one client read as a colour slab with hairlines at its end. */
+
+    .tk-mix {
+      display: grid;
+      gap: var(--space-xs);
+    }
+
+    /* Composition: contiguous parts, shaded by the --c ramp below. */
+    .tk-mix-bar {
+      display: flex;
+      block-size: 0.875rem;
+      overflow: hidden;
+      border-radius: var(--radius-full);
+      background-color: var(--gray-4);
+    }
+
+    .tk-mix-bar span {
+      min-inline-size: 3px;
+      background-color: var(--c, var(--gray-6));
+    }
+
+    .tk-mix-bar span + span {
+      border-inline-start: 2px solid var(--background);
+    }
+
+    /* Client mix: brand-keyed pills with real air between them. A day is
+       usually carried by one client, and separate capsules let the tail
+       read as its own small marks rather than as hairline cracks in a
+       slab — which is also the honest shape, since these are different
+       agents rather than parts of one number. */
+    .tk-today-bar {
+      display: flex;
+      gap: 3px;
+      block-size: var(--tk-meter);
+      border-radius: var(--radius-full);
+    }
+
+    .tk-today-bar span {
+      min-inline-size: var(--tk-meter);
+      border-radius: var(--radius-full);
+      background-color: var(--p);
+      transition: opacity 0.15s ease;
+    }
+
+    /* Its legend leads with brand icons rather than color chips, so the
+       bar is keyed on demand instead: hovering or focusing a client row
+       mutes every segment but that client's (today.ts sets [data-mute]). */
+    .tk-today-bar span[data-mute] {
+      opacity: 0.25;
+    }
+
+    .tk-mix [data-k="0"] {
+      --c: var(--foreground);
+    }
+
+    .tk-mix [data-k="1"] {
+      --c: color-mix(in oklab, var(--foreground) 60%, var(--background));
+    }
+
+    .tk-mix [data-k="2"] {
+      --c: var(--tk-accent);
+    }
+
+    .tk-mix [data-k="3"] {
+      --c: color-mix(in oklab, var(--tk-accent) 50%, var(--background));
+    }
+
+    .tk-mix [data-k="4"] {
+      --c: var(--gray-8);
+    }
+
+    /* One column per category, echoing the stat cards above:
+       muted label, medium value, muted share. */
+    .tk-mix-legend {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: var(--space-xs) var(--space-s);
+      font-size: var(--step--1);
+
+      @media (width < 40rem) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .tk-mix-legend li {
+      display: grid;
+      gap: var(--space-3xs);
+      align-content: start;
+    }
+
+    .tk-mix-legend .name {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      color: var(--muted-foreground);
+    }
+
+    .tk-mix-legend .chip {
+      flex-shrink: 0;
+      inline-size: 0.625rem;
+      block-size: 0.625rem;
+      border-radius: var(--radius-xs);
+      background-color: var(--c, var(--gray-6));
+    }
+
+    .tk-mix-legend .value {
+      font-size: var(--step-1);
+      font-weight: var(--font-weight-medium);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .tk-mix-legend .share {
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-mix-legend .sk-line {
+      max-inline-size: 100%;
+    }
+
+    /* Quota — the one reported section, so everything here is built to
+       admit its own age (see tokens-dashboard/quota.ts). */
+
+    .tk-quota-section[hidden] {
+      display: none;
+    }
+
+    /* Everything below .tk-plans is built by the renderer, so it is
+       addressed through :global — only the list itself is in this
+       template. The skeleton in the markup carries the same class names
+       so it lands in the same geometry.
+
+       Side by side once there is room, like the Breakdown split: the
+       subscriptions are peers being compared, not a sequence to read. */
+    .tk-plans {
+      display: grid;
+      grid-template-columns: 1fr;
       gap: var(--space-m);
+
+      @media (width >= 40rem) {
+        grid-template-columns: 1fr 1fr;
+      }
     }
-  }
 
-  .tk-split .tk-label:first-child {
-    margin-block-start: 0;
-  }
-
-  /* Devices */
-
-  .tk-devices {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .tk-devices :global(.tk-device + .tk-device) {
-    border-block-start: 1px solid var(--border);
-  }
-
-  /* The row is a button wherever there is CLI metadata to expand into;
-     the fourth column holds the chevron and collapses to nothing on the
-     plain <div> variant. */
-  .tk-devices :global(.dev-row) {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: var(--space-2xs);
-    inline-size: 100%;
-    padding-block: var(--space-2xs);
-    text-align: start;
-  }
-
-  .tk-devices :global(button.dev-row) {
-    cursor: pointer;
-  }
-
-  /* Hover brightens the chevron rather than underlining the name — the
-     same affordance the expandable client rows use, and a device name
-     is not a link. */
-  .tk-devices :global(button.dev-row:hover svg) {
-    color: var(--foreground);
-  }
-
-  .tk-devices :global(button.dev-row:focus-visible) {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-    border-radius: var(--radius-sm);
-  }
-
-  .tk-devices :global(.dev-row svg) {
-    inline-size: 1em;
-    block-size: 1em;
-    color: var(--muted-foreground);
-    transition: rotate 0.15s;
-  }
-
-  .tk-devices :global(.dev-row[aria-expanded="true"] svg) {
-    rotate: 180deg;
-  }
-
-  /* Two columns of label/value pairs, indented past the liveness dot so
-     they read as belonging to the row above. */
-  .tk-devices :global(.dev-details) {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-3xs) var(--space-s);
-    margin-inline-start: calc(0.5rem + var(--space-2xs));
-    padding-block-end: var(--space-2xs);
-    font-size: var(--step--1);
-
-    @media (width < 30rem) {
-      grid-template-columns: minmax(0, 1fr);
+    /* Name, windows and credits are three levels of the same statement,
+       so they sit further apart than the lines inside a window do. */
+    .tk-plans .tk-plan {
+      display: grid;
+      gap: var(--space-s);
+      align-content: start;
     }
-  }
 
-  .tk-devices :global(.dev-details > div) {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4em;
-  }
+    /* Mark, name and tier read as one phrase on one line — "Codex · Team"
+       — so the row never wraps and the mark sits on the text's centre
+       rather than its baseline. The age is pushed to the far end. */
+    .tk-plans .plan-head {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+    }
 
-  .tk-devices :global(.dev-details dt) {
-    color: var(--muted-foreground);
-  }
+    .tk-plans .plan-age {
+      margin-inline-start: auto;
+      padding-inline-start: var(--space-2xs);
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
 
-  .tk-devices :global(.dev-details dd) {
-    margin: 0;
-    font-variant-numeric: tabular-nums;
-    overflow-wrap: anywhere;
-  }
+    /* Past the staleness threshold the age is the headline, not a
+       footnote: this card's numbers may describe a window that ended. */
+    .tk-plans .plan-age[data-stale] {
+      color: var(--destructive);
+    }
 
-  .tk-devices :global(.dot) {
-    inline-size: 0.5rem;
-    block-size: 0.5rem;
-    border-radius: var(--radius-full);
-    background-color: var(--gray-7);
-  }
+    .tk-plans .plan-name {
+      font-weight: var(--font-weight-medium);
+    }
 
-  .tk-devices :global(.dot[data-online]) {
-    background-color: var(--tk-accent);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--tk-accent) 25%, transparent);
-  }
+    .tk-plans .plan-head .ico {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      inline-size: 1.1em;
+      block-size: 1.1em;
+    }
 
-  .tk-devices :global(.dev-id) {
-    display: grid;
-    gap: var(--space-3xs);
-  }
+    .tk-plans .plan-head .ico svg {
+      inline-size: 100%;
+      block-size: 100%;
+    }
 
-  .tk-devices :global(.dev-name) {
-    overflow: hidden;
-    font-weight: var(--font-weight-medium);
-    line-height: 1.25;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
+    .tk-plans .plan-tier {
+      color: var(--muted-foreground);
+      white-space: nowrap;
+    }
 
-  .tk-devices :global(.dev-seen) {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-  }
+    /* Three nested gaps that have to stay in that order, or the grouping
+       inverts: the lines of a window sit closer than two windows do, and
+       two windows closer than a plan's head, windows and credits. */
+    .tk-plans .tk-windows {
+      display: grid;
+      gap: var(--space-xs);
+    }
 
-  .tk-devices :global(.dev-usage) {
-    display: grid;
-    gap: var(--space-3xs);
-    justify-items: end;
-  }
+    .tk-plans .tk-window {
+      display: grid;
+      gap: var(--space-2xs);
+    }
 
-  .tk-devices :global(.dev-tokens) {
-    font-weight: var(--font-weight-medium);
-    font-variant-numeric: tabular-nums;
-    line-height: 1.25;
-  }
+    /* Label and figure share a baseline, like a stat card turned on its
+       side, with the meter reading underneath them. */
+    .tk-plans .win-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-s);
+    }
 
-  .tk-devices :global(.dev-meta) {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-    font-variant-numeric: tabular-nums;
-  }
+    .tk-plans .win-label {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
 
-  /* Skeletons */
+    .tk-plans .win-used {
+      font-size: var(--step-1);
+      font-weight: var(--font-weight-medium);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
 
-  .sk-sub {
-    inline-size: 7em;
-    block-size: 0.8em;
-  }
+    /* A window past its reset has no figure to give: the dash stands in
+       for it at the same size, so the row keeps its baseline, but at the
+       label's weight and colour — it is the absence of a reading, not a
+       reading. Its track stays empty (quota.ts draws no head). */
+    .tk-plans .tk-window[data-reset] .win-used {
+      font-weight: inherit;
+      color: var(--muted-foreground);
+    }
 
-  .sk-num {
-    inline-size: 2.6em;
-    justify-self: end;
-  }
+    /* A quota window is a gauge against a ceiling, not a share of a whole,
+       so it gets a gauge: a thin track carrying one rounded head, with a
+       floor under the head's width so a barely-touched week still shows
+       that it was touched. The track is a wash of the same hue as the
+       head — the vendor's own — so an empty window still says whose
+       ceiling it measures, and the ceiling itself stays visible at a
+       glance instead of being implied by an unfilled remainder. */
+    .tk-plans .tk-meter {
+      block-size: var(--tk-meter);
+      border-radius: var(--radius-full);
+      background-color: var(--gray-4);
+    }
 
-  .sk-ico {
-    border-radius: var(--radius-full);
-  }
+    .tk-plans .tk-meter[data-p] {
+      background-color: color-mix(in oklab, var(--p) 22%, var(--gray-3));
+    }
 
-  .sk-ico,
-  .tk-mix-bar[data-skeleton],
-  .tk-today-bar[data-skeleton],
-  .tk-plans :global(.tk-meter[data-skeleton]),
-  .tk-chart-bars[data-skeleton],
-  .tk-device[data-skeleton] .dot {
-    background-color: var(--gray-5);
-    animation: var(--sk-pulse);
-  }
+    .tk-plans .tk-meter span {
+      display: block;
+      block-size: 100%;
+      min-inline-size: var(--tk-meter);
+      border-radius: inherit;
+      background-color: var(--p, var(--gray-8));
+    }
 
-  .tk-chart-bars[data-skeleton] {
-    border-radius: var(--radius-sm);
-    background-image: none;
+    .tk-plans .win-foot,
+    .tk-plans .plan-credits {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Each credit expires on its own date, so they are a list under a
+       count rather than one summarised line. */
+    .tk-plans .plan-credits {
+      display: grid;
+      gap: var(--space-3xs);
+    }
+
+    .tk-plans .credits-list {
+      display: grid;
+      gap: var(--space-3xs);
+    }
+
+    .tk-plans .credits-list li {
+      /* Aligned under the count, marked by the same rail the breakdown
+         rows use rather than by a bullet glyph. */
+      padding-inline-start: var(--space-xs);
+      border-inline-start: 1px solid var(--gray-4);
+    }
+
+    /* The brand hue says which subscription is being measured; red is
+       reserved for the one case where the reading is a warning rather
+       than a measurement. It is swapped in as --p, so the track's wash
+       turns with the head — a red head on a coral wash would read as two
+       subjects in one gauge. */
+    .tk-plans .tk-meter[data-high] {
+      --p: var(--red-9);
+    }
+
+    /* Trend chart */
+
+    .tk-chart-head {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-s);
+      margin-block-end: var(--space-2xs);
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
+
+    .tk-chart-peak,
+    .tk-rhythm-peak {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      block-size: clamp(8rem, 24vw, 11rem);
+      border-block-end: 1px solid var(--border);
+      background-image: repeating-linear-gradient(
+        to top,
+        color-mix(in oklab, var(--border) 55%, transparent) 0 1px,
+        transparent 1px 25%
+      );
+    }
+
+    .tk-chart-bars span {
+      display: flex;
+      /* First stack segment (largest provider) sits at the bottom. */
+      flex-direction: column-reverse;
+      flex: 1 1 0;
+      min-inline-size: 0;
+      block-size: max(2px, calc(var(--v) * 100%));
+      overflow: hidden;
+      border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+    }
+
+    .tk-chart-bars span:hover {
+      filter: brightness(1.12);
+    }
+
+    .tk-chart-bars span[data-zero] {
+      background-color: var(--gray-6);
+    }
+
+    .tk-chart-bars i {
+      flex-basis: 0;
+    }
+
+    .tk-chart {
+      position: relative;
+    }
+
+    .tk-tip {
+      position: absolute;
+      inset-block-start: var(--space-3xs);
+      z-index: 5;
+      display: grid;
+      gap: var(--space-3xs);
+      max-inline-size: min(18rem, 100%);
+      padding: var(--space-2xs) var(--space-xs);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background-color: color-mix(in oklab, var(--background) 92%, transparent);
+      backdrop-filter: blur(var(--blur-sm));
+      font-size: var(--step--1);
+      pointer-events: none;
+    }
+
+    .tk-tip .tip-title {
+      font-weight: var(--font-weight-medium);
+    }
+
+    .tk-tip .tip-total {
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-tip ul {
+      display: grid;
+      gap: var(--space-3xs);
+    }
+
+    .tk-tip li {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-tip .tip-share {
+      margin-inline-start: var(--space-s);
+      margin-inline-end: 0;
+      flex: 1;
+      text-align: end;
+      color: var(--muted-foreground);
+    }
+
+    .tk-tip .chip {
+      flex-shrink: 0;
+      inline-size: 0.625rem;
+      block-size: 0.625rem;
+      border-radius: var(--radius-xs);
+    }
+
+    .tk-chart-axis {
+      display: flex;
+      justify-content: space-between;
+      margin-block-start: var(--space-3xs);
+      font-size: 0.6875rem;
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-chart-foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3xs) var(--space-s);
+      margin-block-start: var(--space-2xs);
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
+
+    .tk-chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3xs) var(--space-s);
+    }
+
+    .tk-chart-legend li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+
+    .tk-chart-legend .chip {
+      inline-size: 0.625rem;
+      block-size: 0.625rem;
+      border-radius: var(--radius-xs);
+    }
+
+    /* Weekly rhythm line chart */
+
+    .tk-rhythm {
+      position: relative;
+    }
+
+    .tk-rhythm-plot {
+      block-size: clamp(6.5rem, 18vw, 8.5rem);
+      border-block-end: 1px solid var(--border);
+    }
+
+    .tk-rhythm-plot svg {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+      overflow: visible;
+    }
+
+    .tk-rhythm-plot .grid {
+      stroke: color-mix(in oklab, var(--border) 55%, transparent);
+      stroke-width: 1;
+      shape-rendering: crispedges;
+    }
+
+    .tk-rhythm-plot .area {
+      fill: color-mix(in oklab, var(--tk-accent) 12%, transparent);
+    }
+
+    .tk-rhythm-plot .line {
+      fill: none;
+      stroke: var(--tk-accent);
+      stroke-width: 1.5;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    .tk-rhythm-plot .dot {
+      fill: var(--tk-accent);
+      stroke: var(--background);
+      stroke-width: 1.5;
+    }
+
+    .tk-rhythm-plot .dot[data-peak] {
+      stroke: color-mix(in oklab, var(--tk-accent) 35%, var(--background));
+      stroke-width: 2.5;
+    }
+
+    .tk-rhythm-plot .hit {
+      fill: transparent;
+    }
+
+    .tk-rhythm-axis {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-block-start: var(--space-3xs);
+      font-size: 0.6875rem;
+      color: var(--muted-foreground);
+      text-align: center;
+    }
+
+    .tk-rhythm-plot[data-skeleton] {
+      border-radius: var(--radius-sm);
+      background-color: var(--gray-5);
+      animation: var(--sk-pulse);
+    }
+
+    /* Brand palette, applied through --p to bar segments and chips.
+       Clients take their vendor's hue — Claude Code renders Anthropic
+       coral, Codex the OpenAI green — so both stackings of the same data
+       read in one color language. Keep the bare [data-p] fallback first:
+       the named rules below must win. */
+    [data-p] {
+      --p: var(--tk-p-other);
+
+      background-color: var(--p);
+    }
+
+    [data-p="anthropic"],
+    [data-p="claude"] {
+      --p: var(--tk-p-anthropic);
+    }
+
+    [data-p="openai"],
+    [data-p="codex"] {
+      --p: var(--tk-p-openai);
+    }
+
+    [data-p="google"],
+    [data-p="gemini"] {
+      --p: var(--tk-p-google);
+    }
+
+    [data-p="alibaba"],
+    [data-p="qwen"] {
+      --p: var(--tk-p-alibaba);
+    }
+
+    [data-p="xai"],
+    [data-p="grok"] {
+      --p: var(--tk-p-xai);
+    }
+
+    [data-p="cursor"] {
+      --p: var(--tk-p-cursor);
+    }
+
+    [data-p="zed"],
+    [data-p="zed.dev"] {
+      --p: var(--tk-p-zed);
+    }
+
+    [data-p="opencode"] {
+      --p: var(--tk-p-opencode);
+    }
+
+    [data-p="hermes"] {
+      --p: var(--tk-p-hermes);
+    }
+
+    [data-p="moonshotai"] {
+      --p: var(--tk-p-moonshot);
+    }
+
+    [data-p="zai"] {
+      --p: var(--tk-p-zai);
+    }
+
+    [data-p="deepseek"] {
+      --p: var(--tk-p-deepseek);
+    }
+
+    [data-p="meta"] {
+      --p: var(--tk-p-meta);
+    }
+
+    [data-p="openrouter"] {
+      --p: var(--tk-p-openrouter);
+    }
+
+    /* Kimi is Moonshot's model line: same vendor, same hue. */
+    [data-p="kimi"] {
+      --p: var(--tk-p-moonshot);
+    }
+
+    /* Shades of a brand hue, for stacking the trend chart by model: the
+       vendor decides the color and the shade separates its models within
+       it, assigned in stack order, so "everything Anthropic" still reads
+       as one family. Model ids are 40-odd and growing — a rule per model
+       would be a maintenance queue, and an unmapped one would fall back to
+       grey. Must follow the [data-p] rules above: same specificity, and
+       these override the flat background-color they set. */
+    [data-shade="1"] {
+      background-color: color-mix(in oklab, var(--p) 78%, var(--background));
+    }
+
+    [data-shade="2"] {
+      background-color: color-mix(in oklab, var(--p) 58%, var(--background));
+    }
+
+    [data-shade="3"] {
+      background-color: color-mix(in oklab, var(--p) 40%, var(--background));
+    }
+
+    /* Breakdown lists */
+
+    .tk-rows {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3xs);
+    }
+
+    .tk-rows .tk-row {
+      position: relative;
+      /* Isolate the row so the fill can slot between its background and
+         its content via z-index: -1. */
+      z-index: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) max-content 3.2rem;
+      align-items: center;
+      gap: var(--space-2xs);
+      padding-block: var(--space-3xs);
+      font-size: var(--step--1);
+    }
+
+    /* Proportional fill behind each row — its share of the range total,
+       sized by the --w custom property the script sets. Soft-cornered
+       rectangle, the site's shape for data marks (heatmap cells, trend
+       bars, chips); tiny shares taper to a hairline rather than getting
+       a forced minimum width. */
+    .tk-rows .tk-row:not([data-skeleton])::before {
+      content: "";
+      position: absolute;
+      inset-block: 2px;
+      inset-inline-start: 0;
+      z-index: -1;
+      inline-size: calc(var(--w, 0) * 100%);
+      border-radius: var(--radius-xs);
+      background-color: color-mix(in oklab, var(--gray-5) 55%, transparent);
+    }
+
+    .tk-rows .ico {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: 1.1em;
+      block-size: 1.1em;
+    }
+
+    .tk-rows .ico svg {
+      inline-size: 100%;
+      block-size: 100%;
+    }
+
+    .tk-rows .name {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .tk-rows .val {
+      justify-self: end;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-rows .share {
+      justify-self: end;
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-empty {
+      padding-block: var(--space-3xs);
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
+
+    /* A row that opens onto the models behind it. The row itself is
+       the button — the whole width is the hit target, and it keeps the
+       four-column grid, so an expandable row and a plain one still line
+       up. The chevron rides inside the name cell. */
+    .tk-rows .tk-row-toggle {
+      inline-size: 100%;
+      text-align: start;
+      cursor: pointer;
+    }
+
+    .tk-rows .tk-row-toggle .name {
+      display: flex;
+      align-items: center;
+      gap: 0.3em;
+      min-inline-size: 0;
+    }
+
+    /* The label keeps its own box so a long model name still ellipsises
+       against the value column instead of shoving the chevron out. */
+    .tk-rows .tk-row-toggle .name > span {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .tk-rows .tk-row-toggle .name svg {
+      flex-shrink: 0;
+      inline-size: 0.85em;
+      block-size: 0.85em;
+      color: var(--muted-foreground);
+      transition: rotate 0.15s;
+    }
+
+    .tk-rows .tk-row-toggle[aria-expanded="true"] .name svg {
+      rotate: 180deg;
+    }
+
+    .tk-rows .tk-row-toggle:hover .name svg {
+      color: var(--foreground);
+    }
+
+    /* The models under a client or vendor: same row grid, indented and quieter, so
+       the parent still reads as the total they add up to. */
+    .tk-rows .tk-sub {
+      margin-inline-start: calc(1.1em + var(--space-2xs));
+    }
+
+    .tk-rows .tk-sub .tk-row {
+      color: var(--muted-foreground);
+    }
+
+    .tk-rows .tk-sub .name {
+      color: var(--foreground);
+    }
+
+    .tk-rows .tk-more {
+      margin-block-start: var(--space-3xs);
+    }
+
+    .tk-rows .tk-more-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      inline-size: 100%;
+      padding-block: var(--space-2xs);
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      cursor: pointer;
+    }
+
+    .tk-rows .tk-more-btn:hover {
+      color: var(--foreground);
+    }
+
+    .tk-rows .tk-more-btn svg {
+      inline-size: 1em;
+      block-size: 1em;
+      transition: rotate 0.15s;
+    }
+
+    .tk-rows .tk-more-btn[aria-expanded="true"] svg {
+      rotate: 180deg;
+    }
+
+    .tk-rows .more-amount {
+      margin-inline-start: auto;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tk-split {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-s);
+      /* The models list (and its expand button) sits right above; keep the
+         same rhythm a .tk-label would bring. */
+      margin-block-start: var(--space-m);
+
+      @media (width >= 40rem) {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-m);
+      }
+    }
+
+    .tk-split .tk-label:first-child {
+      margin-block-start: 0;
+    }
+
+    /* Devices */
+
+    .tk-devices {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tk-devices .tk-device + .tk-device {
+      border-block-start: 1px solid var(--border);
+    }
+
+    /* The row is a button wherever there is CLI metadata to expand into;
+       the fourth column holds the chevron and collapses to nothing on the
+       plain <div> variant. */
+    .tk-devices .dev-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: var(--space-2xs);
+      inline-size: 100%;
+      padding-block: var(--space-2xs);
+      text-align: start;
+    }
+
+    .tk-devices button.dev-row {
+      cursor: pointer;
+    }
+
+    /* Hover brightens the chevron rather than underlining the name — the
+       same affordance the expandable client rows use, and a device name
+       is not a link. */
+    .tk-devices button.dev-row:hover svg {
+      color: var(--foreground);
+    }
+
+    .tk-devices button.dev-row:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+
+    .tk-devices .dev-row svg {
+      inline-size: 1em;
+      block-size: 1em;
+      color: var(--muted-foreground);
+      transition: rotate 0.15s;
+    }
+
+    .tk-devices .dev-row[aria-expanded="true"] svg {
+      rotate: 180deg;
+    }
+
+    /* Two columns of label/value pairs, indented past the liveness dot so
+       they read as belonging to the row above. */
+    .tk-devices .dev-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3xs) var(--space-s);
+      margin-inline-start: calc(0.5rem + var(--space-2xs));
+      padding-block-end: var(--space-2xs);
+      font-size: var(--step--1);
+
+      @media (width < 30rem) {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .tk-devices .dev-details > div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4em;
+    }
+
+    .tk-devices .dev-details dt {
+      color: var(--muted-foreground);
+    }
+
+    .tk-devices .dev-details dd {
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .tk-devices .dot {
+      inline-size: 0.5rem;
+      block-size: 0.5rem;
+      border-radius: var(--radius-full);
+      background-color: var(--gray-7);
+    }
+
+    .tk-devices .dot[data-online] {
+      background-color: var(--tk-accent);
+      box-shadow: 0 0 0 3px
+        color-mix(in oklab, var(--tk-accent) 25%, transparent);
+    }
+
+    .tk-devices .dev-id {
+      display: grid;
+      gap: var(--space-3xs);
+    }
+
+    .tk-devices .dev-name {
+      overflow: hidden;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.25;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .tk-devices .dev-seen {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
+
+    .tk-devices .dev-usage {
+      display: grid;
+      gap: var(--space-3xs);
+      justify-items: end;
+    }
+
+    .tk-devices .dev-tokens {
+      font-weight: var(--font-weight-medium);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.25;
+    }
+
+    .tk-devices .dev-meta {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Skeletons */
+
+    .sk-sub {
+      inline-size: 7em;
+      block-size: 0.8em;
+    }
+
+    .sk-num {
+      inline-size: 2.6em;
+      justify-self: end;
+    }
+
+    .sk-ico {
+      border-radius: var(--radius-full);
+    }
+
+    .sk-ico,
+    .tk-mix-bar[data-skeleton],
+    .tk-today-bar[data-skeleton],
+    .tk-plans .tk-meter[data-skeleton],
+    .tk-chart-bars[data-skeleton],
+    .tk-device[data-skeleton] .dot {
+      background-color: var(--gray-5);
+      animation: var(--sk-pulse);
+    }
+
+    .tk-chart-bars[data-skeleton] {
+      border-radius: var(--radius-sm);
+      background-image: none;
+    }
   }
 </style>

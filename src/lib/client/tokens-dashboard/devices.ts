@@ -57,7 +57,7 @@ export function renderDevices(q: Query, site: Site, icons: Icons) {
   list.replaceChildren(
     ...site.devices.map((device) => {
       const item = el("li", "tk-device")
-      const online = isOnline(device.lastSeen)
+      const online = isOnline(device.lastSeen, site.deviceOnlineWithinMs)
       const details = detailsOf(device)
 
       const dot = el("span", "dot")

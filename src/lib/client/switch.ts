@@ -4,7 +4,7 @@
  * the Switch.astro renderer validates against. Pure and browser-safe.
  */
 
-import { swr, fetchJson } from "./feed"
+import { swr, fetchJson, isRecord, isCount, isCalendarDay } from "./feed"
 
 export type SiteStats = {
   totalMinutes: number
@@ -51,17 +51,6 @@ export type Site = {
 
 /** Lockstep with switch-worker SITE_VERSION in src/site.ts. */
 export const SITE_SCHEMA_VERSION = 4
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-
-const isCount = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value)
-
-const isCalendarDay = (value: unknown): value is string =>
-  typeof value === "string" && DATE_RE.test(value)
 
 const isNullableDay = (value: unknown): value is string | null =>
   value === null || isCalendarDay(value)

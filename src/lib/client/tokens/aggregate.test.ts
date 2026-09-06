@@ -1,187 +1,39 @@
-/**
- * Tests for the pure data layer behind the Tokens dashboard. The
- * date, aggregation and streak logic here is what the dashboard
- * renders from, so boundary dates (month/year rollovers, Monday week
- * starts, message-only days) get explicit coverage.
- */
-
 import { describe, expect, it } from "bun:test"
-import { weekdayIndex } from "./heatmap"
+import { weekdayIndex } from "../heatmap"
 import {
   activeTotals,
-  aiIcon,
-  clientLabel,
   computeFacts,
   dailyBuckets,
   fillDaily,
-  formatDelta,
-  formatIn,
-  formatShare,
   hasActivity,
   isMessagesOnly,
-  isSite,
   lastReport,
   levelScale,
-  type ModelCell,
-  modelBrand,
-  modelLabel,
+  modelVendors,
   monthlyBuckets,
   perHour,
-  providerLabel,
-  type QuotaPlan,
-  RANGE_KEYS,
-  shiftDays,
-  type Site,
-  SITE_SCHEMA_VERSION,
-  type SiteDay,
-  type SiteRange,
-  type StackDim,
   stackFor,
   stackPaint,
   todayView,
-  type Usage,
-  type UsageSpan,
   weekdayProfile,
   windowTotals,
-} from "./tokens"
-import fixture from "./tokens.site-fixture.json"
-
-/* Fixtures ------------------------------------------------------------ */
-
-const day = (
-  date: string,
-  tokens = 0,
-  extra: Partial<SiteDay> = {},
-): SiteDay => ({
-  date,
-  tokens,
-  cost: 0,
-  messages: 0,
-  providers: {},
-  clients: {},
-  models: {},
-  ...extra,
-})
-
-const usage = (tokens = 0): Usage => ({
-  input: 0,
-  output: 0,
-  cacheRead: 0,
-  cacheWrite: 0,
-  reasoning: 0,
-  tokens,
-  messages: 0,
-  cost: 0,
-})
-
-const span: UsageSpan = { days: 0, firstDate: null, lastDate: null }
-
-const device = (): Site["devices"][number] => ({
-  name: "MacbookPro",
-  firstSeen: 1784199105234,
-  lastSeen: 1784989231554,
-  cliVersion: "3.1.0",
-  sessions: 12,
-  activeMs: 3_600_000,
-  longestMs: 1_200_000,
-  maxConcurrent: 2,
-  mcpServers: ["context7"],
-  activeDays: 3,
-  tokens: 100,
-  messages: 5,
-  cost: 1.5,
-})
-
-const modelRows = (
-  ...models: [model: string, tokens: number, cost?: number][]
-): SiteRange["byModel"] =>
-  models.map(([model, tokens, cost = 0]) => ({
-    ...usage(tokens),
-    ...span,
-    cost,
-    model,
-    providers: ["anthropic"],
-  }))
-
-const providerRows = (
-  ...providers: [provider: string, tokens: number][]
-): SiteRange["byProvider"] =>
-  providers.map(([provider, tokens]) => ({
-    ...usage(tokens),
-    ...span,
-    provider,
-    models: [],
-  }))
-
-const rangeStats = (
-  byProvider: SiteRange["byProvider"] = [],
-  byClient: SiteRange["byClient"] = [],
-  byModel: SiteRange["byModel"] = [],
-): SiteRange => ({
-  from: null,
-  totals: { ...usage(), activeDays: 0, firstDate: null, lastDate: null },
-  byModel,
-  byClient,
-  byProvider,
-})
-
-const site = (
-  byProvider: SiteRange["byProvider"] = [],
-  byClient: SiteRange["byClient"] = [],
-): Site => ({
-  schemaVersion: SITE_SCHEMA_VERSION,
-  generatedAt: "2026-07-20T00:00:00Z",
-  today: "2026-07-20",
-  quota: [],
-  ranges: {
-    day: rangeStats(),
-    week: rangeStats(),
-    month: rangeStats(),
-    quarter: rangeStats(),
-    all: rangeStats(byProvider, byClient),
-  },
-  daily: [],
-  devices: [],
-})
-
-const quotaPlan = (): QuotaPlan => ({
-  provider: "openai",
-  label: "Codex",
-  plan: "Team",
-  capturedAt: "2026-07-20T00:00:00Z",
-  windows: [
-    { label: "Weekly", usedPercent: 28, resetsAt: "2026-07-22T00:00:00Z" },
-  ],
-  resetCredits: ["2026-07-25T00:00:00Z"],
-})
-
-/* Dates ---------------------------------------------------------------- */
-
-describe("shiftDays", () => {
-  it("shifts within a month", () => {
-    expect(shiftDays("2026-07-20", 1)).toBe("2026-07-21")
-    expect(shiftDays("2026-07-20", -3)).toBe("2026-07-17")
-    expect(shiftDays("2026-07-20", 0)).toBe("2026-07-20")
-  })
-
-  it("rolls over month and year boundaries", () => {
-    expect(shiftDays("2026-02-28", 1)).toBe("2026-03-01")
-    expect(shiftDays("2025-12-31", 1)).toBe("2026-01-01")
-    expect(shiftDays("2026-01-01", -1)).toBe("2025-12-31")
-  })
-
-  it("knows leap days", () => {
-    expect(shiftDays("2024-02-28", 1)).toBe("2024-02-29")
-    expect(shiftDays("2024-03-01", -1)).toBe("2024-02-29")
-  })
-
-  it("is stable across DST transitions", () => {
-    // US spring-forward 2026 happens on Mar 8; noon-UTC anchoring
-    // must keep day arithmetic exact regardless of visitor locale.
-    expect(shiftDays("2026-03-07", 2)).toBe("2026-03-09")
-    expect(shiftDays("2026-11-01", 1)).toBe("2026-11-02")
-  })
-})
+} from "./aggregate"
+import {
+  type ModelCell,
+  type Site,
+  type SiteDay,
+  type SiteRange,
+} from "./schema"
+import {
+  day,
+  usage,
+  span,
+  device,
+  modelRows,
+  providerRows,
+  rangeStats,
+  site,
+} from "./test-helpers"
 
 describe("weekdayIndex", () => {
   it("maps Monday to 0 and Sunday to 6", () => {
@@ -228,8 +80,6 @@ describe("fillDaily", () => {
     expect(days[0].tokens).toBe(9)
   })
 })
-
-/* Aggregation ---------------------------------------------------------- */
 
 describe("hasActivity / isMessagesOnly", () => {
   it("treats message-only days as activity, not idle", () => {
@@ -346,7 +196,7 @@ describe("stackFor", () => {
 describe("stackPaint", () => {
   it("paints provider and client ids with their own hue, unshaded", () => {
     expect(
-      stackPaint({ dim: "provider", ids: ["anthropic", "other"] }),
+      stackPaint({ dim: "provider", ids: ["anthropic", "other"] }, new Map()),
     ).toEqual([
       { p: "anthropic", shade: 0 },
       { p: "other", shade: 0 },
@@ -356,30 +206,41 @@ describe("stackPaint", () => {
   // The point of the shade ramp: a stack of five models must not be five
   // unrelated colors, nor two identical corals.
   it("gives models their vendor's hue and separates them by shade", () => {
-    const paints = stackPaint({
-      dim: "model",
-      ids: [
-        "claude-opus-5",
-        "gpt-5.6-sol",
-        "claude-fable-5",
-        "claude-sonnet-5",
-        "other",
-      ],
-    })
+    const paints = stackPaint(
+      {
+        dim: "model",
+        ids: [
+          "claude-opus-5",
+          "gpt-5.6-sol",
+          "claude-fable-5",
+          "claude-sonnet-5",
+          "other",
+        ],
+      },
+      new Map([
+        ["claude-opus-5", "anthropic"],
+        ["gpt-5.6-sol", "openai"],
+        ["claude-fable-5", "anthropic"],
+        ["claude-sonnet-5", "anthropic"],
+      ]),
+    )
     expect(paints).toEqual([
-      { p: "claude", shade: 0 },
+      { p: "anthropic", shade: 0 },
       { p: "openai", shade: 0 },
-      { p: "claude", shade: 1 },
-      { p: "claude", shade: 2 },
+      { p: "anthropic", shade: 1 },
+      { p: "anthropic", shade: 2 },
       { p: "other", shade: 0 },
     ])
   })
 
   it("keeps unplaceable models off the residual's exact grey", () => {
-    const paints = stackPaint({
-      dim: "model",
-      ids: ["brand-new-model", "another-new-model", "other"],
-    })
+    const paints = stackPaint(
+      {
+        dim: "model",
+        ids: ["brand-new-model", "another-new-model", "other"],
+      },
+      new Map(),
+    )
     expect(paints).toEqual([
       { p: "other", shade: 1 },
       { p: "other", shade: 2 },
@@ -388,10 +249,15 @@ describe("stackPaint", () => {
   })
 
   it("stops the ramp where tints stop being tellable apart", () => {
-    const paints = stackPaint({
-      dim: "model",
-      ids: Array.from({ length: 6 }, (_, i) => `claude-opus-${i}`),
-    })
+    const paints = stackPaint(
+      {
+        dim: "model",
+        ids: Array.from({ length: 6 }, (_, i) => `claude-opus-${i}`),
+      },
+      new Map(
+        Array.from({ length: 6 }, (_, i) => [`claude-opus-${i}`, "anthropic"]),
+      ),
+    )
     expect(paints.map((paint) => paint.shade)).toEqual([0, 1, 2, 3, 3, 3])
   })
 
@@ -639,8 +505,6 @@ describe("weekdayProfile", () => {
   })
 })
 
-/* Today ----------------------------------------------------------------- */
-
 describe("todayView", () => {
   const TODAY = "2026-07-20"
   const EVE = "2026-07-19"
@@ -867,79 +731,6 @@ describe("todayView", () => {
   })
 })
 
-describe("labels and icons", () => {
-  it("falls back to the raw id for ids that shadow Object members", () => {
-    for (const id of [
-      "constructor",
-      "__proto__",
-      "toString",
-      "hasOwnProperty",
-    ]) {
-      expect(clientLabel(id)).toBe(id)
-      expect(providerLabel(id)).toBe(id)
-      expect(aiIcon("client", id)).toBeNull()
-      expect(aiIcon("provider", id)).toBeNull()
-      expect(aiIcon("model", id)).toBeNull()
-    }
-  })
-
-  it("still resolves the known ids", () => {
-    expect(clientLabel("claude")).toBe("Claude Code")
-    expect(clientLabel("other")).toBe("Other")
-    expect(clientLabel("brand-new-cli")).toBe("brand-new-cli")
-    expect(providerLabel("zed.dev")).toBe("Zed")
-    expect(providerLabel("alibaba")).toBe("Alibaba")
-    expect(providerLabel("meta")).toBe("Meta")
-    expect(providerLabel("openrouter")).toBe("OpenRouter")
-    expect(aiIcon("client", "claude")).toBe("claudecode")
-    expect(aiIcon("provider", "moonshotai")).toBe("moonshot")
-    expect(aiIcon("provider", "deepseek")).toBe("deepseek")
-    expect(aiIcon("provider", "alibaba")).toBe("alibaba")
-    expect(aiIcon("provider", "meta")).toBe("meta")
-    expect(aiIcon("provider", "openrouter")).toBe("openrouter")
-    expect(aiIcon("model", "claude-opus-5")).toBe("claude")
-    expect(aiIcon("model", "deepseek-v4-flash")).toBe("deepseek")
-    expect(aiIcon("model", "qwen3.8-max")).toBe("qwen")
-  })
-
-  // The icon slug and the [data-p] palette key are the same brand key,
-  // which is what lets a model band wear its vendor's color without a
-  // CSS rule per model id.
-  it("places models on their vendor's brand key", () => {
-    expect(modelBrand("claude-opus-4-5")).toBe("claude")
-    expect(modelBrand("gpt-5.6-sol")).toBe("openai")
-    expect(modelBrand("o3")).toBe("openai")
-    expect(modelBrand("glm-4.7")).toBe("zai")
-    expect(modelBrand("composer-2.5")).toBe("cursor")
-    expect(modelBrand("muse-spark-1.2")).toBe("meta")
-    expect(modelBrand("ox-alpha")).toBe("openrouter")
-    expect(modelBrand("brand-new-model")).toBeNull()
-    expect(modelBrand("unknown")).toBeNull()
-  })
-
-  it("labels the collector's placeholder model ids", () => {
-    expect(modelLabel("unknown")).toBe("Other")
-    expect(modelLabel("<synthetic>")).toBe("Synthetic")
-  })
-
-  it("humanizes model ids into display names", () => {
-    // Exact overrides keep their canonical brand spelling.
-    expect(modelLabel("deepseek-v4-flash")).toBe("DeepSeek V4 Flash")
-    expect(modelLabel("muse-spark-1.2")).toBe("Muse Spark 1.2")
-    // Generic path: split into words, Title Case, dot-join versions.
-    expect(modelLabel("claude-fable-5")).toBe("Claude Fable 5")
-    expect(modelLabel("claude-opus-4-5")).toBe("Claude Opus 4.5")
-    expect(modelLabel("claude-haiku-4-5")).toBe("Claude Haiku 4.5")
-    expect(modelLabel("gemini-2.5-pro")).toBe("Gemini 2.5 Pro")
-    expect(modelLabel("gpt-5.2-codex")).toBe("GPT 5.2 Codex")
-    expect(modelLabel("kimi-k2")).toBe("Kimi K2")
-    // A lone unknown id falls back to the raw string.
-    expect(modelLabel("brand-new-model")).toBe("Brand New Model")
-  })
-})
-
-/* Facts ---------------------------------------------------------------- */
-
 describe("computeFacts", () => {
   it("returns empty facts for an empty series", () => {
     expect(computeFacts([])).toEqual({
@@ -1069,396 +860,33 @@ describe("levelScale", () => {
   })
 })
 
-/* Formatting ----------------------------------------------------------- */
-
-describe("formatDelta", () => {
-  it("formats rises, falls and no change", () => {
-    expect(formatDelta(0.23)).toBe("↑ 23%")
-    expect(formatDelta(-0.08)).toBe("↓ 8.0%")
-    expect(formatDelta(0)).toBe("→ 0.0%")
-  })
-
-  it("switches to a multiple beyond +200%", () => {
-    expect(formatDelta(2.4)).toBe("↑ 3.4×")
-  })
-})
-
-// The quota renderer branches on the null: a window whose reset time
-// has passed is a different statement, not a negative countdown.
-describe("formatIn", () => {
-  const now = Date.parse("2026-07-20T12:00:00Z")
-  const at = (iso: string) => formatIn(Date.parse(iso), now)
-
-  it("counts down in the coarsest useful unit", () => {
-    expect(at("2026-07-20T12:40:00Z")).toBe("in 40m")
-    expect(at("2026-07-20T15:00:00Z")).toBe("in 3h")
-    expect(at("2026-07-22T12:00:00Z")).toBe("in 2d")
-  })
-
-  // A deadline rounded up hands the reader time they do not have: a
-  // credit lapsing in five and a half days must not read "in 6d".
-  it("rounds down, never up", () => {
-    expect(at("2026-07-26T01:08:00Z")).toBe("in 5d")
-    expect(at("2026-07-20T15:59:00Z")).toBe("in 3h")
-    expect(at("2026-07-20T12:59:00Z")).toBe("in 59m")
-  })
-
-  it("never reads as expired while it still has seconds left", () => {
-    expect(at("2026-07-20T12:00:30Z")).toBe("in 1m")
-  })
-
-  it("returns null once the instant has passed", () => {
-    expect(at("2026-07-20T11:59:00Z")).toBeNull()
-    expect(at("2026-07-20T12:00:00Z")).toBeNull()
-    expect(at("2026-07-19T12:00:00Z")).toBeNull()
-  })
-})
-
-describe("formatShare", () => {
-  it("clamps the readable edges", () => {
-    expect(formatShare(0.0005)).toBe("<0.1%")
-    expect(formatShare(0.9996)).toBe("100%")
-    expect(formatShare(0.421)).toBe("42.1%")
-    expect(formatShare(Number.NaN)).toBe("—")
-  })
-})
-/* Payload decoding ------------------------------------------------------ */
-
-describe("isSite", () => {
-  it("accepts the minimal well-formed payload", () => {
-    expect(isSite(site())).toBe(true)
-  })
-
-  it("accepts exactly the version this build was written against", () => {
-    expect(isSite({ ...site(), schemaVersion: SITE_SCHEMA_VERSION })).toBe(true)
-    for (const version of [
-      undefined,
-      String(SITE_SCHEMA_VERSION),
-      SITE_SCHEMA_VERSION - 1,
-      SITE_SCHEMA_VERSION + 1,
-    ]) {
-      expect(isSite({ ...site(), schemaVersion: version })).toBe(false)
-    }
-  })
-
-  // Quota is a list, empty until a collector has reported, but not
-  // loose: it is reported data and the renderer does arithmetic on every
-  // instant in it.
-  it("accepts an empty quota list but not a malformed one", () => {
-    expect(isSite({ ...site(), quota: [] })).toBe(true)
-    expect(isSite({ ...site(), quota: [quotaPlan()] })).toBe(true)
-
-    // A bare plan where a list belongs, and the shapes schema 11 used.
-    for (const quotaValue of [
-      undefined,
-      null,
-      "yes",
-      quotaPlan(),
-      { capturedAt: "2026-07-20T00:00:00Z", plans: [] },
-    ]) {
-      expect(isSite({ ...site(), quota: quotaValue })).toBe(false)
-    }
-  })
-
-  // capturedAt is per plan: each is read by its own collector on its own
-  // timer, and its card is aged by it, so a decorative string there is
-  // the failure worth catching — it decides whether numbers that may
-  // describe an ended window are presented as current.
-  it("requires every plan to date itself", () => {
-    for (const capturedAt of [undefined, null, "recently", 1_753_000_000_000]) {
-      expect(
-        isSite({ ...site(), quota: [{ ...quotaPlan(), capturedAt }] }),
-      ).toBe(false)
-    }
-  })
-
-  it("rejects a quota plan the renderer could not draw", () => {
-    const withPlan = (patch: Record<string, unknown>) => ({
-      ...site(),
-      quota: [{ ...quotaPlan(), ...patch }],
-    })
-    // A plan with no windows is a heading over nothing.
-    expect(isSite(withPlan({ windows: [] }))).toBe(false)
-    expect(isSite(withPlan({ provider: undefined }))).toBe(false)
-    expect(isSite(withPlan({ resetCredits: [1, 2] }))).toBe(false)
-    // A null plan tier is fine — not every subscription names one.
-    expect(isSite(withPlan({ plan: null }))).toBe(true)
-
-    const badWindow = (patch: Record<string, unknown>) =>
-      withPlan({
-        windows: [
-          { label: "Weekly", usedPercent: 28, resetsAt: null, ...patch },
-        ],
-      })
-    expect(isSite(badWindow({}))).toBe(true)
-    expect(isSite(badWindow({ usedPercent: "28" }))).toBe(false)
-    expect(isSite(badWindow({ resetsAt: "soon" }))).toBe(false)
-  })
-
-  // Model slices are part of the schema now — a missing or malformed
-  // map is a rejection, not a shrug.
-  it("requires per-day model slices", () => {
-    const withModels = site()
-    withModels.daily = [
-      day("2026-07-20", 5, {
-        models: { "claude-opus-5": { tokens: 5, cost: 1 } },
-      }),
-    ]
-    expect(isSite(withModels)).toBe(true)
-
-    const withoutModels = site()
-    withoutModels.daily = [
+it("uses reported vendors for new model names and leaves ambiguous attribution neutral", () => {
+  const range = rangeStats(
+    [],
+    [],
+    [
+      { ...usage(), ...span, model: "future-model", providers: ["anthropic"] },
+      { ...usage(), ...span, model: "claude-custom", providers: ["google"] },
       {
-        date: "2026-07-20",
-        tokens: 5,
-        cost: 0,
-        messages: 0,
-        providers: {},
-        clients: {},
-      } as SiteDay,
-    ]
-    expect(isSite(withoutModels)).toBe(false)
-
-    const badModels = site()
-    badModels.daily = [
-      { ...day("2026-07-20", 5), models: { "claude-opus-5": { tokens: "5" } } },
-    ] as unknown as SiteDay[]
-    expect(isSite(badModels)).toBe(false)
-  })
-
-  it("rejects payloads missing the spine the dashboard indexes", () => {
-    expect(isSite(null)).toBe(false)
-    expect(isSite([])).toBe(false)
-    expect(isSite({})).toBe(false)
-    expect(isSite({ ...site(), daily: "nope" })).toBe(false)
-    // generatedAt is the freshness key the SWR path compares on.
-    expect(isSite({ ...site(), generatedAt: undefined })).toBe(false)
-    const missingRange = site()
-    // @ts-expect-error deliberately breaking the shape
-    delete missingRange.ranges.quarter
-    expect(isSite(missingRange)).toBe(false)
-    // "day" is not in the range selector but the Today section reads it,
-    // so it is part of the spine like any other range.
-    const missingDay = site()
-    // @ts-expect-error deliberately breaking the shape
-    delete missingDay.ranges.day
-    expect(isSite(missingDay)).toBe(false)
-    const badBreakdown = site()
-    // @ts-expect-error deliberately breaking the shape
-    badBreakdown.ranges.all.byModel = {}
-    expect(isSite(badBreakdown)).toBe(false)
-  })
-
-  it("rejects dates the renderers would feed to Date and Intl", () => {
-    // Not pedantry: shiftDays() calls toISOString() on the parsed day,
-    // and that *throws* on an Invalid Date — a malformed cache entry
-    // would take the whole dashboard down rather than fall back.
-    expect(isSite({ ...site(), today: "yesterday" })).toBe(false)
-    expect(isSite({ ...site(), today: "2026-07-20T00:00:00Z" })).toBe(false)
-    expect(isSite({ ...site(), generatedAt: "soon" })).toBe(false)
-
-    const badDay = site()
-    badDay.daily = [day("20/07/2026", 5)]
-    expect(isSite(badDay)).toBe(false)
-
-    const badFrom = site()
-    badFrom.ranges.week.from = "last monday"
-    expect(isSite(badFrom)).toBe(false)
-
-    const badSpan = site(providerRows(["anthropic", 10]))
-    badSpan.ranges.all.byProvider[0].firstDate = "n/a"
-    expect(isSite(badSpan)).toBe(false)
-
-    // Nulls still mean "no dates in this range", as the producer emits
-    // for an empty window.
-    expect(isSite(site())).toBe(true)
-  })
-
-  it("rejects rows missing fields the renderers read unconditionally", () => {
-    // A daily row without its slice maps used to crash the trend
-    // chart's Object.entries() — the exact stale-cache failure the
-    // schema version + strict decoding exist to prevent.
-    const noSlices = site()
-    noSlices.daily = [
-      { date: "2026-07-20", tokens: 1, cost: 0, messages: 1 } as SiteDay,
-    ]
-    expect(isSite(noSlices)).toBe(false)
-
-    const partialTotals = site()
-    // @ts-expect-error deliberately breaking the shape
-    delete partialTotals.ranges.week.totals.cacheRead
-    expect(isSite(partialTotals)).toBe(false)
-
-    const spanless = site([
-      // @ts-expect-error deliberately breaking the shape
-      { ...usage(10), provider: "anthropic", models: [] },
-    ])
-    expect(isSite(spanless)).toBe(false)
-
-    const namelessDevice = site()
-    namelessDevice.devices = [{ activeDays: 1 } as Site["devices"][number]]
-    expect(isSite(namelessDevice)).toBe(false)
-  })
-
-  // The model cells (on client rows since schema 9, on provider rows
-  // since 10) and the model rows' provider arrays are read straight into
-  // a renderer — the cells into a disclosure, the providers into a
-  // .join() — so a wrong type here is a crash, not a blank.
-  it("requires model cells on client and provider rows", () => {
-    const models = [{ model: "claude-opus-5", tokens: 5, cost: 1, messages: 2 }]
-    const good = site(
-      [{ ...usage(5), ...span, provider: "anthropic", models }],
-      [{ ...usage(5), ...span, client: "claude", models }],
-    )
-    expect(isSite(good)).toBe(true)
-
-    for (const broken of [
-      // @ts-expect-error deliberately breaking the shape
-      site([], [{ ...usage(5), ...span, client: "claude" }]),
-      // @ts-expect-error deliberately breaking the shape
-      site([{ ...usage(5), ...span, provider: "anthropic" }]),
-      site(
-        [],
-        // @ts-expect-error deliberately breaking the shape
-        [{ ...usage(5), ...span, client: "claude", models: [{ model: "m" }] }],
-      ),
-    ]) {
-      expect(isSite(broken)).toBe(false)
-    }
-
-    // The pre-9 encoding: a comma-joined string would reach .filter().
-    const joined = site()
-    joined.ranges.all.byModel = [
-      // @ts-expect-error deliberately breaking the shape
-      { ...usage(5), ...span, model: "m", providers: "anthropic,openai" },
-    ]
-    expect(isSite(joined)).toBe(false)
-  })
-
-  it("rejects device metadata whose types would crash the renderer", () => {
-    const withDevice = (overrides: Record<string, unknown>) => ({
-      ...site(),
-      devices: [{ ...device(), ...overrides }],
-    })
-    expect(isSite(withDevice({}))).toBe(true)
-    expect(
-      isSite(
-        withDevice({
-          cliVersion: null,
-          sessions: null,
-          activeMs: null,
-          longestMs: null,
-          maxConcurrent: null,
-          mcpServers: null,
-        }),
-      ),
-    ).toBe(true)
-    // A string has a truthy .length but no .join() — the exact crash
-    // the device tooltip would hit on a malformed cached payload.
-    expect(isSite(withDevice({ mcpServers: "context7" }))).toBe(false)
-    expect(isSite(withDevice({ mcpServers: ["context7", 1] }))).toBe(false)
-    expect(isSite(withDevice({ mcpServers: undefined }))).toBe(false)
-    expect(isSite(withDevice({ sessions: "12" }))).toBe(false)
-    expect(isSite(withDevice({ activeMs: {} }))).toBe(false)
-    expect(isSite(withDevice({ maxConcurrent: Number.NaN }))).toBe(false)
-    expect(isSite(withDevice({ cliVersion: 3.1 }))).toBe(false)
-    expect(isSite(withDevice({ lastSeen: "yesterday" }))).toBe(false)
-  })
-})
-
-/* Producer contract ----------------------------------------------------- */
-
-describe("/api/site fixture contract", () => {
-  // Captured /api/site payload; producer-side assertions live in
-  // tokens-worker/test/site.spec.ts.
-  it("passes the strict decoder", () => {
-    // Recapture the fixture from the live endpoint (never hand-edit it)
-    // when tokens-worker bumps SITE_VERSION.
-    expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
-    expect(isSite(fixture)).toBe(true)
-  })
-
-  // The one reported field, so it is also the one that can be silently
-  // stale — the renderer needs `capturedAt` to be arithmetic, not a
-  // label, and a plan with no windows would draw a heading over nothing.
-  it("carries a decodable quota plan per subscription", () => {
-    if (!isSite(fixture)) throw new Error("fixture failed decoding")
-    for (const plan of fixture.quota) {
-      expect(Number.isFinite(Date.parse(plan.capturedAt))).toBe(true)
-      expect(plan.windows.length).toBeGreaterThan(0)
-      for (const window of plan.windows) {
-        expect(window.usedPercent).toBeGreaterThanOrEqual(0)
-        expect(window.usedPercent).toBeLessThanOrEqual(100)
-      }
-      // Reset credits are instants the renderer compares against now.
-      for (const at of plan.resetCredits) {
-        expect(Number.isFinite(Date.parse(at))).toBe(true)
-      }
-    }
-    // Each provider appears once — the renderer draws one card each.
-    const providers = fixture.quota.map((plan) => plan.provider)
-    expect(new Set(providers).size).toBe(providers.length)
-  })
-
-  it("is composed as of its own `today`", () => {
-    if (!isSite(fixture)) throw new Error("fixture failed decoding")
-    // The payload is a view as of the collector's day: submissions may
-    // legitimately carry dates up to two days ahead, but every window
-    // the dashboard draws ends today, and Today's active time is
-    // matched by exact date — a row past `today` would show up in the
-    // day range while the active-time card ignored it.
-    for (const day of fixture.daily) {
-      expect(day.date <= fixture.today).toBe(true)
-    }
-    for (const key of RANGE_KEYS) {
-      const { totals } = fixture.ranges[key]
-      expect(totals.lastDate === null || totals.lastDate <= fixture.today).toBe(
-        true,
-      )
-    }
-    expect(fixture.ranges.day.from).toBe(fixture.today)
-  })
-
-  it("derives a Today view that agrees with the daily series", () => {
-    if (!isSite(fixture)) throw new Error("fixture failed decoding")
-    const view = todayView(fixture)
-    const today = fixture.daily.find((day) => day.date === fixture.today)
-    expect(view.idle).toBe(false)
-    expect(view.totals.tokens).toBe(today?.tokens ?? 0)
-    expect(view.totals.messages).toBe(today?.messages ?? 0)
-    expect(view.totals.cost).toBeCloseTo(today?.cost ?? 0, 6)
-    // The mix apportions the whole day, whatever the client count — and
-    // the legend, which is not capped, apportions the same day.
-    expect(view.mix.reduce((sum, entry) => sum + entry.tokens, 0)).toBe(
-      view.totals.tokens,
-    )
-    expect(view.clients.reduce((sum, entry) => sum + entry.tokens, 0)).toBe(
-      view.totals.tokens,
-    )
-  })
-
-  it("feeds the render paths the dashboard actually runs", () => {
-    if (!isSite(fixture)) throw new Error("fixture failed decoding")
-    const dims: StackDim[] = ["provider", "client", "model"]
-    for (const dim of dims) {
-      const stack = stackFor(fixture.ranges.all, dim, "tokens")
-      expect(stack.ids.length).toBeGreaterThan(1)
-      expect(stackPaint(stack)).toHaveLength(stack.ids.length)
-      const buckets = dailyBuckets(fixture.daily, stack, "tokens")
-      expect(buckets).toHaveLength(fixture.daily.length)
-      // Every day's stack segments add back up to the day's total.
-      for (const [i, bucket] of buckets.entries()) {
-        const sum = bucket.segments.reduce((a, b) => a + b, 0)
-        expect(sum).toBeCloseTo(fixture.daily[i].tokens, 5)
-      }
-    }
-    const facts = computeFacts(
-      fillDaily(
-        fixture.daily,
-        fixture.daily[0].date,
-        fixture.daily[fixture.daily.length - 1].date,
-      ),
-    )
-    expect(facts.biggest).not.toBeNull()
-  })
+        ...usage(),
+        ...span,
+        model: "ambiguous",
+        providers: ["openai", "google"],
+      },
+      { ...usage(), ...span, model: "unknown-vendor", providers: ["unknown"] },
+      { ...usage(), ...span, model: "__proto__", providers: ["openai"] },
+    ],
+  )
+  expect(
+    stackPaint(
+      { dim: "model", ids: range.byModel.map((row) => row.model) },
+      modelVendors(range),
+    ),
+  ).toEqual([
+    { p: "anthropic", shade: 0 },
+    { p: "google", shade: 0 },
+    { p: "other", shade: 1 },
+    { p: "other", shade: 2 },
+    { p: "openai", shade: 0 },
+  ])
 })

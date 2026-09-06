@@ -337,6 +337,30 @@ const { title, sections } = Astro.props
       const target = document.querySelectorAll(`[id="${CSS.escape(id)}"]`)[nth]
       if (target) links.set(target, a)
     }
+    // The rail owns visibility of its entries. Watch only the hidden
+    // attributes on each target and its ancestors, including cached first paint.
+    const syncHidden = () => {
+      for (const [target, link] of links) {
+        link
+          .closest("li")
+          ?.toggleAttribute("hidden", !!target.closest("[hidden]"))
+      }
+      progress()
+    }
+    const visibility = new MutationObserver(syncHidden)
+    const watched = new Set<Element>()
+    for (const target of links.keys()) {
+      for (let node: Element | null = target; node; node = node.parentElement) {
+        if (watched.has(node)) break
+        watched.add(node)
+        visibility.observe(node, {
+          attributes: true,
+          attributeFilter: ["hidden"],
+        })
+      }
+    }
+    syncHidden()
+
     const articles = document.querySelectorAll("main article, main section")
     const list = nav.querySelector(":scope > ul")
     const currentLabel = nav.querySelector("toc-current")

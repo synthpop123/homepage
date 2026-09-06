@@ -274,13 +274,6 @@ export function renderQuota(q: Query, site: Site, icons: Icons) {
   // explain a piece of plumbing the reader has no stake in.
   const absent = site.quota.length === 0
   section.hidden = absent
-  // The table of contents is rendered by the page shell, outside this
-  // component, so a hidden section would otherwise leave a live link
-  // pointing into nothing.
-  document
-    .querySelector('nav a[href="#quota"]')
-    ?.closest("li")
-    ?.toggleAttribute("hidden", absent)
   if (absent) return
 
   const now = Date.now()

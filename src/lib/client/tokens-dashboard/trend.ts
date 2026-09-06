@@ -26,6 +26,7 @@ import {
   stackFor,
   stackLabel,
   stackPaint,
+  modelVendors,
   type StackPaint,
   WEEKDAYS,
   type WeekdayStat,
@@ -114,7 +115,7 @@ export function createTrendChart(q: Query) {
     dim: StackDim,
   ) => {
     stack = stackFor(site.ranges[range], dim, metric)
-    paints = stackPaint(stack)
+    paints = stackPaint(stack, modelVendors(site.ranges.all))
     const meta = rangeMeta(range)
     const from = site.ranges[range].from
     const buckets =

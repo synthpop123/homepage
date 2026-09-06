@@ -12,6 +12,7 @@
 
 import {
   loadSite,
+  DEFAULT_RANGE,
   type MetricKey,
   type RangeKey,
   type Site,
@@ -84,14 +85,10 @@ export function mountTokensDashboard(root: HTMLElement) {
 
   const readState = (): Controls => {
     const values = new FormData(form)
-    const stackInput = root.querySelector<HTMLInputElement>(
-      'input[name="stack"]:checked',
-    )
-    const stackDim = (stackInput?.value ?? "provider") as StackDim
     return {
-      range: (values.get("range") ?? "month") as RangeKey,
+      range: (values.get("range") ?? DEFAULT_RANGE.key) as RangeKey,
       metric: (values.get("metric") ?? "tokens") as MetricKey,
-      stackDim,
+      stackDim: (values.get("stack") ?? "provider") as StackDim,
     }
   }
 
@@ -124,9 +121,16 @@ export function mountTokensDashboard(root: HTMLElement) {
 
   restoreControls(root)
   form.addEventListener("submit", (event) => event.preventDefault())
-  form.addEventListener("change", renderDynamic)
-  // The stack toggle lives in the chart footer, outside the form.
-  q(".tk-chart-foot .tk-seg")?.addEventListener("change", renderDynamic)
+  // Form-associated footer inputs participate in FormData, but change
+  // events follow DOM ancestry, so one listener belongs on the root.
+  root.addEventListener("change", (event) => {
+    if (
+      event.target instanceof HTMLInputElement &&
+      event.target.form === form
+    ) {
+      renderDynamic()
+    }
+  })
 
   const renderAll = (loaded: Site) => {
     // renderDynamic reads the module state, so commit before rendering —

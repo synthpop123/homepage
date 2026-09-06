@@ -3,9 +3,28 @@
  * Memos, Tokens): a sessionStorage cache with two reading disciplines
  * (TTL for the leisurely feeds, stale-while-revalidate for the
  * freshness-critical one), JSON fetching with a timeout, URL sanitizing
- * for remote payloads, and the site's display time zone. Imported from
+ * for remote payloads, the decoder primitives every payload validator
+ * is built from, and the site's display time zone. Imported from
  * component <script> blocks, so everything here must be browser-safe.
  */
+
+/* Decoder primitives -------------------------------------------------- */
+
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+/** A finite number — every count and cost the payloads carry (costs may
+ *  be fractional, so this is not an integer check). */
+export const isCount = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value)
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/** A calendar day as the workers spell it, `YYYY-MM-DD`. */
+export const isCalendarDay = (value: unknown): value is string =>
+  typeof value === "string" && DATE_RE.test(value)
+
+/* Session cache --------------------------------------------------------- */
 
 const CACHE_TTL = 60_000
 
