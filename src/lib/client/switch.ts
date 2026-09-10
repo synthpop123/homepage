@@ -208,17 +208,6 @@ export function statCards(stats: SiteStats): StatCard[] {
 }
 
 /**
- * The bar legend, or nothing. It earns its line only once a bar is actually
- * split — while every title's recent minutes are its whole history, the
- * solid part is the whole bar and a legend would explain nothing.
- */
-export function legendNote(games: SiteGame[], recentDays: number): string {
-  return games.some((game) => game.recentMinutes < game.totalMinutes)
-    ? `Solid = last ${recentDays} days`
-    : ""
-}
-
-/**
  * The line under a title: how lately it was played, and — only when it is
  * less than the whole — how much of it fell in the recent window. On a
  * title played entirely inside the window the clause would restate the

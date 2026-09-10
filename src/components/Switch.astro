@@ -41,10 +41,7 @@ const stats = ["Playtime", "Games", "", "Per active day"]
     </dl>
     <h3 class="switch-label">Activity</h3>
     <Heatmap />
-    <div class="switch-head">
-      <h3 class="switch-label">Most played</h3>
-      <p class="switch-note" data-note></p>
-    </div>
+    <h3 class="switch-label">Most played</h3>
     <ol class="switch-list">
       {Array.from({ length: Math.min(limit, SKELETON_ROWS) }).map(() => (
         <li class="switch-item" data-skeleton aria-hidden="true">
@@ -75,7 +72,6 @@ const stats = ["Playtime", "Games", "", "Per active day"]
   import {
     formatPlaytime,
     heatmapWindow,
-    legendNote,
     loadSite,
     rowFoot,
     type Site,
@@ -188,7 +184,6 @@ const stats = ["Playtime", "Games", "", "Per active day"]
     const endpoint = feed.dataset.endpoint
     const body = feed.querySelector<HTMLElement>(".switch-body")
     const list = feed.querySelector<HTMLOListElement>(".switch-list")
-    const note = feed.querySelector<HTMLElement>("[data-note]")
     const fallback = feed.querySelector<HTMLElement>(".switch-fallback")
     if (!endpoint || !body || !list) return
 
@@ -214,7 +209,6 @@ const stats = ["Playtime", "Games", "", "Per active day"]
           buildRow(game, max, site.recentDays, site.today),
         ),
       )
-      if (note) note.textContent = legendNote(games, site.recentDays)
       rendered = signature
       feed.setAttribute("aria-busy", "false")
     }).catch(() => {
@@ -228,21 +222,6 @@ const stats = ["Playtime", "Games", "", "Per active day"]
 <style>
   switch-feed {
     display: block;
-  }
-
-  /* The legend belongs on the heading line: it explains the bars below it,
-     and a line of its own would read as content. */
-  .switch-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-s);
-  }
-
-  .switch-note {
-    margin: 0;
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
   }
 
   .switch-stats {

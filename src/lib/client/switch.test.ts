@@ -4,7 +4,6 @@ import {
   heatmapWindow,
   isSite,
   lastPlayedLabel,
-  legendNote,
   rowFoot,
   SITE_SCHEMA_VERSION,
   type SiteGame,
@@ -132,19 +131,6 @@ describe("statCards", () => {
       pricedGameCount: 0,
     })
     expect(third).toEqual({ label: "Days active", value: "3", note: "" })
-  })
-})
-
-describe("legendNote", () => {
-  it("stays silent while every bar is solid end to end", () => {
-    expect(legendNote([game(100, 100), game(50, 50)], 14)).toBe("")
-    expect(legendNote([], 14)).toBe("")
-  })
-
-  it("appears once any bar is split", () => {
-    expect(legendNote([game(100, 100), game(50, 20)], 14)).toBe(
-      "Solid = last 14 days",
-    )
   })
 })
 
