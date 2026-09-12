@@ -29,7 +29,13 @@ const gridMetrics = (grid: HTMLElement) => {
 export const weekdayIndex = (day: string) =>
   (new Date(`${day.slice(0, 10)}T12:00:00Z`).getUTCDay() + 6) % 7
 
-export type HeatCell = { level: number; title: string }
+export type HeatCell = {
+  level: number
+  title: string
+  /** Marks the picked day on a selectable grid (Tokens). Re-read on
+   *  every render, so a resize re-fit keeps the selection drawn. */
+  selected?: boolean
+}
 
 /** One observer per grid, replaced on remount — a data refresh must not
  *  leave the previous mount's observer re-rendering its stale days. */
@@ -67,12 +73,16 @@ export function mountHeatmap<T extends { date: string }>(
       node.dataset.pad = ""
       fragment.append(node)
     }
-    for (const { level, title } of cells(shown)) {
+    // Each cell carries its own date, which is what lets a caller turn
+    // the grid into a day picker without mirroring the layout.
+    cells(shown).forEach(({ level, title, selected }, index) => {
       const node = document.createElement("span")
       node.dataset.level = String(level)
+      node.dataset.date = shown[index].date
       node.title = title
+      if (selected) node.dataset.selected = ""
       fragment.append(node)
-    }
+    })
     grid.replaceChildren(fragment)
   }
 

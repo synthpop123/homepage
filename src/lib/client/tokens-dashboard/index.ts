@@ -18,13 +18,12 @@ import {
   type Site,
   type StackDim,
 } from "../tokens"
-import { renderFacts, renderHeatmap } from "./activity"
+import { createActivity } from "./activity"
 import { createBreakdown } from "./breakdown"
 import { renderDevices } from "./devices"
 import { createIcons, scopedQuery } from "./dom"
 import { renderOverview } from "./overview"
 import { renderQuota } from "./quota"
-import { createToday } from "./today"
 import { createRhythmChart, createTrendChart } from "./trend"
 
 type Controls = { range: RangeKey; metric: MetricKey; stackDim: StackDim }
@@ -72,7 +71,7 @@ export function mountTokensDashboard(root: HTMLElement) {
 
   const q = scopedQuery(root)
   const icons = createIcons(root)
-  const today = createToday(q, icons)
+  const activity = createActivity(q, icons)
   const trend = createTrendChart(q)
   const rhythm = createRhythmChart(q)
   const breakdown = createBreakdown(q, icons)
@@ -143,10 +142,8 @@ export function mountTokensDashboard(root: HTMLElement) {
     // New numbers behind unchanged controls: every section is stale.
     shown = null
     try {
-      today.render(loaded)
       renderQuota(q, loaded, icons)
-      renderHeatmap(q, loaded)
-      renderFacts(q, loaded)
+      activity.render(loaded)
       renderDevices(q, loaded, icons)
       renderDynamic()
     } catch (error) {

@@ -61,7 +61,7 @@ const AI_ICONS: Record<string, SvgComponent> = {
   zed: Zed,
 }
 
-const todayCards = [
+const dayCards = [
   { key: "tokens", label: "Tokens" },
   { key: "cost", label: "Cost" },
   { key: "messages", label: "Messages" },
@@ -111,43 +111,80 @@ const skeletonRows = (count: number) =>
     >.
   </p>
   <div class="tk-body">
+    <section class="tk-quota-section">
+      <h2 id="quota">Quota</h2>
+      <ol class="tk-plans">
+        {skeletonRows(2).map(() => (
+          <li class="tk-plan" data-skeleton aria-hidden="true">
+            <div class="plan-head">
+              <span class="ico sk-ico" />
+              <span class="sk-line" style="inline-size: 4em" />
+            </div>
+            <ol class="tk-windows">
+              <li class="tk-window">
+                <div class="win-head">
+                  <span class="sk-line" style="inline-size: 4em" />
+                  <span class="sk-line sk-num" />
+                </div>
+                <div class="tk-meter" data-skeleton></div>
+                <p class="win-foot"><span class="sk-line sk-sub" /></p>
+              </li>
+            </ol>
+          </li>
+        ))}
+      </ol>
+    </section>
     <section>
       <div class="tk-head">
-        <h2 id="today">Today</h2>
-        <p class="tk-today-meta">
+        <h2 id="activity">Activity</h2>
+        <p class="tk-sync">
           <span class="sk-line sk-sub" aria-hidden="true" />
         </p>
       </div>
-      <div class="tk-today-body">
-        <dl class="tk-cards" data-cards="today">
-          {todayCards.map(({ key, label }) => (
-            <div class="tk-card" data-key={key}>
-              <dt>{label}</dt>
-              <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
-              <dd class="delta"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
-            </div>
-          ))}
-        </dl>
-        <div class="tk-today-breakdown">
-          <h3 class="tk-label">Clients</h3>
-          <div class="tk-mix">
-            <div class="tk-today-bar" data-skeleton></div>
-            <ul class="tk-rows tk-today-legend"></ul>
-          </div>
-          <h3 class="tk-label">Models</h3>
-          <ol class="tk-rows" data-list="today-model">
-            {skeletonRows(3).map(() => (
-              <li class="tk-row" data-skeleton aria-hidden="true">
-                <span class="ico sk-ico" />
-                <span class="sk-line" style="inline-size: min(11em, 70%)" />
-                <span class="sk-line sk-num" />
-                <span class="sk-line sk-num" />
-              </li>
-            ))}
-          </ol>
+      <Heatmap selectable />
+      <div class="tk-day">
+        <div class="tk-day-head">
+          <h3 class="tk-label tk-day-label">Today</h3>
+          <button type="button" class="tk-day-back" hidden>
+            Back to today
+          </button>
         </div>
+        <div class="tk-day-body">
+          <dl class="tk-cards" data-cards="day">
+            {dayCards.map(({ key, label }) => (
+              <div class="tk-card" data-key={key}>
+                <dt>{label}</dt>
+                <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
+                <dd class="delta"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
+              </div>
+            ))}
+          </dl>
+          <div class="tk-day-breakdown tk-mix">
+            <div class="tk-day-bar" data-skeleton></div>
+            <ul class="tk-rows tk-day-legend">
+              {skeletonRows(3).map(() => (
+                <li class="tk-row" data-skeleton aria-hidden="true">
+                  <span class="ico sk-ico" />
+                  <span class="sk-line" style="inline-size: min(11em, 70%)" />
+                  <span class="sk-line sk-num" />
+                  <span class="sk-line sk-num" />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <p class="tk-day-empty" hidden>Zero-byte kind of day.</p>
       </div>
-      <p class="tk-today-empty" hidden>Zero-byte kind of day.</p>
+      <h3 class="tk-label">All-time patterns</h3>
+      <dl class="tk-cards tk-facts" data-cards="facts">
+        {factCards.map(({ key, label }) => (
+          <div class="tk-card" data-key={key}>
+            <dt>{label}</dt>
+            <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
+            <dd class="sub"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
+          </div>
+        ))}
+      </dl>
     </section>
     <section>
       <h2 id="overview">Overview</h2>
@@ -251,20 +288,6 @@ const skeletonRows = (count: number) =>
       </div>
     </section>
     <section>
-      <h2 id="activity">Activity</h2>
-      <Heatmap />
-      <h3 class="tk-label">All-time patterns</h3>
-      <dl class="tk-cards tk-facts" data-cards="facts">
-        {factCards.map(({ key, label }) => (
-          <div class="tk-card" data-key={key}>
-            <dt>{label}</dt>
-            <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
-            <dd class="sub"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-    <section>
       <h2 id="breakdown">Breakdown</h2>
       <h3 class="tk-label">Models</h3>
       <ol class="tk-rows" data-list="model">
@@ -305,29 +328,6 @@ const skeletonRows = (count: number) =>
           </ol>
         </div>
       </div>
-    </section>
-    <section class="tk-quota-section">
-      <h2 id="quota">Quota</h2>
-      <ol class="tk-plans">
-        {skeletonRows(2).map(() => (
-          <li class="tk-plan" data-skeleton aria-hidden="true">
-            <div class="plan-head">
-              <span class="ico sk-ico" />
-              <span class="sk-line" style="inline-size: 4em" />
-            </div>
-            <ol class="tk-windows">
-              <li class="tk-window">
-                <div class="win-head">
-                  <span class="sk-line" style="inline-size: 4em" />
-                  <span class="sk-line sk-num" />
-                </div>
-                <div class="tk-meter" data-skeleton></div>
-                <p class="win-foot"><span class="sk-line sk-sub" /></p>
-              </li>
-            </ol>
-          </li>
-        ))}
-      </ol>
     </section>
     <section>
       <h2 id="devices">Devices</h2>
@@ -422,7 +422,8 @@ const skeletonRows = (count: number) =>
       }
     }
 
-    /* Today */
+    /* Activity: the heatmap is the picker, the day panel is what it
+       picks, and the all-time cards sit under both. */
 
     /* Section heading with its freshness note on the same baseline. */
     .tk-head {
@@ -438,26 +439,70 @@ const skeletonRows = (count: number) =>
       margin-block-end: 0;
     }
 
-    .tk-today-meta,
-    .tk-today-empty {
+    .tk-sync,
+    .tk-day-empty {
       font-size: var(--step--1);
       color: var(--muted-foreground);
     }
 
-    /* The clients bar and the model list are one unit: today.ts hides
-       both on a day that has activity but no tokens yet (active time or
-       messages only), where there is nothing to apportion and an empty
-       bar would read as a broken one. */
-    .tk-today-breakdown[hidden] {
+    .tk-day {
+      display: grid;
+      gap: var(--space-2xs);
+      margin-block-start: var(--space-m);
+    }
+
+    /* The picked day's name, with the way back to today at the far end —
+       the one control the panel has, and only while it is needed. */
+    .tk-day-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-s);
+    }
+
+    .tk-day-head .tk-label {
+      margin-block: 0;
+    }
+
+    .tk-day-back {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      cursor: pointer;
+    }
+
+    .tk-day-back:hover {
+      color: var(--foreground);
+    }
+
+    .tk-day-back[hidden] {
       display: none;
     }
 
-    /* The legend under the client-mix bar is the client breakdown: the
-       same brand-marked rows as the Breakdown section, each opening onto
-       the models that client drove. The Breakdown section has no today
-       window of its own, so this is where the day's client → model join
-       is readable. */
-    .tk-today-legend {
+    .tk-day-body {
+      display: grid;
+      gap: var(--space-s);
+    }
+
+    /* A `display` of its own outranks the UA's [hidden] rule. */
+    .tk-day-body[hidden] {
+      display: none;
+    }
+
+    /* The bar and its legend are one unit: day.ts hides both on a day
+       with activity but no tokens (active time or messages only), where
+       there is nothing to apportion and an empty bar would read as a
+       broken one. */
+    .tk-day-breakdown[hidden] {
+      display: none;
+    }
+
+    /* The legend under the client-mix bar is the day's client
+       breakdown: the same brand-marked rows as the Breakdown section,
+       each opened onto the models that client drove. The Breakdown
+       section has no single-day window, so this is the only place the
+       day's client → model join is readable — which is why the rows
+       start open. */
+    .tk-day-legend {
       margin-block-start: calc(-1 * var(--space-3xs));
     }
 
@@ -580,7 +625,7 @@ const skeletonRows = (count: number) =>
 
     /* Three proportions on this page, three forms. A composition
        (.tk-mix-composition) is one quantity cut into its parts, so it
-       stays one solid block; a client mix (.tk-today-bar) is separate
+       stays one solid block; a client mix (.tk-day-bar) is separate
        actors sharing a day, so its segments are separate pills; a quota
        window (.tk-meter) is a gauge against a ceiling, so it is a thin
        track with a rounded head. Sizing all three alike was what made a
@@ -615,14 +660,14 @@ const skeletonRows = (count: number) =>
        read as its own small marks rather than as hairline cracks in a
        slab — which is also the honest shape, since these are different
        agents rather than parts of one number. */
-    .tk-today-bar {
+    .tk-day-bar {
       display: flex;
       gap: 3px;
       block-size: var(--tk-meter);
       border-radius: var(--radius-full);
     }
 
-    .tk-today-bar span {
+    .tk-day-bar span {
       min-inline-size: var(--tk-meter);
       border-radius: var(--radius-full);
       background-color: var(--p);
@@ -631,8 +676,8 @@ const skeletonRows = (count: number) =>
 
     /* Its legend leads with brand icons rather than color chips, so the
        bar is keyed on demand instead: hovering or focusing a client row
-       mutes every segment but that client's (today.ts sets [data-mute]). */
-    .tk-today-bar span[data-mute] {
+       mutes every segment but that client's (day.ts sets [data-mute]). */
+    .tk-day-bar span[data-mute] {
       opacity: 0.25;
     }
 
@@ -1563,7 +1608,7 @@ const skeletonRows = (count: number) =>
 
     .sk-ico,
     .tk-mix-bar[data-skeleton],
-    .tk-today-bar[data-skeleton],
+    .tk-day-bar[data-skeleton],
     .tk-plans .tk-meter[data-skeleton],
     .tk-chart-bars[data-skeleton],
     .tk-device[data-skeleton] .dot {

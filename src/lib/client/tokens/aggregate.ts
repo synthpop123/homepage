@@ -1,9 +1,9 @@
 /**
  * Everything the dashboard derives from the payload before a renderer
  * touches the DOM: the dense daily series, trend-chart stacks and
- * buckets, window totals and deltas, the Today view, weekday profile,
- * fact cards and heatmap scale. Pure functions over `Site`, so all of
- * it is covered by aggregate.test.ts without a browser.
+ * buckets, window totals and deltas, the single-day view, weekday
+ * profile, fact cards and heatmap scale. Pure functions over `Site`, so
+ * all of it is covered by aggregate.test.ts without a browser.
  */
 import { weekdayIndex } from "../heatmap"
 import {
@@ -22,12 +22,12 @@ import {
   modelLabel,
 } from "./labels"
 import {
+  type DaySlice,
   type Site,
   type SiteDay,
   type SiteRange,
   type Usage,
   type MetricKey,
-  type ModelCell,
 } from "./schema"
 
 /* Aggregation --------------------------------------------------------- */
@@ -62,7 +62,6 @@ export function fillDaily(
         messages: 0,
         providers: {},
         clients: {},
-        models: {},
       },
     )
   }
@@ -177,12 +176,37 @@ export function stackPaint(
   })
 }
 
-const daySlices = (day: SiteDay, dim: StackDim) =>
+/**
+ * The day's model marginal, summed out of the client × model cells the
+ * payload carries. A Map, not an object: model ids come off the wire
+ * unconstrained, and `models["constructor"]` on a plain object is a
+ * function rather than a missing slot.
+ */
+const modelSlices = (day: SiteDay): Map<string, DaySlice> => {
+  const slices = new Map<string, DaySlice>()
+  for (const client of Object.values(day.clients)) {
+    for (const [id, cell] of Object.entries(client.models)) {
+      const slot = slices.get(id)
+      if (slot) {
+        slot.tokens += cell.tokens
+        slot.cost += cell.cost
+      } else {
+        slices.set(id, { tokens: cell.tokens, cost: cell.cost })
+      }
+    }
+  }
+  return slices
+}
+
+const daySlices = (
+  day: SiteDay,
+  dim: StackDim,
+): Iterable<[string, DaySlice]> =>
   dim === "provider"
-    ? day.providers
+    ? Object.entries(day.providers)
     : dim === "client"
-      ? day.clients
-      : day.models
+      ? Object.entries(day.clients)
+      : modelSlices(day)
 
 export type Bucket = {
   label: string
@@ -224,7 +248,7 @@ const addDay = (
     bucket.activeMetric += day[metric]
   }
   let named = 0
-  for (const [id, slice] of Object.entries(daySlices(day, stack.dim))) {
+  for (const [id, slice] of daySlices(day, stack.dim)) {
     const index = stack.ids.indexOf(id)
     if (index >= 0) {
       bucket.segments[index] += slice[metric]
@@ -344,81 +368,95 @@ export const lastReport = (site: Site): number | null => {
   return latest
 }
 
-/* Today --------------------------------------------------------------- */
+/* One day ------------------------------------------------------------- */
 
 /** Clients that keep their own bar segment; the tail merges. The legend
- *  is not capped — see TodayView.clients. */
+ *  is not capped — see DayView.clients. */
 const MIX_SEGMENTS = 4
-const TOP_MODELS = 5
 
 /** A slice of the day's tokens: one client, or the merged tail. */
-export type TodaySlice = {
+export type DayMix = {
   id: string
   label: string
   tokens: number
   share: number
 }
 
-/** A client of the day, plus the models it drove today. */
-export type TodayClient = TodaySlice & { models: ModelCell[] }
+/** One model a client drove on the day. No `messages`: the daily series
+ *  splits tokens and cost, not message counts. */
+export type DayModel = { model: string; tokens: number; cost: number }
 
-export type TodayView = {
-  /** Nothing recorded yet — the section collapses to a single line
-   *  rather than showing a wall of zeroes. */
+/** A client of the day, plus the models behind it. */
+export type DayClientView = DayMix & { models: DayModel[] }
+
+export type DayView = {
+  date: string
+  isToday: boolean
+  /** Nothing recorded — the panel collapses to a single line rather
+   *  than showing a wall of zeroes. */
   idle: boolean
-  totals: SiteRange["totals"]
-  /** CLI-reported active time today (ms), 0 where none was reported. */
+  tokens: number
+  cost: number
+  messages: number
+  /** CLI-reported active time (ms), 0 where none was reported. */
   active: number
-  /** Yesterday, the baseline every delta is measured against. */
-  before: ReturnType<typeof windowTotals> & { active: number }
+  /** The day before, the baseline every delta is measured against. */
+  before: {
+    date: string
+    tokens: number
+    cost: number
+    messages: number
+    active: number
+  }
   /** The bar's segments: the day's top clients, with everything below
    *  the cutoff merged into one residual slice so the bar still sums to
    *  the day. A cap belongs to the bar alone — past a few slices the
    *  segments stop being tellable apart — which is why the legend reads
    *  `clients` instead. */
-  mix: TodaySlice[]
+  mix: DayMix[]
   /** Every client of the day, in rank order, each with the models
    *  behind it. Empty when the day has no tokens to apportion (a
    *  message- or active-time-only day is not idle, but it has no
    *  breakdown either). */
-  clients: TodayClient[]
-  models: SiteRange["byModel"]
+  clients: DayClientView[]
 }
 
 /**
- * Everything the Today section shows, derived in one pass so the
- * renderer only writes DOM: the collector's own today window
- * (`ranges.day` — the payload's only per-model split of a single day),
- * yesterday as the baseline, and the day's client mix and top models.
+ * Everything the day panel shows, derived in one pass so the renderer
+ * only writes DOM. It reads the daily series rather than a range, which
+ * is what makes today and any day the visitor picks off the heatmap the
+ * same code path — the series carries the client × model join.
  *
  * "Nothing logged" means nothing at all, not merely no tokens: cost and
  * CLI-reported active time are stored and displayed independently of
  * token counts, and a day carrying only one of them would otherwise
  * hide the very card that has something to say.
  */
-export function todayView(site: Site): TodayView {
-  const { totals, byClient, byModel } = site.ranges.day
-  const eve = shiftDays(site.today, -1)
-  const dayOf = (date: string) => site.daily.find((day) => day.date === date)
-  const active = dayOf(site.today)?.active ?? 0
+export function dayView(site: Site, date: string): DayView {
+  const dayOf = (at: string) => site.daily.find((day) => day.date === at)
+  const day = dayOf(date)
+  const eve = shiftDays(date, -1)
+  const before = dayOf(eve)
+  const tokens = day?.tokens ?? 0
 
-  const slice = (id: string, tokens: number): TodaySlice => ({
+  const slice = (id: string, value: number): DayMix => ({
     id,
     label: clientLabel(id),
-    tokens,
-    share: tokens / totals.tokens,
+    tokens: value,
+    share: tokens > 0 ? value / tokens : Number.NaN,
   })
 
-  const rows = byClient.filter(
-    (row) => row.tokens > 0 && !PLACEHOLDER_IDS.has(row.client),
-  )
-  const clients =
-    totals.tokens > 0
-      ? rows.map((row) => ({
-          ...slice(row.client, row.tokens),
-          models: row.models,
-        }))
-      : []
+  const rows = Object.entries(day?.clients ?? {})
+    .filter(([id, client]) => client.tokens > 0 && !PLACEHOLDER_IDS.has(id))
+    .sort(([, a], [, b]) => b.tokens - a.tokens)
+
+  const clients = rows.map(([id, client]) => ({
+    ...slice(id, client.tokens),
+    models: Object.entries(client.models).map(([model, cell]) => ({
+      model,
+      ...cell,
+    })),
+  }))
   // Only the *bar* merges its tail, and only because a 1%-wide segment
   // is not a segment. Every client still gets its own legend row: the
   // row is where the name, the models behind it and the exact share
@@ -426,34 +464,37 @@ export function todayView(site: Site): TodayView {
   // as usage the collector could not attribute.
   const tail = rows
     .slice(MIX_SEGMENTS)
-    .reduce((sum, row) => sum + row.tokens, 0)
-  const mix =
-    clients.length === 0
-      ? []
-      : [
-          ...clients
-            .slice(0, MIX_SEGMENTS)
-            .map((row) => slice(row.id, row.tokens)),
-          ...(tail > 0 ? [slice(OTHER, tail)] : []),
-        ]
+    .reduce((sum, [, client]) => sum + client.tokens, 0)
 
   return {
+    date,
+    isToday: date === site.today,
     idle:
-      totals.tokens === 0 &&
-      totals.messages === 0 &&
-      totals.cost === 0 &&
-      active === 0,
-    totals,
-    active,
+      tokens === 0 &&
+      (day?.messages ?? 0) === 0 &&
+      (day?.cost ?? 0) === 0 &&
+      (day?.active ?? 0) === 0,
+    tokens,
+    cost: day?.cost ?? 0,
+    messages: day?.messages ?? 0,
+    active: day?.active ?? 0,
     before: {
-      ...windowTotals(site.daily, eve, eve),
-      active: dayOf(eve)?.active ?? 0,
+      date: eve,
+      tokens: before?.tokens ?? 0,
+      cost: before?.cost ?? 0,
+      messages: before?.messages ?? 0,
+      active: before?.active ?? 0,
     },
-    mix,
+    mix:
+      clients.length === 0
+        ? []
+        : [
+            ...clients
+              .slice(0, MIX_SEGMENTS)
+              .map((row) => slice(row.id, row.tokens)),
+            ...(tail > 0 ? [slice(OTHER, tail)] : []),
+          ],
     clients,
-    models: byModel
-      .filter((row) => row.tokens > 0 && !PLACEHOLDER_IDS.has(row.model))
-      .slice(0, TOP_MODELS),
   }
 }
 

@@ -8,14 +8,13 @@ import Layout from "@/layouts/Layout.astro"
 // The preconnect below warms the cross-origin connection to the
 // collector while the page loads, hiding that RTT from the first fetch.
 const sections = [
-  { id: "today", label: "Today" },
-  { id: "overview", label: "Overview" },
-  { id: "trend", label: "Trend" },
-  { id: "activity", label: "Activity" },
-  { id: "breakdown", label: "Breakdown" },
   // Hidden by the renderer when no collector has reported a quota
   // snapshot, which takes this entry with it (tokens-dashboard/quota.ts).
   { id: "quota", label: "Quota" },
+  { id: "activity", label: "Activity" },
+  { id: "overview", label: "Overview" },
+  { id: "trend", label: "Trend" },
+  { id: "breakdown", label: "Breakdown" },
   { id: "devices", label: "Devices" },
 ]
 const toc = [

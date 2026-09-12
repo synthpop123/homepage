@@ -4,6 +4,7 @@ import {
   activeTotals,
   computeFacts,
   dailyBuckets,
+  dayView,
   fillDaily,
   hasActivity,
   isMessagesOnly,
@@ -14,18 +15,13 @@ import {
   perHour,
   stackFor,
   stackPaint,
-  todayView,
   weekdayProfile,
   windowTotals,
 } from "./aggregate"
-import {
-  type ModelCell,
-  type Site,
-  type SiteDay,
-  type SiteRange,
-} from "./schema"
+import { type Site, type SiteDay } from "./schema"
 import {
   day,
+  dayClient,
   usage,
   span,
   device,
@@ -363,13 +359,20 @@ describe("dailyBuckets", () => {
     expect(bucket.segments[1]).toBe(0)
   })
 
-  it("slices by model when that dimension is charted", () => {
+  // The day carries no model marginal of its own: it is summed back out
+  // of the client × model join.
+  it("slices by model, summing the clients behind each one", () => {
     const [bucket] = dailyBuckets(
       [
         day("2026-07-01", 100, {
-          models: {
-            "claude-opus-5": { tokens: 70, cost: 6 },
-            "gpt-5.6-sol": { tokens: 30, cost: 2 },
+          clients: {
+            "claude-code": dayClient(80, 7, {
+              "claude-opus-5": { tokens: 50, cost: 5 },
+              "gpt-5.6-sol": { tokens: 30, cost: 2 },
+            }),
+            zed: dayClient(20, 1, {
+              "claude-opus-5": { tokens: 20, cost: 1 },
+            }),
           },
           providers: { anthropic: { tokens: 100, cost: 8 } },
         }),
@@ -380,11 +383,15 @@ describe("dailyBuckets", () => {
     expect(bucket.segments).toEqual([70, 30])
   })
 
-  // A payload composed before the collector shipped per-day model slices
-  // has no `models` key at all; charting it must not throw.
+  // A day whose clients name no model — usage the collector could not
+  // attribute — still charts, as one residual band.
   it("treats a day without model slices as all residual", () => {
     const [bucket] = dailyBuckets(
-      [day("2026-07-01", 100)],
+      [
+        day("2026-07-01", 100, {
+          clients: { "claude-code": dayClient(100, 8) },
+        }),
+      ],
       { dim: "model", ids: ["claude-opus-5", "other"] },
       "tokens",
     )
@@ -505,82 +512,64 @@ describe("weekdayProfile", () => {
   })
 })
 
-describe("todayView", () => {
+describe("dayView", () => {
   const TODAY = "2026-07-20"
   const EVE = "2026-07-19"
 
-  const clientRow = (
-    client: string,
-    tokens: number,
-    models: ModelCell[] = [],
-  ) => ({
-    ...usage(tokens),
-    ...span,
-    client,
-    models,
+  const daySite = (...daily: SiteDay[]): Site => ({
+    ...site(),
+    today: TODAY,
+    daily,
   })
 
-  const modelRow = (model: string, tokens: number) => ({
-    ...usage(tokens),
-    ...span,
-    model,
-    providers: ["anthropic"],
-  })
-
-  /** A site whose only populated range is `day`, plus a daily series. */
-  const todaySite = (
-    day: Omit<Partial<SiteRange>, "totals"> & {
-      totals?: Partial<SiteRange["totals"]>
-    },
-    daily: SiteDay[] = [],
-  ): Site => {
-    const base = site()
-    return {
-      ...base,
-      today: TODAY,
-      ranges: {
-        ...base.ranges,
-        day: {
-          ...rangeStats(),
-          ...day,
-          from: TODAY,
-          totals: { ...rangeStats().totals, ...day.totals },
-        },
-      },
-      daily,
-    }
-  }
+  /** A day's clients, as `tokens[, models]` per id. */
+  const clients = (
+    ...rows: [id: string, tokens: number, models?: [string, number][]][]
+  ): SiteDay["clients"] =>
+    Object.fromEntries(
+      rows.map(([id, tokens, models = []]) => [
+        id,
+        dayClient(
+          tokens,
+          0,
+          Object.fromEntries(
+            models.map(([model, value]) => [model, { tokens: value, cost: 0 }]),
+          ),
+        ),
+      ]),
+    )
 
   it("is idle only when nothing at all was recorded", () => {
-    expect(todayView(todaySite({})).idle).toBe(true)
-    expect(todayView(todaySite({ totals: { tokens: 10 } })).idle).toBe(false)
-    expect(todayView(todaySite({ totals: { messages: 3 } })).idle).toBe(false)
-    expect(todayView(todaySite({ totals: { cost: 0.4 } })).idle).toBe(false)
+    const idle = (...daily: SiteDay[]) => dayView(daySite(...daily), TODAY).idle
+    expect(idle()).toBe(true)
+    expect(idle(day(TODAY, 10))).toBe(false)
+    expect(idle(day(TODAY, 0, { messages: 3 }))).toBe(false)
+    expect(idle(day(TODAY, 0, { cost: 0.4 }))).toBe(false)
   })
 
   it("counts CLI-reported active time as activity of its own", () => {
-    // activeTimeMs is stored and displayed independently of tokens, and
-    // a submission carrying only active time passes validation — the
-    // section must not answer "nothing logged" while holding a duration.
-    const view = todayView(
-      todaySite({}, [day(TODAY, 0, { active: 1_800_000 })]),
-    )
+    // Active time is stored and displayed independently of tokens, and a
+    // submission carrying only it passes validation — the panel must not
+    // answer "nothing logged" while holding a duration.
+    const view = dayView(daySite(day(TODAY, 0, { active: 1_800_000 })), TODAY)
     expect(view.idle).toBe(false)
     expect(view.active).toBe(1_800_000)
     // No tokens means no breakdown to draw.
     expect(view.mix).toEqual([])
     expect(view.clients).toEqual([])
-    expect(view.models).toEqual([])
   })
 
-  it("baselines against yesterday, active time included", () => {
-    const view = todayView(
-      todaySite({ totals: { tokens: 300, cost: 3, messages: 9 } }, [
+  it("baselines against the day before, active time included", () => {
+    const view = dayView(
+      daySite(
         day(EVE, 100, { cost: 1, messages: 4, active: 600_000 }),
         day(TODAY, 300, { cost: 3, messages: 9, active: 900_000 }),
-      ]),
+      ),
+      TODAY,
     )
+    expect(view.isToday).toBe(true)
     expect(view.before).toMatchObject({
+      date: EVE,
       tokens: 100,
       cost: 1,
       messages: 4,
@@ -589,27 +578,41 @@ describe("todayView", () => {
     expect(view.active).toBe(900_000)
   })
 
-  it("reads no baseline when yesterday is missing from the series", () => {
-    const view = todayView(
-      todaySite({ totals: { tokens: 300 } }, [day(TODAY, 300)]),
+  it("reads a past day against its own eve, not against today", () => {
+    const view = dayView(
+      daySite(
+        day("2026-07-18", 50, { cost: 2 }),
+        day(EVE, 100, { cost: 1 }),
+        day(TODAY, 300, { cost: 3 }),
+      ),
+      EVE,
     )
-    expect(view.before).toMatchObject({ tokens: 0, active: 0 })
+    expect(view.isToday).toBe(false)
+    expect(view.tokens).toBe(100)
+    expect(view.before).toMatchObject({ date: "2026-07-18", tokens: 50 })
+  })
+
+  it("reads no baseline when the day before is missing from the series", () => {
+    const view = dayView(daySite(day(TODAY, 300)), TODAY)
+    expect(view.before).toMatchObject({ date: EVE, tokens: 0, active: 0 })
   })
 
   it("keeps the top clients and merges the tail into one segment", () => {
-    const view = todayView(
-      todaySite({
-        totals: { tokens: 100 },
-        byClient: [
-          clientRow("claude", 40),
-          clientRow("codex", 30),
-          clientRow("cursor", 15),
-          clientRow("pi", 10),
-          clientRow("zed", 3),
-          clientRow("gemini", 2),
-          clientRow("hermes", 0), // no tokens today: not a segment
-        ],
-      }),
+    const view = dayView(
+      daySite(
+        day(TODAY, 100, {
+          clients: clients(
+            ["claude", 40],
+            ["codex", 30],
+            ["cursor", 15],
+            ["pi", 10],
+            ["zed", 3],
+            ["gemini", 2],
+            ["hermes", 0], // nothing spent: not a segment
+          ),
+        }),
+      ),
+      TODAY,
     )
     expect(view.mix.map((entry) => entry.id)).toEqual([
       "claude",
@@ -624,7 +627,7 @@ describe("todayView", () => {
       10,
     )
     // The cutoff is the bar's alone: the legend names every client that
-    // spent anything today, so nobody is filed under "Other".
+    // spent anything that day, so nobody is filed under "Other".
     expect(view.clients.map((entry) => entry.id)).toEqual([
       "claude",
       "codex",
@@ -639,11 +642,11 @@ describe("todayView", () => {
   })
 
   it("draws no residual segment when every client has one of its own", () => {
-    const view = todayView(
-      todaySite({
-        totals: { tokens: 100 },
-        byClient: [clientRow("claude", 60), clientRow("codex", 40)],
-      }),
+    const view = dayView(
+      daySite(
+        day(TODAY, 100, { clients: clients(["claude", 60], ["codex", 40]) }),
+      ),
+      TODAY,
     )
     expect(view.mix.map((entry) => entry.id)).toEqual(["claude", "codex"])
     expect(view.clients.map((entry) => entry.id)).toEqual(["claude", "codex"])
@@ -653,11 +656,13 @@ describe("todayView", () => {
     // Client ids come off the wire unconstrained; a plain-object label
     // table would answer `constructor` with a native function, and the
     // legend would print its source text.
-    const view = todayView(
-      todaySite({
-        totals: { tokens: 10 },
-        byClient: [clientRow("constructor", 6), clientRow("__proto__", 4)],
-      }),
+    const view = dayView(
+      daySite(
+        day(TODAY, 10, {
+          clients: clients(["constructor", 6], ["__proto__", 4]),
+        }),
+      ),
+      TODAY,
     )
     expect(view.clients.map((entry) => entry.label)).toEqual([
       "constructor",
@@ -666,28 +671,26 @@ describe("todayView", () => {
   })
 
   it("carries each client's models, the merged-out ones included", () => {
-    const cells = (...models: [string, number][]) =>
-      models.map(([model, tokens]) => ({
-        model,
-        tokens,
-        cost: 0,
-        messages: 0,
-      }))
-    const view = todayView(
-      todaySite({
-        totals: { tokens: 100 },
-        byClient: [
-          clientRow(
-            "claude",
-            60,
-            cells(["claude-opus-5", 40], ["deepseek-v4-flash", 20]),
+    const view = dayView(
+      daySite(
+        day(TODAY, 100, {
+          clients: clients(
+            [
+              "claude",
+              60,
+              [
+                ["claude-opus-5", 40],
+                ["deepseek-v4-flash", 20],
+              ],
+            ],
+            ["codex", 20, [["gpt-5.6-sol", 20]]],
+            ["cursor", 10, [["composer-2", 10]]],
+            ["pi", 6, [["gpt-5.6-luna", 6]]],
+            ["zed", 4, [["claude-sonnet-5", 4]]],
           ),
-          clientRow("codex", 20, cells(["gpt-5.6-sol", 20])),
-          clientRow("cursor", 10, cells(["composer-2", 10])),
-          clientRow("pi", 6, cells(["gpt-5.6-luna", 6])),
-          clientRow("zed", 4, cells(["claude-sonnet-5", 4])),
-        ],
-      }),
+        }),
+      ),
+      TODAY,
     )
     expect(view.clients[0].models.map((cell) => cell.model)).toEqual([
       "claude-opus-5",
@@ -704,30 +707,21 @@ describe("todayView", () => {
     expect(view.mix.at(-1)).toMatchObject({ id: "other", tokens: 4 })
   })
 
-  // Placeholder ids are rendered, not hidden — a list whose shares are
-  // meant to sum to the day cannot silently drop rows. They are labelled
-  // the way the client and provider tables label theirs.
-  it("drops unattributed usage from the list and caps it at five", () => {
-    // A row reading "Other" answers no question, so it is left out here
-    // the same way it is left out of the breakdown lists and the stacks —
-    // even when, as here, it would have topped the list.
-    const view = todayView(
-      todaySite({
-        totals: { tokens: 100 },
-        byModel: [
-          modelRow("unknown", 50),
-          ...Array.from({ length: 6 }, (_, i) => modelRow(`m-${i}`, 10 - i)),
-          modelRow("m-idle", 0),
-        ],
-      }),
+  // A row reading "Other" answers no question, so unattributed usage is
+  // left out here the same way it is left out of the breakdown lists and
+  // the stacks — even when, as here, it would have topped the list.
+  it("drops unattributed clients from the mix and the legend", () => {
+    const view = dayView(
+      daySite(
+        day(TODAY, 100, {
+          clients: clients(["unknown", 50], ["claude", 30], ["codex", 20]),
+        }),
+      ),
+      TODAY,
     )
-    expect(view.models.map((row) => row.model)).toEqual([
-      "m-0",
-      "m-1",
-      "m-2",
-      "m-3",
-      "m-4",
-    ])
+    expect(view.clients.map((entry) => entry.id)).toEqual(["claude", "codex"])
+    // The trade is that the shares no longer sum to the day.
+    expect(view.mix.map((entry) => entry.share)).toEqual([0.3, 0.2])
   })
 })
 

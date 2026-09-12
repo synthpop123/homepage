@@ -20,9 +20,15 @@ export const day = (
   messages: 0,
   providers: {},
   clients: {},
-  models: {},
   ...extra,
 })
+
+/** A day's client slice: totals plus the models behind them. */
+export const dayClient = (
+  tokens: number,
+  cost: number,
+  models: Record<string, { tokens: number; cost: number }> = {},
+): SiteDay["clients"][string] => ({ tokens, cost, models })
 
 export const usage = (tokens = 0): Usage => ({
   input: 0,
@@ -96,7 +102,6 @@ export const site = (
   today: "2026-07-20",
   quota: [],
   ranges: {
-    day: rangeStats(),
     week: rangeStats(),
     month: rangeStats(),
     quarter: rangeStats(),

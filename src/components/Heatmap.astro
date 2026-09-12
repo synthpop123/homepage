@@ -4,7 +4,15 @@
  * (skeleton until the parent feed's script fills it via mountHeatmap
  * from @/lib/client/heatmap), and the Less–More legend. Owns the shared
  * cell geometry and green palette for every heatmap on the site.
+ *
+ * `selectable` makes the grid a day picker: cells take a pointer cursor
+ * and the grid takes focus, so the owning feed can read clicks and
+ * arrow keys off it (Tokens). The selection itself is the feed's — it
+ * marks the picked cell through mountHeatmap.
  */
+type Props = { selectable?: boolean }
+
+const { selectable = false } = Astro.props
 ---
 
 <activity-heatmap>
@@ -12,7 +20,13 @@
     <div class="heat-days" aria-hidden="true">
       {["Mon", "Wed", "Fri", "Sun"].map((day) => <span>{day}</span>)}
     </div>
-    <div class="heat-grid" data-skeleton></div>
+    <div
+      class="heat-grid"
+      data-skeleton
+      data-pick={selectable ? "" : undefined}
+      tabindex={selectable ? 0 : undefined}
+      aria-label={selectable ? "Activity by day — pick a day" : undefined}
+    ></div>
   </div>
   <div class="heat-scale" aria-hidden="true">
     <span>Less</span>
@@ -92,6 +106,22 @@
 
   .heat-grid :global(span[data-pad]) {
     visibility: hidden;
+  }
+
+  .heat-grid[data-pick] :global(span:not([data-pad])) {
+    cursor: pointer;
+  }
+
+  .heat-grid[data-pick]:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* The ring is inset: the grid clips its overflow (see above), so an
+     outline on an edge cell would be cut in half. */
+  .heat-grid :global(span[data-selected]) {
+    box-shadow: inset 0 0 0 1.5px var(--foreground);
   }
 
   .heat-scale {

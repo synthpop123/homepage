@@ -10,6 +10,7 @@
 import { el } from "../dom"
 import {
   aiIcon,
+  type DayModel,
   formatCostExact,
   formatExact,
   formatMetric,
@@ -127,9 +128,13 @@ export const usageRow = (icons: Icons, row: RowSpec) =>
  * metric on screen for the same reason the trend stack is: in Cost, a
  * model that is a rounding error by volume can be most of the bill.
  * Shares are of the parent row's own total.
+ *
+ * `messages` is optional because the two callers carry different cells:
+ * a range's client × model cells have the full metric set, a day's have
+ * tokens and cost. The tooltip says what it was given.
  */
 export const modelSubRows = (
-  models: ModelCell[],
+  models: (ModelCell | DayModel)[],
   rowTotal: number,
   metric: MetricKey,
 ): RowSpec[] =>
@@ -138,6 +143,8 @@ export const modelSubRows = (
     .sort((a, b) => b[metric] - a[metric])
     .map((cell) => {
       const name = modelLabel(cell.model)
+      const messages =
+        "messages" in cell ? ` · ${formatExact(cell.messages)} messages` : ""
       return {
         icon: aiIcon("model", cell.model),
         name,
@@ -145,7 +152,7 @@ export const modelSubRows = (
         share: rowTotal > 0 ? cell[metric] / rowTotal : Number.NaN,
         title: `${name} — ${formatExact(cell.tokens)} tokens · ${formatCostExact(
           cell.cost,
-        )} · ${formatExact(cell.messages)} messages`,
+        )}${messages}`,
       }
     })
 

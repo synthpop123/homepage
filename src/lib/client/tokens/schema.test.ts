@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import {
   DEFAULT_RANGE,
   isSite,
+  type RangeKey,
   RANGES,
   rangeMeta,
   type Site,
@@ -10,6 +11,7 @@ import {
 } from "./schema"
 import {
   day,
+  dayClient,
   usage,
   span,
   device,
@@ -89,13 +91,18 @@ describe("isSite", () => {
     expect(isSite(badWindow({ resetsAt: "soon" }))).toBe(false)
   })
 
-  // Model slices are part of the schema now — a missing or malformed
-  // map is a rejection, not a shrug.
-  it("requires per-day model slices", () => {
+  // The day panel expands a day's clients into the models behind them,
+  // so that join is part of the schema: a client without its models is a
+  // rejection, not a shrug.
+  it("requires the per-day client × model join", () => {
     const withModels = site()
     withModels.daily = [
       day("2026-07-20", 5, {
-        models: { "claude-opus-5": { tokens: 5, cost: 1 } },
+        clients: {
+          "claude-code": dayClient(5, 1, {
+            "claude-opus-5": { tokens: 5, cost: 1 },
+          }),
+        },
       }),
     ]
     expect(isSite(withModels)).toBe(true)
@@ -103,19 +110,24 @@ describe("isSite", () => {
     const withoutModels = site()
     withoutModels.daily = [
       {
-        date: "2026-07-20",
-        tokens: 5,
-        cost: 0,
-        messages: 0,
-        providers: {},
-        clients: {},
-      } as SiteDay,
-    ]
+        ...day("2026-07-20", 5),
+        clients: { "claude-code": { tokens: 5, cost: 1 } },
+      },
+    ] as unknown as SiteDay[]
     expect(isSite(withoutModels)).toBe(false)
 
     const badModels = site()
     badModels.daily = [
-      { ...day("2026-07-20", 5), models: { "claude-opus-5": { tokens: "5" } } },
+      {
+        ...day("2026-07-20", 5),
+        clients: {
+          "claude-code": {
+            tokens: 5,
+            cost: 1,
+            models: { "claude-opus-5": { tokens: "5" } },
+          },
+        },
+      },
     ] as unknown as SiteDay[]
     expect(isSite(badModels)).toBe(false)
   })
@@ -131,12 +143,6 @@ describe("isSite", () => {
     // @ts-expect-error deliberately breaking the shape
     delete missingRange.ranges.quarter
     expect(isSite(missingRange)).toBe(false)
-    // "day" is not in the range selector but the Today section reads it,
-    // so it is part of the spine like any other range.
-    const missingDay = site()
-    // @ts-expect-error deliberately breaking the shape
-    delete missingDay.ranges.day
-    expect(isSite(missingDay)).toBe(false)
     const badBreakdown = site()
     // @ts-expect-error deliberately breaking the shape
     badBreakdown.ranges.all.byModel = {}
@@ -276,6 +282,7 @@ it("rejects missing or invalid device freshness thresholds", () => {
 
 it("keeps selector defaults and unknown-range fallback together", () => {
   expect(RANGES.filter((entry) => entry.default)).toHaveLength(1)
-  expect(rangeMeta("day")).toBe(DEFAULT_RANGE)
+  // A control persisted by an older build names a range that is gone.
+  expect(rangeMeta("day" as RangeKey)).toBe(DEFAULT_RANGE)
   expect(rangeMeta(DEFAULT_RANGE.key)).toBe(DEFAULT_RANGE)
 })

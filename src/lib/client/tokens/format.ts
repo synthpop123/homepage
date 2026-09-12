@@ -49,6 +49,12 @@ const dateLabel = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   timeZone: "UTC",
 })
+const weekdayLabel = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+})
 /**
  * Quota instants are real moments, not the day strings the formatters
  * above anchor at noon UTC — so they are the one thing on this page that
@@ -114,6 +120,9 @@ export const formatDay = (day: string) => dayLabel.format(noon(day))
 
 /** "Jul 12, 2026" */
 export const formatDate = (day: string) => dateLabel.format(noon(day))
+
+/** "Sun, Jul 12" — a picked day, where the weekday is half the answer. */
+export const formatWeekdayDay = (day: string) => weekdayLabel.format(noon(day))
 
 /** "Aug 8, 21:28" — an absolute instant, in the collector's zone. */
 export const formatInstant = (iso: string) => {

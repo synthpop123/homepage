@@ -2,12 +2,12 @@ import { describe, expect, it } from "bun:test"
 import {
   computeFacts,
   dailyBuckets,
+  dayView,
   fillDaily,
   modelVendors,
   type StackDim,
   stackFor,
   stackPaint,
-  todayView,
 } from "./aggregate"
 import { isSite, RANGE_KEYS, SITE_SCHEMA_VERSION } from "./schema"
 import fixture from "../tokens.site-fixture.json"
@@ -48,9 +48,9 @@ describe("/api/site fixture contract", () => {
     if (!isSite(fixture)) throw new Error("fixture failed decoding")
     // The payload is a view as of the collector's day: submissions may
     // legitimately carry dates up to two days ahead, but every window
-    // the dashboard draws ends today, and Today's active time is
-    // matched by exact date — a row past `today` would show up in the
-    // day range while the active-time card ignored it.
+    // the dashboard draws ends today, and the day panel's active time is
+    // matched by exact date — a row past `today` would be unreachable
+    // from the heatmap while still counting in every range.
     for (const day of fixture.daily) {
       expect(day.date <= fixture.today).toBe(true)
     }
@@ -60,25 +60,33 @@ describe("/api/site fixture contract", () => {
         true,
       )
     }
-    expect(fixture.ranges.day.from).toBe(fixture.today)
   })
 
-  it("derives a Today view that agrees with the daily series", () => {
+  // Today and any day the visitor clicks are one code path, so the
+  // fixture has to prove both ends of it.
+  it("opens today and a past day off the same daily series", () => {
     if (!isSite(fixture)) throw new Error("fixture failed decoding")
-    const view = todayView(fixture)
-    const today = fixture.daily.find((day) => day.date === fixture.today)
-    expect(view.idle).toBe(false)
-    expect(view.totals.tokens).toBe(today?.tokens ?? 0)
-    expect(view.totals.messages).toBe(today?.messages ?? 0)
-    expect(view.totals.cost).toBeCloseTo(today?.cost ?? 0, 6)
-    // The mix apportions the whole day, whatever the client count — and
-    // the legend, which is not capped, apportions the same day.
-    expect(view.mix.reduce((sum, entry) => sum + entry.tokens, 0)).toBe(
-      view.totals.tokens,
-    )
-    expect(view.clients.reduce((sum, entry) => sum + entry.tokens, 0)).toBe(
-      view.totals.tokens,
-    )
+    const busiest = [...fixture.daily].sort((a, b) => b.tokens - a.tokens)[0]
+
+    for (const date of [fixture.today, busiest.date]) {
+      const view = dayView(fixture, date)
+      const day = fixture.daily.find((entry) => entry.date === date)
+      expect(view.isToday).toBe(date === fixture.today)
+      expect(view.idle).toBe(false)
+      expect(view.tokens).toBe(day?.tokens ?? 0)
+      expect(view.messages).toBe(day?.messages ?? 0)
+      expect(view.cost).toBeCloseTo(day?.cost ?? 0, 6)
+      // The bar apportions the day whatever the client count, and the
+      // legend — which is not capped — apportions the same day.
+      const named = view.clients.reduce((sum, entry) => sum + entry.tokens, 0)
+      expect(view.mix.reduce((sum, entry) => sum + entry.tokens, 0)).toBe(named)
+      // Every client opens onto the models behind it, and those sum back
+      // to the client.
+      for (const client of view.clients) {
+        const models = client.models.reduce((sum, cell) => sum + cell.tokens, 0)
+        expect(models).toBe(client.tokens)
+      }
+    }
   })
 
   it("feeds the render paths the dashboard actually runs", () => {

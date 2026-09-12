@@ -44,6 +44,15 @@ export type SiteRange = {
 
 export type DaySlice = { tokens: number; cost: number }
 
+/** A client of one day, carrying the models behind it — the same
+ *  client × model join the ranges have, which is what lets the day panel
+ *  open any day the visitor clicks the way it opens today. */
+export type DayClient = DaySlice & {
+  /** Keyed by *canonical* model id, so the slices agree with
+   *  `ranges.*.byModel`. */
+  models: Record<string, DaySlice>
+}
+
 export type SiteDay = {
   date: string
   tokens: number
@@ -53,10 +62,7 @@ export type SiteDay = {
    *  days the CLI reported it. */
   active?: number
   providers: Record<string, DaySlice>
-  clients: Record<string, DaySlice>
-  /** Keyed by *canonical* model id, so the slices agree with
-   *  `ranges.*.byModel`. */
-  models: Record<string, DaySlice>
+  clients: Record<string, DayClient>
 }
 
 export type SiteDevice = {
@@ -128,16 +134,16 @@ export type Site = {
  * number is also the sessionStorage cache key, so a deploy never reads
  * the previous build's entries.
  */
-export const SITE_SCHEMA_VERSION = 13
+export const SITE_SCHEMA_VERSION = 14
 
-export type RangeKey = "day" | "week" | "month" | "quarter" | "all"
+export type RangeKey = "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
 
 /**
- * The ranges the selector offers. `day` is deliberately not among them:
- * it is the collector's today-only window, and it backs the standalone
- * Today section (the only per-model split of a single day the payload
- * carries) rather than the range-driven parts of the page.
+ * The ranges the selector offers — which is every range the payload
+ * carries. There is deliberately no single-day one: the day panel reads
+ * the daily series, whose client × model join makes today and any day
+ * the visitor clicks one code path.
  */
 export const RANGES: {
   key: RangeKey
@@ -154,10 +160,10 @@ export const RANGES: {
 export const DEFAULT_RANGE = RANGES.find((entry) => entry.default)!
 
 /** Every range key the payload carries — what the decoder validates. */
-export const RANGE_KEYS: RangeKey[] = ["day", ...RANGES.map(({ key }) => key)]
+export const RANGE_KEYS: RangeKey[] = RANGES.map(({ key }) => key)
 
-/** The selector entry behind a range key. `day` is not one of them, so a
- *  miss falls back to the 30-day window the markup starts checked. */
+/** The selector entry behind a range key; an unrecognised one (a stale
+ *  stored control) falls back to the window the markup starts checked. */
 export const rangeMeta = (key: RangeKey) =>
   RANGES.find((entry) => entry.key === key) ?? DEFAULT_RANGE
 
@@ -190,11 +196,23 @@ const isSpanRow = (value: unknown, id: string): boolean =>
   isDateOrNull(value.firstDate) &&
   isDateOrNull(value.lastDate)
 
-/** A daily providers/clients map the trend chart Object.entries() over. */
+/** A daily slice map the trend chart Object.entries() over. */
 const isSlices = (value: unknown): boolean =>
   isRecord(value) &&
   Object.values(value).every(
     (slice) => isRecord(slice) && isCount(slice.tokens) && isCount(slice.cost),
+  )
+
+/** The same, one level deeper: each client of the day carries the models
+ *  behind it, which the day panel expands and the model stacking sums. */
+const isDayClients = (value: unknown): boolean =>
+  isRecord(value) &&
+  Object.values(value).every(
+    (client) =>
+      isRecord(client) &&
+      isCount(client.tokens) &&
+      isCount(client.cost) &&
+      isSlices(client.models),
   )
 
 const isDay = (value: unknown): boolean =>
@@ -205,8 +223,7 @@ const isDay = (value: unknown): boolean =>
   isCount(value.messages) &&
   (value.active === undefined || isCount(value.active)) &&
   isSlices(value.providers) &&
-  isSlices(value.clients) &&
-  isSlices(value.models)
+  isDayClients(value.clients)
 
 const isCountOrNull = (value: unknown): boolean =>
   value === null || isCount(value)
@@ -310,10 +327,10 @@ const isRange = (value: unknown): boolean =>
  * Runtime decoder for the /api/site payload, strict over every field
  * the renderers actually read: the schema version (anything this build
  * does not accept is rejected outright), every reported quota plan, all
- * five ranges with their
- * totals and breakdown rows (metrics + usage spans), every daily row
- * including the provider/client/model slice maps the trend chart
- * iterates, and the device list down to its nullable metadata —
+ * four ranges with their totals and breakdown rows (metrics + usage
+ * spans), every daily row including the provider and client × model
+ * slice maps the trend chart and the day panel iterate, and the device
+ * list down to its nullable metadata —
  * render-site truthiness guards handle absence, not wrong types. Dates
  * are held to the calendar-day shape and `generatedAt` to something
  * Date can actually parse: both are arithmetic inputs, not labels.
