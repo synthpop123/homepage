@@ -22,6 +22,7 @@ import { createActivity } from "./activity"
 import { createBreakdown } from "./breakdown"
 import { renderDevices } from "./devices"
 import { createIcons, scopedQuery } from "./dom"
+import { renderFacts } from "./facts"
 import { renderOverview } from "./overview"
 import { renderQuota } from "./quota"
 import { createRhythmChart, createTrendChart } from "./trend"
@@ -144,6 +145,7 @@ export function mountTokensDashboard(root: HTMLElement) {
     try {
       renderQuota(q, loaded, icons)
       activity.render(loaded)
+      renderFacts(q, loaded)
       renderDevices(q, loaded, icons)
       renderDynamic()
     } catch (error) {

@@ -175,16 +175,6 @@ const skeletonRows = (count: number) =>
         </div>
         <p class="tk-day-empty" hidden>Zero-byte kind of day.</p>
       </div>
-      <h3 class="tk-label">All-time patterns</h3>
-      <dl class="tk-cards tk-facts" data-cards="facts">
-        {factCards.map(({ key, label }) => (
-          <div class="tk-card" data-key={key}>
-            <dt>{label}</dt>
-            <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
-            <dd class="sub"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
-          </div>
-        ))}
-      </dl>
     </section>
     <section>
       <h2 id="overview">Overview</h2>
@@ -330,6 +320,18 @@ const skeletonRows = (count: number) =>
       </div>
     </section>
     <section>
+      <h2 id="patterns">Patterns</h2>
+      <dl class="tk-cards tk-facts" data-cards="facts">
+        {factCards.map(({ key, label }) => (
+          <div class="tk-card" data-key={key}>
+            <dt>{label}</dt>
+            <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
+            <dd class="sub"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+    <section>
       <h2 id="devices">Devices</h2>
       <ol class="tk-devices">
         {skeletonRows(2).map(() => (
@@ -423,7 +425,7 @@ const skeletonRows = (count: number) =>
     }
 
     /* Activity: the heatmap is the picker, the day panel is what it
-       picks, and the all-time cards sit under both. */
+       picks. */
 
     /* Section heading with its freshness note on the same baseline. */
     .tk-head {
