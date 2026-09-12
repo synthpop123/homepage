@@ -490,6 +490,13 @@ const skeletonRows = (count: number) =>
       display: none;
     }
 
+    /* The delta lines under the cards end close to their baseline, so
+       the body's gap alone left the mix bar reading as a rule under the
+       last card rather than the start of the next thing. */
+    .tk-day-breakdown {
+      margin-block-start: var(--space-2xs);
+    }
+
     /* The bar and its legend are one unit: day.ts hides both on a day
        with activity but no tokens (active time or messages only), where
        there is nothing to apportion and an empty bar would read as a

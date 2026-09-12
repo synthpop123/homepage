@@ -159,16 +159,13 @@ export function createDayPanel(q: Query, icons: Icons, onBack: () => void) {
     }
 
     // A day with nothing on it is a quiet day, not an outage — and a
-    // wall of zeroes would read as the latter.
+    // wall of zeroes would read as the latter. The line is the same
+    // whichever day it is: the heading above already names the day, so
+    // repeating the date here only made the empty state longer.
     const body = q(".tk-day-body")
     const empty = q(".tk-day-empty")
     if (body) body.hidden = view.idle
-    if (empty) {
-      empty.hidden = !view.idle
-      empty.textContent = view.isToday
-        ? "Zero-byte kind of day."
-        : `Nothing logged on ${formatDate(date)}.`
-    }
+    if (empty) empty.hidden = !view.idle
     if (view.idle) return
 
     renderCards(view)

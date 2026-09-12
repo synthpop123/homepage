@@ -427,7 +427,7 @@ export type DayView = {
  * is what makes today and any day the visitor picks off the heatmap the
  * same code path — the series carries the client × model join.
  *
- * "Nothing logged" means nothing at all, not merely no tokens: cost and
+ * An idle day is one with nothing at all, not merely no tokens: cost and
  * CLI-reported active time are stored and displayed independently of
  * token counts, and a day carrying only one of them would otherwise
  * hide the very card that has something to say.
