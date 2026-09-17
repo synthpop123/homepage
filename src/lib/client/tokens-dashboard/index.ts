@@ -2,12 +2,13 @@
  * Runtime controller for the Tokens dashboard — Tokens.astro owns the
  * markup, styles and skeletons, this module owns everything that runs
  * in the browser. One mount per <tokens-dashboard> root: load the
- * /api/site payload stale-while-revalidate (a session-cached copy
- * paints instantly, the revalidated answer follows and re-renders only
- * if `generatedAt` moved — every renderer is replaceChildren-idempotent,
- * so a refresh is just rendering again), then repaint whichever dynamic
- * sections a change to the range / metric / stacking controls can
- * actually affect. The controls themselves persist for the session.
+ * /api/site payload stale-while-revalidate (a locally cached copy from
+ * any earlier visit paints instantly, the revalidated answer follows
+ * and re-renders only if `generatedAt` moved — every renderer is
+ * replaceChildren-idempotent, so a refresh is just rendering again),
+ * then repaint whichever dynamic sections a change to the range /
+ * metric / stacking controls can actually affect. The controls
+ * themselves persist for the session.
  */
 
 import {
@@ -68,6 +69,7 @@ export function mountTokensDashboard(root: HTMLElement) {
   const body = root.querySelector<HTMLElement>(".tk-body")
   const form = root.querySelector<HTMLFormElement>(".tk-controls")
   const fallback = root.querySelector<HTMLElement>(".tk-fallback")
+  const retry = root.querySelector<HTMLButtonElement>(".tk-retry")
   if (!endpoint || !body || !form) return
 
   const q = scopedQuery(root)
@@ -155,15 +157,29 @@ export function mountTokensDashboard(root: HTMLElement) {
     root.setAttribute("aria-busy", "false")
   }
 
+  // The body and the fallback are the two states of one slot — loading
+  // (skeletons) or failed — so a retry simply puts the skeletons back
+  // and runs the load again. Only ever reached with nothing on screen:
+  // a failed *refresh* keeps the stale render and never gets here.
+  const showFallback = () => {
+    body.hidden = true
+    if (fallback) fallback.hidden = false
+    root.setAttribute("aria-busy", "false")
+  }
+
   // Data may arrive twice (cached paint, then the revalidated answer);
   // an unchanged generatedAt means the second is a no-op. Rejects only
   // when there is nothing to paint at all — a failed refresh keeps the
   // stale render instead of swapping it for the fallback.
-  loadSite(endpoint, (loaded) => {
-    if (site?.generatedAt !== loaded.generatedAt) renderAll(loaded)
-  }).catch(() => {
-    body.hidden = true
-    if (fallback) fallback.hidden = false
-    root.setAttribute("aria-busy", "false")
-  })
+  const load = () => {
+    if (fallback) fallback.hidden = true
+    body.hidden = false
+    root.setAttribute("aria-busy", "true")
+    loadSite(endpoint, (loaded) => {
+      if (site?.generatedAt !== loaded.generatedAt) renderAll(loaded)
+    }).catch(showFallback)
+  }
+
+  retry?.addEventListener("click", load)
+  load()
 }

@@ -45,17 +45,18 @@ describe("safeHttpUrl", () => {
 /* Stale-while-revalidate ------------------------------------------------ */
 
 describe("swr", () => {
-  // bun:test has no DOM; stand in for the browser's sessionStorage.
+  // bun:test has no DOM; stand in for the browser's localStorage — the
+  // area the stale-while-revalidate path persists to.
   const store = new Map<string, string>()
 
   beforeEach(() => {
     store.clear()
-    globalThis.sessionStorage = {
+    globalThis.localStorage = {
       getItem: (key: string) => store.get(key) ?? null,
       setItem: (key: string, value: string) => void store.set(key, value),
       removeItem: (key: string) => void store.delete(key),
       clear: () => store.clear(),
-      key: () => null,
+      key: (index: number) => [...store.keys()][index] ?? null,
       get length() {
         return store.size
       },
@@ -63,7 +64,7 @@ describe("swr", () => {
   })
 
   afterEach(() => {
-    Reflect.deleteProperty(globalThis, "sessionStorage")
+    Reflect.deleteProperty(globalThis, "localStorage")
   })
 
   type Payload = { id: string }
@@ -145,6 +146,28 @@ describe("swr", () => {
         () => {},
       ),
     ).rejects.toThrow("offline")
+  })
+
+  it("sweeps the same feed's entries under other schema versions", async () => {
+    // localStorage outlives deploys, so a version bump would otherwise
+    // leave every previous build's payload behind for good. Other feeds
+    // and unrelated keys are not the writer's to touch.
+    const stale = JSON.stringify({ t: Date.now(), data: { id: "old" } })
+    store.set("tokens:site:v13:https://t.example", stale)
+    store.set("tokens:site:v12:https://t.example", stale)
+    store.set("switch:site:v3:https://s.example", stale)
+    store.set("tokens:controls", "{}")
+    await swr<Payload>(
+      "tokens:site:v14:https://t.example",
+      () => Promise.resolve({ id: "fresh" }),
+      valid,
+      () => {},
+    )
+    expect([...store.keys()].sort()).toEqual([
+      "switch:site:v3:https://s.example",
+      "tokens:controls",
+      "tokens:site:v14:https://t.example",
+    ])
   })
 
   it("never hands out payloads that fail validation", async () => {

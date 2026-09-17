@@ -131,8 +131,8 @@ export type Site = {
  * payload and bumps on any shape or semantics change; isSite rejects
  * anything else, so a stale cache or a mid-deploy mismatch falls back to
  * a refetch (or the fallback UI) instead of a renderer crash. This
- * number is also the sessionStorage cache key, so a deploy never reads
- * the previous build's entries.
+ * number is also part of the localStorage cache key, so a deploy never
+ * reads the previous build's entries.
  */
 export const SITE_SCHEMA_VERSION = 14
 
@@ -166,6 +166,13 @@ export const RANGE_KEYS: RangeKey[] = RANGES.map(({ key }) => key)
  *  stored control) falls back to the window the markup starts checked. */
 export const rangeMeta = (key: RangeKey) =>
   RANGES.find((entry) => entry.key === key) ?? DEFAULT_RANGE
+
+/**
+ * How many rows each Breakdown list shows before its "Show more" —
+ * and, so the skeleton lands in the same geometry, how many placeholder
+ * rows Tokens.astro draws for the models list.
+ */
+export const TOP_ROWS = 8
 
 /** The five token categories, in display order (shade 1…5). */
 export const COMPOSITION: { key: keyof Usage; label: string }[] = [

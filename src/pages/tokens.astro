@@ -5,8 +5,13 @@ import Tokens from "@/components/Tokens.astro"
 import { TOKENS } from "@/consts"
 import Layout from "@/layouts/Layout.astro"
 
-// The preconnect below warms the cross-origin connection to the
-// collector while the page loads, hiding that RTT from the first fetch.
+// The dashboard's one request is issued from a module script, which
+// runs only after the HTML has parsed and the script has downloaded.
+// The preload below lets the browser start it alongside the CSS and JS
+// instead — the request is the same one `loadSite` makes (default fetch
+// mode/credentials, which is what a bare `crossorigin` matches), so the
+// script picks up the in-flight response rather than opening a second.
+// The preconnect is kept for the case where the preload is not honoured.
 const sections = [
   // Hidden by the renderer when no collector has reported a quota
   // snapshot, which takes this entry with it (tokens-dashboard/quota.ts).
@@ -37,6 +42,13 @@ const toc = [
     description="Token usage across my AI coding agents, live from a self-hosted meter."
   />
   <link rel="preconnect" href={TOKENS.endpoint} crossorigin slot="head">
+  <link
+    rel="preload"
+    as="fetch"
+    href={`${TOKENS.endpoint}/api/site`}
+    crossorigin
+    slot="head"
+  >
   <TableOfContents slot="toc" title="Tokens" sections={toc} />
   <header>
     <h1>Tokens</h1>

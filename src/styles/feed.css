@@ -23,8 +23,7 @@
 .memos-fallback a,
 .switch-intro a,
 .switch-fallback a,
-.tk-intro a,
-.tk-fallback a {
+.tk-intro a {
   color: var(--foreground);
   text-decoration: underline;
 }
@@ -96,8 +95,7 @@ switch-feed .sk-line {
 }
 
 .memos-empty,
-.memos-fallback,
-.tk-fallback {
+.memos-fallback {
   color: var(--muted-foreground);
 }
 

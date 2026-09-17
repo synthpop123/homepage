@@ -20,6 +20,7 @@ import {
   providerLabel,
   type RangeKey,
   type Site,
+  TOP_ROWS,
   type Usage,
   type UsageSpan,
 } from "../tokens"
@@ -31,8 +32,6 @@ import {
   type Query,
   usageRow,
 } from "./dom"
-
-const TOP_ROWS = 8
 
 type BreakdownKind = "model" | "client" | "provider"
 
