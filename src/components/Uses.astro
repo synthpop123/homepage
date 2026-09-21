@@ -5,7 +5,34 @@
  * than its product class does. Static build-time data from `USES`.
  */
 
-import { USES } from "@/consts"
+import BookOpenIcon from "@/assets/icons/uses/book-open.svg"
+import HeadphonesIcon from "@/assets/icons/uses/headphones.svg"
+import KeyboardIcon from "@/assets/icons/uses/keyboard.svg"
+import LaptopIcon from "@/assets/icons/uses/laptop.svg"
+import MonitorIcon from "@/assets/icons/uses/monitor.svg"
+import MouseIcon from "@/assets/icons/uses/mouse.svg"
+import SmartphoneIcon from "@/assets/icons/uses/smartphone.svg"
+import SpeakerIcon from "@/assets/icons/uses/speaker.svg"
+import WatchIcon from "@/assets/icons/uses/watch.svg"
+import { USES, type UsesIcon } from "@/consts"
+
+/**
+ * One mark per thing, keyed by the `UsesIcon` union — a device list reads
+ * as a list of shapes before it reads as words, and the shape is what
+ * tells a keyboard from a speaker at a glance. Typed as a full record, so
+ * an icon added to `USES` without an SVG here fails the build.
+ */
+const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
+  laptop: LaptopIcon,
+  monitor: MonitorIcon,
+  keyboard: KeyboardIcon,
+  mouse: MouseIcon,
+  speaker: SpeakerIcon,
+  smartphone: SmartphoneIcon,
+  watch: WatchIcon,
+  headphones: HeadphonesIcon,
+  "book-open": BookOpenIcon,
+}
 ---
 
 <p class="uses-intro">
@@ -15,82 +42,137 @@ import { USES } from "@/consts"
   >.
 </p>
 <uses-list>
-  {USES.map(({ group, items }) => (
-    <uses-group>
-      <h3 class="uses-label">{group}</h3>
-      <dl>
-        {items.map(({ name, note }) => (
-          <div class="uses-item">
-            <dt class="name">{name}</dt>
-            <dd class="note">{note}</dd>
-          </div>
-        ))}
-      </dl>
-    </uses-group>
-  ))}
+  {USES.map(({ group, items }) => {
+    return (
+      <uses-group>
+        <h3 class="uses-label">
+          <span class="group">{group}</span>
+          <span class="count">{items.length}</span>
+        </h3>
+        <dl class="uses-items">
+          {items.map(({ name, note, icon }) => {
+            const Mark = MARKS[icon]
+            return (
+              <div class="uses-item">
+                <dt class="term">
+                  <span class="mark"><Mark aria-hidden="true" /></span>
+                  <span class="name">{name}</span>
+                </dt>
+                <dd class="note">{note}</dd>
+              </div>
+            )
+          })}
+        </dl>
+      </uses-group>
+    )
+  })}
 </uses-list>
 
 <style>
-  .uses-intro {
-    margin-block-end: var(--space-s);
-    color: var(--muted-foreground);
-
-    a {
-      color: var(--foreground);
-      text-decoration: underline;
-    }
-  }
-
+  /* The section sizes itself against its own column rather than the
+     viewport: between 64rem and 76rem the sidebar and the table of
+     contents take their cut first, so a viewport query would put two
+     columns here while the column itself is still one column wide. */
   uses-list {
     display: block;
+    container-type: inline-size;
   }
 
   uses-group {
     display: block;
   }
 
+  /* The feeds' uppercase label, carried to its own rule: with no divider
+     between the things below it, the rule is what says where one group
+     ends. The count rides the far end of it — nine things over two groups
+     is a fact the list makes you count for yourself otherwise. */
   .uses-label {
-    margin-block: var(--space-m) var(--space-2xs);
-    font-size: var(--step--1);
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-block-end: var(--space-s);
+
+    /* Every cell is placed by hand: the rule is generated content, so
+       leaving any of the three to auto-placement would order them by
+       where the pseudo lands rather than by where they read. */
+    &::after {
+      content: "";
+      grid-area: 1 / 2;
+      block-size: 1px;
+      background-color: var(--border);
+    }
   }
 
   uses-group:first-child .uses-label {
     margin-block-start: 0;
   }
 
-  dl {
-    margin: 0;
+  .group {
+    grid-area: 1 / 1;
   }
 
-  /* Name and note read as two columns of one spec sheet; below 40rem the
-     note drops under the name it belongs to rather than squeezing into a
-     column too narrow to hold a clause. */
-  .uses-item {
-    display: grid;
-    grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
-    align-items: baseline;
-    gap: var(--space-2xs) var(--space-s);
-    padding-block: var(--space-xs);
+  .count {
+    grid-area: 1 / 3;
+    font-variant-numeric: tabular-nums;
+    color: var(--gray-9);
+  }
 
-    @media (width < 40rem) {
-      grid-template-columns: minmax(0, 1fr);
+  /* Two things side by side once the column can hold a note at a readable
+     measure, one below that — the pairs are peers, not a sequence, so
+     nothing is lost by reading them in either order. */
+  .uses-items {
+    display: grid;
+    gap: var(--space-s-m) var(--space-m);
+    margin: 0;
+
+    @container (width >= 34rem) {
+      grid-template-columns: 1fr 1fr;
     }
   }
 
-  .uses-item + .uses-item {
-    border-block-start: 1px solid var(--border);
+  /* Mark, name, note: the note starts under the name rather than under
+     the mark, so the two lines read as one block with the mark beside
+     them instead of a hanging indent. */
+  .uses-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-content: start;
+    column-gap: var(--space-xs);
+    row-gap: var(--space-3xs);
   }
 
-  .name {
+  .term {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
     font-weight: var(--font-weight-medium);
   }
 
-  .note {
-    margin: 0;
+  /* The chip is sized in its own em, so it stays exactly twice the mark
+     inside it however the fluid scale moves. */
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2em;
+    block-size: 2em;
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
     color: var(--muted-foreground);
+    font-size: var(--step-0);
+  }
+
+  .name {
+    text-wrap: pretty;
+  }
+
+  .note {
+    grid-column: 2;
+    margin: 0;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    text-wrap: pretty;
   }
 </style>
