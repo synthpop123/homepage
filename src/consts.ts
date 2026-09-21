@@ -64,6 +64,59 @@ export const SWITCH = {
   limit: 8,
 } as const
 
+/** The hardware on `/misc`, grouped by where each thing actually lives. */
+export const USES: {
+  group: string
+  items: { name: string; note: string }[]
+}[] = [
+  {
+    group: "Desk",
+    items: [
+      {
+        name: "MacBook Pro",
+        note: "14-inch M3 Pro, always ready.",
+      },
+      {
+        name: "LG Ultrafine",
+        note: "27-inch 4K, reverse charging.",
+      },
+      {
+        name: "NuPhy BH65",
+        note: "65% and wireless, arrow keys kept, numpad dropped.",
+      },
+      {
+        name: "Logi MX Master 3S",
+        note: "Quiet clicks, and a wheel that spins through a long diff.",
+      },
+      {
+        name: "Marshall Acton III",
+        note: "The speaker behind most of what shows up under Music.",
+      },
+    ],
+  },
+  {
+    group: "Carry",
+    items: [
+      {
+        name: "iPhone Air",
+        note: "Thin enough that I stopped noticing the pocket.",
+      },
+      {
+        name: "Apple Watch Series 9",
+        note: "Timers, rings, and the notifications worth a wrist buzz.",
+      },
+      {
+        name: "HUAWEI FreeClip 2",
+        note: "Open-ear clips — music without sealing the room out.",
+      },
+      {
+        name: "Kindle Paperwhite 6",
+        note: "Long-form reading, on the one screen that can't notify.",
+      },
+    ],
+  },
+]
+
 export const GLOBE_LOCATIONS: { location: [number, number]; size: number }[] = [
   { location: [39.904989, 116.405285], size: 0.02 }, // 北京
   { location: [22.547, 114.085947], size: 0.02 }, // 深圳

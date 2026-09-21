@@ -6,6 +6,7 @@ import Movies from "@/components/Movies.astro"
 import Music from "@/components/Music.astro"
 import Switch from "@/components/Switch.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
+import Uses from "@/components/Uses.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getCollection } from "astro:content"
 
@@ -19,6 +20,7 @@ const sections = [
   { id: "movies", label: "Movies" },
   { id: "music", label: "Music" },
   { id: "switch", label: "Switch" },
+  { id: "uses", label: "Uses" },
 ]
 const toc = [
   {
@@ -70,6 +72,10 @@ const toc = [
   <section>
     <h2 id="switch">Switch</h2>
     <Switch limit={10} />
+  </section>
+  <section>
+    <h2 id="uses">Uses</h2>
+    <Uses />
   </section>
 </Layout>
 

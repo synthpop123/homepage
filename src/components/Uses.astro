@@ -1,0 +1,96 @@
+---
+/**
+ * The hardware I actually use, grouped by where it lives rather than by
+ * category — a thing's place says more about how often it gets touched
+ * than its product class does. Static build-time data from `USES`.
+ */
+
+import { USES } from "@/consts"
+---
+
+<p class="uses-intro">
+  Inspired by
+  <a href="https://uses.tech/" target="_blank" rel="noopener noreferrer"
+    >uses.tech</a
+  >.
+</p>
+<uses-list>
+  {USES.map(({ group, items }) => (
+    <uses-group>
+      <h3 class="uses-label">{group}</h3>
+      <dl>
+        {items.map(({ name, note }) => (
+          <div class="uses-item">
+            <dt class="name">{name}</dt>
+            <dd class="note">{note}</dd>
+          </div>
+        ))}
+      </dl>
+    </uses-group>
+  ))}
+</uses-list>
+
+<style>
+  .uses-intro {
+    margin-block-end: var(--space-s);
+    color: var(--muted-foreground);
+
+    a {
+      color: var(--foreground);
+      text-decoration: underline;
+    }
+  }
+
+  uses-list {
+    display: block;
+  }
+
+  uses-group {
+    display: block;
+  }
+
+  .uses-label {
+    margin-block: var(--space-m) var(--space-2xs);
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  uses-group:first-child .uses-label {
+    margin-block-start: 0;
+  }
+
+  dl {
+    margin: 0;
+  }
+
+  /* Name and note read as two columns of one spec sheet; below 40rem the
+     note drops under the name it belongs to rather than squeezing into a
+     column too narrow to hold a clause. */
+  .uses-item {
+    display: grid;
+    grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--space-2xs) var(--space-s);
+    padding-block: var(--space-xs);
+
+    @media (width < 40rem) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .uses-item + .uses-item {
+    border-block-start: 1px solid var(--border);
+  }
+
+  .name {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+</style>
