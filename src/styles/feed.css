@@ -1,8 +1,10 @@
-/* Shared feed typography and loading surfaces. Row layouts stay local. */
+/* Shared section typography and loading surfaces for the /misc feeds and
+   the static sections beside them. Row layouts stay local. */
 
 .music-intro,
 .movies-intro,
-.switch-intro {
+.switch-intro,
+.uses-intro {
   margin-block-end: var(--space-s);
   color: var(--muted-foreground);
 }
@@ -23,14 +25,16 @@
 .memos-fallback a,
 .switch-intro a,
 .switch-fallback a,
-.tk-intro a {
+.tk-intro a,
+.uses-intro a {
   color: var(--foreground);
   text-decoration: underline;
 }
 
 .music-label,
 .switch-label,
-.tk-label {
+.tk-label,
+.uses-label {
   margin-block: var(--space-m) var(--space-2xs);
   font-size: var(--step--1);
   font-weight: var(--font-weight-medium);

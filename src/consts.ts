@@ -64,10 +64,26 @@ export const SWITCH = {
   limit: 8,
 } as const
 
+/**
+ * The marks `Uses.astro` draws beside a thing — the union, not a free
+ * string, so an icon this page has no SVG for fails the type check rather
+ * than rendering an empty square.
+ */
+export type UsesIcon =
+  | "laptop"
+  | "monitor"
+  | "keyboard"
+  | "mouse"
+  | "speaker"
+  | "smartphone"
+  | "watch"
+  | "headphones"
+  | "book-open"
+
 /** The hardware on `/misc`, grouped by where each thing actually lives. */
 export const USES: {
   group: string
-  items: { name: string; note: string }[]
+  items: { name: string; note: string; icon: UsesIcon }[]
 }[] = [
   {
     group: "Desk",
@@ -75,22 +91,27 @@ export const USES: {
       {
         name: "MacBook Pro",
         note: "14-inch M3 Pro, always ready.",
+        icon: "laptop",
       },
       {
         name: "LG Ultrafine",
         note: "27-inch 4K, reverse charging.",
+        icon: "monitor",
       },
       {
         name: "NuPhy BH65",
         note: "65% and wireless, arrow keys kept, numpad dropped.",
+        icon: "keyboard",
       },
       {
         name: "Logi MX Master 3S",
         note: "Quiet clicks, and a wheel that spins through a long diff.",
+        icon: "mouse",
       },
       {
         name: "Marshall Acton III",
         note: "The speaker behind most of what shows up under Music.",
+        icon: "speaker",
       },
     ],
   },
@@ -100,18 +121,22 @@ export const USES: {
       {
         name: "iPhone Air",
         note: "Thin enough that I stopped noticing the pocket.",
+        icon: "smartphone",
       },
       {
         name: "Apple Watch Series 9",
         note: "Timers, rings, and the notifications worth a wrist buzz.",
+        icon: "watch",
       },
       {
         name: "HUAWEI FreeClip 2",
         note: "Open-ear clips — music without sealing the room out.",
+        icon: "headphones",
       },
       {
         name: "Kindle Paperwhite 6",
         note: "Long-form reading, on the one screen that can't notify.",
+        icon: "book-open",
       },
     ],
   },
