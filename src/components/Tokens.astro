@@ -7,6 +7,7 @@ import Anthropic from "@/assets/icons/ai/anthropic.svg"
 import Claude from "@/assets/icons/ai/claude.svg"
 import ClaudeCode from "@/assets/icons/ai/claudecode.svg"
 import Codex from "@/assets/icons/ai/codex.svg"
+import CraftAgents from "@/assets/icons/ai/craftagents.svg"
 import Cursor from "@/assets/icons/ai/cursor.svg"
 import DeepSeek from "@/assets/icons/ai/deepseek.svg"
 import Gemini from "@/assets/icons/ai/gemini.svg"
@@ -35,14 +36,16 @@ type Props = {
 const { endpoint = TOKENS.endpoint } = Astro.props
 
 /** Mono brand SVGs, vendored from Lobe Icons (https://lobehub.com/icons)
- *  except zed.svg (official Zed mark, normalized to currentColor). The
- *  hidden defs block below is what the runtime script clones from. */
+ *  except zed.svg and craftagents.svg (the apps' own marks, normalized
+ *  to currentColor). The hidden defs block below is what the runtime
+ *  script clones from. */
 const AI_ICONS: Record<string, SvgComponent> = {
   alibaba: Alibaba,
   anthropic: Anthropic,
   claude: Claude,
   claudecode: ClaudeCode,
   codex: Codex,
+  craftagents: CraftAgents,
   cursor: Cursor,
   deepseek: DeepSeek,
   gemini: Gemini,
@@ -448,6 +451,10 @@ const LEGEND_CHIPS = 4
     /* Nous ships a cream-on-black brand; a parchment tan keeps it apart
        from the zinc (xAI) and stone (OpenCode) neutrals. */
     --tk-p-hermes: light-dark(#8a7248, #cdb37e);
+    /* Craft Agents' brand mauve (#9570be). It lands in the same family
+       as Cursor's violet, but at less than half the saturation, which
+       is what keeps the two apart where they stack together. */
+    --tk-p-craft: light-dark(#8257b3, #b99ada);
     /* Moonshot's brand near-black (#16191e), lifted for dark mode. */
     --tk-p-moonshot: light-dark(#16191e, #e4e4e7);
     /* Z.ai brands near-black like Moonshot; keep its Zhipu-heritage
@@ -1292,6 +1299,10 @@ const LEGEND_CHIPS = 4
 
     [data-p="hermes"] {
       --p: var(--tk-p-hermes);
+    }
+
+    [data-p="craft-agent"] {
+      --p: var(--tk-p-craft);
     }
 
     [data-p="moonshotai"] {

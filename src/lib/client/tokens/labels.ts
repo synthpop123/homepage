@@ -21,6 +21,7 @@ const CLIENT_LABELS = new Map<string, string>([
   ["gemini", "Gemini CLI"],
   ["grok", "Grok Build"],
   ["hermes", "Hermes Agent"],
+  ["craft-agent", "Craft Agents"],
   ["zed", "Zed"],
   ["unknown", "Other"],
   [OTHER, "Other"],
@@ -142,6 +143,7 @@ const CLIENT_ICONS = new Map<string, string>([
   ["gemini", "gemini"],
   ["grok", "grok"],
   ["hermes", "hermesagent"],
+  ["craft-agent", "craftagents"],
   ["zed", "zed"],
 ])
 
