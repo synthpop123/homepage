@@ -12,7 +12,7 @@ tags:
 ai: true
 ---
 
-假如一台服务器上跑着十几二十个自托管服务：订阅记账、电子书库、照片备份、媒体服务器，外加一堆小工具，全靠手动维护，用不了多久就会变成一件头疼事。把它们交给 Git 管理会省心很多：
+假如一台服务器上跑着十几二十个自托管服务：订阅记账、电子书库、照片备份、媒体服务器，外加一堆小工具，全靠手动维护，很快就会难以管理。交给 Git 管理的做法是：
 
 - 每个服务写成一个 Compose 文件，pin 到固定的镜像版本；
 - 由 Komodo 从仓库自动部署；
@@ -24,7 +24,7 @@ ai: true
 
 镜像版本是另一个问题。为了尽快把服务跑起来，往往会选择 `image: app:latest`，每次 `docker compose pull` 都可能拉到不一样的镜像，出了问题连引入 breaking change 的是哪个版本都查不到；老老实实 pin 住版本，升级又得记着去翻 changelog，一放就是两年，安全补丁也跟着错过。
 
-两个问题的根源相同：服务器的真实状态缺少一个单一、可信、带历史的来源。GitOps 做的就是把 Git 仓库变成这个来源，让机器自动向它对齐。
+这两个问题都源于服务器状态缺少一个可信、带历史的统一来源。GitOps 把 Git 仓库作为这个来源，让机器自动与它保持一致。
 
 ## GitOps：让 Git 成为唯一事实来源
 
@@ -58,7 +58,7 @@ GitOps 这个词最早来自 Kubernetes 社区，但它的思想跟编排引擎�
 
 _Core 是控制平面，Periphery 是在每台机器上实际执行命令的代理_
 
-Komodo 适合 GitOps 的关键在于，这些资源本身可以用代码声明。它提供一种叫 **Resource Sync** 的资源：把所有 Stack 的定义写进一个 TOML 文件、提交进 Git，Komodo 读取这个文件，把里面声明的资源创建出来并保持一致。这样有哪些服务、各自怎么配置，也和代码一样有版本、有历史。
+Komodo 能用于 GitOps，是因为这些资源本身可以用代码声明。它提供一种叫 **Resource Sync** 的资源：把所有 Stack 的定义写进一个 TOML 文件、提交进 Git，Komodo 读取这个文件，把里面声明的资源创建出来并保持一致。这样有哪些服务、各自怎么配置，也和代码一样有版本、有历史。
 
 在 `sync.toml` 里，每个服务对应一个 `[[stack]]` 块：
 
@@ -79,7 +79,7 @@ file_paths = ["compose.yaml"]
 几个字段的含义：
 
 - `server`：部署到哪台被 Komodo 纳管的服务器，也就是哪个 Periphery；
-- `linked_repo`：指向一个在 Komodo UI 里配好的 Repo 资源。Git 账号、仓库地址、访问令牌这些实例相关的信息留在 Komodo 里，仓库文件里只出现一个名字，干净、可移植；
+- `linked_repo`：指向一个在 Komodo UI 里配好的 Repo 资源。Git 账号、仓库地址、访问令牌这些实例相关的信息留在 Komodo 里，仓库文件里只出现一个名字，便于移植；
 - `run_directory` 和 `file_paths`：指定读仓库的哪个子目录、哪个 Compose 文件；
 - `deploy = false`：把部署动作从 sync 里拆出去，交给后面要讲的 Procedure。
 
@@ -206,7 +206,7 @@ executions = [
 - **Mend 托管的 GitHub App**：在 Marketplace 安装、授权给目标仓库，Mend 的基础设施按大约每小时一次的节奏临时 clone 仓库、扫描、提 PR，跑完不留存代码，仓库里不需要配任何 CI。首次运行会开一个 onboarding PR，合并后自动开始工作；
 - **自托管**：把 Renovate 当作 npm 包、Docker 镜像或定时运行的 GitHub Action 自己跑，控制更细。
 
-整套流程有一个前提：镜像 tag 要 pin 到固定版本，Renovate 才有东西可检测，部署本身也因此可复现。
+前提是镜像 tag 要 pin 到固定版本，Renovate 才有东西可检测，部署也因此可复现。
 
 数据库和缓存则按另一套规则，**锁到大版本线**：
 
@@ -215,7 +215,7 @@ image: pgvector/pgvector:pg17
 image: redis:8
 ```
 
-一个好用的判断标准是看升级要不要人工介入数据迁移：需要的锁大版本线，让大版本升级以一个显眼的 major PR 出现；无痛补丁则锁精确版本，让 Renovate 自由提 PR。
+判断标准是升级是否需要人工迁移数据：需要的锁大版本线，让大版本升级以一个显眼的 major PR 出现；无痛补丁则锁精确版本，让 Renovate 自由提 PR。
 
 ```json title="renovate.json"
 {
@@ -231,7 +231,7 @@ image: redis:8
 - `config:recommended` 是官方推荐基线，打开大部分合理默认值；
 - `:dependencyDashboard` 在仓库里自动维护一个 Dependency Dashboard issue，把所有待升级、被忽略、有冲突的项汇总在一个看板上，也能在上面手动勾选触发某个升级；
 - `:semanticCommits` 让 Renovate 的 commit 和 PR 标题遵循语义化提交风格；
-- `prConcurrentLimit` 和 `prHourlyLimit` 是限流阀门。Renovate 默认限制同时打开的 PR 数和每小时新建的 PR 数，服务多时这个限制反而拖慢升级节奏，可以把两个值都设为 0。
+- `prConcurrentLimit` 和 `prHourlyLimit` 用于限流。Renovate 默认限制同时打开的 PR 数和每小时新建的 PR 数，服务多时会拖慢升级，可以把两个值都设为 0。
 
 服务数增加后，可以通过 `packageRules` 分组来减少 PR 数量。比如 Mastodon 的 web/sidekiq 和 streaming 是两个镜像、但始终同版本发布，就把它们合并成一个 PR：
 
@@ -245,9 +245,9 @@ image: redis:8
 ]
 ```
 
-分组让这类关联镜像一起升、一起审、一起部署，避免版本错配；除按镜像名外，也可以用 `matchFileNames` 按 Stack 目录分组。如果 PR 还是来得太勤，再加 `schedule` 把某组更新收拢到固定的时间窗口。
+分组后，关联镜像在同一个 PR 里升级和部署，避免版本错配；除按镜像名外，也可以用 `matchFileNames` 按 Stack 目录分组。如果 PR 还是来得太勤，再加 `schedule` 把某组更新收拢到固定的时间窗口。
 
-至于自动合并，Renovate 支持给低风险更新（比如 digest、pin、补丁）开 automerge。不过在自托管的个人服务上，review 一行版本号的成本很低，却能让每次变更都心里有数，我选择把审核留给自己。
+至于自动合并，Renovate 支持给低风险更新（比如 digest、pin、补丁）开 automerge。不过在自托管的个人服务上，review 一行版本号的成本很低，还能清楚每次改了什么，所以我把审核留给自己。
 
 ![renovate-pr](./assets/renovate-pr.png)
 
@@ -327,7 +327,7 @@ APP_REDIS_PASSWORD=[[APP_REDIS_PASSWORD]]
 
 ## 端口、网络与数据目录
 
-GitOps 管住了部署机制，让几十个服务长期不乱，还需要一组人为约定。
+GitOps 解决了部署，但要让几十个服务长期有序，还需要几条约定。
 
 1. **端口顺序分配，维护唯一登记表。** 给 host 端口定一个起始基数，比如从 `20000` 开始按 1 递增，每个发布了 host 端口的服务占一个号，全部登记在仓库里的一张端口表（一个 markdown 文件就够）。加服务时取下一个空号、在同一个 commit 里登记。只在网络内部通信的容器（数据库、缓存、搜索引擎）不发布 host 端口，因此不占号。这张表是端口分配的唯一事实来源，哪些号空着一眼可见，也避开了 3000、8080 这类应用默认端口的频繁冲突。
 
@@ -376,7 +376,7 @@ stat -c '%n  %U:%G  %a' /srv/<service>/*
 
 - **`:latest` 可能比版本 tag 新。** `:latest` 经常跟着上游的 `main` 分支走，可能跑在最新 release 之前。直接照着 release tag 去 pin，反而可能是一次悄悄的降级。pin 之前核对一下：把正在跑的镜像的 digest 和候选 tag 的 digest 比一下，确认一致再切。
 
-- **共享数据库最好拆成每个 Stack 自带。** 给每个 Stack 配一个自带的 Postgres 更清爽：隔离性更好、每个应用独立的版本和备份、没有共享的单点、host 的 `5432` 也不用再对外发布，只需将应用配置里连接的 host 从 `host.docker.internal` 改成自带服务的名字（比如 `app-postgres`）。
+- **共享数据库最好拆成每个 Stack 自带。** 给每个 Stack 配一个自带的 Postgres：隔离性更好、每个应用独立的版本和备份、没有共享的单点、host 的 `5432` 也不用再对外发布，只需将应用配置里连接的 host 从 `host.docker.internal` 改成自带服务的名字（比如 `app-postgres`）。
 
   ```bash
   # Export only this one database from the shared instance
@@ -424,7 +424,7 @@ Docker 发布的端口流量在内核的 prerouting 阶段就被 DNAT 改写目�
 
 1. 过滤只动 `DOCKER-USER` 链，针对公网网卡。容器之间在内部桥接网络上的通信、容器对外的出站流量，都不满足入站方向来自公网网卡这个条件，所以内部互联和访问外网都不受影响。
 
-2. `INPUT` 策略保持 `accept`，host 进程的端口（SSH、反代用的 80/443）照常放行。要限制某个走 host 网络的端口，就单开一个子链、只丢弃那一个端口。这么设计的用意只有一个：就算规则写错了，也伤不到 SSH，人永远能登进来修。
+2. `INPUT` 策略保持 `accept`，host 进程的端口（SSH、反代用的 80/443）照常放行。要限制某个走 host 网络的端口，就单开一个子链、只丢弃那一个端口。这样即使规则写错，也影响不到 SSH，始终能登录进来修复。
 
 3. 只用原生 `iptables`/`ip6tables` 管这一条链，不装 ufw 或 firewalld。那类工具会接管整套链和默认策略，和 Docker 互相冲突，光一个 `FORWARD` 默认 `DROP` 就能让所有容器转发瘫痪。
 
@@ -461,7 +461,7 @@ _Docker 发布的端口走 DNAT 加 forward，在 DOCKER-USER 链上拦截；SSH
 
 ## 备份：三层状态，分层处理
 
-Git 里有全部声明，但光靠 `git clone` 重建不出一台服务器：真正的状态分散在三层，各有不同的归属和备份方式，要从彻底丢失中恢复，三层都得在手上。
+Git 里有全部声明，但只靠 `git clone` 重建不了服务器：状态分散在三层，归属和备份方式各不相同，彻底丢失后要恢复，三层都得有备份。
 
 | 层                | 内容                                                       | 在哪              | 谁来备份          | 丢了会怎样                   |
 | ----------------- | ---------------------------------------------------------- | ----------------- | ----------------- | ---------------------------- |
@@ -469,7 +469,7 @@ Git 里有全部声明，但光靠 `git clone` 重建不出一台服务器：真
 | 2. 控制平面元数据 | 资源定义、变量 / 密钥、用户、API key、Git 和 registry 账号 | Komodo 的数据库   | 内置 dump（每天） | 密钥和账号丢失，需要手工重配 |
 | 3. 应用数据       | 各服务的库、上传文件、应用自持的 key                       | 数据根目录 `/srv` | 自己安排          | 用户数据丢失                 |
 
-仓库定义了每个 Stack 是什么，但每个密钥要么是 Komodo 里的变量、要么在 `/srv` 里，Git 中只有占位符。恢复时三层各有来源：Git 重建定义，数据库 dump 找回密钥和账号，`/srv` 备份找回数据。
+Git 里的密钥只有占位符，真实值要么是 Komodo 里的变量，要么在 `/srv` 里，所以缺了后两层，仓库里的定义也跑不起来。
 
 - 第一层，把代码推到一个异地的 Git 远端。
 
