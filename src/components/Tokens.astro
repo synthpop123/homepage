@@ -1,6 +1,7 @@
 ---
 import type { SvgComponent } from "astro/types"
 import ChevronIcon from "@/assets/icons/callouts/alt-arrow-down.svg"
+import HourglassIcon from "@/assets/icons/hourglass.svg"
 import Heatmap from "@/components/Heatmap.astro"
 import Alibaba from "@/assets/icons/ai/alibaba.svg"
 import Anthropic from "@/assets/icons/ai/anthropic.svg"
@@ -126,6 +127,7 @@ const LEGEND_CHIPS = 4
       <span data-icon={name}><Icon /></span>
     ))}
     <span data-icon="chevron"><ChevronIcon /></span>
+    <span data-icon="hourglass"><HourglassIcon /></span>
   </div>
   <p class="tk-intro">
     Token usage across my AI coding agents, live from my
@@ -152,16 +154,19 @@ const LEGEND_CHIPS = 4
                     <span class="win-used"><span class="sk-line sk-num" /></span>
                   </div>
                   <div class="tk-meter" data-skeleton></div>
-                  <p class="win-foot"><span class="sk-line sk-sub" style="inline-size: 11em" /></p>
+                  <p class="win-foot"><span class="sk-line sk-sub" style="inline-size: 7em" /></p>
                 </li>
               ))}
             </ol>
             {plan === 0 && (
               <div class="plan-credits">
-                <p class="credits-head"><span class="sk-line sk-sub" style="inline-size: 6em" /></p>
+                <div class="win-head">
+                  <span class="win-label"><span class="sk-line" style="inline-size: 6em" /></span>
+                  <span class="win-used"><span class="sk-line sk-num" /></span>
+                </div>
                 <ol class="credits-list">
                   {skeletonRows(QUOTA_CREDITS).map(() => (
-                    <li><span class="sk-line sk-sub" style="inline-size: 10em" /></li>
+                    <li class="credit"><span class="sk-line sk-sub" style="inline-size: 5em" /></li>
                   ))}
                 </ol>
               </div>
@@ -978,42 +983,51 @@ const LEGEND_CHIPS = 4
        two windows closer than a plan's head, windows and credits. */
     .tk-plans .tk-windows {
       display: grid;
-      gap: var(--space-xs);
+      gap: var(--space-s);
     }
 
+    /* Head, meter, foot — every window renders all three whatever its
+       state (quota.ts always writes a foot), so rows keep the same
+       height down a card and across the two cards. */
     .tk-plans .tk-window {
       display: grid;
       gap: var(--space-2xs);
     }
 
-    /* Label and figure share a baseline, like a stat card turned on its
-       side, with the meter reading underneath them. */
+    /* Label left, "9% used" right, on one baseline: the figure column
+       lines up down the card, and the manual-resets count ("3 left")
+       reuses the row so it lands in the same column. */
     .tk-plans .win-head {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
       gap: var(--space-s);
-    }
-
-    .tk-plans .win-label {
       font-size: var(--step--1);
-      color: var(--muted-foreground);
     }
 
     .tk-plans .win-used {
-      font-size: var(--step-1);
-      font-weight: var(--font-weight-medium);
+      color: var(--muted-foreground);
       font-variant-numeric: tabular-nums;
-      line-height: 1.2;
+      white-space: nowrap;
     }
 
-    /* A window past its reset has no figure to give: the dash stands in
-       for it at the same size, so the row keeps its baseline, but at the
-       label's weight and colour — it is the absence of a reading, not a
-       reading. Its track stays empty (quota.ts draws no head). */
-    .tk-plans .tk-window[data-reset] .win-used {
+    .tk-plans .win-used b {
+      font-size: var(--step-0);
+      font-weight: var(--font-weight-medium);
+      color: var(--foreground);
+    }
+
+    /* A window past its reset reads 0% because the ceiling is back, not
+       because anyone reported it: the figure drops to the unit's colour,
+       and the foot — "awaiting report" — takes the page's colour for a
+       reading that is no longer current, as a stale card's age does. */
+    .tk-plans .tk-window[data-state="reset"] .win-used b {
       font-weight: inherit;
-      color: var(--muted-foreground);
+      color: inherit;
+    }
+
+    .tk-plans .tk-window[data-state="reset"] .win-foot {
+      color: var(--destructive);
     }
 
     /* A quota window is a gauge against a ceiling, not a share of a whole,
@@ -1041,30 +1055,64 @@ const LEGEND_CHIPS = 4
       background-color: var(--p, var(--gray-8));
     }
 
-    .tk-plans .win-foot,
-    .tk-plans .plan-credits {
+    .tk-plans .win-foot {
       font-size: var(--step--1);
       color: var(--muted-foreground);
       font-variant-numeric: tabular-nums;
     }
 
-    /* Each credit expires on its own date, so they are a list under a
-       count rather than one summarised line. */
+    /* [data-p] is here for the hue alone (the tile to spend next wears
+       it); the background the bare rule paints on chips is not wanted. */
     .tk-plans .plan-credits {
       display: grid;
-      gap: var(--space-3xs);
+      gap: var(--space-2xs);
+      background-color: transparent;
     }
 
+    /* Each banked reset is a tile, not a line: they are discrete things
+       spent one at a time, and a row of tokens reads as a count before
+       it reads as a list. The track fits as many as the card allows and
+       wraps the rest. */
     .tk-plans .credits-list {
       display: grid;
-      gap: var(--space-3xs);
+      grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+      gap: var(--space-2xs);
     }
 
-    .tk-plans .credits-list li {
-      /* Aligned under the count, marked by the same rail the breakdown
-         rows use rather than by a bullet glyph. */
-      padding-inline-start: var(--space-xs);
-      border-inline-start: 1px solid var(--gray-4);
+    .tk-plans .credit {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      padding: var(--space-3xs) var(--space-xs);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: var(--step--1);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      color: var(--muted-foreground);
+    }
+
+    .tk-plans .credit .ico {
+      display: inline-flex;
+      flex-shrink: 0;
+    }
+
+    /* The one to spend next wears the plan's hue — the same wash the
+       meters' tracks use, so it reads as this subscription's. */
+    .tk-plans .credit[data-next] {
+      border-color: color-mix(in oklab, var(--p) 45%, var(--border));
+      background-color: color-mix(in oklab, var(--p) 10%, transparent);
+      color: var(--foreground);
+    }
+
+    .tk-plans .credit[data-next] .ico {
+      color: var(--p);
+    }
+
+    /* Lapsing within a day: spend it or lose it. */
+    .tk-plans .credit[data-urgent] {
+      --p: var(--red-9);
+      color: var(--destructive);
     }
 
     /* The brand hue says which subscription is being measured; red is
@@ -1807,8 +1855,7 @@ const LEGEND_CHIPS = 4
     [data-skeleton] .win-used,
     [data-skeleton] .win-foot,
     [data-skeleton] .plan-age,
-    [data-skeleton] .credits-head,
-    [data-skeleton] .credits-list li,
+    [data-skeleton] .credit,
     [data-skeleton] .dev-name,
     [data-skeleton] .dev-seen,
     [data-skeleton] .dev-tokens,
@@ -1822,6 +1869,12 @@ const LEGEND_CHIPS = 4
       display: grid;
       align-content: center;
       min-block-size: 1lh;
+    }
+
+    /* The figure's line box is set by its step-0 number, not by the
+       step--1 row it sits in. */
+    [data-skeleton] .win-used {
+      font-size: var(--step-0);
     }
 
     /* Legend entries stay inline-flex (chip beside line), so only the

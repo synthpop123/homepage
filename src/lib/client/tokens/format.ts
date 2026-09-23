@@ -148,25 +148,38 @@ export const formatAgo = (epochMs: number, now = Date.now()) => {
 }
 
 /**
- * "in 4m" / "in 3h" / "in 2d" — the mirror of formatAgo, for the quota
- * windows and reset credits, which are the only instants on this page
- * that lie ahead. An instant that has already passed returns null: a
- * rate-limit window that reset is not "in -1h", it is a different state,
- * and the caller says so in words.
+ * "4m" / "1h 8m" / "3d 4h" — how long until an instant that lies ahead:
+ * the quota windows and reset credits, the only such instants on this
+ * page. An instant that has already passed returns null: a rate-limit
+ * window that reset is not "-1h" away, it is a different state, and the
+ * caller says so in words.
+ *
+ * Two units, not one: "1h" for a session that resets in 1h 59m is off
+ * by half the answer. A zero second unit is dropped ("3h").
  *
  * Rounds *down*, unlike formatAgo. These are deadlines, and rounding a
- * credit that lapses in five and a half days up to "in 6d" tells the
- * reader they have a day they do not have. Under a minute still reads
- * "in 1m" rather than "in 0m" — it has not expired yet, which is the
- * only thing null is allowed to mean here.
+ * credit that lapses in five and a half days up to "6d" tells the reader
+ * they have a day they do not have. Under a minute still reads "1m"
+ * rather than "0m" — it has not expired yet, which is the only thing
+ * null is allowed to mean here.
  */
-export const formatIn = (epochMs: number, now = Date.now()) => {
+export const formatRemaining = (epochMs: number, now = Date.now()) => {
   const ms = epochMs - now
   if (ms <= 0) return null
   const minutes = Math.floor(ms / 60_000)
-  if (minutes < 60) return `in ${Math.max(1, minutes)}m`
+  if (minutes < 60) return `${Math.max(1, minutes)}m`
+  const pair = (major: number, unit: string, minor: number, sub: string) =>
+    minor > 0 ? `${major}${unit} ${minor}${sub}` : `${major}${unit}`
   const hours = Math.floor(minutes / 60)
-  return hours < 24 ? `in ${hours}h` : `in ${Math.floor(hours / 24)}d`
+  return hours < 24
+    ? pair(hours, "h", minutes % 60, "m")
+    : pair(Math.floor(hours / 24), "d", hours % 24, "h")
+}
+
+/** "in 4m" / "in 1h 8m" / "in 3d 4h" — formatRemaining, as a phrase. */
+export const formatIn = (epochMs: number, now = Date.now()) => {
+  const remaining = formatRemaining(epochMs, now)
+  return remaining === null ? null : `in ${remaining}`
 }
 
 /** "42 min" / "9.5 h" — for CLI-reported active time. */

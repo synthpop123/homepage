@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test"
 import {
   windowDurationMs,
-  windowFoot,
   windowHasReset,
   windowIsOpen,
+  windowView,
 } from "./quota"
 
 const capturedAt = Date.parse("2026-08-27T06:00:00Z")
@@ -132,10 +132,10 @@ describe("windowHasReset", () => {
   })
 })
 
-describe("windowFoot", () => {
-  it("hides the placeholder reset at 0%", () => {
+describe("windowView", () => {
+  it("names what starts an unanchored window rather than going blank", () => {
     expect(
-      windowFoot(
+      windowView(
         {
           label: "Session",
           usedPercent: 0,
@@ -144,48 +144,59 @@ describe("windowFoot", () => {
         now,
         capturedAt,
       ),
-    ).toBe("")
+    ).toEqual({ state: "idle", used: 0, foot: "starts on first use" })
   })
 
-  it("shows the countdown for a 0% window that has already been anchored", () => {
-    expect(
-      windowFoot(
-        {
-          label: "Session",
-          usedPercent: 0,
-          resetsAt: "2026-08-27T10:50:00Z",
-        },
-        now,
-        capturedAt,
-      ),
-    ).toContain("in 4h")
+  it("counts down a 0% window that has already been anchored", () => {
+    const view = windowView(
+      { label: "Session", usedPercent: 0, resetsAt: "2026-08-27T10:50:00Z" },
+      now,
+      capturedAt,
+    )
+    expect(view.state).toBe("open")
+    expect(view.foot).toBe("resets in 4h 50m")
   })
 
-  it("shows the countdown once spend has anchored the window", () => {
-    expect(
-      windowFoot(
-        {
-          label: "Session",
-          usedPercent: 5,
-          resetsAt: "2026-08-27T11:00:00Z",
-        },
-        now,
-        capturedAt,
-      ),
-    ).toContain("in 5h")
+  it("counts down once spend has anchored the window", () => {
+    const view = windowView(
+      { label: "Session", usedPercent: 5, resetsAt: "2026-08-27T11:00:00Z" },
+      now,
+      capturedAt,
+    )
+    expect(view).toMatchObject({ state: "open", used: 5 })
+    expect(view.foot).toBe("resets in 5h")
+    expect(view.title).toBe("Resets Aug 27, 19:00")
   })
 
-  it("says the window reset once the vendor timestamp has passed", () => {
+  it("starts a rolled-over window from zero and says it is unreported", () => {
+    const view = windowView(
+      { label: "Session", usedPercent: 12, resetsAt: "2026-08-27T05:00:00Z" },
+      now,
+      capturedAt,
+    )
+    expect(view).toMatchObject({ state: "reset", used: 0 })
+    expect(view.foot).toBe("reset 1h ago · awaiting report")
+  })
+
+  it("rolls over while the page is open, not only on load", () => {
+    const window = {
+      label: "Session",
+      usedPercent: 40,
+      resetsAt: "2026-08-27T07:00:00Z",
+    }
+    expect(windowView(window, now, capturedAt).state).toBe("open")
+    expect(windowView(window, now + 2 * 3_600_000, capturedAt).state).toBe(
+      "reset",
+    )
+  })
+
+  it("clamps the reported figure to the gauge", () => {
     expect(
-      windowFoot(
-        {
-          label: "Session",
-          usedPercent: 12,
-          resetsAt: "2026-08-27T05:00:00Z",
-        },
+      windowView(
+        { label: "Weekly", usedPercent: 104, resetsAt: "2026-08-28T06:00:00Z" },
         now,
         capturedAt,
-      ),
-    ).toBe("window reset — awaiting next report")
+      ).used,
+    ).toBe(100)
   })
 })

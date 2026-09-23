@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import {
   formatDelta,
   formatIn,
+  formatRemaining,
   formatShare,
   isOnline,
   shiftDays,
@@ -49,17 +50,19 @@ describe("formatIn", () => {
   const now = Date.parse("2026-07-20T12:00:00Z")
   const at = (iso: string) => formatIn(Date.parse(iso), now)
 
-  it("counts down in the coarsest useful unit", () => {
+  it("counts down in two units, dropping a zero second one", () => {
     expect(at("2026-07-20T12:40:00Z")).toBe("in 40m")
+    expect(at("2026-07-20T13:08:00Z")).toBe("in 1h 8m")
     expect(at("2026-07-20T15:00:00Z")).toBe("in 3h")
+    expect(at("2026-07-22T16:00:00Z")).toBe("in 2d 4h")
     expect(at("2026-07-22T12:00:00Z")).toBe("in 2d")
   })
 
   // A deadline rounded up hands the reader time they do not have: a
   // credit lapsing in five and a half days must not read "in 6d".
   it("rounds down, never up", () => {
-    expect(at("2026-07-26T01:08:00Z")).toBe("in 5d")
-    expect(at("2026-07-20T15:59:00Z")).toBe("in 3h")
+    expect(at("2026-07-26T01:08:00Z")).toBe("in 5d 13h")
+    expect(at("2026-07-20T15:59:30Z")).toBe("in 3h 59m")
     expect(at("2026-07-20T12:59:00Z")).toBe("in 59m")
   })
 
@@ -71,6 +74,16 @@ describe("formatIn", () => {
     expect(at("2026-07-20T11:59:00Z")).toBeNull()
     expect(at("2026-07-20T12:00:00Z")).toBeNull()
     expect(at("2026-07-19T12:00:00Z")).toBeNull()
+  })
+})
+
+describe("formatRemaining", () => {
+  it("is formatIn without the preposition", () => {
+    const now = Date.parse("2026-07-20T12:00:00Z")
+    expect(formatRemaining(Date.parse("2026-07-31T07:00:00Z"), now)).toBe(
+      "10d 19h",
+    )
+    expect(formatRemaining(now, now)).toBeNull()
   })
 })
 
