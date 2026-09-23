@@ -36,143 +36,163 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
 ---
 
 <p class="uses-intro">
-  Inspired by
+  This section is inspired by
   <a href="https://uses.tech/" target="_blank" rel="noopener noreferrer"
     >uses.tech</a
   >.
 </p>
 <uses-list>
-  {USES.map(({ group, items }) => {
-    return (
-      <uses-group>
-        <h3 class="uses-label">
-          <span class="group">{group}</span>
-          <span class="count">{items.length}</span>
-        </h3>
-        <dl class="uses-items">
-          {items.map(({ name, note, icon }) => {
-            const Mark = MARKS[icon]
-            return (
-              <div class="uses-item">
-                <dt class="term">
-                  <span class="mark"><Mark aria-hidden="true" /></span>
-                  <span class="name">{name}</span>
-                </dt>
-                <dd class="note">{note}</dd>
-              </div>
-            )
-          })}
-        </dl>
-      </uses-group>
-    )
-  })}
+  {USES.map(({ group, items }) => (
+    <uses-group>
+      <h3 class="uses-label">
+        {group}
+        <span class="count">{items.length}</span>
+      </h3>
+      <dl>
+        {items.map(({ name, note, icon }) => {
+          const Mark = MARKS[icon]
+          return (
+            <div>
+              <dt>
+                {name}
+                <span class="mark"><Mark aria-hidden="true" /></span>
+              </dt>
+              <dd>{note}</dd>
+            </div>
+          )
+        })}
+      </dl>
+    </uses-group>
+  ))}
 </uses-list>
 
 <style>
   /* The section sizes itself against its own column rather than the
      viewport: between 64rem and 76rem the sidebar and the table of
-     contents take their cut first, so a viewport query would put two
-     columns here while the column itself is still one column wide. */
+     contents take their cut first, so a viewport query would lay out
+     three columns while the column itself is still narrow. */
   uses-list {
-    display: block;
+    display: grid;
+    gap: var(--space-l);
     container-type: inline-size;
   }
 
   uses-group {
-    display: block;
+    display: grid;
+    gap: var(--space-s);
   }
 
-  /* The feeds' uppercase label, carried to its own rule: with no divider
-     between the things below it, the rule is what says where one group
-     ends. The count rides the far end of it — nine things over two groups
-     is a fact the list makes you count for yourself otherwise. */
+  /* The feeds' uppercase label, carried to its own rule. The count takes
+     the rest of the line and draws the rule ahead of itself, so it lands
+     at the far end without any placement. */
   .uses-label {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    display: flex;
     align-items: center;
     gap: var(--space-xs);
-    margin-block-end: var(--space-s);
-
-    /* Every cell is placed by hand: the rule is generated content, so
-       leaving any of the three to auto-placement would order them by
-       where the pseudo lands rather than by where they read. */
-    &::after {
-      content: "";
-      grid-area: 1 / 2;
-      block-size: 1px;
-      background-color: var(--border);
-    }
-  }
-
-  uses-group:first-child .uses-label {
-    margin-block-start: 0;
-  }
-
-  .group {
-    grid-area: 1 / 1;
+    margin: 0;
   }
 
   .count {
-    grid-area: 1 / 3;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: inherit;
     font-variant-numeric: tabular-nums;
     color: var(--gray-9);
-  }
 
-  /* Two things side by side once the column can hold a note at a readable
-     measure, one below that — the pairs are peers, not a sequence, so
-     nothing is lost by reading them in either order. */
-  .uses-items {
-    display: grid;
-    gap: var(--space-s-m) var(--space-m);
-    margin: 0;
-
-    @container (width >= 34rem) {
-      grid-template-columns: 1fr 1fr;
+    &::before {
+      content: "";
+      flex: 1;
+      border-block-start: 1px solid var(--border);
     }
   }
 
-  /* Mark, name, note: the note starts under the name rather than under
-     the mark, so the two lines read as one block with the mark beside
-     them instead of a hanging indent. */
-  .uses-item {
+  /* A bento: the first thing in a group is the one it is built around, so
+     it takes two cells; a group left one cell short hands the gap to its
+     last card rather than leaving a hole. Two columns or three, the rows
+     come out full either way for groups of four and five. */
+  dl {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-content: start;
-    column-gap: var(--space-xs);
-    row-gap: var(--space-3xs);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xs);
+    margin: 0;
+
+    @container (width >= 34rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
-  .term {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: subgrid;
-    align-items: center;
+  dl > div {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    min-block-size: 10rem;
+    padding: var(--space-s);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: color-mix(in oklab, var(--muted) 45%, transparent);
+    line-height: 1.4;
+    isolation: isolate;
+
+    &:first-child,
+    &:last-child:nth-child(even) {
+      grid-column: span 2;
+    }
+  }
+
+  dt {
     font-weight: var(--font-weight-medium);
+    text-wrap: balance;
   }
 
-  /* The chip is sized in its own em, so it stays exactly twice the mark
-     inside it however the fluid scale moves. */
-  .mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: 2em;
-    block-size: 2em;
-    border-radius: var(--radius-lg);
-    background-color: var(--muted);
-    color: var(--muted-foreground);
-    font-size: var(--step-0);
-  }
-
-  .name {
-    text-wrap: pretty;
-  }
-
-  .note {
-    grid-column: 2;
+  dd {
     margin: 0;
     font-size: var(--step--1);
     color: var(--muted-foreground);
     text-wrap: pretty;
+  }
+
+  /* The mark has to live in the dt (a dl's div admits only dt and dd), but
+     it is positioned against the card, so where it sits in the markup
+     costs the layout nothing. It is the card's backdrop rather than a chip beside its name:
+     drawn large, faint and cropped by the corner, it says what the thing
+     is before the words do, and costs the text no width. The stroke is
+     thinned so it scales up as a line drawing instead of a slab. */
+  .mark {
+    position: absolute;
+    z-index: -1;
+    inset-block-end: -0.15em;
+    inset-inline-end: -0.15em;
+    font-size: 4.5rem;
+    line-height: 0;
+    color: color-mix(in oklab, var(--foreground) 9%, transparent);
+    transition:
+      color 0.3s ease,
+      transform 0.3s ease;
+
+    & :global(g) {
+      stroke-width: 1.25;
+    }
+  }
+
+  /* The anchor card reads a size up: a bigger name, and a mark with room
+     to be the largest thing in the group. */
+  dl > div:first-child {
+    & dt {
+      font-size: var(--step-1);
+    }
+
+    & .mark {
+      font-size: 7.5rem;
+    }
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    dl > div:hover .mark {
+      color: color-mix(in oklab, var(--foreground) 16%, transparent);
+      transform: translate(-0.04em, -0.04em) rotate(-4deg);
+    }
   }
 </style>
