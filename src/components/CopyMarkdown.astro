@@ -1,7 +1,13 @@
 ---
+/**
+ * The post's Markdown source, served at `href`: a chip that copies it on
+ * click (the Markdown mark turning into a check), beside an arrow that
+ * opens it.
+ */
+
 import ArrowUpRight from "@/assets/icons/arrow-up-right.svg"
 import CheckIcon from "@/assets/icons/check.svg"
-import CopyIcon from "@/assets/icons/copy.svg"
+import MarkdownIcon from "@/assets/icons/markdown.svg"
 
 type Props = { href: string }
 
@@ -10,28 +16,35 @@ const { href } = Astro.props
 
 <copy-markdown>
   <button type="button">
-    <span><CopyIcon aria-hidden="true" />Copy Markdown</span>
-    <span><CheckIcon aria-hidden="true" />Copied!</span>
+    <span class="glyph" aria-hidden="true">
+      <MarkdownIcon data-idle />
+      <CheckIcon data-done />
+    </span>
+    Copy Markdown
   </button>
   <a
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    aria-label="View as Markdown"
-    title="View as Markdown"
+    aria-label="Open as Markdown"
+    title="Open as Markdown"
   >
     <ArrowUpRight aria-hidden="true" />
   </a>
+  <span aria-live="polite"></span>
 </copy-markdown>
 
 <style>
+  /* One soft chip split in two — no border, so it sits in the meta row as
+     an object rather than a form control; the hairline between the halves
+     is the only line it draws. */
   copy-markdown {
     display: inline-flex;
     align-items: stretch;
     margin-inline-start: auto;
-    white-space: nowrap;
-    border: 1px solid var(--border);
     border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+    white-space: nowrap;
     overflow: hidden;
   }
 
@@ -39,9 +52,8 @@ const { href } = Astro.props
   a {
     display: inline-flex;
     align-items: center;
-    gap: 0.375em;
-    padding-block: 0.1875rem;
-    padding-inline: 0.5rem;
+    gap: 0.45em;
+    padding-block: 0.25rem;
     color: var(--muted-foreground);
     cursor: pointer;
     transition:
@@ -50,7 +62,7 @@ const { href } = Astro.props
 
     &:hover {
       color: var(--foreground);
-      background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+      background-color: var(--muted);
     }
 
     &:focus-visible {
@@ -59,28 +71,58 @@ const { href } = Astro.props
     }
 
     svg {
+      flex: none;
       inline-size: 0.875em;
       block-size: 0.875em;
     }
   }
 
-  button > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375em;
+  button {
+    padding-inline: 0.5rem;
   }
 
-  button > span:last-child {
-    display: none;
+  a {
+    padding-inline: 0.4rem;
+    text-decoration-line: none;
+    border-inline-start: 1px solid
+      color-mix(in oklab, var(--border) 70%, transparent);
   }
 
-  button[data-state="copied"] {
-    > span:first-child {
-      display: none;
+  /* The mark turns into a check in place, so the chip never
+     changes width — the label stays put and only the glyph answers. */
+  .glyph {
+    display: grid;
+    place-items: center;
+
+    [data-idle] {
+      inline-size: 1.15em;
+      block-size: 1.15em;
     }
 
-    > span:last-child {
-      display: inline-flex;
+    > * {
+      grid-area: 1 / 1;
+      transition:
+        opacity 0.2s ease,
+        scale 0.2s ease;
+    }
+  }
+
+  [data-done] {
+    opacity: 0;
+    scale: 0.5;
+  }
+
+  /* Only the glyph answers: brightening the text as well reads as a hover
+     stuck on for two seconds after the pointer has left. */
+  button[data-state="copied"] {
+    [data-idle] {
+      opacity: 0;
+      scale: 0.5;
+    }
+
+    [data-done] {
+      opacity: 1;
+      scale: 1;
     }
   }
 
@@ -88,18 +130,28 @@ const { href } = Astro.props
     color: var(--destructive);
   }
 
-  a {
-    padding-inline: 0.4375rem;
-    text-decoration-line: none;
-    border-inline-start: 1px solid var(--border);
+  /* Announces the result to a screen reader without drawing anything. */
+  [aria-live] {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glyph > * {
+      transition: none;
+    }
   }
 </style>
 
 <script>
   for (const el of document.querySelectorAll<HTMLElement>("copy-markdown")) {
     const button = el.querySelector("button")
+    const status = el.querySelector("[aria-live]")
     const source = el.querySelector("a")?.href
-    if (!button || !source) continue
+    if (!button || !status || !source) continue
 
     let markdown: Promise<string> | undefined
     // Prefetch so clipboard.writeText usually runs during user activation.
@@ -125,14 +177,17 @@ const { href } = Astro.props
       try {
         await navigator.clipboard.writeText(await load())
         button.dataset.state = "copied"
+        status.textContent = "Copied"
       } catch {
         button.dataset.state = "error"
         button.title = "Copy failed — open the Markdown instead"
+        status.textContent = "Copy failed"
       }
       clearTimeout(reset)
       reset = setTimeout(() => {
         delete button.dataset.state
         button.removeAttribute("title")
+        status.textContent = ""
       }, 2000)
     })
   }
