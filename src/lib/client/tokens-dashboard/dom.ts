@@ -192,14 +192,22 @@ export const expandableRow = (
   sub.append(...subRows.map((spec) => usageRow(icons, spec)))
 
   button.addEventListener("click", () => {
-    const next = button.getAttribute("aria-expanded") !== "true"
-    button.setAttribute("aria-expanded", String(next))
-    sub.hidden = !next
+    setExpanded(item, button.getAttribute("aria-expanded") !== "true")
     onToggle()
   })
 
   item.append(button, sub)
   return item
+}
+
+/** Open or close an `expandableRow` from outside it — for a caller that
+ *  keeps its rows an accordion rather than independent disclosures. */
+export const setExpanded = (item: Element, open: boolean) => {
+  item
+    .querySelector(".tk-row-toggle")
+    ?.setAttribute("aria-expanded", String(open))
+  const sub = item.querySelector<HTMLElement>(".tk-sub")
+  if (sub) sub.hidden = !open
 }
 
 /**

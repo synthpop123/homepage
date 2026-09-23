@@ -626,7 +626,7 @@ describe("dayView", () => {
       1,
       10,
     )
-    // The cutoff is the bar's alone: the legend names every client that
+    // The cutoff is the ring's alone: the legend names every client that
     // spent anything that day, so nobody is filed under "Other".
     expect(view.clients.map((entry) => entry.id)).toEqual([
       "claude",
@@ -641,7 +641,7 @@ describe("dayView", () => {
     ])
   })
 
-  it("draws no residual segment when every client has one of its own", () => {
+  it("draws no residual slice when every client has one of its own", () => {
     const view = dayView(
       daySite(
         day(TODAY, 100, { clients: clients(["claude", 60], ["codex", 40]) }),
@@ -650,6 +650,30 @@ describe("dayView", () => {
     )
     expect(view.mix.map((entry) => entry.id)).toEqual(["claude", "codex"])
     expect(view.clients.map((entry) => entry.id)).toEqual(["claude", "codex"])
+  })
+
+  it("keeps a lone tail client as a slice of its own", () => {
+    const view = dayView(
+      daySite(
+        day(TODAY, 100, {
+          clients: clients(
+            ["claude", 40],
+            ["codex", 30],
+            ["cursor", 15],
+            ["pi", 10],
+            ["zed", 5],
+          ),
+        }),
+      ),
+      TODAY,
+    )
+    expect(view.mix.map((entry) => entry.id)).toEqual([
+      "claude",
+      "codex",
+      "cursor",
+      "pi",
+      "zed",
+    ])
   })
 
   it("labels client ids that shadow Object members as themselves", () => {
@@ -686,7 +710,8 @@ describe("dayView", () => {
             ["codex", 20, [["gpt-5.6-sol", 20]]],
             ["cursor", 10, [["composer-2", 10]]],
             ["pi", 6, [["gpt-5.6-luna", 6]]],
-            ["zed", 4, [["claude-sonnet-5", 4]]],
+            ["zed", 2, [["claude-sonnet-5", 2]]],
+            ["gemini", 2, [["gemini-3-pro", 2]]],
           ),
         }),
       ),
@@ -696,11 +721,10 @@ describe("dayView", () => {
       "claude-opus-5",
       "deepseek-v4-flash",
     ])
-    // Zed is past the bar's cutoff and inside the residual segment, but
+    // Zed is past the ring's cutoff and inside the residual slice, but
     // its legend row still opens onto the model it drove.
-    expect(view.clients.at(-1)).toMatchObject({
-      id: "zed",
-      models: [{ model: "claude-sonnet-5", tokens: 4 }],
+    expect(view.clients.find((entry) => entry.id === "zed")).toMatchObject({
+      models: [{ model: "claude-sonnet-5", tokens: 2 }],
     })
     // The residual slice is several clients at once, so it is a width and
     // a share and nothing else — there is no disclosure to hang on it.

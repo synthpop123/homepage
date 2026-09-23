@@ -370,8 +370,8 @@ export const lastReport = (site: Site): number | null => {
 
 /* One day ------------------------------------------------------------- */
 
-/** Clients that keep their own bar segment; the tail merges. The legend
- *  is not capped — see DayView.clients. */
+/** Clients that keep their own slice of the ring; the tail merges. The
+ *  legend is not capped — see DayView.clients. */
 const MIX_SEGMENTS = 4
 
 /** A slice of the day's tokens: one client, or the merged tail. */
@@ -408,10 +408,10 @@ export type DayView = {
     messages: number
     active: number
   }
-  /** The bar's segments: the day's top clients, with everything below
-   *  the cutoff merged into one residual slice so the bar still sums to
-   *  the day. A cap belongs to the bar alone — past a few slices the
-   *  segments stop being tellable apart — which is why the legend reads
+  /** The ring's slices: the day's top clients, with everything below
+   *  the cutoff merged into one residual slice so the ring still closes
+   *  on the day. A cap belongs to the ring alone — past a few slices the
+   *  arcs stop being tellable apart — which is why the legend reads
    *  `clients` instead. */
   mix: DayMix[]
   /** Every client of the day, in rank order, each with the models
@@ -457,13 +457,15 @@ export function dayView(site: Site, date: string): DayView {
       ...cell,
     })),
   }))
-  // Only the *bar* merges its tail, and only because a 1%-wide segment
-  // is not a segment. Every client still gets its own legend row: the
-  // row is where the name, the models behind it and the exact share
-  // are, and folding a named client into an iconless "Other" there read
-  // as usage the collector could not attribute.
+  // Only the *ring* merges its tail, and only because a 1% arc is not a
+  // slice. Every client still gets its own legend row: the row is where
+  // the name, the models behind it and the exact share are, and folding
+  // a named client into an iconless "Other" there read as usage the
+  // collector could not attribute. A tail of one is not merged at all —
+  // an "Other" standing for a single client only hides its name.
+  const cut = rows.length === MIX_SEGMENTS + 1 ? rows.length : MIX_SEGMENTS
   const tail = rows
-    .slice(MIX_SEGMENTS)
+    .slice(cut)
     .reduce((sum, [, client]) => sum + client.tokens, 0)
 
   return {
@@ -489,9 +491,7 @@ export function dayView(site: Site, date: string): DayView {
       clients.length === 0
         ? []
         : [
-            ...clients
-              .slice(0, MIX_SEGMENTS)
-              .map((row) => slice(row.id, row.tokens)),
+            ...clients.slice(0, cut).map((row) => slice(row.id, row.tokens)),
             ...(tail > 0 ? [slice(OTHER, tail)] : []),
           ],
     clients,

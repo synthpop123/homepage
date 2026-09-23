@@ -195,8 +195,14 @@ const LEGEND_CHIPS = 4
               </div>
             ))}
           </dl>
-          <div class="tk-day-breakdown tk-mix">
-            <div class="tk-day-bar" data-skeleton></div>
+          <div class="tk-day-breakdown">
+            <div class="tk-donut" data-skeleton aria-hidden="true">
+              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" /></svg>
+              <p class="tk-donut-focus">
+                <span class="value" />
+                <span class="caption" />
+              </p>
+            </div>
             <ul class="tk-rows tk-day-legend">
               {skeletonRows(3).map(() => (
                 <li class="tk-row" data-skeleton aria-hidden="true">
@@ -428,11 +434,11 @@ const LEGEND_CHIPS = 4
     /* Level-3 green of the shared heatmap palette (see Heatmap.astro). */
     --tk-accent: light-dark(#30a14e, #26a641);
 
-    /* One height for the two instrument bars — the Today client pills
-       and the quota meters. Thin enough that a bar reads as a reading
-       rather than as a block of colour, and thick enough that the
+    /* The quota meters' height. Thin enough that a bar reads as a
+       reading rather than as a block of colour, and thick enough that the
        smallest segment still has a shape. It doubles as the minimum
-       segment width, so a sliver lands as a dot rather than a hair. */
+       segment width, so a sliver lands as a dot rather than a hair — the
+       day ring (day.ts) keeps the same rule for its arcs. */
     --tk-meter: 0.375rem;
 
     /* Brand palette for stacked segments and chips. Client ids map onto
@@ -548,29 +554,126 @@ const LEGEND_CHIPS = 4
       display: none;
     }
 
-    /* The delta lines under the cards end close to their baseline, so
-       the body's gap alone left the mix bar reading as a rule under the
-       last card rather than the start of the next thing. */
+    /* The client mix: the ring on the left, the clients it is cut into
+       on the right. Top-aligned rather than centred, so opening another
+       client (which changes the list's height) never moves the ring. */
     .tk-day-breakdown {
-      margin-block-start: var(--space-2xs);
+      display: grid;
+      grid-template-columns: 9.5rem minmax(0, 1fr);
+      align-items: start;
+      gap: var(--space-s) var(--space-l);
+      margin-block-start: var(--space-xs);
+
+      @media (width < 40rem) {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
 
-    /* The bar and its legend are one unit: day.ts hides both on a day
+    /* The ring and its legend are one unit: day.ts hides both on a day
        with activity but no tokens (active time or messages only), where
-       there is nothing to apportion and an empty bar would read as a
+       there is nothing to apportion and an empty ring would read as a
        broken one. */
     .tk-day-breakdown[hidden] {
       display: none;
     }
 
-    /* The legend under the client-mix bar is the day's client
-       breakdown: the same brand-marked rows as the Breakdown section,
-       each opened onto the models that client drove. The Breakdown
-       section has no single-day window, so this is the only place the
-       day's client → model join is readable — which is why the rows
-       start open. */
-    .tk-day-legend {
+    /* A ring rather than a pie: the page's instruments are strokes, and
+       the hole is where the one number the ring is about goes. Separate
+       arcs with air between them, for the same reason the quota meters
+       are pills — these are different agents sharing a day, not parts
+       of one quantity. */
+    .tk-donut {
+      position: relative;
+      aspect-ratio: 1;
+
+      @media (width < 40rem) {
+        justify-self: center;
+        inline-size: 8.5rem;
+      }
+    }
+
+    .tk-donut svg {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+      overflow: visible;
+      rotate: -90deg;
+    }
+
+    .tk-donut circle {
+      fill: none;
+      stroke: var(--p);
+      stroke-width: 6;
+      stroke-linecap: round;
+      cursor: pointer;
+      transition:
+        opacity 0.15s ease,
+        stroke-width 0.15s ease;
+    }
+
+    /* The open client's arc stands proud of the rest; the others mute
+       only while something else is being pointed at. */
+    .tk-donut circle[data-focus] {
+      stroke-width: 9;
+    }
+
+    .tk-donut circle[data-mute] {
+      opacity: 0.25;
+    }
+
+    .tk-donut-focus {
+      position: absolute;
+      inset: 20%;
+      display: grid;
+      place-content: center;
+      gap: 0.15em;
+      margin: 0;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .tk-donut-focus .value {
+      font-size: var(--step-1);
+      font-weight: var(--font-weight-medium);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .tk-donut-focus .caption {
+      font-size: var(--step--1);
+      line-height: 1.2;
+      color: var(--muted-foreground);
+      text-wrap: balance;
+    }
+
+    /* The clients beside the ring: the same brand-marked rows as the
+       Breakdown section, one opened at a time onto the models that client
+       drove. The ring already carries each client's share of the day, so
+       a client row drops its fill and keys its slice through its mark
+       instead, tinted with the slice's hue; the fills under the open
+       client take that hue too, as a split of the arc beside them. */
+    .tk-rows.tk-day-legend {
       margin-block-start: calc(-1 * var(--space-3xs));
+    }
+
+    .tk-rows.tk-day-legend > .tk-row::before,
+    .tk-rows.tk-day-legend > .tk-group > .tk-row::before {
+      content: none;
+    }
+
+    /* A row carries [data-p] for its hue alone; the background the
+       palette paints onto segments is not meant for it. */
+    .tk-rows.tk-day-legend > [data-p] {
+      background-color: transparent;
+    }
+
+    .tk-rows.tk-day-legend > .tk-row > .ico,
+    .tk-rows.tk-day-legend > .tk-group > .tk-row > .ico {
+      color: var(--p);
+    }
+
+    .tk-rows.tk-day-legend .tk-sub .tk-row::before {
+      background-color: color-mix(in oklab, var(--p) 16%, transparent);
     }
 
     /* Controls */
@@ -692,12 +795,11 @@ const LEGEND_CHIPS = 4
 
     /* Three proportions on this page, three forms. A composition
        (.tk-mix-composition) is one quantity cut into its parts, so it
-       stays one solid block; a client mix (.tk-day-bar) is separate
-       actors sharing a day, so its segments are separate pills; a quota
-       window (.tk-meter) is a gauge against a ceiling, so it is a thin
-       track with a rounded head. Sizing all three alike was what made a
-       10%-spent week read as a stalled composition, and a day carried by
-       one client read as a colour slab with hairlines at its end. */
+       stays one solid block; a client mix (.tk-donut) is separate actors
+       sharing a day, so its arcs stand apart; a quota window (.tk-meter)
+       is a gauge against a ceiling, so it is a thin track with a rounded
+       head. Sizing all three alike was what made a 10%-spent week read as
+       a stalled composition. */
 
     .tk-mix {
       display: grid;
@@ -720,32 +822,6 @@ const LEGEND_CHIPS = 4
 
     .tk-mix-bar span + span {
       border-inline-start: 2px solid var(--background);
-    }
-
-    /* Client mix: brand-keyed pills with real air between them. A day is
-       usually carried by one client, and separate capsules let the tail
-       read as its own small marks rather than as hairline cracks in a
-       slab — which is also the honest shape, since these are different
-       agents rather than parts of one number. */
-    .tk-day-bar {
-      display: flex;
-      gap: 3px;
-      block-size: var(--tk-meter);
-      border-radius: var(--radius-full);
-    }
-
-    .tk-day-bar span {
-      min-inline-size: var(--tk-meter);
-      border-radius: var(--radius-full);
-      background-color: var(--p);
-      transition: opacity 0.15s ease;
-    }
-
-    /* Its legend leads with brand icons rather than color chips, so the
-       bar is keyed on demand instead: hovering or focusing a client row
-       mutes every segment but that client's (day.ts sets [data-mute]). */
-    .tk-day-bar span[data-mute] {
-      opacity: 0.25;
     }
 
     .tk-mix [data-k="0"] {
@@ -1772,7 +1848,6 @@ const LEGEND_CHIPS = 4
        here so the chart footer already stands at its final height. */
     .sk-ico,
     .tk-mix-bar[data-skeleton],
-    .tk-day-bar[data-skeleton],
     .tk-plans .tk-meter[data-skeleton],
     .tk-chart-bars[data-skeleton],
     .tk-chart-legend [data-skeleton] .chip,
@@ -1784,6 +1859,11 @@ const LEGEND_CHIPS = 4
     .tk-chart-bars[data-skeleton] {
       border-radius: var(--radius-sm);
       background-image: none;
+    }
+
+    .tk-donut[data-skeleton] circle {
+      stroke: var(--gray-5);
+      animation: var(--sk-pulse);
     }
   }
 </style>
