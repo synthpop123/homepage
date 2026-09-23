@@ -9,8 +9,10 @@
  * presented as simply current: each card dates itself from its own
  * `capturedAt` (one can be a minute old while the other has been stuck
  * for hours), and a window whose reset time has passed says it reset
- * instead of showing a percentage that is no longer true. Rendered once
- * per load; no control applies to it.
+ * instead of showing a percentage that is no longer true. No control
+ * applies to it, but the clock does: the controller re-renders it every
+ * minute, so countdowns tick and a window that rolls over while the page
+ * is open turns into its reset state without a reload.
  */
 
 import {
@@ -18,6 +20,7 @@ import {
   formatAgo,
   formatIn,
   formatInstant,
+  formatRemaining,
   type QuotaPlan,
   type QuotaWindow,
   type Site,
@@ -45,6 +48,12 @@ const STALE_AFTER_MS = 2 * 60 * 60 * 1000
  * the vendor clock and the Worker's `capturedAt`.
  */
 const PLACEHOLDER_SLACK_MS = 2 * 60 * 1000
+
+/**
+ * A banked reset lapsing within a day is spend-it-or-lose-it; that one
+ * tile is the only part of the list that is a warning.
+ */
+const CREDIT_URGENT_MS = 24 * 60 * 60 * 1000
 
 const MS = { d: 86_400_000, h: 3_600_000, m: 60_000, s: 1_000 } as const
 
@@ -94,7 +103,7 @@ export function windowIsOpen(
  * current any more: the figure and the bar both describe a window that
  * has ended, and the one that replaced it is unread until the next
  * collector run. So the whole window renders as reset, not just its
- * foot; a bar drawn at 11% under the words "window reset" is the card
+ * foot; a bar drawn at 11% under the word "reset" is the card
  * contradicting itself.
  *
  * Only windows the vendor actually anchored qualify (windowIsOpen) —
@@ -114,29 +123,77 @@ export function windowHasReset(
 }
 
 /**
- * "resets Aug 8, 21:28 · in 2d", or what is true instead.
+ * What one window's row says, decided once so the renderer only writes
+ * it down:
  *
- * Only the reset. What is left is already on the card twice over — as
- * the figure and as the bar — and saying "72% left" beside a bar that is
- * 28% full is the same fact a third time, in the opposite direction.
- * The wall-clock time is what you plan around and the countdown is what
- * reads at a glance, so both of those ship, and neither is left to a
- * `title` no touch device can reach.
+ * - `idle`  — the vendor has not anchored the window (OpenAI's drifting
+ *   placeholder, Anthropic's omitted reset). Nothing is counting down,
+ *   so the foot says what starts the clock instead of going blank — an
+ *   empty foot is what left one card's rows a line out of step with
+ *   the other's.
+ * - `open`  — the reading is current: "resets in 2h 5m". Only the reset,
+ *   not what is left: the figure and the bar already say that twice.
+ * - `reset` — the vendor's reset time has passed since the report. The
+ *   ended window's spend no longer applies and the new one starts from
+ *   zero, so the row reads 0% on an empty track; what nobody knows yet
+ *   is whether anything has been spent since, and the foot says so.
+ *
+ * The foot is relative — the countdown is what reads at a glance — and
+ * the wall-clock instant, which is what you plan around, rides in
+ * `title` for whoever wants it.
  */
-export function windowFoot(
+export type WindowView = {
+  state: "idle" | "open" | "reset"
+  used: number
+  foot: string
+  title?: string
+}
+
+export function windowView(
   window: QuotaWindow,
   now: number,
   capturedAtMs: number,
-): string {
+): WindowView {
+  const used = Math.min(100, Math.max(0, window.usedPercent))
   if (!windowIsOpen(window, capturedAtMs) || window.resetsAt === null) {
-    return ""
+    return {
+      state: "idle",
+      used,
+      // A vendor that reports spend with no reset time is a shape
+      // neither collector has produced, but the foot must not claim the
+      // window has not started while the bar says otherwise.
+      foot: used > 0 ? "reset time not reported" : "starts on first use",
+    }
   }
-  // The vendor's own reset time, so a window that rolled over since the
-  // last report is stated as reset rather than counted down to.
+  const at = Date.parse(window.resetsAt)
+  const instant = formatInstant(window.resetsAt)
   if (windowHasReset(window, now, capturedAtMs)) {
-    return "window reset — awaiting next report"
+    return {
+      state: "reset",
+      used: 0,
+      foot: `reset ${formatAgo(at, now)} · awaiting report`,
+      title: `Reset ${instant}`,
+    }
   }
-  return `resets ${formatInstant(window.resetsAt)} · ${formatIn(Date.parse(window.resetsAt), now)}`
+  return {
+    state: "open",
+    used,
+    foot: `resets ${formatIn(at, now)}`,
+    title: `Resets ${instant}`,
+  }
+}
+
+/**
+ * Label left, figure right — "Session … 9% used" — so the figure column
+ * lines up down the card and across both cards, and the word "used"
+ * settles which way the bar reads.
+ */
+function figureRow(label: string, value: string, unit: string) {
+  const head = el("div", "win-head")
+  const figure = el("span", "win-used")
+  figure.append(el("b", "", value), ` ${unit}`)
+  head.append(el("span", "win-label", label), figure)
+  return head
 }
 
 function renderWindow(
@@ -145,52 +202,35 @@ function renderWindow(
   now: number,
   capturedAtMs: number,
 ): HTMLElement {
+  const view = windowView(window, now, capturedAtMs)
   const item = el("li", "tk-window")
-
-  // Past the vendor's reset the reported figure belongs to a window that
-  // has ended, and the current one is unread until the next collector
-  // run — so the window says it does not know rather than restating a
-  // number the foot underneath it contradicts.
-  const hasReset = windowHasReset(window, now, capturedAtMs)
-  if (hasReset) item.toggleAttribute("data-reset", true)
-
-  const head = el("div", "win-head")
-  head.append(
-    el("span", "win-label", window.label),
-    el(
-      "span",
-      "win-used",
-      hasReset ? "—" : `${Math.round(window.usedPercent)}%`,
-    ),
-  )
+  item.dataset.state = view.state
 
   // A gauge, not a share: the other bars on the page cut one number
   // into its parts, this one measures a number against a ceiling that
   // is never drawn anywhere else. So it gets its own form — a thin
-  // track carrying one rounded head — rather than the mix bar's
-  // geometry, which sized a barely-spent week like a stalled
-  // composition. The vendor's hue is set on the track, so the head
-  // inherits it and the track can wash itself in the same colour.
+  // track carrying one rounded head. The vendor's hue is set on the
+  // track, so the head inherits it and the track washes itself in it.
   const bar = el("div", "tk-meter")
   bar.dataset.p = provider
-  // A window that has rolled over is never the warning colour: the
-  // ceiling it was pressing against is not the one in force now.
-  if (!hasReset && window.usedPercent >= HIGH_USE) bar.dataset.high = ""
+  if (view.used >= HIGH_USE) bar.dataset.high = ""
   // A window barely touched should still show that it was touched — the
   // head's own min-inline-size keeps the sliver visible — but an
   // untouched one shows nothing at all, or that floor would report a
   // spend of zero as a spend.
-  if (!hasReset && window.usedPercent > 0) {
+  if (view.used > 0) {
     const fill = el("span")
-    fill.style.inlineSize = `${Math.min(100, window.usedPercent)}%`
+    fill.style.inlineSize = `${view.used}%`
     bar.append(fill)
   }
 
-  item.append(head, bar)
-  // Placeholder resets and vendor-null leave no foot; an empty line
-  // would just add space between the bars.
-  const foot = windowFoot(window, now, capturedAtMs)
-  if (foot !== "") item.append(el("p", "win-foot", foot))
+  const foot = el("p", "win-foot", view.foot)
+  if (view.title) foot.title = view.title
+  item.append(
+    figureRow(window.label, `${Math.round(view.used)}%`, "used"),
+    bar,
+    foot,
+  )
   return item
 }
 
@@ -232,32 +272,38 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
 
   item.append(head, windows)
 
-  // Manual resets are a property of the plan, not of any one window, and
-  // they expire whether or not they are spent — so each expiry is listed
-  // in full rather than summarised as "next expires in 6d". They are
-  // spent one at a time, and which one to spend depends on when the
-  // others lapse.
+  // Banked resets are a property of the plan, not of any one window,
+  // and they expire whether or not they are spent — so each is its own
+  // tile rather than a summary like "next expires in 6d". They are spent
+  // one at a time, and which one to spend depends on when the others
+  // lapse: the tiles run soonest first, the first wears the plan's hue
+  // as the one to spend next, and one about to lapse turns red. The
+  // hourglass says "expires in"; the instant is on hover.
   const unspent = plan.resetCredits.filter((at) => Date.parse(at) > now)
   if (unspent.length > 0) {
     const credits = el("div", "plan-credits")
-    credits.append(
-      el(
-        "p",
-        "credits-head",
-        `${unspent.length} manual ${unspent.length === 1 ? "reset" : "resets"}`,
-      ),
-    )
+    credits.dataset.p = plan.provider
     const list = el("ol", "credits-list")
     list.append(
-      ...unspent.map((at) =>
-        el(
-          "li",
-          "",
-          `expires ${formatInstant(at)} · ${formatIn(Date.parse(at), now)}`,
-        ),
-      ),
+      ...unspent.map((at, i) => {
+        const expires = Date.parse(at)
+        const tile = el("li", "credit")
+        tile.title = `Expires ${formatInstant(at)}`
+        if (i === 0) tile.dataset.next = ""
+        if (expires - now < CREDIT_URGENT_MS) tile.dataset.urgent = ""
+        tile.append(
+          icons.slot("hourglass"),
+          el("span", "", formatRemaining(expires, now) ?? ""),
+        )
+        return tile
+      }),
     )
-    credits.append(list)
+    // Same row as a window's head, so the count sits in the figure
+    // column: "Banked resets … 3 left".
+    credits.append(
+      figureRow("Banked resets", `${unspent.length}`, "left"),
+      list,
+    )
     item.append(credits)
   }
 

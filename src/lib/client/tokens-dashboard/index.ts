@@ -180,6 +180,16 @@ export function mountTokensDashboard(root: HTMLElement) {
     }).catch(showFallback)
   }
 
+  // Quota is the one section that ages on screen without a new payload:
+  // its countdowns tick, and a window can roll over while the page is
+  // open. Re-rendering it on the minute keeps both true; a hidden tab
+  // skips the work and catches up the moment it is shown again.
+  const tick = () => {
+    if (site && !document.hidden) renderQuota(q, site, icons)
+  }
+  setInterval(tick, 60_000)
+  document.addEventListener("visibilitychange", tick)
+
   retry?.addEventListener("click", load)
   load()
 }
