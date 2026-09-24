@@ -9,7 +9,7 @@
 
 import { cached, fetchJson } from "../feed"
 import { isStatusList, type MastodonStatus, toMemo } from "../memos"
-import { renderMemo } from "./render"
+import { memoYear, renderMemo, renderYear } from "./render"
 
 export function mountMemos(root: HTMLElement) {
   const list = root.querySelector<HTMLOListElement>(".memos-list")
@@ -43,8 +43,15 @@ export function mountMemos(root: HTMLElement) {
         show(empty)
         return
       }
+      // Newest first, so a year's marker goes in ahead of its first memo.
       const fragment = document.createDocumentFragment()
-      for (const memo of memos) fragment.append(renderMemo(memo))
+      let year = ""
+      for (const memo of memos) {
+        const next = memoYear(memo)
+        if (next !== year) fragment.append(renderYear(next))
+        year = next
+        fragment.append(renderMemo(memo))
+      }
       list.replaceChildren(fragment)
       done()
     })

@@ -112,11 +112,13 @@ const skeletonRows = (count: number) =>
  * column of height, stacked on a phone they cost two. The first plan
  * also reserves a manual-resets block — the Codex card has carried one
  * for as long as the section has existed, and the grid's height is the
- * taller card's, so leaving it out is what left the row short.
+ * taller card's, so leaving it out is what left the row short. It
+ * holds three tiles, the count the account banks: two left the card a
+ * row short wherever the third wraps.
  */
 const QUOTA_PLANS = 2
 const QUOTA_WINDOWS = 2
-const QUOTA_CREDITS = 2
+const QUOTA_CREDITS = 3
 const SPLIT_ROWS = 6
 const LEGEND_CHIPS = 4
 ---
@@ -746,24 +748,7 @@ const LEGEND_CHIPS = 4
       font-size: 0.6875rem;
     }
 
-    /* Stat cards */
-
-    .tk-cards {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-s);
-      margin: 0;
-
-      @media (width < 40rem) {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .tk-card {
-      display: grid;
-      gap: var(--space-3xs);
-      align-content: start;
-    }
+    /* Stat cards: the panel surface is shared with the feeds (feed.css). */
 
     .tk-card dt {
       font-size: var(--step--1);
@@ -926,9 +911,52 @@ const LEGEND_CHIPS = 4
     /* Name, windows and credits are three levels of the same statement,
        so they sit further apart than the lines inside a window do. */
     .tk-plans .tk-plan {
+      position: relative;
       display: grid;
       gap: var(--space-s);
       align-content: start;
+      padding: var(--space-s);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background-color: color-mix(in oklab, var(--muted) 45%, transparent);
+      isolation: isolate;
+    }
+
+    /* The subscription's card is washed in its vendor's hue — faint
+       enough that the meters, in the full hue, still carry the colour. */
+    .tk-plans .tk-plan[data-p] {
+      border-color: color-mix(in oklab, var(--p) 22%, var(--border));
+      background-color: color-mix(
+        in oklab,
+        var(--p) 5%,
+        color-mix(in oklab, var(--muted) 45%, var(--background))
+      );
+    }
+
+    /* The vendor mark as the card's backdrop, cropped by its corner (the
+       Uses cards do the same with theirs). */
+    .tk-plans .plan-mark {
+      position: absolute;
+      z-index: -1;
+      inset-block-end: -1.25rem;
+      inset-inline-end: -1.25rem;
+      inline-size: 8rem;
+      block-size: 8rem;
+      color: color-mix(in oklab, var(--p) 12%, transparent);
+      pointer-events: none;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tk-plans .plan-mark svg {
+      inline-size: 100%;
+      block-size: 100%;
+    }
+
+    @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+      .tk-plans .tk-plan:hover .plan-mark {
+        transform: rotate(-8deg) scale(1.04);
+      }
     }
 
     /* Mark, name and tier read as one phrase on one line — "Codex · Team"
@@ -1855,7 +1883,6 @@ const LEGEND_CHIPS = 4
     [data-skeleton] .win-used,
     [data-skeleton] .win-foot,
     [data-skeleton] .plan-age,
-    [data-skeleton] .credit,
     [data-skeleton] .dev-name,
     [data-skeleton] .dev-seen,
     [data-skeleton] .dev-tokens,
@@ -1869,6 +1896,19 @@ const LEGEND_CHIPS = 4
       display: grid;
       align-content: center;
       min-block-size: 1lh;
+    }
+
+    /* The head's line box is its name's, not the icon placeholder's. */
+    [data-skeleton] .plan-head {
+      min-block-size: 1lh;
+    }
+
+    /* Likewise a reset tile's is its countdown's. The tile keeps its own
+       flex row (a min-block-size on it would count its padding), and an
+       empty strut the height of that line holds it open around the bar. */
+    [data-skeleton] .credit::before {
+      content: "";
+      block-size: 1lh;
     }
 
     /* The figure's line box is set by its step-0 number, not by the

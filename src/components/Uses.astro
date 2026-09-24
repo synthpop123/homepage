@@ -44,10 +44,7 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
 <uses-list>
   {USES.map(({ group, items }) => (
     <uses-group>
-      <h3 class="uses-label">
-        {group}
-        <span class="count">{items.length}</span>
-      </h3>
+      <h3 class="uses-label">{group}</h3>
       <dl>
         {items.map(({ name, note, icon }) => {
           const Mark = MARKS[icon]
@@ -82,29 +79,11 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
     gap: var(--space-s);
   }
 
-  /* The feeds' uppercase label, carried to its own rule. The count takes
-     the rest of the line and draws the rule ahead of itself, so it lands
-     at the far end without any placement. */
+  /* The feeds' uppercase label, bare: the cards under it already say
+     where the group starts and ends, so a rule or a count would only
+     repeat them. */
   .uses-label {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
     margin: 0;
-  }
-
-  .count {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    gap: inherit;
-    font-variant-numeric: tabular-nums;
-    color: var(--gray-9);
-
-    &::before {
-      content: "";
-      flex: 1;
-      border-block-start: 1px solid var(--border);
-    }
   }
 
   /* A bento: the first thing in a group is the one it is built around, so

@@ -1,6 +1,5 @@
 ---
 import { LETTERBOXD } from "@/consts"
-import { SKELETON_ROWS } from "@/lib/utils"
 
 type Props = {
   username?: string
@@ -19,14 +18,16 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
 </p>
 <movies-feed data-endpoint={feedUrl} data-limit={limit} aria-busy="true">
   <ol class="movies-grid">
-    {Array.from({ length: Math.min(limit, SKELETON_ROWS) }).map(() => (
+    {Array.from({ length: limit }).map(() => (
         <li class="movie-card" data-skeleton aria-hidden="true">
           <div class="movie-link">
             <span class="poster" />
             <span class="meta">
-              <span class="sk-line sk-title" />
-              <span class="sk-line sk-date" />
-              <span class="sk-line sk-rating" />
+              <span class="title"><span class="sk-line sk-title" /></span>
+              <span class="foot">
+                <span class="sk-line sk-rating" />
+                <span class="sk-line sk-date" />
+              </span>
             </span>
           </div>
         </li>
@@ -40,11 +41,13 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
 </movies-feed>
 
 <script>
+  import { el } from "@/lib/client/dom"
   import {
     cached,
     dateFormatter,
     fetchJson,
     safeHttpUrl,
+    TIME_ZONE,
   } from "@/lib/client/feed"
 
   type LetterboxdEntry = {
@@ -59,28 +62,32 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
     uri?: string
   }
 
+  // The wall is recent by construction, so the year is noise on the card;
+  // the full date is on hover.
+  const shortDate = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: TIME_ZONE,
+  })
+
   const entryTime = (entry: LetterboxdEntry) =>
     entry.date?.watched ?? entry.date?.published ?? 0
 
-  const createRewatchTag = () => {
-    const tag = document.createElement("span")
-    tag.className = "rewatch"
-    tag.textContent = "rewatched"
-    return tag
-  }
-
+  /**
+   * One poster in the wall: the artwork carries the card, the title and
+   * its year sit under it, and the line under that pairs the rating with
+   * the day it was watched. A rewatch is a tag on the poster's corner,
+   * since it qualifies the film rather than the date.
+   */
   const buildCard = (entry: LetterboxdEntry, href: string) => {
-    const card = document.createElement("li")
-    card.className = "movie-card"
+    const card = el("li", "movie-card")
 
-    const link = document.createElement("a")
-    link.className = "movie-link"
+    const link = el("a", "movie-link") as HTMLAnchorElement
     link.href = href
     link.target = "_blank"
     link.rel = "noopener noreferrer"
 
-    const poster = document.createElement("span")
-    poster.className = "poster"
+    const poster = el("span", "poster")
     const { small, medium, large } = entry.film?.image ?? {}
     const src = safeHttpUrl(medium ?? small ?? large)
     if (src) {
@@ -95,45 +102,36 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
       img.height = 225
       poster.append(img)
     }
+    if (entry.isRewatch) poster.append(el("span", "rewatch", "Rewatch"))
     link.append(poster)
 
-    const meta = document.createElement("span")
-    meta.className = "meta"
+    const title = el("span", "title", entry.film?.title ?? "Untitled")
+    if (entry.film?.year) title.append(" ", el("span", "year", entry.film.year))
 
-    const title = document.createElement("span")
-    title.className = "title"
-    title.append(entry.film?.title ?? "Untitled")
-    if (entry.film?.year) {
-      const year = document.createElement("span")
-      year.className = "year"
-      year.textContent = entry.film.year
-      title.append(" ", year)
-    }
-    meta.append(title)
-
-    const watched = entry.date?.watched ?? entry.date?.published
-    if (watched || entry.isRewatch) {
-      if (watched) {
-        const value = new Date(watched)
-        const time = document.createElement("time")
-        time.className = "date"
-        time.dateTime = value.toISOString()
-        time.textContent = dateFormatter.format(value)
-        meta.append(time)
-      }
-      if (entry.isRewatch) meta.append(createRewatchTag())
-    }
-
+    const foot = el("span", "foot")
     if (typeof entry.rating?.score === "number") {
-      const rating = document.createElement("span")
-      rating.className = "rating"
+      const rating = el("span", "rating")
       rating.style.setProperty("--score", String(entry.rating.score))
       rating.setAttribute("role", "img")
       rating.setAttribute("aria-label", `${entry.rating.score} out of 5 stars`)
-      rating.append(document.createElement("span"))
-      meta.append(rating)
+      rating.append(el("span"))
+      foot.append(rating)
+    }
+    const watched = entry.date?.watched ?? entry.date?.published
+    if (watched) {
+      const value = new Date(watched)
+      const time = el(
+        "time",
+        "date",
+        shortDate.format(value),
+      ) as HTMLTimeElement
+      time.dateTime = value.toISOString()
+      time.title = dateFormatter.format(value)
+      foot.append(time)
     }
 
+    const meta = el("span", "meta")
+    meta.append(title, foot)
     link.append(meta)
     card.append(link)
     return card
@@ -180,36 +178,74 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
 </script>
 
 <style>
+  /* A poster wall rather than a list: the artwork is what a film is
+     recognised by, so it takes the width and the words sit under it. The
+     wall sizes itself against its own column (see Uses.astro for why a
+     viewport query would be wrong between 64rem and 76rem): three across
+     on a phone, four once the column has room. */
   movies-feed {
     display: block;
+    container-type: inline-size;
   }
 
   .movies-grid {
-    --poster-w: clamp(4.5rem, 11vw, 5.5rem);
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-s) var(--space-m);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-m) var(--space-xs);
+
+    @container (width >= 30rem) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
 
-  movies-feed :global(.movie-card) {
-    min-block-size: calc(var(--poster-w) * 3 / 2);
-  }
-
+  /* The card answers the pointer the way the Music rows do — a faint wash
+     behind it — rather than moving: the artwork stays put. */
   movies-feed :global(.movie-link) {
     display: flex;
+    flex-direction: column;
     gap: var(--space-2xs);
+    margin: calc(-1 * var(--space-3xs));
+    padding: var(--space-3xs);
+    border-radius: calc(var(--radius-lg) + var(--space-3xs));
     color: var(--foreground);
     text-decoration: none;
+    transition:
+      background-color 0.15s ease,
+      transform 0.12s ease;
+  }
+
+  @media (hover: hover) {
+    movies-feed :global(.movie-link:hover) {
+      background-color: var(--muted);
+    }
+  }
+
+  movies-feed :global(.movie-link:active) {
+    transform: scale(0.985);
   }
 
   movies-feed :global(.poster) {
-    flex-shrink: 0;
-    inline-size: var(--poster-w);
+    position: relative;
+    display: block;
     aspect-ratio: 2 / 3;
     overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-lg);
     background-color: var(--muted);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.08),
+      0 4px 12px -6px rgb(0 0 0 / 0.18);
+  }
+
+  /* An inset hairline, so a pale poster keeps its edge on a pale page
+     without a border changing its size. */
+  movies-feed :global(.poster::after) {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px
+      color-mix(in oklab, var(--foreground) 12%, transparent);
+    pointer-events: none;
   }
 
   movies-feed :global(.poster img) {
@@ -218,9 +254,24 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
     object-fit: cover;
   }
 
+  /* Solid, not frosted: a tag on artwork has to read on any poster. */
+  movies-feed :global(.rewatch) {
+    position: absolute;
+    inset-block-start: var(--space-3xs);
+    inset-inline-start: var(--space-3xs);
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--foreground);
+    color: var(--background);
+    font-size: 0.625rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
   movies-feed :global(.meta) {
     display: flex;
-    min-inline-size: 0;
     flex-direction: column;
     gap: var(--space-3xs);
   }
@@ -228,40 +279,45 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
   movies-feed :global(.title) {
     display: -webkit-box;
     overflow: hidden;
-    font-size: var(--step-0);
+    font-size: var(--step--1);
     font-weight: var(--font-weight-medium);
-    line-height: 1.25;
+    line-height: 1.3;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    text-wrap: pretty;
+    /* Two lines whatever the title needs, so the stars line up across a
+       row and the skeleton reserves exactly what the card will take. */
+    min-block-size: 2lh;
   }
 
   movies-feed :global(.year) {
-    font-size: var(--step--1);
     font-weight: var(--font-weight-normal);
     color: var(--muted-foreground);
   }
 
-  movies-feed :global(.date) {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
+  movies-feed :global(.foot) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    min-block-size: 1lh;
+    font-size: 0.75rem;
+    justify-content: space-between;
+    gap: var(--space-3xs);
   }
 
-  /* A word rather than a glyph, echoing the EDITED marker on /memos,
-     on its own line under the date it qualifies. */
-  movies-feed :global(.rewatch) {
-    font-size: 0.6875rem;
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+  movies-feed :global(.date) {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   movies-feed :global(.rating) {
     --score: 0;
     position: relative;
     inline-size: max-content;
-    margin-block-start: auto;
-    font-size: var(--step-0);
+    font-size: 0.8125rem;
+    letter-spacing: 0.05em;
     line-height: 1;
     color: var(--gray-6);
   }
@@ -283,18 +339,21 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
     content: "★★★★★";
   }
 
-  movies-feed :global(.sk-title) {
-    inline-size: 85%;
+  movies-feed :global([data-skeleton] .poster) {
+    box-shadow: none;
   }
 
-  movies-feed :global(.sk-date) {
-    inline-size: 40%;
-    block-size: 0.7em;
+  movies-feed :global(.sk-title) {
+    inline-size: 80%;
   }
 
   movies-feed :global(.sk-rating) {
-    inline-size: 4.8em;
-    block-size: 0.95em;
-    margin-block-start: auto;
+    inline-size: 4.5em;
+    block-size: 0.8em;
+  }
+
+  movies-feed :global(.sk-date) {
+    inline-size: 3em;
+    block-size: 0.7em;
   }
 </style>

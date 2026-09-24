@@ -9,7 +9,6 @@
 
 import Heatmap from "@/components/Heatmap.astro"
 import { SWITCH } from "@/consts"
-import { SKELETON_ROWS } from "@/lib/utils"
 
 type Props = {
   endpoint?: string
@@ -43,17 +42,15 @@ const stats = ["Playtime", "Games", "", "Per active day"]
     <Heatmap />
     <h3 class="switch-label">Most played</h3>
     <ol class="switch-list">
-      {Array.from({ length: Math.min(limit, SKELETON_ROWS) }).map(() => (
+      {Array.from({ length: limit }).map(() => (
         <li class="switch-item" data-skeleton aria-hidden="true">
+          <span class="rank" />
           <span class="cover" />
           <span class="meta">
             <span class="title"><span class="sk-line sk-title" /></span>
-            <span class="foot">
-              <span class="sk-line sk-sub" />
-              <span class="sk-line sk-amount" />
-            </span>
-            <span class="sk-line sk-bar" />
+            <span class="sub"><span class="sk-line sk-sub" /></span>
           </span>
+          <span class="amount"><span class="sk-line sk-amount" /></span>
         </li>
       ))}
     </ol>
@@ -121,20 +118,25 @@ const stats = ["Playtime", "Games", "", "Per active day"]
   }
 
   /**
-   * One title: a cover, the name over up to two lines, how lately it was
-   * played and its lifetime hours on the line under that, and a bar
-   * spanning the row underneath. The bar's length is its share of the
-   * most-played game and the solid part inside it is the recent window —
-   * so the row reads as "how much, and how much of that was lately"
-   * without a second column.
+   * One title, and one bar of a chart: the row's own background is the
+   * bar. Its fill runs to the title's share of the most-played one, and
+   * the part of that inside the recent window is drawn in the heatmap's
+   * green — the same "played lately" the grid above says in cells. So the
+   * list reads as a ranking, a chart and a recency check at once, in one
+   * line per game.
    */
   const buildRow = (
     game: SiteGame,
+    rank: number,
     max: number,
     recentDays: number,
     today: string,
   ) => {
     const row = el("li", "switch-item")
+    // Both fills are measured against the same maximum, so the green part
+    // is literally a slice of the bar it sits inside.
+    row.style.setProperty("--total", `${(game.totalMinutes / max) * 100}%`)
+    row.style.setProperty("--recent", `${(game.recentMinutes / max) * 100}%`)
 
     const cover = el("span", "cover")
     const src = safeHttpUrl(game.imageUrl)
@@ -149,23 +151,20 @@ const stats = ["Playtime", "Games", "", "Per active day"]
       cover.append(img)
     }
 
+    const title = el("span", "title", game.title)
+    title.title = game.title
+    const meta = el("span", "meta")
+    meta.append(title, el("span", "sub", rowFoot(game, recentDays, today)))
+
     const amount = el("span", "amount", formatPlaytime(game.totalMinutes))
     amount.title = `${numberFormatter.format(game.totalMinutes)} minutes`
 
-    // Both fills are measured against the same maximum, so the solid part
-    // is literally a slice of the bar it sits inside.
-    const bar = el("span", "bar")
-    bar.style.setProperty("--total", `${(game.totalMinutes / max) * 100}%`)
-    bar.style.setProperty("--recent", `${(game.recentMinutes / max) * 100}%`)
-    bar.append(el("span", "bar-total"), el("span", "bar-recent"))
-
-    const foot = el("span", "foot")
-    foot.append(el("span", "sub", rowFoot(game, recentDays, today)), amount)
-
-    const meta = el("span", "meta")
-    meta.append(el("span", "title", game.title), foot, bar)
-
-    row.append(cover, meta)
+    row.append(
+      el("span", "rank", String(rank).padStart(2, "0")),
+      cover,
+      meta,
+      amount,
+    )
 
     const shop = safeHttpUrl(game.shopUrl)
     if (shop) {
@@ -205,8 +204,8 @@ const stats = ["Playtime", "Games", "", "Per active day"]
       const max = Math.max(...games.map((game) => game.totalMinutes), 1)
       list.hidden = games.length === 0
       list.replaceChildren(
-        ...games.map((game) =>
-          buildRow(game, max, site.recentDays, site.today),
+        ...games.map((game, i) =>
+          buildRow(game, i + 1, max, site.recentDays, site.today),
         ),
       )
       rendered = signature
@@ -224,43 +223,61 @@ const stats = ["Playtime", "Games", "", "Per active day"]
     display: block;
   }
 
-  .switch-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-xs) var(--space-s);
-    margin: 0;
-
-    @media (width < 40rem) {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
+  /* The list is the chart: every row is a bar (see buildRow), so rows sit
+     a hairline apart instead of being ruled, and a row is one line tall —
+     a cover the height of title plus recency, the hours at the far end. */
   .switch-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    gap: 2px;
   }
 
   switch-feed :global(.switch-item) {
+    --total: 0%;
+    --recent: 0%;
+    --fill: color-mix(in oklab, var(--foreground) 7%, transparent);
+    --fill-recent: light-dark(
+      color-mix(in oklab, #40c463 30%, transparent),
+      color-mix(in oklab, #26a641 38%, transparent)
+    );
+
     /* Positioned so the eShop link can stretch across the whole row. */
     position: relative;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: 1.5em auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--space-s);
-    padding-block: var(--space-xs);
+    gap: var(--space-xs);
+    padding: var(--space-3xs) var(--space-xs) var(--space-3xs) var(--space-2xs);
+    border-radius: var(--radius-lg);
+    background-image: linear-gradient(
+      to right,
+      var(--fill-recent) var(--recent),
+      var(--fill) var(--recent) var(--total),
+      transparent var(--total)
+    );
+    transition: background-color 0.15s ease;
   }
 
-  switch-feed :global(.switch-item + .switch-item) {
-    border-block-start: 1px solid var(--border);
+  @media (hover: hover) {
+    switch-feed :global(.switch-item:hover) {
+      background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+    }
+  }
+
+  switch-feed :global(.rank) {
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+    text-align: end;
   }
 
   switch-feed :global(.cover) {
-    inline-size: 5rem;
+    display: block;
+    inline-size: 2.75rem;
     aspect-ratio: 1;
     overflow: hidden;
-    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background-color: var(--muted);
+    box-shadow: inset 0 0 0 1px var(--border);
   }
 
   switch-feed :global(.cover img) {
@@ -270,95 +287,61 @@ const stats = ["Playtime", "Games", "", "Per active day"]
   }
 
   switch-feed :global(.meta) {
-    display: flex;
+    display: grid;
+    gap: 0.125rem;
     min-inline-size: 0;
-    flex-direction: column;
-    gap: var(--space-3xs);
   }
 
-  /* Two lines, always: a long title wraps rather than being cut mid-word,
-     and reserving the second line keeps every row the same height — so the
-     hours and the bars below them stay on one baseline down the list. */
-  switch-feed :global(.title) {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+  /* One line each: a long title gives way before the hours do, and the
+     whole name is on hover. The row's height is the cover's either way,
+     which is what lets the skeleton reserve it exactly. */
+  switch-feed :global(:is(.title, .sub)) {
     overflow: hidden;
-    min-block-size: 2lh;
-    font-size: var(--step-0);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.25;
-  }
-
-  /* How lately, and how much. The hours are what the list is ranked by, so
-     they keep the right edge to be read as a column. */
-  switch-feed :global(.foot) {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-s);
-  }
-
-  /* Two nested fills, one box: --total is the share of the top title,
-     --recent the part of that which falls in the recent window. It sits
-     under the text rather than between its two lines, so it can span the
-     row and be read as a measure. */
-  switch-feed :global(.bar) {
-    position: relative;
-    display: block;
-    inline-size: 100%;
-    block-size: 0.375rem;
-    margin-block-start: var(--space-3xs);
-    border-radius: var(--radius-full);
-    background-color: var(--muted);
-  }
-
-  switch-feed :global(.bar-total),
-  switch-feed :global(.bar-recent) {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: 0;
-    border-radius: inherit;
-  }
-
-  switch-feed :global(.bar-total) {
-    inline-size: var(--total);
-    background-color: color-mix(in oklab, var(--foreground) 20%, transparent);
-  }
-
-  switch-feed :global(.bar-recent) {
-    inline-size: var(--recent);
-    background-color: color-mix(in oklab, var(--foreground) 65%, transparent);
-  }
-
-  switch-feed :global(.sub) {
-    overflow: hidden;
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
     white-space: nowrap;
     text-overflow: ellipsis;
   }
 
+  switch-feed :global(.title) {
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.3;
+  }
+
+  switch-feed :global(.sub) {
+    min-block-size: 1lh;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
   switch-feed :global(.amount) {
-    flex: none;
-    margin-inline-start: auto;
-    font-size: var(--step-0);
+    min-block-size: 1lh;
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   /* The eShop link covers the row rather than sitting in it — the whole
-     row is the hit target, and a fourth column would crowd the amount.
-     It carries no hover treatment of its own — like the Music rows, the
-     list stays quiet and the pointer is the affordance. Keyboard focus
-     still has to be visible, which is what the outline below is for. */
+     row is the hit target — and stays transparent, so the bar under it
+     shows through. Keyboard focus still has to be visible. */
   switch-feed :global(.shop) {
     position: absolute;
     inset: 0;
+    border-radius: inherit;
   }
 
   switch-feed :global(.shop:focus-visible) {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
-    border-radius: var(--radius-md);
+  }
+
+  switch-feed :global([data-skeleton] :is(.title, .sub, .amount)) {
+    display: grid;
+    align-content: center;
+  }
+
+  switch-feed :global([data-skeleton] .title) {
+    min-block-size: 1lh;
   }
 
   switch-feed :global(.sk-title) {
@@ -367,17 +350,10 @@ const stats = ["Playtime", "Games", "", "Per active day"]
 
   switch-feed :global(.sk-sub) {
     inline-size: 30%;
-  }
-
-  switch-feed :global(.sk-bar) {
-    inline-size: 100%;
-    block-size: 0.375rem;
-    margin-block-start: var(--space-3xs);
+    block-size: 0.7em;
   }
 
   switch-feed :global(.sk-amount) {
-    flex: none;
-    margin-inline-start: auto;
     inline-size: 3em;
   }
 </style>

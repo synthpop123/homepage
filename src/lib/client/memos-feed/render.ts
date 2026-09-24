@@ -7,7 +7,7 @@
  */
 
 import { el } from "../dom"
-import { dateFormatter } from "../feed"
+import { TIME_ZONE } from "../feed"
 import {
   type Memo,
   type MemoMedia,
@@ -16,6 +16,23 @@ import {
   timeLabel,
 } from "../memos"
 import { emojify, toFragment } from "./sanitize"
+
+// The year is said once, by the marker that opens it on the thread, so
+// each entry only needs the day; the full instant is on hover.
+const dayFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: TIME_ZONE,
+})
+
+const yearFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  timeZone: TIME_ZONE,
+})
+
+/** The calendar year a memo was posted in, in the site's zone. */
+export const memoYear = (memo: Memo) =>
+  yearFormatter.format(new Date(memo.createdAt))
 
 const reduceMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -150,11 +167,18 @@ function renderRail(memo: Memo) {
   const date = new Date(memo.createdAt)
   const time = el("time") as HTMLTimeElement
   time.dateTime = date.toISOString()
-  time.textContent = dateFormatter.format(date)
+  time.textContent = dayFormatter.format(date)
   permalink.append(time)
   rail.append(permalink)
   if (memo.edited) rail.append(el("span", "memo-edited", "edited"))
   return rail
+}
+
+/** The node on the thread where a new year starts. */
+export function renderYear(year: string) {
+  const item = el("li", "memo-year")
+  item.append(el("h2", "", year))
+  return item
 }
 
 export function renderMemo(memo: Memo) {
