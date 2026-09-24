@@ -6,8 +6,8 @@
  *
  * The globe is the section's centrepiece, and it tours the routes: turning
  * to each in turn and flying it — a trail drawn along the arc, a plane at
- * its head, the two airport codes at its ends — with a caption in the
- * corner naming it. Under it, the airports and routes ranked; pointing at
+ * its head, each end labelled with its code and city — with one line
+ * under the globe for what the labels leave out. Under it, the airports and routes ranked; pointing at
  * a row (or focusing it) takes the tour over, and letting go hands it back.
  */
 
@@ -78,14 +78,13 @@ const ranks = [
           ></path>
         </g>
       </svg>
-      <span class="flights-code" data-end="from" aria-hidden="true"></span>
-      <span class="flights-code" data-end="to" aria-hidden="true"></span>
-      <div class="flights-hud" aria-hidden="true">
-        <span class="hud-title"></span>
-        <span class="hud-index"></span>
-        <span class="hud-name"></span>
-        <span class="hud-meta"></span>
-      </div>
+      <span class="flights-code" data-end="from" aria-hidden="true"
+        ><b></b><span></span></span
+      >
+      <span class="flights-code" data-end="to" aria-hidden="true"
+        ><b></b><span></span></span
+      >
+      <p class="flights-caption" aria-hidden="true"></p>
     </div>
     <div class="flights-ranks">
       {ranks.map(({ kind, label, unit }) => (
@@ -305,11 +304,10 @@ const ranks = [
       from: stage.querySelector<HTMLElement>('.flights-code[data-end="from"]')!,
       to: stage.querySelector<HTMLElement>('.flights-code[data-end="to"]')!,
     }
-    const hud = {
-      title: stage.querySelector<HTMLElement>(".hud-title")!,
-      index: stage.querySelector<HTMLElement>(".hud-index")!,
-      name: stage.querySelector<HTMLElement>(".hud-name")!,
-      meta: stage.querySelector<HTMLElement>(".hud-meta")!,
+    const caption = stage.querySelector<HTMLElement>(".flights-caption")!
+    const label = (node: HTMLElement, airport: SiteAirport | null) => {
+      node.querySelector("b")!.textContent = airport?.code ?? ""
+      node.querySelector("span")!.textContent = airport ? cityName(airport) : ""
     }
     const limit = Number(feed.dataset.limit) || 8
 
@@ -412,12 +410,9 @@ const ranks = [
         const route = site.routes[next.index]
         const { from, to } = routeEnds(route)
         target = viewAngles(midpoint(place(from), place(to)), phi)
-        codes.from.textContent = from.code
-        codes.to.textContent = to.code
-        hud.title.textContent = routeLabel(route)
-        hud.index.textContent = `${pad(next.index + 1)} / ${pad(site.routes.length)}`
-        hud.name.textContent = `${cityName(from)} ⇄ ${cityName(to)}`
-        hud.meta.textContent = [
+        label(codes.from, from)
+        label(codes.to, to)
+        caption.textContent = [
           formatKm(route.km),
           route.minutes === null ? "" : `~${formatDuration(route.minutes)}`,
           route.flights > 0 ? plural(route.flights, "flight") : "",
@@ -431,15 +426,11 @@ const ranks = [
         )
       } else {
         const airport = airports.get(next.code)!
-        const rank = site.airports.indexOf(airport)
         target = viewAngles(place(airport), phi)
-        codes.from.textContent = airport.code
-        codes.to.textContent = ""
-        hud.title.textContent = airport.code
-        hud.index.textContent = `${pad(rank + 1)} / ${pad(site.airports.length)}`
-        hud.name.textContent = airport.name
-        hud.meta.textContent = [
-          [airport.city, airport.country].filter(Boolean).join(", "),
+        label(codes.from, airport)
+        label(codes.to, null)
+        caption.textContent = [
+          airport.name,
           plural(airport.visits, "visit"),
           plural(routesAt(site, airport.code).length, "route"),
         ]
@@ -617,6 +608,8 @@ const ranks = [
 
       globe.update({ phi, theta })
       drawOverlay()
+      if (touring)
+        stage.style.setProperty("--dwell", String(Math.min(elapsed / DWELL, 1)))
 
       // Settled and not touring: nothing left to animate until an input.
       const settled =
@@ -930,85 +923,94 @@ const ranks = [
     mask-image: linear-gradient(transparent, #000 12%, #000 82%, transparent);
   }
 
+  /* An end's label: the code over the city, above the airport and on the
+     side away from the other end, so it lies across neither this route
+     nor the ones fanning out below a hub. */
   .flights-code {
     position: absolute;
-    translate: calc(-100% - 0.7rem) -50%;
+    display: grid;
+    justify-items: end;
+    translate: calc(-100% - 0.3rem) calc(-100% - 0.2rem);
     pointer-events: none;
     white-space: nowrap;
-    transition: opacity 0.25s ease;
-  }
-
-  .flights-code {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.06em;
-    color: var(--foreground);
+    line-height: 1.2;
     text-shadow:
       0 0 3px var(--background),
-      0 0 6px var(--background);
-  }
-
-  .flights-code[data-side="right"] {
-    translate: 0.7rem -50%;
-  }
-
-  /* The caption: what the globe is on, in the corner the globe
-     leaves empty, so nothing is drawn over the route. */
-  .flights-hud {
-    position: absolute;
-    inset-inline-start: 0;
-    inset-block-end: 0;
-    display: grid;
-    grid-template-columns: auto auto;
-    column-gap: var(--space-s);
-    justify-content: start;
-    align-items: baseline;
-    max-inline-size: 100%;
-    pointer-events: none;
-    font-size: 0.75rem;
-    line-height: 1.45;
-    color: var(--muted-foreground);
+      0 0 8px var(--background);
     transition: opacity 0.25s ease;
 
-    & > * {
-      min-inline-size: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      text-shadow: 0 0 6px var(--background);
+    & b {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: var(--font-weight-medium);
+      letter-spacing: 0.06em;
+      color: var(--foreground);
+    }
+
+    & span {
+      font-size: 0.6875rem;
+      color: var(--muted-foreground);
     }
   }
 
-  .hud-title {
-    font-family: var(--font-mono);
-    font-size: var(--step-0);
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.04em;
-    color: var(--flights-accent);
+  .flights-code[data-side="right"] {
+    justify-items: start;
+    translate: 0.3rem calc(-100% - 0.2rem);
   }
 
-  .hud-index {
-    grid-area: 1 / 2;
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .hud-name,
-  .hud-meta {
-    grid-column: 1 / -1;
-  }
-
-  .hud-name {
+  /* One line under the globe for what the labels leave out, over a short
+     rule that fills while the tour dwells — the clock to the next route. */
+  .flights-caption {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    margin-inline: auto;
+    padding-block-end: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
     font-size: var(--step--1);
-    color: var(--foreground);
-  }
-
-  .hud-meta {
     font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+    transition: opacity 0.25s ease;
+
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      inset-block-end: 0;
+      inset-inline-start: calc(50% - 1rem);
+      inline-size: 2rem;
+      block-size: 2px;
+      border-radius: 1px;
+    }
+
+    &::before {
+      background-color: var(--border);
+    }
+
+    &::after {
+      background-color: var(--flights-accent);
+      transform: scaleX(var(--dwell, 0));
+      transform-origin: left;
+    }
   }
 
-  .flights-stage:not([data-focus]) :is(.flights-code, .flights-hud),
+  flights-feed[data-held] .flights-caption::after {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flights-caption::before,
+    .flights-caption::after {
+      display: none;
+    }
+  }
+
+  .flights-stage:not([data-focus]) :is(.flights-code, .flights-caption),
   .flights-code[data-hidden] {
     opacity: 0;
   }
