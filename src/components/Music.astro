@@ -29,7 +29,7 @@ const stats: { key: string; label: string }[] = [
 <music-feed data-instance={instance} data-limit={limit} aria-busy="true">
   <div class="music-body">
     <h3 class="music-label">All-time stats</h3>
-    <dl class="music-stats">
+    <dl class="readout">
       {stats.map(({ key, label }) => (
         <div class="stat" data-key={key}>
           <dt class="label">{label}</dt>
@@ -69,6 +69,7 @@ const stats: { key: string; label: string }[] = [
   import { el } from "@/lib/client/dom"
   import { cached, fetchJson, TIME_ZONE } from "@/lib/client/feed"
   import { HEAT_MAX_WEEKS, mountHeatmap } from "@/lib/client/heatmap"
+  import { setReadout } from "@/lib/client/readout"
 
   type KoitoStats = Record<string, number>
 
@@ -124,7 +125,7 @@ const stats: { key: string; label: string }[] = [
       const value = stats[stat.dataset.key ?? ""]
       const target = stat.querySelector<HTMLElement>(".value")
       if (target && typeof value === "number") {
-        target.textContent = numberFormatter.format(value)
+        setReadout(target, numberFormatter.format(value))
       }
     })
   }

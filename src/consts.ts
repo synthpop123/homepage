@@ -64,6 +64,13 @@ export const SWITCH = {
   limit: 8,
 } as const
 
+/** The flights-worker endpoint, and how many rows each ranked list
+ *  (airports, routes) shows under the globe. */
+export const FLIGHTS = {
+  endpoint: "https://flights.lkwplus.com",
+  limit: 8,
+} as const
+
 /**
  * The marks `Uses.astro` draws beside a thing — the union, not a free
  * string, so an icon this page has no SVG for fails the type check rather
@@ -140,22 +147,6 @@ export const USES: {
       },
     ],
   },
-]
-
-export const GLOBE_LOCATIONS: { location: [number, number]; size: number }[] = [
-  { location: [39.904989, 116.405285], size: 0.02 }, // 北京
-  { location: [22.547, 114.085947], size: 0.02 }, // 深圳
-  { location: [22.28552, 114.15769], size: 0.02 }, // 香港
-  { location: [28.19409, 112.982279], size: 0.02 }, // 长沙
-  { location: [30.584355, 114.298572], size: 0.02 }, // 武汉
-  { location: [31.230393, 121.473702], size: 0.02 }, // 上海
-  { location: [30.659462, 104.065735], size: 0.02 }, // 成都
-  { location: [31.863945, 117.281127], size: 0.02 }, // 合肥
-  { location: [34.263161, 108.948024], size: 0.02 }, // 西安
-  { location: [37.550978, 126.849565], size: 0.02 }, // 首尔
-  { location: [35.18146, 129.07854], size: 0.02 }, // 釜山
-  { location: [8.006098, 98.237611], size: 0.02 }, // 普吉
-  { location: [1.352083, 103.819839], size: 0.02 }, // 新加坡
 ]
 
 export const PROFILE_TABS: CodeTab[] = [
