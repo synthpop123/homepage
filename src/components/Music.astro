@@ -114,8 +114,8 @@ const stats: { key: string; label: string }[] = [
     return dayFormatter.format(value)
   }
 
-  /** Within this many minutes the lead record is still turning. */
-  const SPINNING_MINUTES = 10
+  /** Within this many minutes the lead listen counts as just played. */
+  const RECENT_MINUTES = 10
 
   type KoitoData = [KoitoStats, KoitoActivity, KoitoListens]
 
@@ -190,7 +190,7 @@ const stats: { key: string; label: string }[] = [
     if (lead) {
       row.dataset.lead = ""
       const minutes = (Date.now() - Date.parse(item.time)) / 60_000
-      if (minutes < SPINNING_MINUTES) row.dataset.spinning = ""
+      if (minutes < RECENT_MINUTES) row.dataset.recent = ""
       const disc = el("span", "disc")
       disc.setAttribute("aria-hidden", "true")
       const label = el("span", "disc-label")
@@ -462,6 +462,7 @@ const stats: { key: string; label: string }[] = [
     overflow: hidden;
     border-radius: 50%;
     background-color: var(--gray-8);
+    animation: music-spin 3.2s linear infinite;
   }
 
   music-feed :global(.disc-label img) {
@@ -469,10 +470,6 @@ const stats: { key: string; label: string }[] = [
     block-size: 100%;
     object-fit: cover;
     mask: radial-gradient(circle, transparent 0 6%, #000 7%);
-  }
-
-  music-feed :global([data-spinning] .disc-label) {
-    animation: music-spin 3.2s linear infinite;
   }
 
   @keyframes music-spin {
@@ -495,7 +492,7 @@ const stats: { key: string; label: string }[] = [
     color: var(--muted-foreground);
   }
 
-  music-feed :global([data-spinning] .when::before) {
+  music-feed :global([data-recent] .when::before) {
     content: "";
     display: inline-block;
     inline-size: 0.4rem;
