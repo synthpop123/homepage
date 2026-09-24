@@ -30,7 +30,7 @@ const stats = ["Playtime", "Games", "", "Per active day"]
 <switch-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
   <div class="switch-body">
     <h3 class="switch-label">All-time stats</h3>
-    <dl class="switch-stats">
+    <dl class="readout">
       {stats.map((label) => (
         <div class="stat">
           <dt class="label">{label}</dt>
@@ -66,6 +66,7 @@ const stats = ["Playtime", "Games", "", "Per active day"]
   import { el } from "@/lib/client/dom"
   import { safeHttpUrl, TIME_ZONE } from "@/lib/client/feed"
   import { HEAT_MAX_WEEKS, mountHeatmap } from "@/lib/client/heatmap"
+  import { setReadout } from "@/lib/client/readout"
   import {
     formatPlaytime,
     heatmapWindow,
@@ -95,7 +96,7 @@ const stats = ["Playtime", "Games", "", "Per active day"]
       const value = stat.querySelector<HTMLElement>(".value")
       if (!card || !label || !value) return
       label.textContent = card.label
-      value.textContent = card.value
+      setReadout(value, card.value)
       stat.title = card.note
     })
   }

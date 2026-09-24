@@ -1,6 +1,6 @@
 ---
 import AuthorCard from "@/components/AuthorCard.astro"
-import Globe from "@/components/Globe.astro"
+import Flights from "@/components/Flights.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import Movies from "@/components/Movies.astro"
 import Music from "@/components/Music.astro"
@@ -16,7 +16,7 @@ const friends = (await getCollection("friends")).sort((a, b) =>
 
 const sections = [
   { id: "friends", label: "Friends" },
-  { id: "footprint", label: "Footprint" },
+  { id: "flights", label: "Flights" },
   { id: "movies", label: "Movies" },
   { id: "music", label: "Music" },
   { id: "switch", label: "Switch" },
@@ -49,17 +49,8 @@ const toc = [
     </ul>
   </section>
   <section>
-    <h2 id="footprint">Footprint</h2>
-    <p>
-      Generated with
-      <a
-        href="https://cobe.vercel.app/"
-        target="_blank"
-        rel="noopener noreferrer"
-        >Cobe</a
-      >, a lightweight (5kB) WebGL globe library.
-    </p>
-    <Globe />
+    <h2 id="flights">Flights</h2>
+    <Flights />
   </section>
   <section>
     <h2 id="movies">Movies</h2>

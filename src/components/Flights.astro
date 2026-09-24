@@ -1,0 +1,1137 @@
+---
+/**
+ * Where I've flown, from the self-hosted AirTrail instance through the
+ * flights-worker (which holds the API key and ships the map rather than
+ * the log: airports, routes and totals, never a single flight).
+ *
+ * The globe is the section's centrepiece, and it tours the routes: turning
+ * to each in turn and flying it — a trail drawn along the arc, a plane at
+ * its head, the two airport codes at its ends — with a caption in the
+ * corner naming it. Under it, the airports and routes ranked; pointing at
+ * a row (or focusing it) takes the tour over, and letting go hands it back.
+ */
+
+import { FLIGHTS } from "@/consts"
+
+type Props = {
+  endpoint?: string
+  limit?: number
+}
+
+const { endpoint = FLIGHTS.endpoint, limit = FLIGHTS.limit } = Astro.props
+
+const stats = [
+  "Flights",
+  "Distance",
+  "In the air",
+  "Airports",
+  "Routes",
+  "Longest",
+  "Airlines",
+  "Aircraft",
+]
+const ranks = [
+  { kind: "airports", label: "Airports", unit: "visits" },
+  { kind: "routes", label: "Routes", unit: "flights" },
+]
+---
+
+<p class="flights-intro">
+  Everywhere I've flown, from my self-hosted
+  <a
+    href="https://github.com/johanohly/AirTrail"
+    target="_blank"
+    rel="noopener noreferrer"
+    >AirTrail</a
+  >
+  instance, flown again on a
+  <a href="https://cobe.vercel.app/" target="_blank" rel="noopener noreferrer"
+    >Cobe</a
+  >
+  globe.
+</p>
+<flights-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
+  <div class="flights-body">
+    <dl class="readout">
+      {stats.map((label) => (
+          <div>
+            <dt>{label}</dt>
+            <dd class="value">
+              <span class="sk-line sk-stat" aria-hidden="true" />
+            </dd>
+            <dd class="foot">
+              <span class="sk-line sk-foot" aria-hidden="true" />
+            </dd>
+          </div>
+        ))}
+    </dl>
+    <div class="flights-stage">
+      <canvas aria-hidden="true"></canvas>
+      <svg class="flights-trace" viewBox="0 0 600 400" aria-hidden="true">
+        <path class="trail-glow"></path>
+        <path class="trail"></path>
+        <circle class="pulse" data-end="from" r="6"></circle>
+        <circle class="pulse" data-end="to" r="6"></circle>
+        <g class="plane">
+          <path
+            d="M13 0 11 -1.6 3 -2 -3 -10 -6 -10 -2.5 -2 -8 -2 -10.5 -5.5 -12.5 -5.5 -11 0 -12.5 5.5 -10.5 5.5 -8 2 -2.5 2 -6 10 -3 10 3 2 11 1.6Z"
+          ></path>
+        </g>
+      </svg>
+      <span class="flights-code" data-end="from" aria-hidden="true"></span>
+      <span class="flights-code" data-end="to" aria-hidden="true"></span>
+      <div class="flights-hud" aria-hidden="true">
+        <span class="hud-title"></span>
+        <span class="hud-index"></span>
+        <span class="hud-name"></span>
+        <span class="hud-meta"></span>
+      </div>
+    </div>
+    <div class="flights-ranks">
+      {ranks.map(({ kind, label, unit }) => (
+          <section class="flights-rank" data-kind={kind}>
+            <h3 class="flights-label">
+              {label}
+              <span>{unit}</span>
+            </h3>
+            <ol>
+              {Array.from({ length: limit }).map(() => (
+                <li class="rank-row" data-skeleton aria-hidden="true">
+                  <span class="sk-line" style="inline-size: 1.2em" />
+                  <span class="sk-line" style="inline-size: min(12em, 70%)" />
+                  <span class="sk-line" style="inline-size: 1.2em" />
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))}
+    </div>
+  </div>
+  <p class="flights-fallback" hidden>
+    The flight map is out of reach right now.
+  </p>
+</flights-feed>
+
+<script>
+  import createGlobe, {
+    type Arc,
+    type COBEOptions,
+    type Globe,
+    type Marker,
+  } from "cobe"
+  import { el } from "@/lib/client/dom"
+  import {
+    arcPoint,
+    formatDuration,
+    formatKm,
+    homeView,
+    type LatLon,
+    loadSite,
+    markerSize,
+    midpoint,
+    project,
+    routeId,
+    routeLabel,
+    routesAt,
+    type Site,
+    type SiteAirport,
+    type SiteRoute,
+    share,
+    statCards,
+    surfacePoint,
+    toVector,
+    type Vec3,
+    viewAngles,
+  } from "@/lib/client/flights"
+  import { setReadout } from "@/lib/client/readout"
+
+  type RGB = [number, number, number]
+
+  /* The globe's look per theme. Arcs and markers are drawn opaque, so a
+     dimmed one is a colour mixed toward the page rather than a
+     transparent one. */
+  const PALETTES: Record<
+    "light" | "dark",
+    Pick<
+      COBEOptions,
+      | "dark"
+      | "diffuse"
+      | "mapBrightness"
+      | "mapBaseBrightness"
+      | "baseColor"
+      | "glowColor"
+      | "markerColor"
+    > & { route: RGB; focus: RGB }
+  > = {
+    dark: {
+      dark: 1,
+      diffuse: 1.2,
+      mapBrightness: 4,
+      mapBaseBrightness: 0,
+      baseColor: [0.32, 0.32, 0.34],
+      glowColor: [0.16, 0.15, 0.14],
+      markerColor: [0.62, 0.42, 0.16],
+      route: [0.52, 0.34, 0.12],
+      focus: [1, 0.72, 0.3],
+    },
+    light: {
+      dark: 0,
+      diffuse: 1.2,
+      // In light mode cobe shades a dot (1 - brightness): past 1 it
+      // saturates to black, so a grey map wants a value under it.
+      mapBrightness: 0.5,
+      mapBaseBrightness: 0,
+      baseColor: [1, 1, 1],
+      glowColor: [0.96, 0.95, 0.93],
+      markerColor: [0.96, 0.66, 0.36],
+      route: [0.98, 0.8, 0.58],
+      focus: [0.9, 0.44, 0.05],
+    },
+  }
+
+  const SCALE = 1.8
+  const ARC_HEIGHT = 0.12
+  const ELEVATION = 0.01
+  /** How long the tour stays on a route, and how long the flight takes. */
+  const DWELL = 5500
+  const TURN = 500
+  const FLY = 1800
+  const TRAIL_SAMPLES = 64
+
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)")
+  const darkScheme = matchMedia("(prefers-color-scheme: dark)")
+  const theme = () => {
+    const set = document.documentElement.dataset.theme
+    if (set === "light" || set === "dark") return set
+    return darkScheme.matches ? "dark" : "light"
+  }
+
+  const numberFormatter = new Intl.NumberFormat("en-US")
+  const easeInOut = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const plural = (n: number, word: string) =>
+    `${numberFormatter.format(n)} ${word}${n === 1 ? "" : "s"}`
+
+  const place = (airport: SiteAirport): LatLon => [airport.lat, airport.lon]
+  const cityName = (airport: SiteAirport) => airport.city ?? airport.code
+
+  /** What the globe is showing: a route being flown, or one airport. */
+  type Focus =
+    | { kind: "route"; index: number }
+    | { kind: "airport"; code: string }
+
+  const focusKey = (focus: Focus | null) =>
+    !focus
+      ? ""
+      : focus.kind === "route"
+        ? `route:${focus.index}`
+        : `airport:${focus.code}`
+
+  const fillStats = (feed: HTMLElement, site: Site) => {
+    const cards = statCards(site)
+    feed.querySelectorAll<HTMLElement>(".readout > div").forEach((cell, i) => {
+      const card = cards[i]
+      const value = cell.querySelector<HTMLElement>(".value")
+      const foot = cell.querySelector<HTMLElement>(".foot")
+      if (!card || !value || !foot) return
+      cell.querySelector("dt")!.textContent = card.label
+      setReadout(value, card.value)
+      foot.textContent = card.foot
+    })
+  }
+
+  /** A ranked row: rank, code, name, count, over a bar of its share. */
+  const rankRow = (
+    key: string,
+    rank: number,
+    code: string,
+    name: string,
+    count: number,
+    top: number,
+    label: string,
+  ) => {
+    const row = el("li", "rank-row")
+    row.dataset.focus = key
+    row.style.setProperty("--share", `${share(count, top) * 100}%`)
+    const hit = el("button", "hit")
+    hit.setAttribute("type", "button")
+    hit.setAttribute("aria-pressed", "false")
+    hit.setAttribute("aria-label", `${label}: show on the globe`)
+    row.append(
+      el("span", "rank-n", pad(rank)),
+      el("span", "rank-code", code),
+      el("span", "rank-name", name),
+      el("span", "rank-count", numberFormatter.format(count)),
+      hit,
+    )
+    return row
+  }
+
+  document.querySelectorAll<HTMLElement>("flights-feed").forEach((feed) => {
+    const endpoint = feed.dataset.endpoint
+    const body = feed.querySelector<HTMLElement>(".flights-body")
+    const lists = feed.querySelector<HTMLElement>(".flights-ranks")
+    const airportList = feed.querySelector<HTMLOListElement>(
+      '[data-kind="airports"] ol',
+    )
+    const routeList = feed.querySelector<HTMLOListElement>(
+      '[data-kind="routes"] ol',
+    )
+    const fallback = feed.querySelector<HTMLElement>(".flights-fallback")
+    const stage = feed.querySelector<HTMLElement>(".flights-stage")
+    const canvas = stage?.querySelector("canvas")
+    const svg = stage?.querySelector<SVGSVGElement>(".flights-trace")
+    if (
+      !endpoint ||
+      !body ||
+      !lists ||
+      !airportList ||
+      !routeList ||
+      !stage ||
+      !canvas ||
+      !svg
+    )
+      return
+
+    const trail = svg.querySelector<SVGPathElement>(".trail")!
+    const glow = svg.querySelector<SVGPathElement>(".trail-glow")!
+    const plane = svg.querySelector<SVGGElement>(".plane")!
+    const pulses = {
+      from: svg.querySelector<SVGCircleElement>('.pulse[data-end="from"]')!,
+      to: svg.querySelector<SVGCircleElement>('.pulse[data-end="to"]')!,
+    }
+    const codes = {
+      from: stage.querySelector<HTMLElement>('.flights-code[data-end="from"]')!,
+      to: stage.querySelector<HTMLElement>('.flights-code[data-end="to"]')!,
+    }
+    const hud = {
+      title: stage.querySelector<HTMLElement>(".hud-title")!,
+      index: stage.querySelector<HTMLElement>(".hud-index")!,
+      name: stage.querySelector<HTMLElement>(".hud-name")!,
+      meta: stage.querySelector<HTMLElement>(".hud-meta")!,
+    }
+    const limit = Number(feed.dataset.limit) || 8
+
+    /* Data ------------------------------------------------------------- */
+
+    let site: Site | null = null
+    let airports = new Map<string, SiteAirport>()
+    let rendered = ""
+
+    /* View state ---------------------------------------------------------
+       `phi`/`theta` are where the globe is; the target is where the tour
+       wants it. The globe eases toward the target every frame unless a
+       drag holds it, and a drag lets go of it for a moment afterwards. */
+
+    let phi = viewAngles([30, 115]).phi
+    let theta = viewAngles([30, 115]).theta
+    let target = { phi, theta }
+    let focus: Focus | null = null
+    /** The route the tour is on, kept while a row borrows the globe. */
+    let tour = 0
+    /** Time spent on the focus, paused while the tour is held. */
+    let elapsed = 0
+    let holds = 0
+    let dragging: { x: number; y: number; phi: number; theta: number } | null =
+      null
+    let releasedAt = -Infinity
+    let last = 0
+
+    const palette = () => PALETTES[theme()]
+
+    const globe: Globe = createGlobe(canvas, {
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      width: stage.clientWidth || 600,
+      height: stage.clientHeight || 400,
+      phi,
+      theta,
+      scale: SCALE,
+      mapSamples: 16000,
+      markerElevation: ELEVATION,
+      arcHeight: ARC_HEIGHT,
+      arcWidth: 0.6,
+      markers: [],
+      arcs: [],
+      ...palette(),
+      arcColor: palette().route,
+    })
+
+    /** The routes and airports the focus lights up. */
+    const lit = () => {
+      if (!site || !focus) return { routes: new Set<string>(), ports: [] }
+      if (focus.kind === "route") {
+        const route = site.routes[focus.index]
+        return {
+          routes: new Set([routeId(route.from, route.to)]),
+          ports: [route.from, route.to],
+        }
+      }
+      return {
+        routes: new Set(
+          routesAt(site, focus.code).map((r) => routeId(r.from, r.to)),
+        ),
+        ports: [focus.code],
+      }
+    }
+
+    const paintGlobe = () => {
+      const colors = palette()
+      const on = lit()
+      const arcs: Arc[] = (site?.routes ?? []).map((route) => ({
+        from: place(airports.get(route.from)!),
+        to: place(airports.get(route.to)!),
+        color: on.routes.has(routeId(route.from, route.to))
+          ? colors.focus
+          : colors.route,
+      }))
+      const markers: Marker[] = (site?.airports ?? []).map((airport) => ({
+        location: place(airport),
+        size: markerSize(airport.visits),
+        color: on.ports.includes(airport.code)
+          ? colors.focus
+          : (colors.markerColor as RGB),
+      }))
+      globe.update({ ...colors, arcColor: colors.route, arcs, markers })
+    }
+
+    /* Focus ------------------------------------------------------------ */
+
+    const routeEnds = (route: SiteRoute) => ({
+      from: airports.get(route.from)!,
+      to: airports.get(route.to)!,
+    })
+
+    const setFocus = (next: Focus, instant = false) => {
+      if (!site || focusKey(next) === focusKey(focus)) return
+      focus = next
+      elapsed = instant || reducedMotion.matches ? TURN + FLY : 0
+
+      if (next.kind === "route") {
+        tour = next.index
+        const route = site.routes[next.index]
+        const { from, to } = routeEnds(route)
+        target = viewAngles(midpoint(place(from), place(to)), phi)
+        codes.from.textContent = from.code
+        codes.to.textContent = to.code
+        hud.title.textContent = routeLabel(route)
+        hud.index.textContent = `${pad(next.index + 1)} / ${pad(site.routes.length)}`
+        hud.name.textContent = `${cityName(from)} ⇄ ${cityName(to)}`
+        hud.meta.textContent = [
+          formatKm(route.km),
+          route.minutes === null ? "" : `~${formatDuration(route.minutes)}`,
+          route.flights > 0 ? plural(route.flights, "flight") : "",
+          route.upcoming > 0 ? `${route.upcoming} upcoming` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ")
+        stage.toggleAttribute(
+          "data-upcoming",
+          route.flights === 0 && route.upcoming > 0,
+        )
+      } else {
+        const airport = airports.get(next.code)!
+        const rank = site.airports.indexOf(airport)
+        target = viewAngles(place(airport), phi)
+        codes.from.textContent = airport.code
+        codes.to.textContent = ""
+        hud.title.textContent = airport.code
+        hud.index.textContent = `${pad(rank + 1)} / ${pad(site.airports.length)}`
+        hud.name.textContent = airport.name
+        hud.meta.textContent = [
+          [airport.city, airport.country].filter(Boolean).join(", "),
+          plural(airport.visits, "visit"),
+          plural(routesAt(site, airport.code).length, "route"),
+        ]
+          .filter(Boolean)
+          .join(" · ")
+        stage.removeAttribute("data-upcoming")
+      }
+      if (instant) ({ phi, theta } = target)
+      stage.dataset.kind = next.kind
+
+      const key = focusKey(next)
+      for (const row of lists.querySelectorAll<HTMLElement>(".rank-row")) {
+        const current = row.dataset.focus === key
+        row.toggleAttribute("data-current", current)
+        row.querySelector(".hit")?.setAttribute("aria-pressed", String(current))
+      }
+      paintGlobe()
+      wake()
+    }
+
+    const hold = () => {
+      holds += 1
+      feed.dataset.held = ""
+    }
+    const release = () => {
+      holds = Math.max(0, holds - 1)
+      if (holds > 0) return
+      delete feed.dataset.held
+      // Back to the tour, where it was.
+      if (focus?.kind === "airport") setFocus({ kind: "route", index: tour })
+    }
+
+    /* The overlay ------------------------------------------------------ */
+
+    // The overlay's user units are the stage's CSS pixels (the resize
+    // observer keeps its viewBox in step), so the plane keeps its shape.
+    let box = { width: 600, height: 400 }
+    const view = () => ({
+      phi,
+      theta,
+      scale: SCALE,
+      aspect: box.width / box.height,
+    })
+    const toBox = (p: { x: number; y: number }) =>
+      `${(p.x * box.width).toFixed(1)} ${(p.y * box.height).toFixed(1)}`
+
+    /** A code sits beside its airport on the side away from the other
+     *  end, so it never lies across the route it names. */
+    const placeLabel = (
+      node: HTMLElement,
+      point: { x: number; y: number; visible: boolean },
+      side: "left" | "right",
+    ) => {
+      node.style.left = `${point.x * 100}%`
+      node.style.top = `${point.y * 100}%`
+      node.dataset.side = side
+      node.toggleAttribute("data-hidden", !point.visible)
+    }
+
+    const placePulse = (
+      pulse: SVGCircleElement,
+      point: { x: number; y: number; visible: boolean } | null,
+    ) => {
+      if (point) {
+        pulse.setAttribute("cx", (point.x * box.width).toFixed(1))
+        pulse.setAttribute("cy", (point.y * box.height).toFixed(1))
+      }
+      pulse.toggleAttribute("data-hidden", !point?.visible)
+    }
+
+    const clearTrail = () => {
+      trail.setAttribute("d", "")
+      glow.setAttribute("d", "")
+      plane.toggleAttribute("data-hidden", true)
+    }
+
+    const drawOverlay = () => {
+      if (!site || !focus) {
+        stage.removeAttribute("data-focus")
+        return
+      }
+      stage.dataset.focus = ""
+      const v = view()
+
+      if (focus.kind === "airport") {
+        const airport = airports.get(focus.code)!
+        const at = project(surfacePoint(place(airport), ELEVATION), v)
+        clearTrail()
+        svg.toggleAttribute("data-landed", true)
+        placePulse(pulses.from, at)
+        placePulse(pulses.to, null)
+        placeLabel(codes.from, at, "right")
+        codes.to.toggleAttribute("data-hidden", true)
+        return
+      }
+
+      const { from, to } = routeEnds(site.routes[focus.index])
+      const a: Vec3 = toVector(place(from))
+      const b: Vec3 = toVector(place(to))
+      const flown = easeInOut(Math.min(Math.max((elapsed - TURN) / FLY, 0), 1))
+
+      // The trail, broken wherever the globe hides it.
+      let d = ""
+      let open = false
+      const steps = Math.max(1, Math.round(TRAIL_SAMPLES * flown))
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * flown
+        const p = project(arcPoint(a, b, t, ARC_HEIGHT, ELEVATION), v)
+        if (!p.visible) {
+          open = false
+          continue
+        }
+        d += `${open ? "L" : "M"}${toBox(p)}`
+        open = true
+      }
+      trail.setAttribute("d", flown > 0 ? d : "")
+      glow.setAttribute("d", flown > 0 ? d : "")
+
+      // The plane, heading along the curve.
+      const head = project(arcPoint(a, b, flown, ARC_HEIGHT, ELEVATION), v)
+      const back = project(
+        arcPoint(a, b, Math.max(flown - 0.01, 0), ARC_HEIGHT, ELEVATION),
+        v,
+      )
+      const ahead = project(
+        arcPoint(a, b, Math.min(flown + 0.01, 1), ARC_HEIGHT, ELEVATION),
+        v,
+      )
+      const angle =
+        (Math.atan2(ahead.y - back.y, ahead.x - back.x) * 180) / Math.PI
+      plane.setAttribute(
+        "transform",
+        `translate(${toBox(head)}) rotate(${angle.toFixed(1)}) scale(0.8)`,
+      )
+      plane.toggleAttribute("data-hidden", !head.visible || flown >= 1)
+      svg.toggleAttribute("data-landed", flown >= 1)
+
+      const ends = {
+        from: project(surfacePoint(place(from), ELEVATION), v),
+        to: project(surfacePoint(place(to), ELEVATION), v),
+      }
+      placePulse(pulses.from, ends.from)
+      placePulse(pulses.to, ends.to)
+      const fromLeft = ends.from.x < ends.to.x
+      placeLabel(codes.from, ends.from, fromLeft ? "left" : "right")
+      placeLabel(codes.to, ends.to, fromLeft ? "right" : "left")
+    }
+
+    /* The loop --------------------------------------------------------- */
+
+    let raf = 0
+    let inView = false
+
+    const frame = (now: number) => {
+      raf = 0
+      const dt = Math.min(now - (last || now), 64)
+      last = now
+
+      const touring = site && holds === 0 && !dragging && !reducedMotion.matches
+      if (touring) {
+        elapsed += dt
+        if (elapsed >= DWELL && site && site.routes.length > 1) {
+          setFocus({ kind: "route", index: (tour + 1) % site.routes.length })
+        }
+      } else if (focus) {
+        // Held: still let the route finish flying.
+        elapsed = Math.min(elapsed + dt, TURN + FLY)
+      }
+
+      if (!dragging && now - releasedAt > 1600) {
+        const k = 1 - Math.exp(-dt / 320)
+        phi += (target.phi - phi) * k
+        theta += (target.theta - theta) * k
+      }
+
+      globe.update({ phi, theta })
+      drawOverlay()
+
+      // Settled and not touring: nothing left to animate until an input.
+      const settled =
+        !touring &&
+        !dragging &&
+        now - releasedAt > 1600 &&
+        Math.abs(target.phi - phi) + Math.abs(target.theta - theta) < 1e-4 &&
+        elapsed >= TURN + FLY
+      if (inView && !settled) raf = requestAnimationFrame(frame)
+    }
+
+    const wake = () => {
+      if (inView && !raf) {
+        last = 0
+        raf = requestAnimationFrame(frame)
+      }
+    }
+
+    new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting
+      if (inView) wake()
+      else if (raf) {
+        cancelAnimationFrame(raf)
+        raf = 0
+      }
+    }).observe(stage)
+
+    new ResizeObserver(() => {
+      const { clientWidth: width, clientHeight: height } = stage
+      if (width === 0 || height === 0) return
+      box = { width, height }
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
+      globe.update({ width, height })
+      wake()
+    }).observe(stage)
+
+    const repaint = () => {
+      paintGlobe()
+      wake()
+    }
+    new MutationObserver(repaint).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    })
+    darkScheme.addEventListener("change", repaint)
+
+    /* Dragging --------------------------------------------------------- */
+
+    canvas.addEventListener("pointerdown", (event) => {
+      dragging = { x: event.clientX, y: event.clientY, phi, theta }
+      canvas.setPointerCapture(event.pointerId)
+      stage.dataset.dragging = ""
+      wake()
+    })
+    canvas.addEventListener("pointermove", (event) => {
+      if (!dragging) return
+      const size = stage.clientHeight || 400
+      phi = dragging.phi + ((event.clientX - dragging.x) / size) * 1.2
+      theta = Math.min(
+        Math.max(
+          dragging.theta + ((event.clientY - dragging.y) / size) * 1.2,
+          -1,
+        ),
+        1.2,
+      )
+    })
+    const drop = () => {
+      if (!dragging) return
+      dragging = null
+      releasedAt = performance.now()
+      delete stage.dataset.dragging
+      // Back to what is in focus by the nearest way round.
+      target = {
+        ...target,
+        phi:
+          target.phi +
+          2 * Math.PI * Math.round((phi - target.phi) / (2 * Math.PI)),
+      }
+      wake()
+    }
+    canvas.addEventListener("pointerup", drop)
+    canvas.addEventListener("pointercancel", drop)
+
+    /* The lists take the tour over ------------------------------------- */
+
+    const rowFocus = (event: Event): Focus | null => {
+      const key = (event.target as Element).closest<HTMLElement>(".rank-row")
+        ?.dataset.focus
+      if (!key) return null
+      const [kind, value] = key.split(":")
+      return kind === "route"
+        ? { kind, index: Number(value) }
+        : { kind: "airport", code: value }
+    }
+    lists.addEventListener("pointerover", (event) => {
+      const next = rowFocus(event)
+      if (next && event.pointerType === "mouse") setFocus(next)
+    })
+    lists.addEventListener("pointerenter", (event) => {
+      if (event.pointerType === "mouse") hold()
+    })
+    lists.addEventListener("pointerleave", (event) => {
+      if (event.pointerType === "mouse") release()
+    })
+    lists.addEventListener("focusin", (event) => {
+      hold()
+      const next = rowFocus(event)
+      if (next) setFocus(next)
+    })
+    lists.addEventListener("focusout", release)
+    lists.addEventListener("click", (event) => {
+      const next = rowFocus(event)
+      if (!next) return
+      setFocus(next)
+      elapsed = Math.min(elapsed, TURN)
+      wake()
+      if (matchMedia("(width < 64rem)").matches)
+        stage.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    })
+
+    /* Load ------------------------------------------------------------- */
+
+    loadSite(endpoint, (next) => {
+      if (next.routes.length === 0) throw new Error("No routes")
+      const signature = JSON.stringify(next)
+      if (signature === rendered) return
+      rendered = signature
+
+      site = next
+      airports = new Map(
+        next.airports.map((airport) => [airport.code, airport]),
+      )
+
+      fillStats(feed, next)
+      const visited = next.airports.filter((airport) => airport.visits > 0)
+      airportList.replaceChildren(
+        ...visited
+          .slice(0, limit)
+          .map((airport, i) =>
+            rankRow(
+              `airport:${airport.code}`,
+              i + 1,
+              airport.code,
+              cityName(airport),
+              airport.visits,
+              visited[0].visits,
+              `${airport.name}, ${plural(airport.visits, "visit")}`,
+            ),
+          ),
+      )
+      routeList.replaceChildren(
+        ...next.routes.slice(0, limit).flatMap((route, i) => {
+          if (route.flights === 0) return []
+          const { from, to } = routeEnds(route)
+          return rankRow(
+            `route:${i}`,
+            i + 1,
+            routeLabel(route),
+            `${cityName(from)} ⇄ ${cityName(to)}`,
+            route.flights,
+            next.routes[0].flights,
+            `${cityName(from)} and ${cityName(to)}, ${plural(route.flights, "flight")}`,
+          )
+        }),
+      )
+
+      // Open on the busiest route, from above the whole map of them.
+      if (!focus) ({ phi, theta } = viewAngles(homeView(next.airports), phi))
+      focus = null
+      tour = 0
+      setFocus({ kind: "route", index: 0 })
+      feed.setAttribute("aria-busy", "false")
+    }).catch(() => {
+      body.hidden = true
+      if (fallback) fallback.hidden = false
+      feed.setAttribute("aria-busy", "false")
+      globe.destroy()
+    })
+  })
+</script>
+
+<style>
+  flights-feed {
+    --flights-accent: light-dark(#e2700b, #ffb547);
+
+    display: block;
+  }
+
+  flights-feed .readout {
+    --readout-accent: var(--flights-accent);
+  }
+
+  /* The globe ----------------------------------------------------------- */
+
+  .flights-stage {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    margin-block: var(--space-m) var(--space-s);
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+
+    /* A halo in the route colour, under the globe's own glow. */
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 5% 18%;
+      border-radius: 50%;
+      background: radial-gradient(
+        closest-side,
+        color-mix(in oklab, var(--flights-accent) 14%, transparent),
+        transparent
+      );
+      filter: blur(24px);
+      pointer-events: none;
+    }
+
+    &[data-dragging] {
+      cursor: grabbing;
+    }
+  }
+
+  .flights-stage canvas {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .flights-trace {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .flights-trace path {
+    fill: none;
+    stroke: var(--flights-accent);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .flights-trace .trail {
+    stroke-width: 2;
+  }
+
+  .flights-trace .trail-glow {
+    stroke-width: 7;
+    opacity: 0.25;
+    filter: blur(3px);
+  }
+
+  [data-upcoming] .flights-trace :is(.trail, .trail-glow) {
+    stroke-dasharray: 2 5;
+  }
+
+  .flights-trace .plane path {
+    fill: var(--foreground);
+    stroke: var(--background);
+    stroke-width: 1.2;
+    paint-order: stroke;
+    vector-effect: none;
+  }
+
+  .flights-trace .plane {
+    transition: opacity 0.4s ease;
+  }
+
+  .flights-trace [data-hidden] {
+    opacity: 0;
+  }
+
+  /* The ends: a ring that keeps breathing out from each airport. */
+  .flights-trace .pulse {
+    fill: none;
+    stroke: var(--flights-accent);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: flights-pulse 2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+  }
+
+  .flights-trace .pulse[data-end="to"] {
+    animation-delay: 1s;
+  }
+
+  .flights-trace:not([data-landed]) .pulse[data-end="to"] {
+    visibility: hidden;
+  }
+
+  @keyframes flights-pulse {
+    from {
+      transform: scale(0.4);
+      opacity: 1;
+    }
+    to {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+
+  /* The globe is drawn larger than the frame — close enough that the
+     routes have room — and the frame fades out where it crops it. The
+     caption is left out of the fade, since it sits in the corner. */
+  .flights-stage :is(canvas, .flights-trace) {
+    mask-image: linear-gradient(transparent, #000 12%, #000 82%, transparent);
+  }
+
+  .flights-code {
+    position: absolute;
+    translate: calc(-100% - 0.7rem) -50%;
+    pointer-events: none;
+    white-space: nowrap;
+    transition: opacity 0.25s ease;
+  }
+
+  .flights-code {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.06em;
+    color: var(--foreground);
+    text-shadow:
+      0 0 3px var(--background),
+      0 0 6px var(--background);
+  }
+
+  .flights-code[data-side="right"] {
+    translate: 0.7rem -50%;
+  }
+
+  /* The caption: what the globe is on, in the corner the globe
+     leaves empty, so nothing is drawn over the route. */
+  .flights-hud {
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-end: 0;
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: var(--space-s);
+    justify-content: start;
+    align-items: baseline;
+    max-inline-size: 100%;
+    pointer-events: none;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--muted-foreground);
+    transition: opacity 0.25s ease;
+
+    & > * {
+      min-inline-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-shadow: 0 0 6px var(--background);
+    }
+  }
+
+  .hud-title {
+    font-family: var(--font-mono);
+    font-size: var(--step-0);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.04em;
+    color: var(--flights-accent);
+  }
+
+  .hud-index {
+    grid-area: 1 / 2;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hud-name,
+  .hud-meta {
+    grid-column: 1 / -1;
+  }
+
+  .hud-name {
+    font-size: var(--step--1);
+    color: var(--foreground);
+  }
+
+  .hud-meta {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .flights-stage:not([data-focus]) :is(.flights-code, .flights-hud),
+  .flights-code[data-hidden] {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flights-trace .pulse {
+      animation: none;
+      opacity: 0.8;
+    }
+  }
+
+  /* The ranked lists ---------------------------------------------------- */
+
+  /* Two lists side by side when the column has room for both, stacked
+     when it doesn't — an intrinsic grid, so no query is needed. */
+  .flights-ranks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-s) var(--space-m);
+  }
+
+  .flights-rank .flights-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+
+    & span {
+      text-transform: none;
+      letter-spacing: normal;
+    }
+  }
+
+  .flights-rank ol {
+    display: grid;
+    gap: 2px;
+  }
+
+  /* Like the Switch list, the list is the chart: each row is a bar filled
+     to its share of the leader. */
+  flights-feed :global(.rank-row) {
+    --share: 0%;
+    --fill: color-mix(in oklab, var(--foreground) 6%, transparent);
+
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.5em auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-xs);
+    min-block-size: 2rem;
+    padding-inline: var(--space-2xs) var(--space-xs);
+    border-radius: var(--radius-lg);
+    background-image: linear-gradient(
+      to right,
+      var(--fill) var(--share),
+      transparent var(--share)
+    );
+    font-variant-numeric: tabular-nums;
+    transition: background-color 0.15s ease;
+  }
+
+  flights-feed :global(.rank-row[data-current]) {
+    --fill: color-mix(in oklab, var(--flights-accent) 22%, transparent);
+  }
+
+  @media (hover: hover) {
+    flights-feed :global(.rank-row:not([data-skeleton]):hover) {
+      background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+    }
+  }
+
+  flights-feed :global(.rank-n) {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+    text-align: end;
+  }
+
+  flights-feed :global(.rank-code) {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.04em;
+  }
+
+  flights-feed :global(.rank-row[data-current] .rank-code) {
+    color: var(--flights-accent);
+  }
+
+  flights-feed :global(.rank-name) {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  flights-feed :global(.rank-count) {
+    font-size: var(--step--1);
+  }
+
+  flights-feed :global(.rank-row .hit) {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: none;
+    cursor: pointer;
+  }
+
+  flights-feed :global(.rank-row .hit:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+
+  /* The skeleton row: rank, a name bar spanning code and name, count. */
+  flights-feed :global(.rank-row[data-skeleton]) {
+    grid-template-columns: 1.5em minmax(0, 1fr) auto;
+  }
+
+  flights-feed :global(.rank-row[data-skeleton] .sk-line:first-child) {
+    justify-self: end;
+  }
+
+  .sk-foot {
+    inline-size: 6em;
+  }
+</style>

@@ -8,6 +8,7 @@
  */
 
 import { el } from "../dom"
+import { setReadout } from "../readout"
 import {
   aiIcon,
   type DayModel,
@@ -45,7 +46,7 @@ export function scopedQuery(root: HTMLElement) {
 
 export type Query = ReturnType<typeof scopedQuery>
 
-/** Fill one stat card (dt/value/sub) inside a .tk-cards list. */
+/** Fill one stat card (dt/value/sub) inside a .tk-cards readout. */
 export const setCard = (
   cards: HTMLElement | null,
   key: string,
@@ -57,7 +58,7 @@ export const setCard = (
   const valueEl = card?.querySelector<HTMLElement>(".value")
   const subEl = card?.querySelector<HTMLElement>(".sub")
   if (!valueEl || !subEl) return
-  valueEl.textContent = value
+  setReadout(valueEl, value)
   if (exact) valueEl.title = exact
   subEl.textContent = sub
 }

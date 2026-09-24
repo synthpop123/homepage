@@ -7,6 +7,7 @@
  * and today render through one path.
  */
 
+import { setReadout } from "../readout"
 import {
   aiIcon,
   type DayMix,
@@ -180,7 +181,7 @@ export function createDayPanel(q: Query, icons: Icons, onBack: () => void) {
       const card = q(`[data-cards="day"] .tk-card[data-key="${key}"]`)
       const valueEl = card?.querySelector<HTMLElement>(".value")
       if (valueEl) {
-        valueEl.textContent = value
+        setReadout(valueEl, value)
         valueEl.title = exact
       }
       setDelta(

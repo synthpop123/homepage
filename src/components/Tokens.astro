@@ -193,7 +193,7 @@ const LEGEND_CHIPS = 4
           </button>
         </div>
         <div class="tk-day-body">
-          <dl class="tk-cards" data-cards="day">
+          <dl class="tk-cards readout" data-cards="day">
             {dayCards.map(({ key, label }) => (
               <div class="tk-card" data-key={key}>
                 <dt>{label}</dt>
@@ -252,7 +252,7 @@ const LEGEND_CHIPS = 4
           </label>
         </fieldset>
       </form>
-      <dl class="tk-cards" data-cards="overview">
+      <dl class="tk-cards readout" data-cards="overview">
         {overviewCards.map(({ key, label }) => (
           <div class="tk-card" data-key={key}>
             <dt>{label}</dt>
@@ -377,7 +377,7 @@ const LEGEND_CHIPS = 4
     </section>
     <section>
       <h2 id="patterns">Patterns</h2>
-      <dl class="tk-cards tk-facts" data-cards="facts">
+      <dl class="tk-cards tk-facts readout" data-cards="facts">
         {factCards.map(({ key, label }) => (
           <div class="tk-card" data-key={key}>
             <dt>{label}</dt>
@@ -748,31 +748,12 @@ const LEGEND_CHIPS = 4
       font-size: 0.6875rem;
     }
 
-    /* Stat cards: the panel surface is shared with the feeds (feed.css). */
-
-    .tk-card dt {
-      font-size: var(--step--1);
-      color: var(--muted-foreground);
-    }
-
-    .tk-card .value {
-      margin: 0;
-      font-size: var(--step-2);
-      font-weight: var(--font-weight-medium);
-      font-variant-numeric: tabular-nums;
-      line-height: 1.2;
-    }
+    /* Stat cards: the readout is shared with the feeds (feed.css). The
+       Patterns figures are a size down — eight of them, and several are
+       words (`Thursday`) that would otherwise crowd their cell. */
 
     .tk-facts .value {
       font-size: var(--step-1);
-    }
-
-    .tk-card .sub,
-    .tk-card .delta {
-      margin: 0;
-      font-size: var(--step--1);
-      color: var(--muted-foreground);
-      font-variant-numeric: tabular-nums;
     }
 
     .tk-card .delta:empty {
@@ -1887,9 +1868,6 @@ const LEGEND_CHIPS = 4
     [data-skeleton] .dev-seen,
     [data-skeleton] .dev-tokens,
     [data-skeleton] .dev-meta,
-    .tk-card .value:has(> .sk-line),
-    .tk-card .sub:has(> .sk-line),
-    .tk-card .delta:has(> .sk-line),
     .tk-mix-legend .value:has(> .sk-line),
     .tk-mix-legend .share:has(> .sk-line),
     .tk-sync:has(> .sk-line) {

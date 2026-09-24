@@ -4,6 +4,7 @@
 .music-intro,
 .movies-intro,
 .switch-intro,
+.flights-intro,
 .uses-intro {
   margin-block-end: var(--space-s);
   color: var(--muted-foreground);
@@ -11,7 +12,8 @@
 
 .music-fallback,
 .movies-fallback,
-.switch-fallback {
+.switch-fallback,
+.flights-fallback {
   margin-block-end: 0;
   color: var(--muted-foreground);
 }
@@ -25,6 +27,7 @@
 .memos-fallback a,
 .switch-intro a,
 .switch-fallback a,
+.flights-intro a,
 .tk-intro a,
 .uses-intro a {
   color: var(--foreground);
@@ -33,6 +36,7 @@
 
 .music-label,
 .switch-label,
+.flights-label,
 .tk-label,
 .uses-label {
   margin-block: var(--space-m) var(--space-2xs);
@@ -48,70 +52,184 @@
   margin-block-start: 0;
 }
 
-/* Stat panel: one rounded surface cut into cells by hairline seams (the
-   gap shows the border colour behind the opaque cells), rather than a
-   loose field of numbers or a grid of separate cards. The same surface as
-   the Uses cards and the memo media grid, so every feed's summary reads
-   as one instrument. Label above value in every cell, like a gauge.
+/* Readout: the stat panel every summary grid shares (Music, Switch,
+   Flights, the Tokens day/overview/Patterns cards). Not a box cut into
+   cells but a row of instruments on a rule — each figure standing on its
+   own hairline, with a short accent tick where the rule starts. The
+   figure is set in two sizes by `setReadout` (src/lib/client/readout.ts):
+   numbers large, units small and dim, so `145.1M` reads as a quantity
+   rather than a string. The first time a panel scrolls into view
+   (`data-seen`), its rules draw in one cell after another while the
+   numbers count up; hovering a cell runs its tick the length of the rule
+   and lets a wash of the accent down behind it.
 
-   Two across or four, never three: a row left short would show the seam
-   colour as a hole. The column count switches on the panel's own width
+   Two across or four, never three: a row left short would read as a
+   figure missing. The column count switches on the panel's own width
    (the clamp resolves to half the width below --panel-wide and a quarter
-   above it), so the panel needs no container around it to query. Tokens
-   raises the threshold, since its cells carry a comparison line that has
-   to fit on one line — a wrapped one is also a line its skeleton didn't
-   reserve. */
-.music-stats,
-.switch-stats,
-tokens-dashboard .tk-cards {
+   above it, less the gaps), so the panel needs no container around it to
+   query. Tokens raises the threshold, since its cells carry a comparison
+   line that has to fit on one line — a wrapped one is also a line its
+   skeleton didn't reserve. */
+.readout {
+  /* The heatmap's green, which every panel but two sits above. */
+  --readout-accent: light-dark(#30a14e, #39d353);
   --panel-wide: 32rem;
+  --readout-gap: var(--space-s);
 
   display: grid;
   grid-template-columns: repeat(
     auto-fill,
     minmax(
-      clamp(25% - 1px, (var(--panel-wide) - 100%) * 999, 50% - 1px),
+      clamp(
+        25% - var(--readout-gap) * 0.75,
+        (var(--panel-wide) - 100%) * 999,
+        50% - var(--readout-gap) * 0.5
+      ),
       1fr
     )
   );
-  gap: 1px;
+  gap: var(--space-s) var(--readout-gap);
   margin: 0;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  background-color: var(--border);
 }
 
-tokens-dashboard .tk-cards {
+tokens-dashboard .readout {
   --panel-wide: 44rem;
 }
 
-.music-stats > div,
-.switch-stats > div,
-tokens-dashboard .tk-cards > div {
+switch-feed .readout {
+  --readout-accent: light-dark(#e60012, #ff4d5a);
+}
+
+.readout > div {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3xs);
-  padding: var(--space-xs);
-  background-color: color-mix(in oklab, var(--muted) 45%, var(--background));
+  padding-block: var(--space-xs) var(--space-3xs);
+  background: linear-gradient(
+      color-mix(in oklab, var(--readout-accent) 9%, transparent),
+      transparent
+    )
+    no-repeat;
+  background-size: 100% 0;
+  transition: background-size 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-music-feed .stat .value,
-switch-feed .stat .value {
-  margin: 0;
-  font-size: var(--step-1);
-  font-weight: var(--font-weight-medium);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-  /* The skeleton bar is shorter than a line of figures; reserve the line. */
-  min-block-size: 1lh;
+.readout > div:nth-child(2) { --i: 1; }
+.readout > div:nth-child(3) { --i: 2; }
+.readout > div:nth-child(4) { --i: 3; }
+.readout > div:nth-child(5) { --i: 4; }
+.readout > div:nth-child(6) { --i: 5; }
+.readout > div:nth-child(7) { --i: 6; }
+.readout > div:nth-child(8) { --i: 7; }
+
+/* The rule, and the tick at its start. Both are pseudo-elements so they
+   can be drawn in: a border can't grow from the left. */
+.readout > div::before,
+.readout > div::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition:
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--i, 0) * 70ms),
+    inline-size 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-music-feed .stat .label {
+.readout > div::before {
+  inline-size: 100%;
+  block-size: 1px;
+  background-color: var(--border);
+}
+
+.readout > div::after {
+  inline-size: 1.25rem;
+  block-size: 2px;
+  margin-block-start: -0.5px;
+  border-radius: 1px;
+  background-color: var(--readout-accent);
+}
+
+.readout[data-seen] > div::before,
+.readout[data-seen] > div::after {
+  transform: none;
+}
+
+@media (hover: hover) {
+  .readout > div:hover {
+    background-size: 100% 100%;
+  }
+
+  .readout > div:hover::after {
+    inline-size: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readout > div::before,
+  .readout > div::after {
+    transform: none;
+  }
+}
+
+.readout dt {
   font-size: var(--step--1);
   color: var(--muted-foreground);
 }
 
+.readout .value {
+  margin: 0;
+  font-size: var(--step-2);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  /* The skeleton bar is shorter than a line of figures; reserve the line. */
+  min-block-size: 1lh;
+}
+
+.readout .value .unit {
+  margin-inline: 0.05em;
+  font-size: 0.56em;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0;
+  color: var(--muted-foreground);
+}
+
+/* A figure with no number in it (`Thursday`) is its own figure. */
+.readout .value[data-word] .unit {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+.readout dd:not(.value) {
+  margin: 0;
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+
+.readout :is(.value, dd):has(> .sk-line) {
+  display: grid;
+  align-content: center;
+  min-block-size: 1lh;
+}
+
+.sk-stat {
+  inline-size: 3.5em;
+  block-size: 1em;
+}
+
+tokens-dashboard .sk-stat {
+  inline-size: 4.5em;
+  block-size: 1.1em;
+}
 
 memos-feed .sk-line,
 tokens-dashboard .sk-line,
@@ -120,7 +238,8 @@ music-feed .sk-line,
 movies-feed [data-skeleton] .poster,
 movies-feed .sk-line,
 switch-feed [data-skeleton] .cover,
-switch-feed .sk-line {
+switch-feed .sk-line,
+flights-feed .sk-line {
   background-color: var(--gray-5);
   animation: var(--sk-pulse);
 }
@@ -129,7 +248,8 @@ music-feed .sk-line,
 memos-feed .sk-line,
 tokens-dashboard .sk-line,
 movies-feed .sk-line,
-switch-feed .sk-line {
+switch-feed .sk-line,
+flights-feed .sk-line {
   display: block;
   block-size: 0.85em;
   border-radius: var(--radius-sm);
@@ -144,21 +264,4 @@ switch-feed .sk-line {
 .memos-empty,
 .memos-fallback {
   color: var(--muted-foreground);
-}
-
-switch-feed .stat .label {
-  min-block-size: 1lh;
-  font-size: var(--step--1);
-  color: var(--muted-foreground);
-}
-
-tokens-dashboard .sk-stat {
-  inline-size: 4.5em;
-  block-size: 1.1em;
-}
-
-music-feed .sk-stat,
-switch-feed .sk-stat {
-  inline-size: 3.5em;
-  block-size: 1em;
 }

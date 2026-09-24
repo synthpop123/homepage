@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "today": "2026-09-24",
+  "stats": {
+    "flights": 25,
+    "upcoming": 0,
+    "km": 34511,
+    "minutes": 3937,
+    "airports": 15,
+    "countries": 5,
+    "airlines": 10,
+    "aircraftTypes": 14,
+    "routes": 14,
+    "firstDate": "2023-08-02",
+    "lastDate": "2026-08-16"
+  },
+  "airports": [
+    {
+      "code": "PEK",
+      "name": "Beijing Capital Intl.",
+      "city": "Beijing",
+      "country": "CN",
+      "lat": 40.077349,
+      "lon": 116.596702,
+      "visits": 15
+    },
+    {
+      "code": "SHA",
+      "name": "Shanghai Hongqiao Intl.",
+      "city": "Shanghai",
+      "country": "CN",
+      "lat": 31.198104,
+      "lon": 121.33426,
+      "visits": 6
+    },
+    {
+      "code": "CAN",
+      "name": "Guangzhou Baiyun Intl.",
+      "city": "Guangzhou",
+      "country": "CN",
+      "lat": 23.392401,
+      "lon": 113.299004,
+      "visits": 4
+    },
+    {
+      "code": "HKT",
+      "name": "Phuket Intl.",
+      "city": "Phuket",
+      "country": "TH",
+      "lat": 8.113257,
+      "lon": 98.3174,
+      "visits": 4
+    },
+    {
+      "code": "PKX",
+      "name": "Beijing Daxing Intl.",
+      "city": "Beijing",
+      "country": "CN",
+      "lat": 39.501289,
+      "lon": 116.413967,
+      "visits": 4
+    },
+    {
+      "code": "SZX",
+      "name": "Shenzhen Bao'an Intl.",
+      "city": "Shenzhen",
+      "country": "CN",
+      "lat": 22.639474,
+      "lon": 113.803262,
+      "visits": 3
+    },
+    {
+      "code": "CTU",
+      "name": "Chengdu Shuangliu Intl.",
+      "city": "Chengdu",
+      "country": "CN",
+      "lat": 30.558257,
+      "lon": 103.945966,
+      "visits": 2
+    },
+    {
+      "code": "GMP",
+      "name": "Seoul Gimpo Intl.",
+      "city": "Seoul",
+      "country": "KR",
+      "lat": 37.5583,
+      "lon": 126.791,
+      "visits": 2
+    },
+    {
+      "code": "HKG",
+      "name": "Hong Kong Intl.",
+      "city": "Hong Kong",
+      "country": "HK",
+      "lat": 22.31184,
+      "lon": 113.914862,
+      "visits": 2
+    },
+    {
+      "code": "SIN",
+      "name": "Singapore Changi Airport",
+      "city": "Singapore",
+      "country": "SG",
+      "lat": 1.35019,
+      "lon": 103.994003,
+      "visits": 2
+    },
+    {
+      "code": "XIY",
+      "name": "Xi'an Xianyang Intl.",
+      "city": "Xi'an",
+      "country": "CN",
+      "lat": 34.442207,
+      "lon": 108.762385,
+      "visits": 2
+    },
+    {
+      "code": "ICN",
+      "name": "Incheon Intl.",
+      "city": "Seoul",
+      "country": "KR",
+      "lat": 37.469101,
+      "lon": 126.450996,
+      "visits": 1
+    },
+    {
+      "code": "JNH",
+      "name": "Jiaxing Nanhu Airport",
+      "city": "Xiuzhou, Hangzhou",
+      "country": "CN",
+      "lat": 30.698056,
+      "lon": 120.663056,
+      "visits": 1
+    },
+    {
+      "code": "PUS",
+      "name": "Gimhae Intl.",
+      "city": "Busan",
+      "country": "KR",
+      "lat": 35.179501,
+      "lon": 128.938004,
+      "visits": 1
+    },
+    {
+      "code": "ZUH",
+      "name": "Zhuhai Jinwan Airport",
+      "city": "Zhuhai",
+      "country": "CN",
+      "lat": 22.006399,
+      "lon": 113.375999,
+      "visits": 1
+    }
+  ],
+  "routes": [
+    {
+      "from": "PEK",
+      "to": "SHA",
+      "flights": 6,
+      "upcoming": 0,
+      "km": 1076,
+      "minutes": 141
+    },
+    {
+      "from": "CAN",
+      "to": "HKT",
+      "flights": 2,
+      "upcoming": 0,
+      "km": 2332,
+      "minutes": 230
+    },
+    {
+      "from": "PEK",
+      "to": "SZX",
+      "flights": 2,
+      "upcoming": 0,
+      "km": 1957,
+      "minutes": 187
+    },
+    {
+      "from": "HKG",
+      "to": "PKX",
+      "flights": 2,
+      "upcoming": 0,
+      "km": 1926,
+      "minutes": 203
+    },
+    {
+      "from": "CAN",
+      "to": "PKX",
+      "flights": 2,
+      "upcoming": 0,
+      "km": 1815,
+      "minutes": 178
+    },
+    {
+      "from": "HKT",
+      "to": "SIN",
+      "flights": 2,
+      "upcoming": 0,
+      "km": 980,
+      "minutes": 117
+    },
+    {
+      "from": "PEK",
+      "to": "XIY",
+      "flights": 2,
+      "upcoming": 0,
+      "km": 934,
+      "minutes": 153
+    },
+    {
+      "from": "PEK",
+      "to": "ZUH",
+      "flights": 1,
+      "upcoming": 0,
+      "km": 2032,
+      "minutes": 231
+    },
+    {
+      "from": "CTU",
+      "to": "PEK",
+      "flights": 1,
+      "upcoming": 0,
+      "km": 1558,
+      "minutes": 175
+    },
+    {
+      "from": "CTU",
+      "to": "SZX",
+      "flights": 1,
+      "upcoming": 0,
+      "km": 1316,
+      "minutes": 140
+    },
+    {
+      "from": "JNH",
+      "to": "PEK",
+      "flights": 1,
+      "upcoming": 0,
+      "km": 1106,
+      "minutes": 135
+    },
+    {
+      "from": "GMP",
+      "to": "PEK",
+      "flights": 1,
+      "upcoming": 0,
+      "km": 926,
+      "minutes": 108
+    },
+    {
+      "from": "ICN",
+      "to": "PEK",
+      "flights": 1,
+      "upcoming": 0,
+      "km": 902,
+      "minutes": 132
+    },
+    {
+      "from": "GMP",
+      "to": "PUS",
+      "flights": 1,
+      "upcoming": 0,
+      "km": 327,
+      "minutes": 39
+    }
+  ],
+  "airlines": [
+    {
+      "code": "CA",
+      "name": "Air China",
+      "flights": 9
+    },
+    {
+      "code": "CZ",
+      "name": "China Southern Airlines",
+      "flights": 5
+    },
+    {
+      "code": "MU",
+      "name": "China Eastern Airlines",
+      "flights": 2
+    },
+    {
+      "code": "UO",
+      "name": "HK express",
+      "flights": 2
+    },
+    {
+      "code": "TR",
+      "name": "Scoot",
+      "flights": 2
+    },
+    {
+      "code": "OZ",
+      "name": "Asiana Airlines",
+      "flights": 1
+    },
+    {
+      "code": "HU",
+      "name": "Hainan Airlines",
+      "flights": 1
+    },
+    {
+      "code": "KE",
+      "name": "Korean Air",
+      "flights": 1
+    },
+    {
+      "code": "SC",
+      "name": "Shandong Airlines",
+      "flights": 1
+    },
+    {
+      "code": "TW",
+      "name": "T'way Air",
+      "flights": 1
+    }
+  ],
+  "aircraft": [
+    {
+      "code": "A21N",
+      "name": "Airbus A321neo",
+      "flights": 4
+    },
+    {
+      "code": "A20N",
+      "name": "Airbus A320neo",
+      "flights": 3
+    },
+    {
+      "code": "A321",
+      "name": "Airbus A321",
+      "flights": 3
+    },
+    {
+      "code": "B738",
+      "name": "Boeing 737-800",
+      "flights": 3
+    },
+    {
+      "code": "A359",
+      "name": "Airbus A350-900",
+      "flights": 2
+    },
+    {
+      "code": "B789",
+      "name": "Boeing 787-9",
+      "flights": 2
+    },
+    {
+      "code": "A320",
+      "name": "Airbus A320",
+      "flights": 1
+    },
+    {
+      "code": "A332",
+      "name": "Airbus A330-200",
+      "flights": 1
+    },
+    {
+      "code": "A333",
+      "name": "Airbus A330-300",
+      "flights": 1
+    },
+    {
+      "code": "B38M",
+      "name": "Boeing 737 MAX 8",
+      "flights": 1
+    },
+    {
+      "code": "B739",
+      "name": "Boeing 737-900",
+      "flights": 1
+    },
+    {
+      "code": "B77W",
+      "name": "Boeing 777-300ER",
+      "flights": 1
+    },
+    {
+      "code": "B788",
+      "name": "Boeing 787-8",
+      "flights": 1
+    },
+    {
+      "code": "C919",
+      "name": "Comac C919",
+      "flights": 1
+    }
+  ]
+}
