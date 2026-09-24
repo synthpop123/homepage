@@ -1,7 +1,6 @@
 ---
 import Heatmap from "@/components/Heatmap.astro"
 import { KOITO } from "@/consts"
-import { SKELETON_ROWS } from "@/lib/utils"
 
 type Props = {
   instance?: string
@@ -42,8 +41,13 @@ const stats: { key: string; label: string }[] = [
     <Heatmap />
     <h3 class="music-label">Last played</h3>
     <ol class="music-list">
-      {Array.from({ length: Math.min(limit, SKELETON_ROWS) }).map(() => (
-        <li class="music-item" data-skeleton aria-hidden="true">
+      {Array.from({ length: limit }).map((_, i) => (
+        <li
+          class="music-item"
+          data-skeleton
+          data-lead={i === 0 ? "" : undefined}
+          aria-hidden="true"
+        >
           <div class="music-link">
             <span class="cover" />
             <span class="meta">
@@ -62,6 +66,7 @@ const stats: { key: string; label: string }[] = [
 </music-feed>
 
 <script>
+  import { el } from "@/lib/client/dom"
   import { cached, fetchJson, TIME_ZONE } from "@/lib/client/feed"
   import { HEAT_MAX_WEEKS, mountHeatmap } from "@/lib/client/heatmap"
 
@@ -98,19 +103,19 @@ const stats: { key: string; label: string }[] = [
     minute: "2-digit",
     timeZone: TIME_ZONE,
   })
-  const relativeFormatter = new Intl.RelativeTimeFormat("en-US", {
-    numeric: "always",
-  })
-
+  // Short enough to sit beside the artists on a half-width row without
+  // either one being cut; the full instant is on hover.
   const formatWhen = (iso: string) => {
     const value = new Date(iso)
     const minutes = Math.round((Date.now() - value.getTime()) / 60_000)
     if (minutes < 1) return "just now"
-    if (minutes < 60) return relativeFormatter.format(-minutes, "minute")
-    if (minutes < 60 * 24)
-      return relativeFormatter.format(-Math.round(minutes / 60), "hour")
-    return timeFormatter.format(value)
+    if (minutes < 60) return `${minutes}m ago`
+    if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`
+    return dayFormatter.format(value)
   }
+
+  /** Within this many minutes the lead record is still turning. */
+  const SPINNING_MINUTES = 10
 
   type KoitoData = [KoitoStats, KoitoActivity, KoitoListens]
 
@@ -146,53 +151,80 @@ const stats: { key: string; label: string }[] = [
     })
   }
 
+  /**
+   * One listen. The first row of the list is the lead: the same markup
+   * plus a record sliding out of the sleeve, its label printed with the
+   * cover art, still turning if the play was only minutes ago.
+   */
   const buildRow = (
     item: NonNullable<KoitoListens["items"]>[number],
     instance: string,
+    lead: boolean,
   ) => {
-    const row = document.createElement("li")
-    row.className = "music-item"
+    const row = el("li", "music-item")
 
-    const link = document.createElement("a")
-    link.className = "music-link"
+    const link = el("a", "music-link") as HTMLAnchorElement
     link.href = `${instance}/track/${item.track?.id}`
     link.target = "_blank"
     link.rel = "noopener noreferrer"
 
-    const cover = document.createElement("span")
-    cover.className = "cover"
-    const src = item.track?.image?.small ?? item.track?.image?.xs
-    if (src) {
+    const images = item.track?.image
+    const path = lead
+      ? (images?.medium ?? images?.small ?? images?.xs)
+      : (images?.small ?? images?.xs)
+    const art = (alt: string, size: number) => {
       const img = document.createElement("img")
-      img.src = `${instance}${src}`
-      img.alt = `${item.track?.title ?? ""} cover art`
+      img.src = `${instance}${path}`
+      img.alt = alt
       img.loading = "lazy"
       img.decoding = "async"
-      img.width = 40
-      img.height = 40
-      cover.append(img)
+      img.width = size
+      img.height = size
+      return img
     }
-    link.append(cover)
 
-    const meta = document.createElement("span")
-    meta.className = "meta"
-    const title = document.createElement("span")
-    title.className = "title"
-    title.textContent = item.track?.title ?? "Untitled"
-    const artists = document.createElement("span")
-    artists.className = "artists"
-    artists.textContent = (item.track?.artists ?? [])
-      .map((artist) => artist.name)
-      .filter(Boolean)
-      .join(", ")
-    meta.append(title, artists)
-    link.append(meta)
+    const cover = el("span", "cover")
+    const title = item.track?.title ?? "Untitled"
+    if (path) cover.append(art(`${title} cover art`, lead ? 160 : 40))
 
-    const when = document.createElement("time")
-    when.className = "when"
+    if (lead) {
+      row.dataset.lead = ""
+      const minutes = (Date.now() - Date.parse(item.time)) / 60_000
+      if (minutes < SPINNING_MINUTES) row.dataset.spinning = ""
+      const disc = el("span", "disc")
+      disc.setAttribute("aria-hidden", "true")
+      const label = el("span", "disc-label")
+      if (path) label.append(art("", 64))
+      disc.append(label)
+      const sleeve = el("span", "sleeve")
+      sleeve.append(disc, cover)
+      link.append(sleeve)
+    } else {
+      link.append(cover)
+    }
+
+    const when = el("time", "when", formatWhen(item.time)) as HTMLTimeElement
     when.dateTime = new Date(item.time).toISOString()
-    when.textContent = formatWhen(item.time)
-    link.append(when)
+    when.title = timeFormatter.format(new Date(item.time))
+
+    const artists = el(
+      "span",
+      "artists",
+      (item.track?.artists ?? [])
+        .map((artist) => artist.name)
+        .filter(Boolean)
+        .join(", "),
+    )
+
+    const meta = el("span", "meta")
+    if (lead) {
+      meta.append(when, el("span", "title", title), artists)
+    } else {
+      const sub = el("span", "sub")
+      sub.append(artists, when)
+      meta.append(el("span", "title", title), sub)
+    }
+    link.append(meta)
 
     row.append(link)
     return row
@@ -237,8 +269,11 @@ const stats: { key: string; label: string }[] = [
         fillStats(feed, stats)
         buildHeatmap(feed, activity)
         const fragment = document.createDocumentFragment()
-        for (const item of items.slice(0, limit))
-          fragment.append(buildRow(item, instance))
+        items
+          .slice(0, limit)
+          .forEach((item, i) =>
+            fragment.append(buildRow(item, instance, i === 0)),
+          )
         list.replaceChildren(fragment)
         feed.setAttribute("aria-busy", "false")
       })
@@ -255,53 +290,55 @@ const stats: { key: string; label: string }[] = [
     display: block;
   }
 
-  /* Stats */
-
-  .music-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-xs) var(--space-s);
-    margin: 0;
-
-    @media (width < 40rem) {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  /* Last played list */
+  /* Last played: the lead listen across the top, the rest in as many
+     columns as fit (one on a phone, two in the column) — intrinsic, so
+     no query has to know how wide the column is. */
 
   .music-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+    gap: var(--space-3xs) var(--space-s);
   }
 
-  music-feed :global(.music-item + .music-item) {
-    border-block-start: 1px solid var(--border);
+  music-feed :global(.music-item[data-lead]) {
+    grid-column: 1 / -1;
+    margin-block-end: var(--space-2xs);
   }
 
   music-feed :global(.music-link) {
     display: flex;
     align-items: center;
     gap: var(--space-2xs);
-    padding-block: var(--space-2xs);
+    margin-inline: calc(-1 * var(--space-3xs));
+    padding: var(--space-3xs);
+    border-radius: var(--radius-lg);
     color: var(--foreground);
     text-decoration: none;
+    transition: background-color 0.15s ease;
   }
 
-  music-feed :global(.music-link:hover .title) {
-    text-decoration: underline;
-    text-decoration-thickness: max(1px, 0.0625em);
-    text-underline-offset: 0.15em;
+  @media (hover: hover) {
+    music-feed :global(.music-item:not([data-lead]) .music-link:hover) {
+      background-color: var(--muted);
+    }
+
+    music-feed :global(.music-link:hover .title) {
+      text-decoration: underline;
+      text-decoration-thickness: max(1px, 0.0625em);
+      text-underline-offset: 0.15em;
+    }
   }
 
   music-feed :global(.cover) {
+    position: relative;
+    display: block;
     flex-shrink: 0;
     inline-size: 2.5rem;
     aspect-ratio: 1;
     overflow: hidden;
-    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background-color: var(--muted);
+    box-shadow: inset 0 0 0 1px var(--border);
   }
 
   music-feed :global(.cover img) {
@@ -315,34 +352,180 @@ const stats: { key: string; label: string }[] = [
     min-inline-size: 0;
     flex: 1;
     flex-direction: column;
-    gap: var(--space-3xs);
+    gap: 0.125rem;
   }
 
   music-feed :global(.title) {
     overflow: hidden;
-    font-size: var(--step-0);
+    font-size: var(--step--1);
     font-weight: var(--font-weight-medium);
-    line-height: 1.25;
+    line-height: 1.3;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  /* Artists give way before the time does: the time is short and is the
+     one fact on the line that can't be read off the cover. */
+  music-feed :global(.sub) {
+    display: flex;
+    gap: var(--space-2xs);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
   }
 
   music-feed :global(.artists) {
     overflow: hidden;
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
     white-space: nowrap;
     text-overflow: ellipsis;
   }
 
+  music-feed :global(.sub .artists) {
+    flex: 1;
+  }
+
   music-feed :global(.when) {
     flex-shrink: 0;
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
   }
 
+  /* The lead: a sleeve with the record half out of it. The grooves are
+     radial, so turning them would show nothing; the label is printed with
+     the cover art, and it is the label that shows the record turning. */
+
+  music-feed :global([data-lead] .music-link) {
+    gap: var(--space-s);
+  }
+
+  music-feed :global(.sleeve) {
+    --sleeve: 6.5rem;
+    position: relative;
+    display: block;
+    flex-shrink: 0;
+    inline-size: calc(var(--sleeve) * 1.45);
+    block-size: var(--sleeve);
+  }
+
+  music-feed :global([data-lead] .cover) {
+    position: relative;
+    z-index: 1;
+    inline-size: var(--sleeve, 6.5rem);
+    border-radius: var(--radius-md);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent),
+      0 1px 2px rgb(0 0 0 / 0.1),
+      0 8px 18px -10px rgb(0 0 0 / 0.45);
+  }
+
+  music-feed :global(.disc) {
+    position: absolute;
+    inset-block-start: 4%;
+    inset-inline-start: 36%;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    inline-size: calc(var(--sleeve) * 0.92);
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        circle,
+        transparent 0 30%,
+        rgb(255 255 255 / 0.05) 31%,
+        transparent 32%
+      ),
+      repeating-radial-gradient(circle, #161616 0 1.5px, #0c0c0c 1.5px 3px);
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent),
+      0 6px 14px -8px rgb(0 0 0 / 0.5);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* A fixed sheen over the grooves: light doesn't turn with the record. */
+  music-feed :global(.disc::after) {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(
+      from 20deg,
+      transparent 0 8%,
+      rgb(255 255 255 / 0.1) 13%,
+      transparent 20% 55%,
+      rgb(255 255 255 / 0.07) 62%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+
+  music-feed :global(.disc-label) {
+    inline-size: 36%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
+    background-color: var(--gray-8);
+  }
+
+  music-feed :global(.disc-label img) {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    mask: radial-gradient(circle, transparent 0 6%, #000 7%);
+  }
+
+  music-feed :global([data-spinning] .disc-label) {
+    animation: music-spin 3.2s linear infinite;
+  }
+
+  @keyframes music-spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  @media (hover: hover) {
+    music-feed :global([data-lead] .music-link:hover .disc) {
+      transform: translateX(12%);
+    }
+  }
+
+  music-feed :global([data-lead] .when) {
+    font-size: 0.6875rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  music-feed :global([data-spinning] .when::before) {
+    content: "";
+    display: inline-block;
+    inline-size: 0.4rem;
+    block-size: 0.4rem;
+    margin-inline-end: 0.4rem;
+    border-radius: 50%;
+    background-color: light-dark(#30a14e, #3dd68c);
+    vertical-align: 0.1em;
+  }
+
+  music-feed :global([data-lead] .title) {
+    font-size: var(--step-1);
+    line-height: 1.25;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  music-feed :global([data-lead] .artists) {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    white-space: normal;
+  }
+
   /* Skeletons */
+
+  music-feed :global([data-skeleton][data-lead] .cover) {
+    inline-size: 6.5rem;
+  }
 
   music-feed :global(.sk-title) {
     inline-size: 60%;

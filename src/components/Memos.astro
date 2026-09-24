@@ -26,6 +26,9 @@ const profileUrl = `${instance}/@${username}`
     instance.
   </p>
   <ol class="memos-list">
+    <li class="memo-year" data-skeleton aria-hidden="true">
+      <span class="sk-line sk-year" />
+    </li>
     {Array.from({ length: SKELETON_ROWS }).map(() => (
         <li class="memo" data-skeleton aria-hidden="true">
           <span class="memo-rail">
@@ -57,8 +60,15 @@ const profileUrl = `${instance}/@${username}`
 
 <style>
   memos-feed {
-    /* Width of the date column left of each entry. */
-    --memos-rail: 8rem;
+    /* Width of the date column right of the thread. */
+    --memos-rail: 5.5rem;
+    /* Room left of every entry for the thread and its nodes. */
+    --thread: 1.5rem;
+    /* Where the thread runs, measured from the list's edge. */
+    --axis: 0.3125rem;
+    /* The first line box of an entry — its date and the prose's first
+       line share it, and each node sits on its centre. */
+    --memo-line: calc(var(--leading-offset) + 1rem);
 
     display: block;
   }
@@ -70,18 +80,99 @@ const profileUrl = `${instance}/@${username}`
     vertical-align: -0.18em;
   }
 
-  /* Entries: a date rail on the left, content on the right; below
-     40rem the rail folds above the content. */
+  /* A thread rather than a stack of ruled rows: one line runs down the
+     left edge, every memo is a node on it and every year a larger, filled
+     one. Each entry draws the stretch of line from its own top down to
+     the next entry, so no piece has to know where another sits; the last
+     one trails off, since the account goes on past what is shown. */
 
   .memos-list {
     display: flex;
     flex-direction: column;
   }
 
-  memos-feed :global(.memo + .memo) {
-    margin-block-start: var(--space-m);
-    padding-block-start: var(--space-m);
-    border-block-start: 1px solid var(--border);
+  memos-feed :global(.memos-list > li) {
+    --gap-after: var(--space-l);
+    --node-y: calc(var(--memo-line) / 2);
+    --node: 0.625rem;
+
+    position: relative;
+    padding-inline-start: var(--thread);
+  }
+
+  memos-feed :global(.memos-list > li:not(:last-child)) {
+    margin-block-end: var(--gap-after);
+  }
+
+  memos-feed :global(.memos-list > li::before) {
+    content: "";
+    position: absolute;
+    inset-block: 0 calc(-1 * var(--gap-after));
+    inset-inline-start: calc(var(--axis) - 0.5px);
+    inline-size: 1px;
+    background-color: var(--border);
+  }
+
+  memos-feed :global(.memos-list > li:first-child::before) {
+    inset-block-start: var(--node-y);
+  }
+
+  memos-feed :global(.memos-list > li:last-child::before) {
+    inset-block-end: auto;
+    block-size: calc(var(--node-y) + 3rem);
+    mask: linear-gradient(#000 calc(100% - 3rem), transparent);
+  }
+
+  memos-feed :global(.memos-list > li:only-child::before) {
+    inset-block-start: var(--node-y);
+    block-size: 3rem;
+    mask: linear-gradient(#000, transparent);
+  }
+
+  memos-feed :global(.memos-list > li::after) {
+    content: "";
+    position: absolute;
+    inset-block-start: calc(var(--node-y) - var(--node) / 2);
+    inset-inline-start: calc(var(--axis) - var(--node) / 2);
+    box-sizing: border-box;
+    inline-size: var(--node);
+    aspect-ratio: 1;
+    border: 1.5px solid var(--gray-8);
+    border-radius: 50%;
+    background-color: var(--background);
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  @media (hover: hover) {
+    memos-feed :global(.memo:not([data-skeleton]):hover::after) {
+      border-color: var(--foreground);
+      background-color: var(--foreground);
+    }
+  }
+
+  /* A year opens with its number on the thread; its node is filled and
+     the one step larger, so the years read as the thread's joints. */
+  memos-feed :global(.memos-list > .memo-year) {
+    --gap-after: var(--space-s);
+    --node-y: 1rem;
+    --node: 0.75rem;
+  }
+
+  memos-feed :global(.memos-list > .memo-year::after) {
+    border-color: var(--foreground);
+    background-color: var(--foreground);
+    box-shadow: 0 0 0 4px var(--background);
+  }
+
+  memos-feed :global(.memo-year h2) {
+    margin: 0;
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 2rem;
+    letter-spacing: -0.01em;
   }
 
   memos-feed :global(.memo article),
@@ -100,6 +191,7 @@ const profileUrl = `${instance}/@${username}`
      align across the two columns. */
   memos-feed :global(.memo-rail) {
     display: flex;
+    margin: 0;
     flex-wrap: wrap;
     align-items: baseline;
     column-gap: 0.5em;
@@ -110,6 +202,13 @@ const profileUrl = `${instance}/@${username}`
     text-transform: uppercase;
     color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
+
+    /* On a wide screen the date rides down beside a long entry, so the
+       day stays in view while its photos scroll past. */
+    @media (width >= 40rem) {
+      position: sticky;
+      inset-block-start: var(--page-offset-top);
+    }
   }
 
   memos-feed :global(.memo-time) {
@@ -266,7 +365,24 @@ const profileUrl = `${instance}/@${username}`
     inline-size: 100%;
   }
 
-  /* Skeletons */
+  /* Skeletons: the thread opens on a year, as the loaded list always
+     does, so the first memo lands where its placeholder was. */
+
+  memos-feed :global(.memo-year[data-skeleton]) {
+    display: flex;
+    align-items: center;
+    block-size: 2rem;
+  }
+
+  memos-feed :global(.memos-list > .memo-year[data-skeleton]::after) {
+    border-color: var(--gray-5);
+    background-color: var(--gray-5);
+  }
+
+  .sk-year {
+    inline-size: 3em;
+    block-size: 1.1em;
+  }
 
   .sk-meta {
     inline-size: 6.5em;

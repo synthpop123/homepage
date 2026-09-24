@@ -22,8 +22,10 @@ export const normalizePath = (pathname: string) => {
 export const hashId = (hash: string) => decodeURIComponent(hash.slice(1))
 
 /**
- * How many placeholder rows a feed renders while it loads. A skeleton says
- * something is coming; it is not a reservation of the final height — one
- * per row turns a scroll to the bottom of /misc into a wall of grey bars.
+ * How many placeholder rows a feed renders while it loads when it can't
+ * know how many it will show (Memos, whose entries vary in height, and the
+ * Tokens devices). The fixed-length /misc lists — Movies, Music, Switch —
+ * render one per row they will fill instead, since their final height is
+ * known and anything short of it shifts every section below on arrival.
  */
 export const SKELETON_ROWS = 3

@@ -48,11 +48,52 @@
   margin-block-start: 0;
 }
 
-music-feed .stat,
-switch-feed .stat {
+/* Stat panel: one rounded surface cut into cells by hairline seams (the
+   gap shows the border colour behind the opaque cells), rather than a
+   loose field of numbers or a grid of separate cards. The same surface as
+   the Uses cards and the memo media grid, so every feed's summary reads
+   as one instrument. Label above value in every cell, like a gauge.
+
+   Two across or four, never three: a row left short would show the seam
+   colour as a hole. The column count switches on the panel's own width
+   (the clamp resolves to half the width below --panel-wide and a quarter
+   above it), so the panel needs no container around it to query. Tokens
+   raises the threshold, since its cells carry a comparison line that has
+   to fit on one line — a wrapped one is also a line its skeleton didn't
+   reserve. */
+.music-stats,
+.switch-stats,
+tokens-dashboard .tk-cards {
+  --panel-wide: 32rem;
+
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(
+      clamp(25% - 1px, (var(--panel-wide) - 100%) * 999, 50% - 1px),
+      1fr
+    )
+  );
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--border);
+}
+
+tokens-dashboard .tk-cards {
+  --panel-wide: 44rem;
+}
+
+.music-stats > div,
+.switch-stats > div,
+tokens-dashboard .tk-cards > div {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   gap: var(--space-3xs);
+  padding: var(--space-xs);
+  background-color: color-mix(in oklab, var(--muted) 45%, var(--background));
 }
 
 music-feed .stat .value,
@@ -62,6 +103,8 @@ switch-feed .stat .value {
   font-weight: var(--font-weight-medium);
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
+  /* The skeleton bar is shorter than a line of figures; reserve the line. */
+  min-block-size: 1lh;
 }
 
 music-feed .stat .label {

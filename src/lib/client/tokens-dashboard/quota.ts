@@ -252,6 +252,12 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
       ? aiIcon("model", "claude")
       : aiIcon("provider", plan.provider)
   head.append(icons.slot(mark))
+  // The same mark again as the card's backdrop, large and faint in the
+  // vendor's hue — the way the Uses cards carry theirs.
+  item.dataset.p = plan.provider
+  const backdrop = icons.slot(mark)
+  backdrop.className = "plan-mark"
+  item.append(backdrop)
   head.append(el("span", "plan-name", plan.label))
   if (plan.plan) head.append(el("span", "plan-tier", `· ${plan.plan}`))
 
