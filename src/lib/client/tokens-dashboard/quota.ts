@@ -23,7 +23,6 @@ import {
   formatRemaining,
   type QuotaAllowance,
   type QuotaCredit,
-  type QuotaExtraUsage,
   type QuotaPlan,
   type QuotaShare,
   type QuotaWindow,
@@ -325,20 +324,6 @@ export function allowanceView(
 }
 
 /**
- * The card's last line: whether usage past the ceilings is billed or
- * simply stops. Off is the common case and worth saying — it is what
- * makes a full bar a wall rather than a bill.
- */
-export function extraUsageText(extra: QuotaExtraUsage): string {
-  if (!extra.enabled) return "Extra usage off"
-  if (extra.used === null) return "Extra usage on"
-  const used = formatMoney(extra.used, extra.currency)
-  return extra.limit === null
-    ? `Extra usage on · ${used} spent`
-    : `Extra usage on · ${used} of ${formatMoney(extra.limit, extra.currency)}`
-}
-
-/**
  * Label left, figure right — "Session … 9% used" — so the figure column
  * lines up down the card and across both cards, and the word "used"
  * settles which way the bar reads.
@@ -563,38 +548,16 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
       }),
     )
     // Same row as a window's head, so the count sits in the figure
-    // column: "Banked resets … 3 left". What a credit resets is the same
-    // for every one the vendor has granted so far, so it is said once,
-    // under the tiles, rather than on each.
+    // column: "Banked resets … 3 left". What a credit resets rides in
+    // each tile's title.
     credits.append(
       figureRow("Banked resets", `${unspent.length}`, "left"),
       list,
     )
-    const titles = new Set(unspent.map((credit) => credit.title))
-    const [only] = titles
-    if (titles.size === 1 && only) {
-      credits.append(el("p", "win-foot", `Each one: ${lowerFirst(only)}`))
-    }
     item.append(credits)
   }
 
-  if (plan.extraUsage) {
-    const extra = el("p", "plan-extra", extraUsageText(plan.extraUsage))
-    extra.dataset.p = plan.provider
-    extra.toggleAttribute("data-on", plan.extraUsage.enabled)
-    extra.title = plan.extraUsage.enabled
-      ? "Usage past the plan's limits is billed"
-      : "Past the plan's limits, usage stops rather than being billed"
-    item.append(extra)
-  }
-
   return item
-}
-
-/** "Full reset (Weekly + 5 hr)" → "full reset (Weekly + 5 hr)", so it
- *  reads as the end of a sentence; an acronym ("API …") is left alone. */
-export function lowerFirst(text: string) {
-  return /^[A-Z][a-z]/.test(text) ? text[0].toLowerCase() + text.slice(1) : text
 }
 
 export function renderQuota(q: Query, site: Site, icons: Icons) {

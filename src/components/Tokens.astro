@@ -114,10 +114,9 @@ const skeletonRows = (count: number) =>
  * for as long as the section has existed, and the grid's height is the
  * taller card's, so leaving it out is what left the row short. It
  * holds three tiles, the count the account banks: two left the card a
- * row short wherever the third wraps, and the line under them saying
- * what each one resets. The second plan (Claude) reserves what its card
- * carries instead: the weekly window's split line and the cloud session
- * credits row. Both end on the extra-usage line.
+ * row short wherever the third wraps. The second plan (Claude) reserves
+ * what its card carries instead: the weekly window's split line and the
+ * cloud session credits row.
  */
 const QUOTA_PLANS = 2
 const QUOTA_WINDOWS = 2
@@ -179,10 +178,8 @@ const LEGEND_CHIPS = 4
                     <li class="credit"><span class="sk-line sk-sub" style="inline-size: 5em" /></li>
                   ))}
                 </ol>
-                <p class="win-foot"><span class="sk-line sk-sub" style="inline-size: 12em" /></p>
               </div>
             )}
-            <p class="plan-extra"><span class="sk-line sk-sub" style="inline-size: 7em" /></p>
           </li>
         ))}
       </ol>
@@ -900,15 +897,12 @@ const LEGEND_CHIPS = 4
     }
 
     /* Name, windows and credits are three levels of the same statement,
-       so they sit further apart than the lines inside a window do. A
-       column rather than a grid so the extra-usage line can sink to the
-       card's floor: the two cards stretch to one height, and that line
-       should close both at the same place. */
+       so they sit further apart than the lines inside a window do. */
     .tk-plans .tk-plan {
       position: relative;
-      display: flex;
-      flex-direction: column;
+      display: grid;
       gap: var(--space-s);
+      align-content: start;
       padding: var(--space-s);
       overflow: hidden;
       border: 1px solid var(--border);
@@ -1177,40 +1171,6 @@ const LEGEND_CHIPS = 4
     }
 
     .tk-plans .win-split-name {
-      color: var(--foreground);
-    }
-
-    /* The card's closing line. A ring when off, a dot in the vendor's
-       hue when on — a status light, not a control, so it takes no
-       affordance. Pushed to the card's floor (see .tk-plan). */
-    .tk-plans .plan-extra {
-      display: flex;
-      align-items: center;
-      gap: 0.5em;
-      margin-block-start: auto;
-      padding-block-start: var(--space-xs);
-      border-block-start: 1px solid
-        color-mix(in oklab, var(--p, var(--border)) 18%, var(--border));
-      font-size: var(--step--1);
-      color: var(--muted-foreground);
-      background-color: transparent;
-    }
-
-    .tk-plans .plan-extra::before {
-      content: "";
-      flex-shrink: 0;
-      inline-size: 0.5em;
-      block-size: 0.5em;
-      border: 1px solid currentColor;
-      border-radius: var(--radius-full);
-    }
-
-    .tk-plans .plan-extra[data-on]::before {
-      border-color: var(--p);
-      background-color: var(--p);
-    }
-
-    .tk-plans .plan-extra[data-on] {
       color: var(--foreground);
     }
 
@@ -2032,14 +1992,6 @@ const LEGEND_CHIPS = 4
     [data-skeleton] .credit::before {
       content: "";
       block-size: 1lh;
-    }
-
-    /* The extra-usage line's status ring is a strut here instead, for
-       the same reason. */
-    [data-skeleton] .plan-extra::before {
-      block-size: 1lh;
-      inline-size: 0;
-      border: 0;
     }
 
     /* The figure's line box is set by its step-0 number, not by the

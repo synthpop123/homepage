@@ -1,9 +1,7 @@
 import { describe, expect, it } from "bun:test"
 import {
   allowanceView,
-  extraUsageText,
   formatMoney,
-  lowerFirst,
   paceView,
   windowDurationMs,
   windowElapsed,
@@ -285,22 +283,6 @@ describe("allowanceView", () => {
   })
 })
 
-describe("extraUsageText", () => {
-  const extra = { enabled: true, used: 3.2, limit: 50, currency: "USD" }
-
-  it("says off plainly — the common case", () => {
-    expect(extraUsageText({ ...extra, enabled: false })).toBe("Extra usage off")
-  })
-
-  it("adds what the vendor reports and nothing more", () => {
-    expect(extraUsageText(extra)).toBe("Extra usage on · $3.20 of $50")
-    expect(extraUsageText({ ...extra, limit: null })).toBe(
-      "Extra usage on · $3.20 spent",
-    )
-    expect(extraUsageText({ ...extra, used: null })).toBe("Extra usage on")
-  })
-})
-
 describe("formatMoney", () => {
   it("keeps whole amounts whole", () => {
     expect(formatMoney(100)).toBe("$100")
@@ -310,14 +292,5 @@ describe("formatMoney", () => {
 
   it("survives a currency code Intl does not know", () => {
     expect(formatMoney(5, "ZZZZ")).toBe("5 ZZZZ")
-  })
-})
-
-describe("lowerFirst", () => {
-  it("lowers a capitalised word but not an acronym", () => {
-    expect(lowerFirst("Full reset (Weekly + 5 hr)")).toBe(
-      "full reset (Weekly + 5 hr)",
-    )
-    expect(lowerFirst("API reset")).toBe("API reset")
   })
 })
