@@ -77,13 +77,37 @@ describe("isSite", () => {
     expect(isSite(withPlan({ windows: [] }))).toBe(false)
     expect(isSite(withPlan({ provider: undefined }))).toBe(false)
     expect(isSite(withPlan({ resetCredits: [1, 2] }))).toBe(false)
+    // Schema 14's bare expiry strings.
+    expect(isSite(withPlan({ resetCredits: ["2026-07-25T00:00:00Z"] }))).toBe(
+      false,
+    )
+    expect(isSite(withPlan({ allowances: undefined }))).toBe(false)
+    // The allowance gauge divides by its limit.
+    const allowance = {
+      label: "Cloud session credits",
+      usedDollars: 0,
+      limitDollars: 100,
+      resetsAt: null,
+    }
+    expect(isSite(withPlan({ allowances: [allowance] }))).toBe(true)
+    expect(
+      isSite(withPlan({ allowances: [{ ...allowance, limitDollars: 0 }] })),
+    ).toBe(false)
+    expect(isSite(withPlan({ extraUsage: null }))).toBe(true)
+    expect(isSite(withPlan({ extraUsage: { enabled: "no" } }))).toBe(false)
     // A null plan tier is fine — not every subscription names one.
     expect(isSite(withPlan({ plan: null }))).toBe(true)
 
     const badWindow = (patch: Record<string, unknown>) =>
       withPlan({
         windows: [
-          { label: "Weekly", usedPercent: 28, resetsAt: null, ...patch },
+          {
+            label: "Weekly",
+            usedPercent: 28,
+            resetsAt: null,
+            breakdown: [],
+            ...patch,
+          },
         ],
       })
     expect(isSite(badWindow({}))).toBe(true)

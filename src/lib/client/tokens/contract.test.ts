@@ -35,8 +35,13 @@ describe("/api/site fixture contract", () => {
         expect(window.usedPercent).toBeLessThanOrEqual(100)
       }
       // Reset credits are instants the renderer compares against now.
-      for (const at of plan.resetCredits) {
-        expect(Number.isFinite(Date.parse(at))).toBe(true)
+      for (const credit of plan.resetCredits) {
+        expect(Number.isFinite(Date.parse(credit.expiresAt))).toBe(true)
+      }
+      // An allowance is a gauge: spend against a positive ceiling.
+      for (const allowance of plan.allowances) {
+        expect(allowance.limitDollars).toBeGreaterThan(0)
+        expect(allowance.usedDollars).toBeGreaterThanOrEqual(0)
       }
     }
     // Each provider appears once — the renderer draws one card each.

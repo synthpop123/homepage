@@ -91,6 +91,35 @@ export type QuotaWindow = {
   label: string
   usedPercent: number
   resetsAt: string | null
+  /** Where the window's spend went, by surface ("Claude Code", 80),
+   *  largest first and only shares above zero. Empty when the vendor
+   *  does not say — Codex never does, Claude only for its weekly one. */
+  breakdown: QuotaShare[]
+}
+
+export type QuotaShare = { label: string; percent: number }
+
+/** A dollar-metered allowance beside the percentage windows — Claude's
+ *  cloud session credits. */
+export type QuotaAllowance = {
+  label: string
+  usedDollars: number
+  limitDollars: number
+  resetsAt: string | null
+}
+
+/** A banked manual reset: when it lapses, and what spending it resets
+ *  ("Full reset (Weekly + 5 hr)") when the vendor says. */
+export type QuotaCredit = { expiresAt: string; title: string | null }
+
+/** Pay-as-you-go usage past the plan's ceilings. Amounts are in
+ *  `currency`'s major unit, null where the vendor reports none (Codex
+ *  only says whether credits exist). */
+export type QuotaExtraUsage = {
+  enabled: boolean
+  used: number | null
+  limit: number | null
+  currency: string | null
 }
 
 /**
@@ -106,9 +135,13 @@ export type QuotaPlan = {
   plan: string | null
   capturedAt: string
   windows: QuotaWindow[]
-  /** Expiry of each unspent manual reset, ascending. Empty for plans
+  /** Dollar allowances, in the vendor's order; empty when none. */
+  allowances: QuotaAllowance[]
+  /** Each unspent manual reset, soonest expiry first. Empty for plans
    *  with no such thing — Claude has none. */
-  resetCredits: string[]
+  resetCredits: QuotaCredit[]
+  /** Null when the vendor's body said nothing about it. */
+  extraUsage: QuotaExtraUsage | null
 }
 
 export type Site = {
@@ -134,7 +167,7 @@ export type Site = {
  * number is also part of the localStorage cache key, so a deploy never
  * reads the previous build's entries.
  */
-export const SITE_SCHEMA_VERSION = 14
+export const SITE_SCHEMA_VERSION = 15
 
 export type RangeKey = "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -266,6 +299,16 @@ const isStringArray = (value: unknown): boolean =>
 const isInstant = (value: unknown): boolean =>
   typeof value === "string" && Number.isFinite(Date.parse(value))
 
+const isOptionalInstant = (value: unknown): boolean =>
+  value === null || isInstant(value)
+
+const isExtraUsage = (value: unknown): boolean =>
+  isRecord(value) &&
+  typeof value.enabled === "boolean" &&
+  (value.used === null || isCount(value.used)) &&
+  (value.limit === null || isCount(value.limit)) &&
+  (value.currency === null || typeof value.currency === "string")
+
 /**
  * One reported plan. A plan with no windows would render as a heading
  * over nothing, so the list is required to be non-empty — the collector
@@ -286,9 +329,34 @@ const isQuotaPlan = (plan: unknown): boolean =>
       isRecord(window) &&
       typeof window.label === "string" &&
       isCount(window.usedPercent) &&
-      (window.resetsAt === null || isInstant(window.resetsAt)),
+      isOptionalInstant(window.resetsAt) &&
+      Array.isArray(window.breakdown) &&
+      window.breakdown.every(
+        (share: unknown) =>
+          isRecord(share) &&
+          typeof share.label === "string" &&
+          isCount(share.percent),
+      ),
   ) &&
-  isStringArray(plan.resetCredits)
+  Array.isArray(plan.allowances) &&
+  plan.allowances.every(
+    (allowance: unknown) =>
+      isRecord(allowance) &&
+      typeof allowance.label === "string" &&
+      isCount(allowance.usedDollars) &&
+      // The gauge divides by it.
+      isCount(allowance.limitDollars) &&
+      allowance.limitDollars > 0 &&
+      isOptionalInstant(allowance.resetsAt),
+  ) &&
+  Array.isArray(plan.resetCredits) &&
+  plan.resetCredits.every(
+    (credit: unknown) =>
+      isRecord(credit) &&
+      isInstant(credit.expiresAt) &&
+      (credit.title === null || typeof credit.title === "string"),
+  ) &&
+  (plan.extraUsage === null || isExtraUsage(plan.extraUsage))
 
 /** The models a client or provider row splits into — rendered by the
  *  disclosure, so the shape matters as much as the numbers. */

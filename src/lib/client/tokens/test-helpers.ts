@@ -117,7 +117,14 @@ export const quotaPlan = (): QuotaPlan => ({
   plan: "Team",
   capturedAt: "2026-07-20T00:00:00Z",
   windows: [
-    { label: "Weekly", usedPercent: 28, resetsAt: "2026-07-22T00:00:00Z" },
+    {
+      label: "Weekly",
+      usedPercent: 28,
+      resetsAt: "2026-07-22T00:00:00Z",
+      breakdown: [],
+    },
   ],
-  resetCredits: ["2026-07-25T00:00:00Z"],
+  allowances: [],
+  resetCredits: [{ expiresAt: "2026-07-25T00:00:00Z", title: "Full reset" }],
+  extraUsage: { enabled: false, used: null, limit: null, currency: null },
 })

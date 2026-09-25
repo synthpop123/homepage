@@ -114,7 +114,10 @@ const skeletonRows = (count: number) =>
  * for as long as the section has existed, and the grid's height is the
  * taller card's, so leaving it out is what left the row short. It
  * holds three tiles, the count the account banks: two left the card a
- * row short wherever the third wraps.
+ * row short wherever the third wraps, and the line under them saying
+ * what each one resets. The second plan (Claude) reserves what its card
+ * carries instead: the weekly window's split line and the cloud session
+ * credits row. Both end on the extra-usage line.
  */
 const QUOTA_PLANS = 2
 const QUOTA_WINDOWS = 2
@@ -149,7 +152,7 @@ const LEGEND_CHIPS = 4
               <span class="plan-age"><span class="sk-line sk-sub" style="inline-size: 3em" /></span>
             </div>
             <ol class="tk-windows">
-              {skeletonRows(QUOTA_WINDOWS).map(() => (
+              {skeletonRows(QUOTA_WINDOWS + plan).map((row) => (
                 <li class="tk-window">
                   <div class="win-head">
                     <span class="win-label"><span class="sk-line" style="inline-size: 4em" /></span>
@@ -157,6 +160,11 @@ const LEGEND_CHIPS = 4
                   </div>
                   <div class="tk-meter" data-skeleton></div>
                   <p class="win-foot"><span class="sk-line sk-sub" style="inline-size: 7em" /></p>
+                  {plan === 1 && row === 1 && (
+                    <ul class="win-split">
+                      <li><span class="sk-line sk-sub" style="inline-size: 6em" /></li>
+                    </ul>
+                  )}
                 </li>
               ))}
             </ol>
@@ -171,8 +179,10 @@ const LEGEND_CHIPS = 4
                     <li class="credit"><span class="sk-line sk-sub" style="inline-size: 5em" /></li>
                   ))}
                 </ol>
+                <p class="win-foot"><span class="sk-line sk-sub" style="inline-size: 12em" /></p>
               </div>
             )}
+            <p class="plan-extra"><span class="sk-line sk-sub" style="inline-size: 7em" /></p>
           </li>
         ))}
       </ol>
@@ -890,12 +900,15 @@ const LEGEND_CHIPS = 4
     }
 
     /* Name, windows and credits are three levels of the same statement,
-       so they sit further apart than the lines inside a window do. */
+       so they sit further apart than the lines inside a window do. A
+       column rather than a grid so the extra-usage line can sink to the
+       card's floor: the two cards stretch to one height, and that line
+       should close both at the same place. */
     .tk-plans .tk-plan {
       position: relative;
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: var(--space-s);
-      align-content: start;
       padding: var(--space-s);
       overflow: hidden;
       border: 1px solid var(--border);
@@ -1047,6 +1060,7 @@ const LEGEND_CHIPS = 4
        ceiling it measures, and the ceiling itself stays visible at a
        glance instead of being implied by an unfilled remainder. */
     .tk-plans .tk-meter {
+      position: relative;
       block-size: var(--tk-meter);
       border-radius: var(--radius-full);
       background-color: var(--gray-4);
@@ -1056,18 +1070,148 @@ const LEGEND_CHIPS = 4
       background-color: color-mix(in oklab, var(--p) 22%, var(--gray-3));
     }
 
-    .tk-plans .tk-meter span {
-      display: block;
+    .tk-plans .tk-fill {
+      display: flex;
       block-size: 100%;
       min-inline-size: var(--tk-meter);
+      overflow: hidden;
       border-radius: inherit;
       background-color: var(--p, var(--gray-8));
     }
 
+    /* The head cut by where the spend went: the largest share in the
+       full hue, each after it a step lighter, hairline gaps between. The
+       split legend under the foot (.win-split) keys its dots the same. */
+    .tk-plans .tk-fill i {
+      flex-basis: 0;
+      min-inline-size: 2px;
+    }
+
+    .tk-plans .tk-fill i + i {
+      border-inline-start: 1px solid var(--background);
+    }
+
+    /* A fourth surface and beyond fall back to grey; the listed shades
+       below override it, so this rule has to come first. */
+    .tk-plans [data-shade] {
+      --shade: var(--gray-8);
+    }
+
+    .tk-plans [data-shade="0"] {
+      --shade: var(--p);
+    }
+
+    .tk-plans [data-shade="1"] {
+      --shade: color-mix(in oklab, var(--p) 60%, var(--background));
+    }
+
+    .tk-plans [data-shade="2"] {
+      --shade: color-mix(in oklab, var(--p) 36%, var(--background));
+    }
+
+    .tk-plans .tk-fill i {
+      background-color: var(--shade);
+    }
+
+    /* Where the clock stands in the window. It stands proud of the track
+       so it reads as a mark on the gauge rather than a gap in the head,
+       and in the foreground's colour so it is plainly not spend. */
+    .tk-plans .tk-pace {
+      position: absolute;
+      inset-block: calc(var(--tk-meter) * -0.6);
+      inline-size: 2px;
+      margin-inline-start: -1px;
+      border-radius: 1px;
+      background-color: color-mix(in oklab, var(--foreground) 55%, transparent);
+      pointer-events: none;
+    }
+
+    /* The reset countdown at the start, what the clock makes of the spend
+       (or, on an allowance, what is left) at the end. */
     .tk-plans .win-foot {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-s);
       font-size: var(--step--1);
       color: var(--muted-foreground);
       font-variant-numeric: tabular-nums;
+    }
+
+    .tk-plans .win-pace,
+    .tk-plans .win-left {
+      white-space: nowrap;
+    }
+
+    .tk-plans .win-pace[data-pace="over"] {
+      color: var(--foreground);
+    }
+
+    /* The split's key: a dot in the share's shade, the surface, its
+       share. Inline and wrapping, since it is a caption, not a table.
+       [data-p] is for the hue alone, as on .plan-credits. */
+    .tk-plans .win-split {
+      background-color: transparent;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3xs) var(--space-s);
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Transparent over the page-wide [data-shade] band fills: here the
+       shade only colours the dot. */
+    .tk-plans .win-split li {
+      background-color: transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+
+    .tk-plans .win-split li::before {
+      content: "";
+      inline-size: 0.5em;
+      block-size: 0.5em;
+      border-radius: var(--radius-full);
+      background-color: var(--shade);
+    }
+
+    .tk-plans .win-split-name {
+      color: var(--foreground);
+    }
+
+    /* The card's closing line. A ring when off, a dot in the vendor's
+       hue when on — a status light, not a control, so it takes no
+       affordance. Pushed to the card's floor (see .tk-plan). */
+    .tk-plans .plan-extra {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-block-start: auto;
+      padding-block-start: var(--space-xs);
+      border-block-start: 1px solid
+        color-mix(in oklab, var(--p, var(--border)) 18%, var(--border));
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      background-color: transparent;
+    }
+
+    .tk-plans .plan-extra::before {
+      content: "";
+      flex-shrink: 0;
+      inline-size: 0.5em;
+      block-size: 0.5em;
+      border: 1px solid currentColor;
+      border-radius: var(--radius-full);
+    }
+
+    .tk-plans .plan-extra[data-on]::before {
+      border-color: var(--p);
+      background-color: var(--p);
+    }
+
+    .tk-plans .plan-extra[data-on] {
+      color: var(--foreground);
     }
 
     /* [data-p] is here for the hue alone (the tile to spend next wears
@@ -1863,6 +2007,7 @@ const LEGEND_CHIPS = 4
     [data-skeleton] .win-label,
     [data-skeleton] .win-used,
     [data-skeleton] .win-foot,
+    [data-skeleton] .win-split li,
     [data-skeleton] .plan-age,
     [data-skeleton] .dev-name,
     [data-skeleton] .dev-seen,
@@ -1887,6 +2032,14 @@ const LEGEND_CHIPS = 4
     [data-skeleton] .credit::before {
       content: "";
       block-size: 1lh;
+    }
+
+    /* The extra-usage line's status ring is a strut here instead, for
+       the same reason. */
+    [data-skeleton] .plan-extra::before {
+      block-size: 1lh;
+      inline-size: 0;
+      border: 0;
     }
 
     /* The figure's line box is set by its step-0 number, not by the

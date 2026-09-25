@@ -1,6 +1,12 @@
 import { describe, expect, it } from "bun:test"
 import {
+  allowanceView,
+  extraUsageText,
+  formatMoney,
+  lowerFirst,
+  paceView,
   windowDurationMs,
+  windowElapsed,
   windowHasReset,
   windowIsOpen,
   windowView,
@@ -13,6 +19,10 @@ describe("windowDurationMs", () => {
   it("maps the published Session and Weekly names", () => {
     expect(windowDurationMs("Session")).toBe(5 * 60 * 60 * 1000)
     expect(windowDurationMs("Weekly")).toBe(7 * 24 * 60 * 60 * 1000)
+  })
+
+  it("reads a scoped ceiling by the window it extends", () => {
+    expect(windowDurationMs("Weekly · Opus")).toBe(7 * 24 * 60 * 60 * 1000)
   })
 
   it("parses a trailing duration on additional-limit labels", () => {
@@ -198,5 +208,116 @@ describe("windowView", () => {
         capturedAt,
       ).used,
     ).toBe(100)
+  })
+})
+
+describe("windowElapsed", () => {
+  it("measures the window back from its reset", () => {
+    // A weekly window resetting in 5.6 days is a fifth gone.
+    const resetsAt = new Date(now + 5.6 * 24 * 60 * 60 * 1000).toISOString()
+    expect(
+      windowElapsed({ label: "Weekly", usedPercent: 11, resetsAt }, now),
+    ).toBeCloseTo(0.2)
+  })
+
+  it("has nothing to say without a length or a reset", () => {
+    const resetsAt = "2026-08-28T00:00:00Z"
+    expect(
+      windowElapsed({ label: "Mystery", usedPercent: 1, resetsAt }, now),
+    ).toBeNull()
+    expect(
+      windowElapsed({ label: "Weekly", usedPercent: 1, resetsAt: null }, now),
+    ).toBeNull()
+  })
+})
+
+describe("paceView", () => {
+  it("compares spend to the share of the window gone", () => {
+    expect(paceView(11, 0.2).verdict).toBe("under")
+    expect(paceView(22, 0.2).verdict).toBe("on")
+    expect(paceView(40, 0.2)).toMatchObject({
+      verdict: "over",
+      text: "ahead of pace",
+      title: "40% used with 20% of the window gone",
+    })
+  })
+
+  it("withholds a verdict early in the window", () => {
+    expect(paceView(6, 0.03)).toMatchObject({ verdict: null, text: null })
+  })
+})
+
+describe("allowanceView", () => {
+  const allowance = {
+    label: "Cloud session credits",
+    usedDollars: 25.5,
+    limitDollars: 100,
+    resetsAt: "2026-09-01T06:00:00Z",
+  }
+
+  it("measures dollars against the ceiling", () => {
+    expect(allowanceView(allowance, now)).toMatchObject({
+      state: "open",
+      used: 25.5,
+      figure: "$25.50",
+      foot: "resets in 5d",
+      left: "$74.50 of $100 left",
+    })
+  })
+
+  it("reads a passed reset as a full allowance awaiting a report", () => {
+    const view = allowanceView(
+      { ...allowance, resetsAt: "2026-08-27T05:00:00Z" },
+      now,
+    )
+    expect(view).toMatchObject({
+      state: "reset",
+      used: 0,
+      left: "$100 left",
+    })
+    expect(view.foot).toBe("reset 1h ago · awaiting report")
+  })
+
+  it("says so when the vendor dates nothing", () => {
+    expect(allowanceView({ ...allowance, resetsAt: null }, now).foot).toBe(
+      "no reset date reported",
+    )
+  })
+})
+
+describe("extraUsageText", () => {
+  const extra = { enabled: true, used: 3.2, limit: 50, currency: "USD" }
+
+  it("says off plainly — the common case", () => {
+    expect(extraUsageText({ ...extra, enabled: false })).toBe("Extra usage off")
+  })
+
+  it("adds what the vendor reports and nothing more", () => {
+    expect(extraUsageText(extra)).toBe("Extra usage on · $3.20 of $50")
+    expect(extraUsageText({ ...extra, limit: null })).toBe(
+      "Extra usage on · $3.20 spent",
+    )
+    expect(extraUsageText({ ...extra, used: null })).toBe("Extra usage on")
+  })
+})
+
+describe("formatMoney", () => {
+  it("keeps whole amounts whole", () => {
+    expect(formatMoney(100)).toBe("$100")
+    expect(formatMoney(0)).toBe("$0")
+    expect(formatMoney(1250)).toBe("$1,250")
+  })
+
+  it("survives a currency code Intl does not know", () => {
+    expect(formatMoney(5, "ZZZZ")).toBe("5 ZZZZ")
+  })
+})
+
+describe("lowerFirst", () => {
+  it("lowers a capitalised word but not an acronym", () => {
+    expect(lowerFirst("Full reset (Weekly + 5 hr)")).toBe(
+      "full reset (Weekly + 5 hr)",
+    )
+    expect(lowerFirst("API reset")).toBe("API reset")
   })
 })

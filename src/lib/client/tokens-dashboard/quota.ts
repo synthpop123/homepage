@@ -21,7 +21,11 @@ import {
   formatIn,
   formatInstant,
   formatRemaining,
+  type QuotaAllowance,
+  type QuotaCredit,
+  type QuotaExtraUsage,
   type QuotaPlan,
+  type QuotaShare,
   type QuotaWindow,
   type Site,
 } from "../tokens"
@@ -58,15 +62,35 @@ const CREDIT_URGENT_MS = 24 * 60 * 60 * 1000
 const MS = { d: 86_400_000, h: 3_600_000, m: 60_000, s: 1_000 } as const
 
 /**
+ * How far spend may stray from the clock, in percentage points, before
+ * the pace line calls it ahead or behind. A window is never spent
+ * evenly, and "ahead of pace" over a two-point gap would be noise.
+ */
+const PACE_SLACK = 5
+
+/**
+ * Before this much of a window has passed, the pace verdict is withheld:
+ * one prompt in the first minutes of a session is "ahead of pace" by any
+ * arithmetic and by no useful reading. The tick on the meter still shows.
+ */
+const PACE_MIN_ELAPSED = 0.1
+
+/** The fields the window arithmetic reads — the breakdown plays no part
+ *  in when a window opens or resets. */
+type WindowTiming = Pick<QuotaWindow, "label" | "usedPercent" | "resetsAt">
+
+/**
  * Length of the rate-limit window named by `label`. Session/Weekly are
- * the names `/api/site` publishes; a trailing `5h` / `7d` covers Codex
+ * the names `/api/site` publishes (a scoped ceiling extends the name:
+ * "Weekly · Opus"); a trailing `5h` / `7d` covers Codex
  * additional limits the Worker leaves unmapped. Unknown labels return
  * null — without a length we cannot tell a placeholder from an open
  * window at 0% spend.
  */
 export function windowDurationMs(label: string): number | null {
-  if (label === "Session") return 5 * MS.h
-  if (label === "Weekly") return 7 * MS.d
+  // "Weekly · Opus" is a weekly window scoped to one model.
+  if (/^Session\b/.test(label)) return 5 * MS.h
+  if (/^Weekly\b/.test(label)) return 7 * MS.d
   const match = /(?:^|\s)(\d+)([dhms])$/i.exec(label)
   if (!match) return null
   const n = Number(match[1])
@@ -83,7 +107,7 @@ export function windowDurationMs(label: string): number | null {
  * spend starts.
  */
 export function windowIsOpen(
-  window: QuotaWindow,
+  window: WindowTiming,
   capturedAtMs: number,
 ): boolean {
   if (window.resetsAt === null) return false
@@ -111,7 +135,7 @@ export function windowIsOpen(
  * window with no reset time cannot have passed one.
  */
 export function windowHasReset(
-  window: QuotaWindow,
+  window: WindowTiming,
   now: number,
   capturedAtMs: number,
 ): boolean {
@@ -147,10 +171,51 @@ export type WindowView = {
   used: number
   foot: string
   title?: string
+  /** Share of the window's length already behind us, 0–1 — only for an
+   *  open window whose length is known. */
+  elapsed?: number
+}
+
+/**
+ * Share of an anchored window that has passed: the window started one
+ * `duration` before its reset, so what is left of it is the countdown.
+ * Null when the length is unknown or nothing is anchored.
+ */
+export function windowElapsed(
+  window: WindowTiming,
+  now: number,
+): number | null {
+  const duration = windowDurationMs(window.label)
+  if (duration === null || window.resetsAt === null) return null
+  const left = Date.parse(window.resetsAt) - now
+  if (!Number.isFinite(left)) return null
+  return Math.min(1, Math.max(0, 1 - left / duration))
+}
+
+/**
+ * Spend measured against the clock: a week 11% spent with a fifth of it
+ * gone is running under the rate that would use it up exactly at the
+ * reset. The verdict is words, the numbers ride in the title — and it is
+ * withheld early in a window, where any spend at all reads as a sprint.
+ */
+export type PaceView = {
+  verdict: "under" | "on" | "over" | null
+  text: string | null
+  title: string
+}
+
+export function paceView(used: number, elapsed: number): PaceView {
+  const gone = Math.round(elapsed * 100)
+  const title = `${Math.round(used)}% used with ${gone}% of the window gone`
+  if (elapsed < PACE_MIN_ELAPSED) return { verdict: null, text: null, title }
+  const gap = used - elapsed * 100
+  if (gap > PACE_SLACK) return { verdict: "over", text: "ahead of pace", title }
+  if (gap < -PACE_SLACK) return { verdict: "under", text: "under pace", title }
+  return { verdict: "on", text: "on pace", title }
 }
 
 export function windowView(
-  window: QuotaWindow,
+  window: WindowTiming,
   now: number,
   capturedAtMs: number,
 ): WindowView {
@@ -175,12 +240,102 @@ export function windowView(
       title: `Reset ${instant}`,
     }
   }
+  const elapsed = windowElapsed(window, now)
   return {
     state: "open",
     used,
     foot: `resets ${formatIn(at, now)}`,
     title: `Resets ${instant}`,
+    ...(elapsed === null ? {} : { elapsed }),
   }
+}
+
+/** "$100", "$25.50" — whole amounts stay whole, anything else shows
+ *  cents, in the currency the vendor named (US dollars when it named
+ *  none: both vendors bill in them). */
+export function formatMoney(value: number, currency: string | null = "USD") {
+  const whole = Number.isInteger(value)
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency ?? "USD",
+      minimumFractionDigits: whole ? 0 : 2,
+      maximumFractionDigits: whole ? 0 : 2,
+    }).format(value)
+  } catch {
+    // An unknown currency code is the vendor's typo, not a reason to
+    // lose the number.
+    return `${value.toFixed(whole ? 0 : 2)} ${currency}`
+  }
+}
+
+/**
+ * One allowance's row, decided the way windowView decides a window's:
+ * spend against a dollar ceiling, the foot saying when it comes back.
+ * An allowance has no drifting placeholder to see through — the vendor
+ * either dates it or does not — so there is no idle state, and a reset
+ * that has passed since the report reads as reset exactly as a window
+ * does.
+ */
+export type AllowanceView = {
+  state: "open" | "reset"
+  used: number
+  figure: string
+  foot: string
+  title?: string
+  left: string
+}
+
+export function allowanceView(
+  allowance: QuotaAllowance,
+  now: number,
+): AllowanceView {
+  const limit = allowance.limitDollars
+  const of = `of ${formatMoney(limit)}`
+  const at =
+    allowance.resetsAt === null ? Number.NaN : Date.parse(allowance.resetsAt)
+  if (Number.isFinite(at) && at <= now) {
+    return {
+      state: "reset",
+      used: 0,
+      figure: formatMoney(0),
+      foot: `reset ${formatAgo(at, now)} · awaiting report`,
+      title: `Reset ${formatInstant(allowance.resetsAt ?? "")}`,
+      left: `${formatMoney(limit)} left`,
+    }
+  }
+  const spent = Math.min(limit, Math.max(0, allowance.usedDollars))
+  return {
+    state: "open",
+    used: (spent / limit) * 100,
+    figure: formatMoney(spent),
+    foot: Number.isFinite(at)
+      ? `resets ${formatIn(at, now)}`
+      : "no reset date reported",
+    ...(Number.isFinite(at)
+      ? { title: `Resets ${formatInstant(allowance.resetsAt ?? "")}` }
+      : {}),
+    // The ceiling is only worth restating once some of it is gone: an
+    // untouched "$100 left" under "$0 used" already says what it is.
+    left:
+      spent > 0
+        ? `${formatMoney(limit - spent)} ${of} left`
+        : `${formatMoney(limit)} left`,
+  }
+}
+
+/**
+ * The card's last line: whether usage past the ceilings is billed or
+ * simply stops. Off is the common case and worth saying — it is what
+ * makes a full bar a wall rather than a bill.
+ */
+export function extraUsageText(extra: QuotaExtraUsage): string {
+  if (!extra.enabled) return "Extra usage off"
+  if (extra.used === null) return "Extra usage on"
+  const used = formatMoney(extra.used, extra.currency)
+  return extra.limit === null
+    ? `Extra usage on · ${used} spent`
+    : `Extra usage on · ${used} of ${formatMoney(extra.limit, extra.currency)}`
 }
 
 /**
@@ -196,6 +351,47 @@ function figureRow(label: string, value: string, unit: string) {
   return head
 }
 
+/**
+ * The gauge itself. A thin track carrying one rounded head; when the
+ * vendor says where the spend went, the head is cut into those surfaces
+ * — one hue stepped lighter per share, largest first — so the split
+ * reads inside the reading instead of as a second chart.
+ */
+function meter(
+  provider: string,
+  used: number,
+  shares: QuotaShare[] = [],
+): HTMLElement {
+  // A gauge, not a share: the other bars on the page cut one number
+  // into its parts, this one measures a number against a ceiling that
+  // is never drawn anywhere else. So it gets its own form. The vendor's
+  // hue is set on the track, so the head inherits it and the track
+  // washes itself in it.
+  const bar = el("div", "tk-meter")
+  bar.dataset.p = provider
+  if (used >= HIGH_USE) bar.dataset.high = ""
+  // A window barely touched should still show that it was touched — the
+  // head's own min-inline-size keeps the sliver visible — but an
+  // untouched one shows nothing at all, or that floor would report a
+  // spend of zero as a spend.
+  if (used > 0) {
+    const fill = el("span", "tk-fill")
+    fill.style.inlineSize = `${used}%`
+    if (shares.length > 1) {
+      fill.append(
+        ...shares.map((share, i) => {
+          const part = el("i")
+          part.dataset.shade = String(i)
+          part.style.flexGrow = String(share.percent)
+          return part
+        }),
+      )
+    }
+    bar.append(fill)
+  }
+  return bar
+}
+
 function renderWindow(
   window: QuotaWindow,
   provider: string,
@@ -206,32 +402,86 @@ function renderWindow(
   const item = el("li", "tk-window")
   item.dataset.state = view.state
 
-  // A gauge, not a share: the other bars on the page cut one number
-  // into its parts, this one measures a number against a ceiling that
-  // is never drawn anywhere else. So it gets its own form — a thin
-  // track carrying one rounded head. The vendor's hue is set on the
-  // track, so the head inherits it and the track washes itself in it.
-  const bar = el("div", "tk-meter")
-  bar.dataset.p = provider
-  if (view.used >= HIGH_USE) bar.dataset.high = ""
-  // A window barely touched should still show that it was touched — the
-  // head's own min-inline-size keeps the sliver visible — but an
-  // untouched one shows nothing at all, or that floor would report a
-  // spend of zero as a spend.
-  if (view.used > 0) {
-    const fill = el("span")
-    fill.style.inlineSize = `${view.used}%`
-    bar.append(fill)
+  const shares = view.state === "reset" ? [] : window.breakdown
+  const bar = meter(provider, view.used, shares)
+
+  const foot = el("p", "win-foot")
+  const when = el("span", "", view.foot)
+  if (view.title) when.title = view.title
+  foot.append(when)
+
+  // Where the clock stands in the window: a tick on the track, so a
+  // head short of it is spend running slower than time. The verdict
+  // sits at the foot's far end, once enough of the window has passed
+  // for one to mean anything.
+  if (view.elapsed !== undefined) {
+    const pace = paceView(view.used, view.elapsed)
+    const tick = el("b", "tk-pace")
+    tick.style.insetInlineStart = `${view.elapsed * 100}%`
+    bar.append(tick)
+    bar.title = pace.title
+    if (pace.text && pace.verdict) {
+      const verdict = el("span", "win-pace", pace.text)
+      verdict.dataset.pace = pace.verdict
+      verdict.title = pace.title
+      foot.append(verdict)
+    }
   }
 
-  const foot = el("p", "win-foot", view.foot)
-  if (view.title) foot.title = view.title
   item.append(
     figureRow(window.label, `${Math.round(view.used)}%`, "used"),
     bar,
     foot,
   )
+
+  // Where the spend went, keyed to the head's shades. A lone surface is
+  // still named — "all of it Claude Code" is a finding too.
+  if (shares.length > 0 && view.used > 0) {
+    const split = el("ul", "win-split")
+    split.dataset.p = provider
+    split.append(
+      ...shares.map((share, i) => {
+        const row = el("li")
+        row.dataset.shade = String(i)
+        row.title = `${share.label}: ${Math.round(share.percent)}% of this window's usage`
+        row.append(
+          el("span", "win-split-name", share.label),
+          el("span", "win-split-share", `${Math.round(share.percent)}%`),
+        )
+        return row
+      }),
+    )
+    item.append(split)
+  }
   return item
+}
+
+function renderAllowance(
+  allowance: QuotaAllowance,
+  provider: string,
+  now: number,
+): HTMLElement {
+  const view = allowanceView(allowance, now)
+  const item = el("li", "tk-window")
+  item.dataset.state = view.state
+  item.dataset.kind = "allowance"
+
+  const foot = el("p", "win-foot")
+  const when = el("span", "", view.foot)
+  if (view.title) when.title = view.title
+  foot.append(when, el("span", "win-left", view.left))
+
+  item.append(
+    figureRow(allowance.label, view.figure, "used"),
+    meter(provider, view.used),
+    foot,
+  )
+  return item
+}
+
+function creditTitle(credit: QuotaCredit) {
+  const expires = `Expires ${formatInstant(credit.expiresAt)}`
+  return credit.title ? `${credit.title}\n${expires}` : expires
 }
 
 function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
@@ -269,10 +519,16 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   age.toggleAttribute("data-stale", now - capturedAt > STALE_AFTER_MS)
   head.append(age)
 
+  // Dollar allowances continue the list of ceilings: they are measured
+  // the same way — spend against a limit that comes back — and only the
+  // unit differs.
   const windows = el("ol", "tk-windows")
   windows.append(
     ...plan.windows.map((window) =>
       renderWindow(window, plan.provider, now, capturedAt),
+    ),
+    ...plan.allowances.map((allowance) =>
+      renderAllowance(allowance, plan.provider, now),
     ),
   )
 
@@ -285,16 +541,18 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   // lapse: the tiles run soonest first, the first wears the plan's hue
   // as the one to spend next, and one about to lapse turns red. The
   // hourglass says "expires in"; the instant is on hover.
-  const unspent = plan.resetCredits.filter((at) => Date.parse(at) > now)
+  const unspent = plan.resetCredits.filter(
+    (credit) => Date.parse(credit.expiresAt) > now,
+  )
   if (unspent.length > 0) {
     const credits = el("div", "plan-credits")
     credits.dataset.p = plan.provider
     const list = el("ol", "credits-list")
     list.append(
-      ...unspent.map((at, i) => {
-        const expires = Date.parse(at)
+      ...unspent.map((credit, i) => {
+        const expires = Date.parse(credit.expiresAt)
         const tile = el("li", "credit")
-        tile.title = `Expires ${formatInstant(at)}`
+        tile.title = creditTitle(credit)
         if (i === 0) tile.dataset.next = ""
         if (expires - now < CREDIT_URGENT_MS) tile.dataset.urgent = ""
         tile.append(
@@ -305,15 +563,38 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
       }),
     )
     // Same row as a window's head, so the count sits in the figure
-    // column: "Banked resets … 3 left".
+    // column: "Banked resets … 3 left". What a credit resets is the same
+    // for every one the vendor has granted so far, so it is said once,
+    // under the tiles, rather than on each.
     credits.append(
       figureRow("Banked resets", `${unspent.length}`, "left"),
       list,
     )
+    const titles = new Set(unspent.map((credit) => credit.title))
+    const [only] = titles
+    if (titles.size === 1 && only) {
+      credits.append(el("p", "win-foot", `Each one: ${lowerFirst(only)}`))
+    }
     item.append(credits)
   }
 
+  if (plan.extraUsage) {
+    const extra = el("p", "plan-extra", extraUsageText(plan.extraUsage))
+    extra.dataset.p = plan.provider
+    extra.toggleAttribute("data-on", plan.extraUsage.enabled)
+    extra.title = plan.extraUsage.enabled
+      ? "Usage past the plan's limits is billed"
+      : "Past the plan's limits, usage stops rather than being billed"
+    item.append(extra)
+  }
+
   return item
+}
+
+/** "Full reset (Weekly + 5 hr)" → "full reset (Weekly + 5 hr)", so it
+ *  reads as the end of a sentence; an acronym ("API …") is left alone. */
+export function lowerFirst(text: string) {
+  return /^[A-Z][a-z]/.test(text) ? text[0].toLowerCase() + text.slice(1) : text
 }
 
 export function renderQuota(q: Query, site: Site, icons: Icons) {
