@@ -8,14 +8,14 @@
  */
 
 import Heatmap from "@/components/Heatmap.astro"
-import { SWITCH } from "@/consts"
+import { MISC, SWITCH } from "@/consts"
 
 type Props = {
   endpoint?: string
   limit?: number
 }
 
-const { endpoint = SWITCH.endpoint, limit = SWITCH.limit } = Astro.props
+const { endpoint = MISC.endpoint, limit = SWITCH.limit } = Astro.props
 
 // Four slots, filled in order by the script — the third one names itself,
 // since a library with no resolved prices has nothing to put there.

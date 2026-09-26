@@ -1,10 +1,12 @@
 /**
- * Data layer for the Switch play-activity feed: types for switch-worker's
- * /api/site view (see switch-worker/src/site.ts) plus the payload decoder
- * the Switch.astro renderer validates against. Pure and browser-safe.
+ * Data layer for the Switch play-activity feed: types for cf-workers-api's
+ * /switch/site view (see src/services/switch/site.ts there), delivered in
+ * the /misc bundle, plus the payload decoder the Switch.astro renderer
+ * validates against. Pure and browser-safe.
  */
 
-import { swr, fetchJson, isRecord, isCount, isCalendarDay } from "./feed"
+import { swr, isRecord, isCount, isCalendarDay } from "./feed"
+import { miscSection } from "./misc"
 
 export type SiteStats = {
   totalMinutes: number
@@ -49,7 +51,7 @@ export type Site = {
   games: SiteGame[]
 }
 
-/** Lockstep with switch-worker SITE_VERSION in src/site.ts. */
+/** Lockstep with cf-workers-api's SITE_VERSION in src/services/switch/site.ts. */
 export const SITE_SCHEMA_VERSION = 4
 
 const isNullableDay = (value: unknown): value is string | null =>
@@ -230,7 +232,7 @@ export const loadSite = (
 ): Promise<void> =>
   swr(
     `switch:site:v${SITE_SCHEMA_VERSION}:${endpoint}`,
-    () => fetchJson<Site>(`${endpoint}/api/site`),
+    () => miscSection(endpoint, "switch") as Promise<Site>,
     isSite,
     onData,
   )

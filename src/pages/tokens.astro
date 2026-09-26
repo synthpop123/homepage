@@ -2,7 +2,7 @@
 import MetaPage from "@/components/MetaPage.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Tokens from "@/components/Tokens.astro"
-import { TOKENS } from "@/consts"
+import { API, TOKENS } from "@/consts"
 import Layout from "@/layouts/Layout.astro"
 
 // The dashboard's one request is issued from a module script, which
@@ -41,14 +41,8 @@ const toc = [
     title="Tokens"
     description="Token usage across my AI coding agents, live from a self-hosted meter."
   />
-  <link rel="preconnect" href={TOKENS.endpoint} crossorigin slot="head">
-  <link
-    rel="preload"
-    as="fetch"
-    href={`${TOKENS.endpoint}/api/site`}
-    crossorigin
-    slot="head"
-  >
+  <link rel="preconnect" href={API} crossorigin slot="head">
+  <link rel="preload" as="fetch" href={TOKENS.endpoint} crossorigin slot="head">
   <TableOfContents slot="toc" title="Tokens" sections={toc} />
   <header>
     <h1>Tokens</h1>

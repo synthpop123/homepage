@@ -1,22 +1,21 @@
 ---
-import { LETTERBOXD } from "@/consts"
+import { LETTERBOXD, MISC } from "@/consts"
 
 type Props = {
-  username?: string
+  endpoint?: string
   limit?: number
 }
 
-const { username = LETTERBOXD.username, limit = LETTERBOXD.limit } = Astro.props
+const { endpoint = MISC.endpoint, limit = LETTERBOXD.limit } = Astro.props
 
-const profileUrl = `https://letterboxd.com/${username}/`
-const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${limit}`
+const profileUrl = `https://letterboxd.com/${LETTERBOXD.username}/`
 ---
 
 <p class="movies-intro">
   Films I recently watched, pulled live from
   <a href={profileUrl} target="_blank" rel="noopener noreferrer">Letterboxd</a>.
 </p>
-<movies-feed data-endpoint={feedUrl} data-limit={limit} aria-busy="true">
+<movies-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
   <ol class="movies-grid">
     {Array.from({ length: limit }).map(() => (
         <li class="movie-card" data-skeleton aria-hidden="true">
@@ -42,25 +41,8 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
 
 <script>
   import { el } from "@/lib/client/dom"
-  import {
-    cached,
-    dateFormatter,
-    fetchJson,
-    safeHttpUrl,
-    TIME_ZONE,
-  } from "@/lib/client/feed"
-
-  type LetterboxdEntry = {
-    film?: {
-      title?: string
-      year?: string
-      image?: { tiny?: string; small?: string; medium?: string; large?: string }
-    }
-    rating?: { score?: number; text?: string }
-    date?: { watched?: number; published?: number }
-    isRewatch?: boolean
-    uri?: string
-  }
+  import { dateFormatter, TIME_ZONE } from "@/lib/client/feed"
+  import { loadSite, type SiteFilm, watchedInstant } from "@/lib/client/movies"
 
   // The wall is recent by construction, so the year is noise on the card;
   // the full date is on hover.
@@ -70,65 +52,54 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
     timeZone: TIME_ZONE,
   })
 
-  const entryTime = (entry: LetterboxdEntry) =>
-    entry.date?.watched ?? entry.date?.published ?? 0
-
   /**
    * One poster in the wall: the artwork carries the card, the title and
    * its year sit under it, and the line under that pairs the rating with
    * the day it was watched. A rewatch is a tag on the poster's corner,
    * since it qualifies the film rather than the date.
    */
-  const buildCard = (entry: LetterboxdEntry, href: string) => {
+  const buildCard = (film: SiteFilm) => {
     const card = el("li", "movie-card")
-
     const link = el("a", "movie-link") as HTMLAnchorElement
-    link.href = href
+    link.href = film.url
     link.target = "_blank"
     link.rel = "noopener noreferrer"
 
     const poster = el("span", "poster")
-    const { small, medium, large } = entry.film?.image ?? {}
-    const src = safeHttpUrl(medium ?? small ?? large)
-    if (src) {
+    if (film.poster) {
       const img = document.createElement("img")
-      img.src = src
-      const retina = safeHttpUrl(large ?? medium)
-      if (retina && retina !== src) img.srcset = `${src} 1x, ${retina} 2x`
-      img.alt = `${entry.film?.title ?? ""} poster`
+      img.src = film.poster
+      img.alt = `${film.title} poster`
       img.loading = "lazy"
       img.decoding = "async"
       img.width = 150
       img.height = 225
       poster.append(img)
     }
-    if (entry.isRewatch) poster.append(el("span", "rewatch", "Rewatch"))
+    if (film.rewatch) poster.append(el("span", "rewatch", "Rewatch"))
     link.append(poster)
 
-    const title = el("span", "title", entry.film?.title ?? "Untitled")
-    if (entry.film?.year) title.append(" ", el("span", "year", entry.film.year))
+    const title = el("span", "title", film.title)
+    if (film.year) title.append(" ", el("span", "year", String(film.year)))
 
     const foot = el("span", "foot")
-    if (typeof entry.rating?.score === "number") {
+    if (film.rating !== null) {
       const rating = el("span", "rating")
-      rating.style.setProperty("--score", String(entry.rating.score))
+      rating.style.setProperty("--score", String(film.rating))
       rating.setAttribute("role", "img")
-      rating.setAttribute("aria-label", `${entry.rating.score} out of 5 stars`)
+      rating.setAttribute("aria-label", `${film.rating} out of 5 stars`)
       rating.append(el("span"))
       foot.append(rating)
     }
-    const watched = entry.date?.watched ?? entry.date?.published
-    if (watched) {
-      const value = new Date(watched)
-      const time = el(
-        "time",
-        "date",
-        shortDate.format(value),
-      ) as HTMLTimeElement
-      time.dateTime = value.toISOString()
-      time.title = dateFormatter.format(value)
-      foot.append(time)
-    }
+    const watched = watchedInstant(film.watched)
+    const time = el(
+      "time",
+      "date",
+      shortDate.format(watched),
+    ) as HTMLTimeElement
+    time.dateTime = film.watched
+    time.title = dateFormatter.format(watched)
+    foot.append(time)
 
     const meta = el("span", "meta")
     meta.append(title, foot)
@@ -144,36 +115,19 @@ const feedUrl = `${LETTERBOXD.embedUrl}/?username=${username}&raw=true&limit=${l
     if (!grid || !endpoint) return
 
     const limit = Number(feed.dataset.limit) || 8
-    const cacheKey = `letterboxd:${endpoint}`
 
-    const load = () =>
-      cached(
-        cacheKey,
-        () => fetchJson<LetterboxdEntry[]>(endpoint),
-        (data) => Array.isArray(data),
-      )
-
-    load()
-      .then((entries) => {
-        const valid = entries
-          .flatMap((entry) => {
-            const href = safeHttpUrl(entry?.uri)
-            return entry?.film?.title && href ? [{ entry, href }] : []
-          })
-          .sort((a, b) => entryTime(b.entry) - entryTime(a.entry))
-          .slice(0, limit)
-        if (valid.length === 0) throw new Error("No diary entries")
-        const fragment = document.createDocumentFragment()
-        for (const { entry, href } of valid)
-          fragment.append(buildCard(entry, href))
-        grid.replaceChildren(fragment)
-        feed.setAttribute("aria-busy", "false")
-      })
-      .catch(() => {
-        grid.hidden = true
-        if (fallback) fallback.hidden = false
-        feed.setAttribute("aria-busy", "false")
-      })
+    loadSite(endpoint, (site) => {
+      if (site.films.length === 0) throw new Error("No diary entries")
+      const fragment = document.createDocumentFragment()
+      for (const film of site.films.slice(0, limit))
+        fragment.append(buildCard(film))
+      grid.replaceChildren(fragment)
+      feed.setAttribute("aria-busy", "false")
+    }).catch(() => {
+      grid.hidden = true
+      if (fallback) fallback.hidden = false
+      feed.setAttribute("aria-busy", "false")
+    })
   })
 </script>
 

@@ -58,7 +58,7 @@ const weekdayLabel = new Intl.DateTimeFormat("en-US", {
 /**
  * Quota instants are real moments, not the day strings the formatters
  * above anchor at noon UTC — so they are the one thing on this page that
- * needs a real zone. It is the collector's (tokens-worker's TIME_ZONE),
+ * needs a real zone. It is the collector's (cf-workers-api's TIME_ZONE),
  * which is also the zone every calendar day here is bucketed in: a reset
  * time rendered in the visitor's zone would disagree with the day
  * boundaries drawn right above it.

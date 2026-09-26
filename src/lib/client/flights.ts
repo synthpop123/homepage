@@ -1,12 +1,14 @@
 /**
- * Data layer for the Flights section: types for flights-worker's /api/site
- * view (see flights-worker/src/compose.ts), the payload decoder, and every
+ * Data layer for the Flights section: types for cf-workers-api's
+ * /flights/site view (see src/services/flights/compose.ts there), delivered
+ * in the /misc bundle, the payload decoder, and every
  * render decision that isn't DOM — the stat cards, the ranked lists, the
  * arcs and markers the globe draws, and the angles it turns to. Pure and
  * browser-safe.
  */
 
-import { fetchJson, isCalendarDay, isCount, isRecord, swr } from "./feed"
+import { isCalendarDay, isCount, isRecord, swr } from "./feed"
+import { miscSection } from "./misc"
 
 export type SiteAirport = {
   code: string
@@ -65,7 +67,7 @@ export type Site = {
   aircraft: SiteCount[]
 }
 
-/** Lockstep with flights-worker SITE_VERSION in src/compose.ts. */
+/** Lockstep with cf-workers-api's SITE_VERSION in src/services/flights/compose.ts. */
 export const SITE_SCHEMA_VERSION = 1
 
 const isNullableString = (value: unknown): value is string | null =>
@@ -402,7 +404,7 @@ export const loadSite = (
 ): Promise<void> =>
   swr(
     `flights:site:v${SITE_SCHEMA_VERSION}:${endpoint}`,
-    () => fetchJson<Site>(`${endpoint}/api/site`),
+    () => miscSection(endpoint, "flights") as Promise<Site>,
     isSite,
     onData,
   )

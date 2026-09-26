@@ -21,7 +21,7 @@ export const loadSite = (
 ): Promise<void> =>
   swr(
     `tokens:site:v${SITE_SCHEMA_VERSION}:${endpoint}`,
-    () => fetchJson<Site>(`${endpoint}/api/site`),
+    () => fetchJson<Site>(endpoint),
     isSite,
     onSite,
   )

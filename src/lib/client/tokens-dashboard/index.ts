@@ -2,7 +2,7 @@
  * Runtime controller for the Tokens dashboard — Tokens.astro owns the
  * markup, styles and skeletons, this module owns everything that runs
  * in the browser. One mount per <tokens-dashboard> root: load the
- * /api/site payload stale-while-revalidate (a locally cached copy from
+ * /tokens/site payload stale-while-revalidate (a locally cached copy from
  * any earlier visit paints instantly, the revalidated answer follows
  * and re-renders only if `generatedAt` moved — every renderer is
  * replaceChildren-idempotent, so a refresh is just rendering again),

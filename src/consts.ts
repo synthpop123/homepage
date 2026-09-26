@@ -44,6 +44,23 @@ export const MASTODON = {
   limit: 20,
 } as const
 
+/**
+ * Every backend the site reads is one Worker, synthpop123/cf-workers-api.
+ * `/tokens` has a page to itself; the four live sections of /misc arrive
+ * together from `/misc`, one request that misc.astro preloads.
+ */
+export const API = "https://api.lkwplus.com"
+
+export const TOKENS = {
+  endpoint: `${API}/tokens/site`,
+} as const
+
+export const MISC = {
+  endpoint: `${API}/misc`,
+} as const
+
+/** The Koito instance the Music section links to (its data comes from
+ *  MISC), and how many listens it shows. */
 export const KOITO = {
   instance: "https://music.lkwplus.com",
   limit: 8,
@@ -51,23 +68,16 @@ export const KOITO = {
 
 export const LETTERBOXD = {
   username: "lkw123",
-  embedUrl: "https://letterboxd-embed.lkwplus.com",
   limit: 8,
-} as const
-
-export const TOKENS = {
-  endpoint: "https://tokens.lkwplus.com",
 } as const
 
 export const SWITCH = {
-  endpoint: "https://switch.lkwplus.com",
   limit: 8,
 } as const
 
-/** The flights-worker endpoint, and how many rows each ranked list
- *  (airports, routes) shows under the globe. */
+/** How many rows each ranked Flights list (airports, routes) shows under
+ *  the globe. */
 export const FLIGHTS = {
-  endpoint: "https://flights.lkwplus.com",
   limit: 8,
 } as const
 

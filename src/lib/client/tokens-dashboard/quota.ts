@@ -4,7 +4,7 @@
  *
  * This is the only section drawn from *reported* data — one card per
  * subscription, each read from its own vendor by its own collector on
- * its own timer (see tokens-worker's `src/quota.ts`) — which shapes the
+ * its own timer (see cf-workers-api's `src/services/tokens/quota.ts`) — which shapes the
  * whole design. Every number here can be silently stale, so nothing is
  * presented as simply current: each card dates itself from its own
  * `capturedAt` (one can be a minute old while the other has been stuck
@@ -80,7 +80,7 @@ type WindowTiming = Pick<QuotaWindow, "label" | "usedPercent" | "resetsAt">
 
 /**
  * Length of the rate-limit window named by `label`. Session/Weekly are
- * the names `/api/site` publishes (a scoped ceiling extends the name:
+ * the names `/tokens/site` publishes (a scoped ceiling extends the name:
  * "Weekly · Opus"); a trailing `5h` / `7d` covers Codex
  * additional limits the Worker leaves unmapped. Unknown labels return
  * null — without a length we cannot tell a placeholder from an open

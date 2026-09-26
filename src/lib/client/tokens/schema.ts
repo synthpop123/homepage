@@ -1,4 +1,4 @@
-/** The versioned /api/site contract and its runtime decoder. */
+/** The versioned /tokens/site contract and its runtime decoder. */
 import { isRecord, isCount, isCalendarDay } from "../feed"
 
 export type Usage = {
@@ -159,8 +159,8 @@ export type Site = {
 }
 
 /**
- * The /api/site schema version this dashboard is built against, in
- * lockstep with tokens-worker's SITE_VERSION. The collector stamps its
+ * The /tokens/site schema version this dashboard is built against, in
+ * lockstep with cf-workers-api's SITE_VERSION (src/services/tokens/site.ts). The collector stamps its
  * payload and bumps on any shape or semantics change; isSite rejects
  * anything else, so a stale cache or a mid-deploy mismatch falls back to
  * a refetch (or the fallback UI) instead of a renderer crash. This
@@ -399,7 +399,7 @@ const isRange = (value: unknown): boolean =>
   )
 
 /**
- * Runtime decoder for the /api/site payload, strict over every field
+ * Runtime decoder for the /tokens/site payload, strict over every field
  * the renderers actually read: the schema version (anything this build
  * does not accept is rejected outright), every reported quota plan, all
  * four ranges with their totals and breakdown rows (metrics + usage

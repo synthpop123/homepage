@@ -1,7 +1,7 @@
 ---
 /**
  * Where I've flown, from the self-hosted AirTrail instance through the
- * flights-worker (which holds the API key and ships the map rather than
+ * flights service in cf-workers-api (which holds the API key and ships the map rather than
  * the log: airports, routes and totals, never a single flight).
  *
  * The globe is the section's centrepiece, and it tours the routes: turning
@@ -11,14 +11,14 @@
  * a row (or focusing it) takes the tour over, and letting go hands it back.
  */
 
-import { FLIGHTS } from "@/consts"
+import { FLIGHTS, MISC } from "@/consts"
 
 type Props = {
   endpoint?: string
   limit?: number
 }
 
-const { endpoint = FLIGHTS.endpoint, limit = FLIGHTS.limit } = Astro.props
+const { endpoint = MISC.endpoint, limit = FLIGHTS.limit } = Astro.props
 
 const stats = [
   "Flights",

@@ -12,12 +12,12 @@ import {
 import { isSite, RANGE_KEYS, SITE_SCHEMA_VERSION } from "./schema"
 import fixture from "../tokens.site-fixture.json"
 
-describe("/api/site fixture contract", () => {
-  // Captured /api/site payload; producer-side assertions live in
-  // tokens-worker/test/site.spec.ts.
+describe("/tokens/site fixture contract", () => {
+  // Captured /tokens/site payload; producer-side assertions live in
+  // cf-workers-api/test/tokens/site.spec.ts.
   it("passes the strict decoder", () => {
     // Recapture the fixture from the live endpoint (never hand-edit it)
-    // when tokens-worker bumps SITE_VERSION.
+    // when cf-workers-api bumps the tokens SITE_VERSION.
     expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
     expect(isSite(fixture)).toBe(true)
   })

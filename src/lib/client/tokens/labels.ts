@@ -10,7 +10,7 @@ export const OTHER = "other"
  * function and `__proto__` to Object.prototype instead of missing — the
  * `?? id` fallback never fires and a row renders the source text of a
  * native function. The producer keeps its own slice maps prototype-free
- * for the same reason (tokens-worker: src/site.ts).
+ * for the same reason (cf-workers-api: src/services/tokens/site.ts).
  */
 const CLIENT_LABELS = new Map<string, string>([
   ["cursor", "Cursor"],

@@ -7,6 +7,7 @@ import Music from "@/components/Music.astro"
 import Switch from "@/components/Switch.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Uses from "@/components/Uses.astro"
+import { API, MISC } from "@/consts"
 import Layout from "@/layouts/Layout.astro"
 import { getCollection } from "astro:content"
 
@@ -14,6 +15,11 @@ const friends = (await getCollection("friends")).sort((a, b) =>
   a.data.name.localeCompare(b.data.name),
 )
 
+// The four live sections share one request (lib/client/misc.ts), which
+// would otherwise leave only once the first module script ran. The preload
+// below starts it with the CSS and JS, and the scripts pick up the
+// in-flight response (default fetch mode/credentials, which is what a bare
+// `crossorigin` matches).
 const sections = [
   { id: "friends", label: "Friends" },
   { id: "flights", label: "Flights" },
@@ -36,6 +42,8 @@ const toc = [
 
 <Layout>
   <MetaPage slot="head" title="Misc" />
+  <link rel="preconnect" href={API} crossorigin slot="head">
+  <link rel="preload" as="fetch" href={MISC.endpoint} crossorigin slot="head">
   <TableOfContents slot="toc" title="Misc" sections={toc} />
   <header>
     <h1>Misc</h1>
@@ -54,7 +62,7 @@ const toc = [
   </section>
   <section>
     <h2 id="movies">Movies</h2>
-    <Movies username="lkw123" limit={8} />
+    <Movies limit={8} />
   </section>
   <section>
     <h2 id="music">Music</h2>
