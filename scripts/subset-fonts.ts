@@ -1,6 +1,7 @@
 /**
  * Subsets the two web fonts every page loads, Geist and Geist Mono
- * (variable, `wght` kept), to the scripts this site is written in.
+ * (variable), to the scripts this site is written in and the weights it
+ * sets.
  *
  * Geist ships Cyrillic, Greek and Vietnamese too, about a third of each
  * file, and none of it is used here. What stays: Latin through Latin
@@ -10,6 +11,11 @@
  * operators, plus every character the content and source use today.
  * Geist Mono also keeps box drawing, for directory trees in code blocks.
  * Anything else falls through to the fallback face in fonts.css.
+ *
+ * The `wght` axis stays variable but is cut to the range in use: 400 to
+ * 600 for Geist (body, --font-weight-medium's 450, one 600 in Flights),
+ * 400 to 700 for Geist Mono, whose code theme sets bold tokens. The
+ * @font-face `font-weight` ranges in fonts.css have to match.
  *
  * Run with `bun scripts/subset-fonts.ts`. Re-runnable: it always subsets
  * from the full fonts pinned in git history, never from the files it
@@ -64,15 +70,18 @@ const chars = (ranges: [number, number][]) =>
 const dir = "src/assets/fonts"
 const used = usedChars()
 
-for (const [file, ranges] of [
-  ["Geist-Variable.woff2", RANGES],
-  ["GeistMono-Variable.woff2", [...RANGES, BOX]],
+for (const [file, ranges, maxWeight] of [
+  ["Geist-Variable.woff2", RANGES, 600],
+  ["GeistMono-Variable.woff2", [...RANGES, BOX], 700],
 ] as const) {
   const full = execSync(`git show ${FULL_FONT_COMMIT}:${dir}/${file}`, {
     maxBuffer: 8 * 1024 * 1024,
   })
   const text = [...new Set(chars([...ranges]) + used)].join("")
-  const output = await subsetFont(full, text, { targetFormat: "woff2" })
+  const output = await subsetFont(full, text, {
+    targetFormat: "woff2",
+    variationAxes: { wght: { min: 400, max: maxWeight, default: 400 } },
+  })
   writeFileSync(path.join(dir, file), output)
   const percent = ((1 - output.length / full.length) * 100).toFixed(1)
   console.log(
