@@ -2,9 +2,10 @@
  * Data layer for the Flights section: types for cf-workers-api's
  * /flights/site view (see src/services/flights/compose.ts there), delivered
  * in the /misc bundle, the payload decoder, and every
- * render decision that isn't DOM — the stat cards, the ranked lists, the
- * arcs and markers the globe draws, and the angles it turns to. Pure and
- * browser-safe.
+ * render decision that isn't DOM: the stat cards, the composition bars,
+ * and the map's plane geometry (arc curves, where labels go, which
+ * airports share a magnifier and which corner it sits in). The projection
+ * itself is d3-geo's, in flights-feed/map.ts. Pure and browser-safe.
  */
 
 import { isCalendarDay, isCount, isRecord, swr } from "./feed"
@@ -175,28 +176,15 @@ export type StatCard = {
   foot: string
 }
 
-/** `mostly Air China`, unless the top of the tally is a tie. */
-const lead = (tally: SiteCount[]) => {
-  const [first, second] = tally
-  if (!first || (second && second.flights === first.flights)) return ""
-  return `mostly ${first.name}`
-}
-
 /**
- * The eight readout cells, in order: four totals, then what they were
- * made of — the routes, the longest of them, the airlines and the
- * aircraft, each footed by the one that leads it.
+ * The four readout cells: how many flights, how far, how long, and where.
+ * What the flights were made of (routes, airlines, aircraft) has lists
+ * and bars of its own under the map, so it is not repeated here.
  */
 export function statCards(site: Site): StatCard[] {
   const { stats } = site
   const laps = stats.km / EARTH_KM
   const days = stats.minutes / (60 * 24)
-  const flown = site.routes.filter((route) => route.flights > 0)
-  const busiest = flown[0]
-  const longest = flown.reduce<SiteRoute | undefined>(
-    (best, route) => (!best || route.km > best.km ? route : best),
-    undefined,
-  )
   return [
     {
       key: "flights",
@@ -222,33 +210,6 @@ export function statCards(site: Site): StatCard[] {
       value: numberFormatter.format(stats.airports),
       foot: `in ${stats.countries} ${stats.countries === 1 ? "country" : "countries"}`,
     },
-    {
-      key: "routes",
-      label: "Routes",
-      value: numberFormatter.format(stats.routes),
-      foot:
-        busiest && busiest.flights > 1
-          ? `${routeLabel(busiest)} ×${busiest.flights}`
-          : "",
-    },
-    {
-      key: "longest",
-      label: "Longest",
-      value: longest ? formatKm(longest.km) : "—",
-      foot: longest ? routeLabel(longest) : "",
-    },
-    {
-      key: "airlines",
-      label: "Airlines",
-      value: numberFormatter.format(stats.airlines),
-      foot: lead(site.airlines),
-    },
-    {
-      key: "aircraft",
-      label: "Aircraft",
-      value: numberFormatter.format(stats.aircraftTypes),
-      foot: lead(site.aircraft),
-    },
   ]
 }
 
@@ -256,147 +217,160 @@ export function statCards(site: Site): StatCard[] {
 export const share = (value: number, top: number) =>
   top > 0 ? Math.min(value / top, 1) : 0
 
-/* Globe geometry --------------------------------------------------------- */
-
-export type LatLon = [number, number]
-
-const rad = Math.PI / 180
-
-/** Great-circle midpoint — where the globe turns to show a route. */
-export function midpoint(a: LatLon, b: LatLon): LatLon {
-  const vec = ([lat, lon]: LatLon) => [
-    Math.cos(lat * rad) * Math.cos(lon * rad),
-    Math.cos(lat * rad) * Math.sin(lon * rad),
-    Math.sin(lat * rad),
-  ]
-  return centroid([vec(a), vec(b)])
-}
-
-const centroid = (vectors: number[][]): LatLon => {
-  const [x, y, z] = vectors.reduce(
-    (sum, v) => [sum[0] + v[0], sum[1] + v[1], sum[2] + v[2]],
-    [0, 0, 0],
-  )
-  const len = Math.hypot(x, y, z) || 1
-  return [Math.asin(z / len) / rad, Math.atan2(y, x) / rad]
-}
-
-/** The visit-weighted centre of every airport — the globe's home view. */
-export function homeView(airports: SiteAirport[]): LatLon {
-  if (airports.length === 0) return [30, 115]
-  return centroid(
-    airports.map(({ lat, lon, visits }) => {
-      const w = Math.max(visits, 1)
-      return [
-        w * Math.cos(lat * rad) * Math.cos(lon * rad),
-        w * Math.cos(lat * rad) * Math.sin(lon * rad),
-        w * Math.sin(lat * rad),
-      ]
-    }),
-  )
-}
+/** The routes the list ranks: flown at least once, most flown first. */
+export const flownRoutes = (site: Site) =>
+  site.routes.filter((route) => route.flights > 0)
 
 /**
- * cobe's rotation for a point to face the viewer: `phi` spins the globe
- * about its axis, `theta` tips it toward the pole. `near` unwraps `phi`
- * onto the turn closest to the current one, so easing between two views
- * never takes the long way round the planet.
+ * A composition bar's rows: the first `named` by flights, then the rest,
+ * which fold behind a "Show more" row. A rest of one is shown instead,
+ * since a row that reveals a single row saves nothing.
  */
-export function viewAngles(
-  [lat, lon]: LatLon,
-  near = 0,
-): { phi: number; theta: number } {
-  const phi = Math.PI - (lon * rad - Math.PI / 2)
-  const turn = 2 * Math.PI
+export function composition(
+  tally: SiteCount[],
+  named: number,
+): { named: SiteCount[]; rest: SiteCount[]; restFlights: number } {
+  const counted = tally.filter((item) => item.flights > 0)
+  if (counted.length <= named + 1)
+    return { named: counted, rest: [], restFlights: 0 }
+  const rest = counted.slice(named)
   return {
-    phi: phi + turn * Math.round((near - phi) / turn),
-    theta: lat * rad,
+    named: counted.slice(0, named),
+    rest,
+    restFlights: rest.reduce((sum, item) => sum + item.flights, 0),
   }
 }
 
-/* The overlay's projection -------------------------------------------------
-   The globe is cobe's, but the flight being shown — its trail, the plane on
-   it, the codes at its ends — is drawn in SVG and HTML over the canvas, so
-   it can animate and carry text. These functions are cobe 2's own vertex
-   math (its `U`, the arc shader's quadratic curve, and the projection it
-   places anchors with), so what is drawn over the globe lands on the arc
-   the globe drew. */
+/* Map geometry ------------------------------------------------------------
+   Everything the map decides once the projection has turned places into
+   points: plane geometry in the SVG's own pixels, so it can be tested
+   without a projection or a DOM. */
 
-export type Vec3 = [number, number, number]
+export type Point = { x: number; y: number }
+export type Box = { x: number; y: number; w: number; h: number }
 
-/** cobe's globe radius in clip space, before `scale`. */
-const RADIUS = 0.8
+/** An airport's dot, by traffic: a hub reads bigger without drowning the rest. */
+export const dotRadius = (visits: number) =>
+  1.8 + Math.sqrt(Math.min(visits, 25)) * 0.75
 
-/** A location as cobe's unit vector (y up, the globe's own axes). */
-export function toVector([lat, lon]: LatLon): Vec3 {
-  const r = lat * rad
-  const a = lon * rad - Math.PI
-  return [-Math.cos(r) * Math.cos(a), Math.sin(r), Math.cos(r) * Math.sin(a)]
+/**
+ * The control point of a route's curve: a quadratic from one end to the
+ * other, bowed `lift` of its length off the chord, always toward the top
+ * of the map so crossing routes read as a family rather than a tangle.
+ */
+export function bow(a: Point, b: Point, lift = 0.22): Point {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  // A normal to the chord, turned to point up the map.
+  const [nx, ny] = dx >= 0 ? [dy, -dx] : [-dy, dx]
+  return { x: (a.x + b.x) / 2 + nx * lift, y: (a.y + b.y) / 2 + ny * lift }
+}
+
+/** Groups points that sit within `within` of another in the group. */
+export function clusters<T extends Point>(points: T[], within: number): T[][] {
+  const groups: T[][] = []
+  for (const point of points) {
+    const near = groups.filter((group) =>
+      group.some((q) => Math.hypot(q.x - point.x, q.y - point.y) < within),
+    )
+    const merged = [...near.flat(), point]
+    for (const group of near) groups.splice(groups.indexOf(group), 1)
+    groups.push(merged)
+  }
+  return groups
+}
+
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
+
+const contains = (outer: Box, inner: Box) =>
+  inner.x >= outer.x &&
+  inner.y >= outer.y &&
+  inner.x + inner.w <= outer.x + outer.w &&
+  inner.y + inner.h <= outer.y + outer.h
+
+export type LabelSpec = Point & {
+  key: string
+  /** The dot's radius, so a label clears it. */
+  r: number
+  w: number
+  h: number
+}
+
+export type Placed = Box & { align: "start" | "middle" | "end" }
+
+/**
+ * Where each label goes: tried in the order given (so busiest first) on
+ * the right of its dot, then the left, above, below and the four
+ * diagonals, taking the first spot that stays inside `bounds` and clear
+ * of every dot, every obstacle and every label already placed. A label
+ * with no such spot is left out, not drawn over another.
+ */
+export function placeLabels(
+  specs: LabelSpec[],
+  obstacles: Box[],
+  bounds: Box,
+  gap = 3,
+): Map<string, Placed> {
+  const dots = specs.map(({ x, y, r }) => ({
+    x: x - r,
+    y: y - r,
+    w: 2 * r,
+    h: 2 * r,
+  }))
+  const taken: Box[] = []
+  const placed = new Map<string, Placed>()
+  for (const { key, x, y, r, w, h } of specs) {
+    const d = r + gap
+    const candidates: Placed[] = [
+      { x: x + d, y: y - h / 2, w, h, align: "start" },
+      { x: x - d - w, y: y - h / 2, w, h, align: "end" },
+      { x: x - w / 2, y: y - d - h, w, h, align: "middle" },
+      { x: x - w / 2, y: y + d, w, h, align: "middle" },
+      { x: x + d * 0.7, y: y - d * 0.7 - h, w, h, align: "start" },
+      { x: x - d * 0.7 - w, y: y - d * 0.7 - h, w, h, align: "end" },
+      { x: x + d * 0.7, y: y + d * 0.7, w, h, align: "start" },
+      { x: x - d * 0.7 - w, y: y + d * 0.7, w, h, align: "end" },
+    ]
+    const spot = candidates.find(
+      (box) =>
+        contains(bounds, box) &&
+        ![...dots, ...obstacles, ...taken].some((other) =>
+          overlaps(box, other),
+        ),
+    )
+    if (!spot) continue
+    taken.push(spot)
+    placed.set(key, spot)
+  }
+  return placed
 }
 
 /**
- * The point `t` (0–1) of the way along cobe's arc between two locations:
- * a quadratic curve from one marker to the other, bent through a control
- * point `height` above the midpoint of the two directions.
+ * The centre for a circle of `radius` in whichever corner of the map is
+ * farthest from everything drawn on it (`points`, sampled along routes
+ * as well as airports), `margin` in from the edges.
  */
-export function arcPoint(
-  from: Vec3,
-  to: Vec3,
-  t: number,
+export function emptiestCorner(
+  width: number,
   height: number,
-  elevation: number,
-): Vec3 {
-  const ends = RADIUS + elevation
-  const sum = from.map((v, i) => v + to[i])
-  const length = Math.hypot(...sum)
-  const lift = RADIUS + height + elevation
-  const control =
-    length > 1e-3 ? sum.map((v) => (v / length) * lift) : [0, lift, 0]
-  const u = 1 - t
-  return from.map(
-    (v, i) => u * u * v * ends + 2 * u * t * control[i] + t * t * to[i] * ends,
-  ) as Vec3
+  radius: number,
+  margin: number,
+  points: Point[],
+): Point {
+  const near = radius + margin
+  const corners: Point[] = [
+    { x: width - near, y: height - near },
+    { x: near, y: height - near },
+    { x: width - near, y: near },
+    { x: near, y: near },
+  ]
+  const clearance = (c: Point) =>
+    Math.min(...points.map((p) => Math.hypot(p.x - c.x, p.y - c.y)))
+  return corners.reduce((best, c) =>
+    clearance(c) > clearance(best) ? c : best,
+  )
 }
-
-/** A point on (or above) the surface, lifted by `elevation`. */
-export const surfacePoint = (location: LatLon, elevation: number): Vec3 =>
-  toVector(location).map((v) => v * (RADIUS + elevation)) as Vec3
-
-/**
- * Where cobe draws a 3D point, as fractions of the canvas's width and
- * height (`aspect` is width over height), and whether it is in front:
- * behind the globe counts as hidden only where the globe's disc covers it,
- * the same test cobe's arc shader discards fragments by.
- */
-export function project(
-  point: Vec3,
-  view: { phi: number; theta: number; scale: number; aspect?: number },
-): { x: number; y: number; visible: boolean } {
-  const [px, py, pz] = point
-  const cp = Math.cos(view.phi)
-  const sp = Math.sin(view.phi)
-  const ct = Math.cos(view.theta)
-  const st = Math.sin(view.theta)
-  const x = cp * px + sp * pz
-  const y = sp * st * px + ct * py - cp * st * pz
-  const z = -sp * ct * px + st * py + cp * ct * pz
-  return {
-    x: ((x / (view.aspect ?? 1)) * view.scale + 1) / 2,
-    y: (-y * view.scale + 1) / 2,
-    visible: z >= 0 || x * x + y * y >= RADIUS * RADIUS,
-  }
-}
-
-/** A route's key, whichever way round its ends are given. */
-export const routeId = (a: string, b: string) => [a, b].sort().join("-")
-
-/** The routes an airport is an end of. */
-export const routesAt = (site: Site, code: string) =>
-  site.routes.filter((route) => route.from === code || route.to === code)
-
-/** Marker radius by traffic: a hub reads bigger without drowning the rest. */
-export const markerSize = (visits: number) =>
-  0.009 + Math.min(Math.sqrt(visits), 4) * 0.005
 
 export const loadSite = (
   endpoint: string,

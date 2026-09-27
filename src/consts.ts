@@ -85,10 +85,16 @@ export const SWITCH = {
   limit: 8,
 } as const
 
-/** How many rows each ranked Flights list (airports, routes) shows under
- *  the globe. */
+/**
+ * Flights on /misc: how many airlines and aircraft types each composition
+ * bar names before folding the rest behind "Show N more", and how many
+ * route rows the skeleton reserves. The list itself shows every route, so
+ * keep `routes` at the real count: a skeleton short of it shifts every
+ * section below when the data lands.
+ */
 export const FLIGHTS = {
-  limit: 8,
+  named: 4,
+  routes: 14,
 } as const
 
 /**

@@ -7,7 +7,12 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/*.svg", "!src/assets/headache-fallback.js"]
+    "includes": [
+      "**",
+      "!**/*.svg",
+      "!src/assets/headache-fallback.js",
+      "!src/assets/flights/*.json"
+    ]
   },
   "html": {
     "experimentalFullSupportEnabled": true,

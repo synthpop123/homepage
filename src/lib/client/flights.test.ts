@@ -1,21 +1,18 @@
 import { describe, expect, it } from "bun:test"
 import {
-  arcPoint,
+  bow,
+  clusters,
+  composition,
+  emptiestCorner,
+  flownRoutes,
   formatDuration,
-  homeView,
   isSite,
-  midpoint,
-  project,
-  routeId,
+  placeLabels,
   routeLabel,
-  routesAt,
   SITE_SCHEMA_VERSION,
   type Site,
   share,
   statCards,
-  surfacePoint,
-  toVector,
-  viewAngles,
 } from "./flights"
 import fixture from "./flights.site-fixture.json"
 
@@ -85,24 +82,21 @@ describe("statCards", () => {
     ],
   }
 
-  it("fills eight cells with a foot line each", () => {
+  it("fills four cells with a foot line each", () => {
     expect(statCards(sample).map((card) => [card.value, card.foot])).toEqual([
       ["25", "since 2023"],
       ["34,511 km", "0.86× around the Earth"],
       ["65h 37m", "≈ 2.7 days aloft"],
       ["15", "in 1 country"],
-      ["3", "PEK ⇄ SHA ×6"],
-      // An upcoming route is not the longest flown, however far it goes.
-      ["2,332 km", "CAN ⇄ HKT"],
-      ["2", "mostly Air China"],
-      // A tie at the top names nobody.
-      ["2", ""],
     ])
   })
 
-  it("names no busiest route when every route was flown once", () => {
-    const once = sample.routes.map((r) => ({ ...r, flights: 1 }))
-    expect(statCards({ ...sample, routes: once })[4].foot).toBe("")
+  it("ranks only routes flown at least once", () => {
+    expect(flownRoutes(sample).map(routeLabel)).toEqual([
+      "PEK ⇄ SHA",
+      "CAN ⇄ HKT",
+      "GMP ⇄ PUS",
+    ])
   })
 
   it("keeps the fixture's cards filled", () => {
@@ -124,66 +118,98 @@ describe("formatting", () => {
   })
 })
 
-describe("globe geometry", () => {
-  it("finds the great-circle midpoint", () => {
-    const [lat, lon] = midpoint([0, 0], [0, 90])
-    expect(lat).toBeCloseTo(0)
-    expect(lon).toBeCloseTo(45)
+describe("composition", () => {
+  const tally = (...counts: number[]) =>
+    counts.map((flights, i) => ({ code: null, name: `#${i}`, flights }))
+
+  it("names the first few and folds the rest", () => {
+    const { named, rest, restFlights } = composition(
+      tally(9, 5, 2, 2, 2, 1, 1),
+      4,
+    )
+    expect(named.map((item) => item.flights)).toEqual([9, 5, 2, 2])
+    expect(rest).toHaveLength(3)
+    expect(restFlights).toBe(4)
   })
 
-  it("weights the home view toward the busy airports", () => {
-    const [lat, lon] = homeView(site.airports)
-    expect(lat).toBeGreaterThan(20)
-    expect(lat).toBeLessThan(40)
-    expect(lon).toBeGreaterThan(105)
-    expect(lon).toBeLessThan(125)
+  it("shows a rest of one rather than folding it", () => {
+    const { named, rest } = composition(tally(9, 5, 2, 2, 2), 4)
+    expect(named).toHaveLength(5)
+    expect(rest).toEqual([])
   })
 
-  it("unwraps phi onto the nearest turn", () => {
-    const { phi } = viewAngles([30, 120])
-    const near = viewAngles([30, 120], phi + 4 * Math.PI + 0.1)
-    expect(near.phi - phi).toBeCloseTo(4 * Math.PI)
+  it("leaves out what was never flown", () => {
+    expect(composition(tally(3, 0), 4).named).toHaveLength(1)
+  })
+})
+
+describe("map geometry", () => {
+  it("bows every route toward the top of the map, whichever way it runs", () => {
+    const a = { x: 0, y: 100 }
+    const b = { x: 100, y: 100 }
+    expect(bow(a, b).y).toBeLessThan(100)
+    expect(bow(b, a).y).toBeLessThan(100)
+    expect(bow(a, b)).toEqual(bow(b, a))
   })
 
-  it("keys a route the same either way round", () => {
-    expect(routeId("SHA", "PEK")).toBe(routeId("PEK", "SHA"))
-    const hub = site.airports[0]
-    const touching = routesAt(site, hub.code)
-    expect(touching.length).toBeGreaterThan(0)
+  it("chains points into clusters", () => {
+    const points = [
+      { x: 0, y: 0 },
+      { x: 8, y: 0 },
+      { x: 16, y: 0 },
+      { x: 100, y: 0 },
+    ]
     expect(
-      touching.every((r) => r.from === hub.code || r.to === hub.code),
-    ).toBe(true)
+      clusters(points, 10)
+        .map((group) => group.length)
+        .sort(),
+    ).toEqual([1, 3])
   })
 
-  // The overlay only lines up with the canvas if these agree with cobe:
-  // turning to a place has to bring it to the centre, facing out.
-  it("projects a place it turned to onto the centre", () => {
-    for (const place of [
-      [39.9, 116.4],
-      [1.35, 103.8],
-      [-33.9, 151.2],
-    ] as [number, number][]) {
-      const view = { ...viewAngles(place), scale: 1 }
-      const { x, y, visible } = project(surfacePoint(place, 0), view)
-      expect(x).toBeCloseTo(0.5)
-      expect(y).toBeCloseTo(0.5)
-      expect(visible).toBe(true)
-    }
+  const bounds = { x: 0, y: 0, w: 200, h: 200 }
+  const label = (key: string, x: number, y: number) => ({
+    key,
+    x,
+    y,
+    r: 3,
+    w: 40,
+    h: 20,
   })
 
-  it("hides the far side, but not what rises past the disc", () => {
-    const view = { ...viewAngles([0, 0]), scale: 1 }
-    expect(project(surfacePoint([0, 180], 0), view).visible).toBe(false)
-    expect(project(surfacePoint([0, 90], 0.2), view).visible).toBe(true)
+  it("puts a label right of its dot when there is room", () => {
+    const placed = placeLabels([label("PEK", 50, 50)], [], bounds)
+    expect(placed.get("PEK")).toMatchObject({ x: 56, align: "start" })
   })
 
-  it("runs an arc from one end to the other, lifted between", () => {
-    const a = toVector([39.9, 116.4])
-    const b = toVector([31.2, 121.3])
-    const start = arcPoint(a, b, 0, 0.1, 0.01)
-    const end = arcPoint(a, b, 1, 0.1, 0.01)
-    start.forEach((v, i) => expect(v).toBeCloseTo(a[i] * 0.81))
-    end.forEach((v, i) => expect(v).toBeCloseTo(b[i] * 0.81))
-    expect(Math.hypot(...arcPoint(a, b, 0.5, 0.1, 0.01))).toBeGreaterThan(0.81)
+  it("turns a label away from the map's edge and from its neighbours", () => {
+    const placed = placeLabels(
+      [label("SIN", 190, 100), label("HKT", 100, 100), label("KUL", 147, 100)],
+      [],
+      bounds,
+    )
+    expect(placed.get("SIN")?.align).toBe("end")
+    const boxes = [...placed.values()]
+    for (const [i, a] of boxes.entries())
+      for (const b of boxes.slice(i + 1))
+        expect(
+          a.x < b.x + b.w &&
+            b.x < a.x + a.w &&
+            a.y < b.y + b.h &&
+            b.y < a.y + a.h,
+        ).toBe(false)
+  })
+
+  it("drops a label with nowhere to go", () => {
+    const placed = placeLabels([label("PEK", 100, 100)], [bounds], bounds)
+    expect(placed.size).toBe(0)
+  })
+
+  it("puts the inset in the corner farthest from everything drawn", () => {
+    const busy = [
+      { x: 20, y: 20 },
+      { x: 180, y: 20 },
+      { x: 20, y: 180 },
+    ]
+    expect(emptiestCorner(200, 200, 30, 10, busy)).toEqual({ x: 160, y: 160 })
   })
 })
