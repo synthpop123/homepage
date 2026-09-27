@@ -51,8 +51,18 @@ export const MASTODON = {
  */
 export const API = "https://api.lkwplus.com"
 
+/** What each reporting device is, keyed by the name its CLI reports.
+ *  The payload says nothing about hardware, so the device card's mark
+ *  comes from here; a name missing from this table gets a generic chip. */
+export type DeviceKind = "laptop" | "desktop" | "server"
+
 export const TOKENS = {
   endpoint: `${API}/tokens/site`,
+  devices: {
+    MacbookPro: "laptop",
+    UbuntuPC: "desktop",
+    OracleARM: "server",
+  } satisfies Record<string, DeviceKind>,
 } as const
 
 export const MISC = {

@@ -1,7 +1,11 @@
 ---
 import type { SvgComponent } from "astro/types"
 import ChevronIcon from "@/assets/icons/callouts/alt-arrow-down.svg"
+import CpuIcon from "@/assets/icons/devices/cpu.svg"
+import ServerIcon from "@/assets/icons/devices/server.svg"
 import HourglassIcon from "@/assets/icons/hourglass.svg"
+import LaptopIcon from "@/assets/icons/uses/laptop.svg"
+import MonitorIcon from "@/assets/icons/uses/monitor.svg"
 import Heatmap from "@/components/Heatmap.astro"
 import Alibaba from "@/assets/icons/ai/alibaba.svg"
 import Anthropic from "@/assets/icons/ai/anthropic.svg"
@@ -26,7 +30,7 @@ import Qwen from "@/assets/icons/ai/qwen.svg"
 import XAI from "@/assets/icons/ai/xai.svg"
 import Zai from "@/assets/icons/ai/zai.svg"
 import Zed from "@/assets/icons/ai/zed.svg"
-import { TOKENS } from "@/consts"
+import { type DeviceKind, TOKENS } from "@/consts"
 import { COMPOSITION, RANGES, TOP_ROWS } from "@/lib/client/tokens"
 import { SKELETON_ROWS } from "@/lib/utils"
 
@@ -118,6 +122,12 @@ const skeletonRows = (count: number) =>
  * what its card carries instead: the weekly window's split line and the
  * cloud session credits row.
  */
+const DEVICE_ICONS: Record<DeviceKind, SvgComponent> = {
+  laptop: LaptopIcon,
+  desktop: MonitorIcon,
+  server: ServerIcon,
+}
+
 const QUOTA_PLANS = 2
 const QUOTA_WINDOWS = 2
 const QUOTA_CREDITS = 3
@@ -132,6 +142,11 @@ const LEGEND_CHIPS = 4
     ))}
     <span data-icon="chevron"><ChevronIcon /></span>
     <span data-icon="hourglass"><HourglassIcon /></span>
+    <span data-icon="device"><CpuIcon /></span>
+    {Object.entries(TOKENS.devices).map(([name, kind]) => {
+      const Icon = DEVICE_ICONS[kind]
+      return <span data-icon={`device:${name}`}><Icon /></span>
+    })}
   </div>
   <p class="tk-intro">
     Token usage across my AI coding agents, live from my
@@ -399,17 +414,27 @@ const LEGEND_CHIPS = 4
       <ol class="tk-devices">
         {skeletonRows(SKELETON_ROWS).map(() => (
           <li class="tk-device" data-skeleton aria-hidden="true">
-            <div class="dev-row">
-              <span class="dot" />
-              <span class="dev-id">
-                <span class="dev-name"><span class="sk-line" style="inline-size: 7em" /></span>
-                <span class="dev-seen"><span class="sk-line sk-sub" /></span>
-              </span>
-              <span class="dev-usage">
-                <span class="dev-tokens"><span class="sk-line sk-num" /></span>
-                <span class="dev-meta"><span class="sk-line sk-sub" /></span>
-              </span>
+            <div class="dev-head">
+              <span class="dev-status"><span class="dot" /><span class="sk-line" style="inline-size: 5em" /></span>
             </div>
+            <div class="dev-id">
+              <h3 class="dev-name"><span class="sk-line" style="inline-size: 6em" /></h3>
+              <p class="dev-since"><span class="sk-line sk-sub" style="inline-size: 9em" /></p>
+            </div>
+            <div class="dev-share">
+              <span class="dev-tokens"><span class="sk-line" style="inline-size: 2.5em" /></span>
+              <span class="dev-meter"></span>
+              <span class="dev-cap"><span class="sk-line sk-sub" style="inline-size: 6em" /></span>
+            </div>
+            <dl class="dev-stats">
+              {["Cost", "Active days", "Sessions", "Active time"].map((label) => (
+                <div>
+                  <dt>{label}</dt>
+                  <dd><span class="sk-line" style="inline-size: 3em" /></dd>
+                </div>
+              ))}
+            </dl>
+            <p class="dev-mcp"><span class="sk-line sk-sub" style="inline-size: 5em" /></p>
           </li>
         ))}
       </ol>
@@ -1766,100 +1791,109 @@ const LEGEND_CHIPS = 4
       margin-block-start: 0;
     }
 
-    /* Devices */
+    /* Devices — one card per device, in the quota cards' idiom: a faint
+       panel, washed green while the device is online, with its kind drawn
+       large and cropped by the corner as a backdrop the way the Uses cards
+       carry theirs. auto-fill sets the column count, so three sit side by
+       side in the column and stack on a phone with no query. */
 
     .tk-devices {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .tk-devices .tk-device + .tk-device {
-      border-block-start: 1px solid var(--border);
-    }
-
-    /* The row is a button wherever there is CLI metadata to expand into;
-       the fourth column holds the chevron and collapses to nothing on the
-       plain <div> variant. */
-    .tk-devices .dev-row {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto auto;
-      align-items: center;
-      gap: var(--space-2xs);
-      inline-size: 100%;
-      padding-block: var(--space-2xs);
-      text-align: start;
-    }
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr));
+      gap: var(--space-xs);
 
-    .tk-devices button.dev-row {
-      cursor: pointer;
-    }
-
-    /* Hover brightens the chevron rather than underlining the name — the
-       same affordance the expandable client rows use, and a device name
-       is not a link. */
-    .tk-devices button.dev-row:hover svg {
-      color: var(--foreground);
-    }
-
-    .tk-devices button.dev-row:focus-visible {
-      outline: 2px solid var(--ring);
-      outline-offset: 2px;
-      border-radius: var(--radius-sm);
-    }
-
-    .tk-devices .dev-row svg {
-      inline-size: 1em;
-      block-size: 1em;
-      color: var(--muted-foreground);
-      transition: rotate 0.15s;
-    }
-
-    .tk-devices .dev-row[aria-expanded="true"] svg {
-      rotate: 180deg;
-    }
-
-    /* Two columns of label/value pairs, indented past the liveness dot so
-       they read as belonging to the row above. */
-    .tk-devices .dev-details {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-3xs) var(--space-s);
-      margin-inline-start: calc(0.5rem + var(--space-2xs));
-      padding-block-end: var(--space-2xs);
-      font-size: var(--step--1);
-
-      @media (width < 30rem) {
-        grid-template-columns: minmax(0, 1fr);
+      & > .tk-empty {
+        grid-column: 1 / -1;
       }
     }
 
-    .tk-devices .dev-details > div {
+    .tk-devices .tk-device {
+      position: relative;
+      display: grid;
+      gap: var(--space-s);
+      align-content: start;
+      padding: var(--space-s);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background-color: color-mix(
+        in oklab,
+        var(--muted) 45%,
+        var(--background)
+      );
+      isolation: isolate;
+    }
+
+    .tk-devices .tk-device[data-online] {
+      --dev-hue: var(--tk-accent);
+      border-color: color-mix(in oklab, var(--tk-accent) 28%, var(--border));
+      background-color: color-mix(
+        in oklab,
+        var(--tk-accent) 4%,
+        color-mix(in oklab, var(--muted) 45%, var(--background))
+      );
+    }
+
+    .tk-devices .dev-mark {
+      position: absolute;
+      z-index: -1;
+      inset-block-end: -0.18em;
+      inset-inline-end: -0.16em;
+      font-size: 7.5rem;
+      color: color-mix(in oklab, var(--foreground) 8%, transparent);
+      transition: rotate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+
+      & g {
+        stroke-width: 1.25;
+      }
+    }
+
+    @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+      .tk-devices .tk-device:hover .dev-mark {
+        rotate: -6deg;
+      }
+    }
+
+    /* Status pill: a grey one reads as "not now", the online one takes
+       the card's green. */
+    .tk-devices .dev-head {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.4em;
     }
 
-    .tk-devices .dev-details dt {
+    .tk-devices .dev-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      padding: 0.15em 0.6em 0.15em 0.5em;
+      border-radius: var(--radius-full);
+      background-color: color-mix(in oklab, var(--foreground) 6%, transparent);
       color: var(--muted-foreground);
+      font-size: var(--step--1);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
-    .tk-devices .dev-details dd {
-      margin: 0;
-      font-variant-numeric: tabular-nums;
-      overflow-wrap: anywhere;
+    .tk-devices [data-online] .dev-status {
+      background-color: color-mix(in oklab, var(--tk-accent) 14%, transparent);
+      color: color-mix(in oklab, var(--tk-accent) 70%, var(--foreground));
     }
 
     .tk-devices .dot {
-      inline-size: 0.5rem;
-      block-size: 0.5rem;
+      inline-size: 0.4rem;
+      block-size: 0.4rem;
       border-radius: var(--radius-full);
-      background-color: var(--gray-7);
+      background-color: var(--gray-8);
     }
 
-    .tk-devices .dot[data-online] {
+    .tk-devices [data-online] .dot {
       background-color: var(--tk-accent);
-      box-shadow: 0 0 0 3px
-        color-mix(in oklab, var(--tk-accent) 25%, transparent);
+      animation: tk-dev-pulse 2.4s ease-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tk-devices [data-online] .dot {
+        animation: none;
+      }
     }
 
     .tk-devices .dev-id {
@@ -1868,34 +1902,107 @@ const LEGEND_CHIPS = 4
     }
 
     .tk-devices .dev-name {
-      overflow: hidden;
+      margin: 0;
+      font-size: var(--step-1);
       font-weight: var(--font-weight-medium);
-      line-height: 1.25;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
     }
 
-    .tk-devices .dev-seen {
+    .tk-devices .dev-since {
+      margin: 0;
       font-size: var(--step--1);
       color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
     }
 
-    .tk-devices .dev-usage {
+    /* The card's one large figure, then its share of every device's
+       tokens as a thin meter: green while online, ink otherwise. */
+    .tk-devices .dev-share {
       display: grid;
       gap: var(--space-3xs);
-      justify-items: end;
     }
 
     .tk-devices .dev-tokens {
+      font-size: var(--step-3);
       font-weight: var(--font-weight-medium);
+      line-height: 1.1;
       font-variant-numeric: tabular-nums;
-      line-height: 1.25;
+      letter-spacing: -0.01em;
+
+      & .unit {
+        margin-inline-start: 0.1em;
+        font-size: 0.55em;
+        color: var(--muted-foreground);
+        letter-spacing: 0;
+      }
     }
 
-    .tk-devices .dev-meta {
+    .tk-devices .dev-meter {
+      block-size: 0.25rem;
+      margin-block-start: var(--space-3xs);
+      border-radius: var(--radius-full);
+      background:
+        linear-gradient(
+          var(--dev-hue, var(--foreground)),
+          var(--dev-hue, var(--foreground))
+        )
+        no-repeat 0 / var(--share, 0%) 100%,
+        color-mix(in oklab, var(--foreground) 8%, transparent);
+    }
+
+    .tk-devices .dev-cap {
       font-size: var(--step--1);
       color: var(--muted-foreground);
       font-variant-numeric: tabular-nums;
+    }
+
+    .tk-devices .dev-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2xs) var(--space-xs);
+      margin: 0;
+
+      & div {
+        display: grid;
+        gap: 0.1em;
+      }
+
+      & dt {
+        font-size: var(--step--1);
+        color: var(--muted-foreground);
+      }
+
+      & dd {
+        margin: 0;
+        font-weight: var(--font-weight-medium);
+        font-variant-numeric: tabular-nums;
+      }
+    }
+
+    .tk-devices .dev-mcp {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3xs);
+      margin: 0;
+
+      & .chip {
+        padding: 0.2em 0.5em;
+        border-radius: var(--radius-md);
+        background-color: color-mix(
+          in oklab,
+          var(--foreground) 6%,
+          transparent
+        );
+        color: var(--muted-foreground);
+        font-family: var(--font-mono);
+        font-size: var(--step--1);
+        line-height: 1.3;
+      }
+
+      &[data-none] .chip {
+        font-family: inherit;
+      }
     }
 
     /* Failure state — the body's stand-in, so it takes the body's
@@ -2040,6 +2147,17 @@ const LEGEND_CHIPS = 4
     .tk-donut[data-skeleton] circle {
       stroke: var(--gray-5);
       animation: var(--sk-pulse);
+    }
+  }
+
+  /* Top level: lightningcss rejects @keyframes nested in a rule. */
+  @keyframes tk-dev-pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--tk-accent) 45%, transparent);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 5px transparent;
     }
   }
 </style>

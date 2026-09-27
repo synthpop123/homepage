@@ -1,8 +1,10 @@
 /**
- * Devices section renderer: the reporting-device inventory with liveness
- * dots, and the CLI metadata behind an expandable row. Rendered once per
- * load. The metadata used to live in a `title` tooltip, which is
- * unreachable on touch — a phone got the dot and nothing else.
+ * Devices section renderer: one card per reporting device, side by side,
+ * in the same idiom as the quota cards above. Everything a device reports
+ * is on the card at once, because a disclosure is one more thing a touch
+ * device has to find; the rarer figures (longest stretch, peak
+ * concurrency) ride in the `title` of the active-time cell they qualify.
+ * Rendered once per load.
  */
 
 import {
@@ -11,41 +13,50 @@ import {
   formatDate,
   formatDuration,
   formatExact,
+  formatShare,
   formatTokens,
   isOnline,
   type Site,
   type SiteDevice,
 } from "../tokens"
+import { splitFigure } from "../readout"
 import { el, type Icons, type Query } from "./dom"
 
-/** Metadata that has no column, as label/value pairs; empty when the
- *  device reported none of it (older CLIs, or a first submission). */
-const detailsOf = (device: SiteDevice): [string, string][] =>
-  (
-    [
-      ["Active time", device.activeMs ? formatDuration(device.activeMs) : ""],
-      [
-        "Longest stretch",
-        device.longestMs ? formatDuration(device.longestMs) : "",
-      ],
-      [
-        "Peak concurrency",
-        device.maxConcurrent && device.maxConcurrent > 1
-          ? `${device.maxConcurrent} sessions`
-          : "",
-      ],
-      [
-        "MCP servers",
-        device.mcpServers?.length ? device.mcpServers.join(", ") : "",
-      ],
-      [
-        "First seen",
-        device.firstSeen
-          ? formatDate(new Date(device.firstSeen).toISOString())
-          : "",
-      ],
-    ] as [string, string][]
-  ).filter(([, value]) => value !== "")
+/** "since Jul 16, 2026 · v27.1.1", or whichever half the device sent. */
+const sinceLine = (device: SiteDevice) =>
+  [
+    device.firstSeen
+      ? `since ${formatDate(new Date(device.firstSeen).toISOString())}`
+      : "",
+    device.cliVersion ? `v${device.cliVersion}` : "",
+  ]
+    .filter((part) => part !== "")
+    .join(" · ")
+
+/** The active-time cell's tooltip: what the figure alone leaves out. */
+const stretchNote = (device: SiteDevice) =>
+  [
+    device.longestMs
+      ? `Longest stretch ${formatDuration(device.longestMs)}`
+      : "",
+    device.maxConcurrent && device.maxConcurrent > 1
+      ? `peak ${device.maxConcurrent} concurrent sessions`
+      : "",
+  ]
+    .filter((part) => part !== "")
+    .join(", ")
+
+/** "1.9B" as a number run and a smaller unit run, like the readouts,
+ *  without their count-up: the card is rebuilt on every render. */
+const figure = (text: string) => {
+  const target = el("span", "dev-tokens")
+  target.append(
+    ...splitFigure(text).map((run) =>
+      el("span", run.kind === "num" ? "num" : "unit", run.text),
+    ),
+  )
+  return target
+}
 
 export function renderDevices(q: Query, site: Site, icons: Icons) {
   const list = q(".tk-devices")
@@ -54,81 +65,77 @@ export function renderDevices(q: Query, site: Site, icons: Icons) {
     list.replaceChildren(el("li", "tk-empty", "No devices reporting yet."))
     return
   }
+  const total = site.devices.reduce((sum, device) => sum + device.tokens, 0)
+
   list.replaceChildren(
     ...site.devices.map((device) => {
-      const item = el("li", "tk-device")
       const online = isOnline(device.lastSeen, site.deviceOnlineWithinMs)
-      const details = detailsOf(device)
+      const card = el("li", "tk-device")
+      if (online) card.dataset.online = ""
 
-      const dot = el("span", "dot")
-      if (online) dot.dataset.online = ""
-      dot.setAttribute("role", "img")
-      dot.setAttribute("aria-label", online ? "Online" : "Offline")
+      const mark = icons.icon(`device:${device.name}`) ?? icons.icon("device")
+      if (mark) {
+        mark.classList.add("dev-mark")
+        mark.setAttribute("aria-hidden", "true")
+        card.append(mark)
+      }
 
-      const id = el("span", "dev-id")
-      const seen =
+      const status = el("span", "dev-status")
+      status.append(
+        el("span", "dot"),
         device.lastSeen === null
-          ? "never reported"
-          : `${online ? "synced" : "last seen"} ${formatAgo(device.lastSeen)}`
-      const facts = [
-        seen,
-        device.cliVersion ? `v${device.cliVersion}` : "",
-        device.sessions ? `${formatExact(device.sessions)} sessions` : "",
-      ].filter((part) => part !== "")
-      id.append(
-        el("span", "dev-name", device.name),
-        el("span", "dev-seen", facts.join(" · ")),
+          ? "Never reported"
+          : `${online ? "Online" : "Offline"} · ${formatAgo(device.lastSeen)}`,
       )
+      const head = el("div", "dev-head")
+      head.append(status)
 
-      const usage = el("span", "dev-usage")
-      const tokens = el("span", "dev-tokens", formatTokens(device.tokens))
+      const id = el("div", "dev-id")
+      id.append(el("h3", "dev-name", device.name))
+      const since = sinceLine(device)
+      if (since) id.append(el("p", "dev-since", since))
+
+      const ratio = total > 0 ? device.tokens / total : 0
+      const tokens = figure(formatTokens(device.tokens))
       tokens.title = `${formatExact(device.tokens)} tokens`
-      usage.append(
+      const meter = el("span", "dev-meter")
+      meter.style.setProperty("--share", `${(ratio * 100).toFixed(2)}%`)
+      const share = el("div", "dev-share")
+      share.append(
         tokens,
-        el(
-          "span",
-          "dev-meta",
-          `${formatCost(device.cost)} · ${device.activeDays} active ${
-            device.activeDays === 1 ? "day" : "days"
-          }`,
-        ),
+        meter,
+        el("span", "dev-cap", `${formatShare(ratio)} of all tokens`),
       )
 
-      // Nothing to expand into means nothing to click: a device without
-      // metadata stays a plain row rather than an empty disclosure.
-      if (details.length === 0) {
-        const row = el("div", "dev-row")
-        row.append(dot, id, usage)
-        item.append(row)
-        return item
-      }
-
-      const button = document.createElement("button")
-      button.type = "button"
-      button.className = "dev-row"
-      button.setAttribute("aria-expanded", "false")
-      const chevron = icons.icon("chevron")
-      button.append(dot, id, usage)
-      if (chevron) {
-        chevron.setAttribute("aria-hidden", "true")
-        button.append(chevron)
-      }
-
-      const table = el("dl", "dev-details")
-      table.hidden = true
-      for (const [label, value] of details) {
+      const stats = el("dl", "dev-stats")
+      const cells: [string, string, string?][] = [
+        ["Cost", formatCost(device.cost)],
+        ["Active days", formatExact(device.activeDays)],
+        ["Sessions", device.sessions ? formatExact(device.sessions) : "—"],
+        [
+          "Active time",
+          device.activeMs ? formatDuration(device.activeMs) : "—",
+          stretchNote(device),
+        ],
+      ]
+      for (const [label, value, note] of cells) {
         const pair = document.createElement("div")
+        if (note) pair.title = note
         pair.append(el("dt", "", label), el("dd", "", value))
-        table.append(pair)
+        stats.append(pair)
       }
-      button.addEventListener("click", () => {
-        const open = button.getAttribute("aria-expanded") === "true"
-        button.setAttribute("aria-expanded", String(!open))
-        table.hidden = open
-      })
 
-      item.append(button, table)
-      return item
+      // Always present, so every card ends on the same line.
+      const mcp = el("p", "dev-mcp")
+      mcp.append(
+        ...(device.mcpServers?.length
+          ? device.mcpServers.map((server) => el("span", "chip", server))
+          : [el("span", "chip", "No MCP servers")]),
+      )
+      if (!device.mcpServers?.length) mcp.dataset.none = ""
+
+      card.append(head, id, share, stats, mcp)
+      return card
     }),
   )
 }
