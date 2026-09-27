@@ -1,0 +1,314 @@
+/* Shared by every Tokens section: the host's tokens (accent, meter,
+   brand hues), section headings, the [data-p] palette, the failure
+   state and the skeletons.
+
+   Tokens.astro imports this file last, after the section files, and
+   the skeletons are why: `[data-skeleton] .win-used` overrides
+   `.tk-plans .win-used` (quota.css) at equal specificity, so it has
+   to come later. Nothing else here ties with a section rule on
+   specificity and property for the same element, so being last
+   changes nothing for it. */
+
+tokens-dashboard {
+  /* Level-3 green of the shared heatmap palette (see Heatmap.astro). */
+  --tk-accent: light-dark(#30a14e, #26a641);
+
+  /* The quota meters' height. Thin enough that a bar reads as a
+     reading rather than as a block of colour, and thick enough that the
+     smallest segment still has a shape. It doubles as the minimum
+     segment width, so a sliver lands as a dot rather than a hair — the
+     day ring (day.ts) keeps the same rule for its arcs. */
+  --tk-meter: 0.375rem;
+
+  /* Brand palette for stacked segments and chips. Client ids map onto
+     their vendor's hue (see the [data-p] rules below). */
+  --tk-p-anthropic: light-dark(#d97757, #cc785c);
+  --tk-p-openai: light-dark(#10a37f, #2dc79f);
+  --tk-p-google: light-dark(#4285f4, #7cacf8);
+  --tk-p-alibaba: light-dark(#ff6a00, #ff8a3d);
+  --tk-p-xai: light-dark(#52525b, #a1a1aa);
+  --tk-p-cursor: light-dark(#8b5cf6, #a78bfa);
+  --tk-p-deepseek: light-dark(#4d6bfe, #8ba0ff);
+  --tk-p-meta: light-dark(#0866ff, #4d9fff);
+  --tk-p-openrouter: light-dark(#6366f1, #818cf8);
+  --tk-p-zed: light-dark(#084ccf, #7a9bff);
+  --tk-p-opencode: light-dark(#78716c, #a8a29e);
+  /* Nous ships a cream-on-black brand; a parchment tan keeps it apart
+     from the zinc (xAI) and stone (OpenCode) neutrals. */
+  --tk-p-hermes: light-dark(#8a7248, #cdb37e);
+  /* Craft Agents' brand mauve (#9570be). It lands in the same family
+     as Cursor's violet, but at less than half the saturation, which
+     is what keeps the two apart where they stack together. */
+  --tk-p-craft: light-dark(#8257b3, #b99ada);
+  /* Moonshot's brand near-black (#16191e), lifted for dark mode. */
+  --tk-p-moonshot: light-dark(#16191e, #e4e4e7);
+  /* Z.ai brands near-black like Moonshot; keep its Zhipu-heritage
+     blue (deeper than Zed's azure) so the two stay apart in stacks. */
+  --tk-p-zai: light-dark(#3859ff, #8da2ff);
+  --tk-p-other: var(--gray-8);
+
+  display: block;
+
+  /* Every rule in these files is nested under tokens-dashboard so it
+     only ever applies inside the dashboard: the renderers build this DOM
+     at runtime, which Astro's scoped styles cannot see. */
+  section + section {
+    margin-block-start: var(--space-l);
+  }
+
+  h2 {
+    margin-block-end: var(--space-s);
+    font-size: var(--step-1);
+    line-height: calc(var(--leading-offset) + 1em);
+    font-weight: var(--font-weight-medium);
+
+    @media (width >= 64rem) {
+      scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
+    }
+  }
+
+  /* Brand palette, applied through --p to bar segments and chips.
+     Clients take their vendor's hue — Claude Code renders Anthropic
+     coral, Codex the OpenAI green — so both stackings of the same data
+     read in one color language. Keep the bare [data-p] fallback first:
+     the named rules below must win. */
+  [data-p] {
+    --p: var(--tk-p-other);
+
+    background-color: var(--p);
+  }
+
+  [data-p="anthropic"],
+  [data-p="claude"] {
+    --p: var(--tk-p-anthropic);
+  }
+
+  [data-p="openai"],
+  [data-p="codex"] {
+    --p: var(--tk-p-openai);
+  }
+
+  [data-p="google"],
+  [data-p="gemini"] {
+    --p: var(--tk-p-google);
+  }
+
+  [data-p="alibaba"],
+  [data-p="qwen"] {
+    --p: var(--tk-p-alibaba);
+  }
+
+  [data-p="xai"],
+  [data-p="grok"] {
+    --p: var(--tk-p-xai);
+  }
+
+  [data-p="cursor"] {
+    --p: var(--tk-p-cursor);
+  }
+
+  [data-p="zed"],
+  [data-p="zed.dev"] {
+    --p: var(--tk-p-zed);
+  }
+
+  [data-p="opencode"] {
+    --p: var(--tk-p-opencode);
+  }
+
+  [data-p="hermes"] {
+    --p: var(--tk-p-hermes);
+  }
+
+  [data-p="craft-agent"] {
+    --p: var(--tk-p-craft);
+  }
+
+  [data-p="moonshotai"] {
+    --p: var(--tk-p-moonshot);
+  }
+
+  [data-p="zai"] {
+    --p: var(--tk-p-zai);
+  }
+
+  [data-p="deepseek"] {
+    --p: var(--tk-p-deepseek);
+  }
+
+  [data-p="meta"] {
+    --p: var(--tk-p-meta);
+  }
+
+  [data-p="openrouter"] {
+    --p: var(--tk-p-openrouter);
+  }
+
+  /* Kimi is Moonshot's model line: same vendor, same hue. */
+  [data-p="kimi"] {
+    --p: var(--tk-p-moonshot);
+  }
+
+  /* Shades of a brand hue, for stacking the trend chart by model: the
+     vendor decides the color and the shade separates its models within
+     it, assigned in stack order, so "everything Anthropic" still reads
+     as one family. Model ids are 40-odd and growing — a rule per model
+     would be a maintenance queue, and an unmapped one would fall back to
+     grey. Must follow the [data-p] rules above: same specificity, and
+     these override the flat background-color they set. */
+  [data-shade="1"] {
+    background-color: color-mix(in oklab, var(--p) 78%, var(--background));
+  }
+
+  [data-shade="2"] {
+    background-color: color-mix(in oklab, var(--p) 58%, var(--background));
+  }
+
+  [data-shade="3"] {
+    background-color: color-mix(in oklab, var(--p) 40%, var(--background));
+  }
+
+  /* Failure state — the body's stand-in, so it takes the body's
+     place: one bordered panel in the tooltip's idiom (same border,
+     same radius), a plain statement of what is missing, and the one
+     action that can change it. The button wears the checked-segment
+     look of the controls (overview.css), the page's one solid pill,
+     because it is the only thing on this screen to press. */
+
+  .tk-fallback {
+    display: grid;
+    gap: var(--space-xs);
+    justify-items: start;
+    max-inline-size: 36rem;
+    padding: var(--space-s) var(--space-m);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .tk-fallback[hidden] {
+    display: none;
+  }
+
+  .tk-fallback .fallback-title {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .tk-fallback .fallback-body {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    text-wrap: pretty;
+  }
+
+  .tk-fallback .fallback-body a {
+    color: var(--foreground);
+    text-decoration: underline;
+  }
+
+  .tk-retry {
+    margin-block-start: var(--space-3xs);
+    padding: 0.25rem 0.875rem;
+    border-radius: var(--radius-full);
+    background-color: var(--foreground);
+    font-size: var(--step--1);
+    color: var(--background);
+    cursor: pointer;
+  }
+
+  .tk-retry:hover {
+    background-color: color-mix(
+      in oklab,
+      var(--foreground) 85%,
+      var(--background)
+    );
+  }
+
+  .tk-retry:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Skeletons */
+
+  /* A placeholder line is shorter than the text it stands for (0.85em
+     against a full line box), so every slot that will hold one line
+     of text reserves that line — otherwise the section grows by a few
+     pixels per line when the words arrive, and the quota card has a
+     dozen of them. */
+  [data-skeleton] .win-label,
+  [data-skeleton] .win-used,
+  [data-skeleton] .win-foot,
+  [data-skeleton] .win-split li,
+  [data-skeleton] .plan-age,
+  [data-skeleton] .dev-name,
+  [data-skeleton] .dev-seen,
+  [data-skeleton] .dev-tokens,
+  [data-skeleton] .dev-meta,
+  .tk-mix-legend .value:has(> .sk-line),
+  .tk-mix-legend .share:has(> .sk-line),
+  .tk-sync:has(> .sk-line) {
+    display: grid;
+    align-content: center;
+    min-block-size: 1lh;
+  }
+
+  /* The head's line box is its name's, not the icon placeholder's. */
+  [data-skeleton] .plan-head {
+    min-block-size: 1lh;
+  }
+
+  /* Likewise a reset tile's is its countdown's. The tile keeps its own
+     flex row (a min-block-size on it would count its padding), and an
+     empty strut the height of that line holds it open around the bar. */
+  [data-skeleton] .credit::before {
+    content: "";
+    block-size: 1lh;
+  }
+
+  /* The figure's line box is set by its step-0 number, not by the
+     step--1 row it sits in. */
+  [data-skeleton] .win-used {
+    font-size: var(--step-0);
+  }
+
+  /* Legend entries stay inline-flex (chip beside line), so only the
+     height is reserved here. */
+  .tk-chart-legend [data-skeleton] {
+    min-block-size: 1lh;
+  }
+
+  .sk-sub {
+    inline-size: 7em;
+    block-size: 0.8em;
+  }
+
+  .sk-num {
+    inline-size: 2.6em;
+    justify-self: end;
+  }
+
+  .sk-ico {
+    border-radius: var(--radius-full);
+  }
+
+  /* The legend placeholders (a grey chip and a short line each) are
+     here so the chart footer already stands at its final height. */
+  .sk-ico,
+  .tk-mix-bar[data-skeleton],
+  .tk-plans .tk-meter[data-skeleton],
+  .tk-chart-bars[data-skeleton],
+  .tk-chart-legend [data-skeleton] .chip,
+  .tk-device[data-skeleton] .dot {
+    background-color: var(--gray-5);
+    animation: var(--sk-pulse);
+  }
+
+  .tk-chart-bars[data-skeleton] {
+    border-radius: var(--radius-sm);
+    background-image: none;
+  }
+
+  .tk-donut[data-skeleton] circle {
+    stroke: var(--gray-5);
+    animation: var(--sk-pulse);
+  }
+}

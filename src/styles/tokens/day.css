@@ -1,0 +1,169 @@
+/* The day panel under the heatmap (tokens-dashboard/day.ts): its head,
+   the client ring and the legend beside it. */
+
+tokens-dashboard {
+  .tk-day {
+    display: grid;
+    gap: var(--space-2xs);
+    margin-block-start: var(--space-m);
+  }
+
+  /* The picked day's name, with the way back to today at the far end —
+     the one control the panel has, and only while it is needed. */
+  .tk-day-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  .tk-day-head .tk-label {
+    margin-block: 0;
+  }
+
+  /* Styled as a heading row's link (.section-link, feed.css). */
+  .tk-day-back {
+    cursor: pointer;
+  }
+
+  .tk-day-back[hidden] {
+    display: none;
+  }
+
+  .tk-day-body {
+    display: grid;
+    gap: var(--space-s);
+  }
+
+  /* A `display` of its own outranks the UA's [hidden] rule. */
+  .tk-day-body[hidden] {
+    display: none;
+  }
+
+  /* The client mix: the ring on the left, the clients it is cut into
+     on the right. Top-aligned rather than centred, so opening another
+     client (which changes the list's height) never moves the ring. */
+  .tk-day-breakdown {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-s) var(--space-l);
+    margin-block-start: var(--space-xs);
+
+    @media (width < 40rem) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* The ring and its legend are one unit: day.ts hides both on a day
+     with activity but no tokens (active time or messages only), where
+     there is nothing to apportion and an empty ring would read as a
+     broken one. */
+  .tk-day-breakdown[hidden] {
+    display: none;
+  }
+
+  /* A ring rather than a pie: the page's instruments are strokes, and
+     the hole is where the one number the ring is about goes. Separate
+     arcs with air between them, for the same reason the quota meters
+     are pills — these are different agents sharing a day, not parts
+     of one quantity. */
+  .tk-donut {
+    position: relative;
+    aspect-ratio: 1;
+
+    @media (width < 40rem) {
+      justify-self: center;
+      inline-size: 8.5rem;
+    }
+  }
+
+  .tk-donut svg {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+    rotate: -90deg;
+  }
+
+  .tk-donut circle {
+    fill: none;
+    stroke: var(--p);
+    stroke-width: 6;
+    stroke-linecap: round;
+    cursor: pointer;
+    transition:
+      opacity 0.15s ease,
+      stroke-width 0.15s ease;
+  }
+
+  /* The open client's arc stands proud of the rest; the others mute
+     only while something else is being pointed at. */
+  .tk-donut circle[data-focus] {
+    stroke-width: 9;
+  }
+
+  .tk-donut circle[data-mute] {
+    opacity: 0.25;
+  }
+
+  .tk-donut-focus {
+    position: absolute;
+    inset: 20%;
+    display: grid;
+    place-content: center;
+    gap: 0.15em;
+    margin: 0;
+    text-align: center;
+    pointer-events: none;
+    /* The hole the text sits in, painted: a circle inside the arcs'
+       inner edge (r 30 against 37.5), so contrast checkers read the
+       page behind the text rather than the slice under the svg's box. */
+    border-radius: 50%;
+    background-color: var(--background);
+  }
+
+  .tk-donut-focus .value {
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .tk-donut-focus .caption {
+    font-size: var(--step--1);
+    line-height: 1.2;
+    color: var(--muted-foreground);
+    text-wrap: balance;
+  }
+
+  /* The clients beside the ring: the same brand-marked rows as the
+     Breakdown section, one opened at a time onto the models that client
+     drove. The ring already carries each client's share of the day, so
+     a client row drops its fill and keys its slice through its mark
+     instead, tinted with the slice's hue; the fills under the open
+     client take that hue too, as a split of the arc beside them. */
+  .tk-rows.tk-day-legend {
+    margin-block-start: calc(-1 * var(--space-3xs));
+  }
+
+  .tk-rows.tk-day-legend > .tk-row::before,
+  .tk-rows.tk-day-legend > .tk-group > .tk-row::before {
+    content: none;
+  }
+
+  /* A row carries [data-p] for its hue alone; the background the
+     palette paints onto segments is not meant for it. */
+  .tk-rows.tk-day-legend > [data-p] {
+    background-color: transparent;
+  }
+
+  .tk-rows.tk-day-legend > .tk-row > .ico,
+  .tk-rows.tk-day-legend > .tk-group > .tk-row > .ico {
+    color: var(--p);
+  }
+
+  .tk-rows.tk-day-legend .tk-sub .tk-row::before {
+    background-color: color-mix(in oklab, var(--p) 16%, transparent);
+  }
+}

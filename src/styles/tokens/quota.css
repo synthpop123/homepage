@@ -1,0 +1,374 @@
+/* Quota (tokens-dashboard/quota.ts): one card per subscription. */
+
+tokens-dashboard {
+  /* Quota — the one reported section, so everything here is built to
+     admit its own age (see tokens-dashboard/quota.ts). */
+
+  .tk-quota-section[hidden] {
+    display: none;
+  }
+
+  /* Everything below .tk-plans is built by the renderer, so it is
+     addressed through :global — only the list itself is in this
+     template. The skeleton in the markup carries the same class names
+     so it lands in the same geometry.
+
+     Side by side once there is room, like the Breakdown split: the
+     subscriptions are peers being compared, not a sequence to read. */
+  .tk-plans {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-m);
+
+    @media (width >= 40rem) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Name, windows and credits are three levels of the same statement,
+     so they sit further apart than the lines inside a window do. */
+  .tk-plans .tk-plan {
+    position: relative;
+    display: grid;
+    gap: var(--space-s);
+    align-content: start;
+    padding: var(--space-s);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: color-mix(in oklab, var(--muted) 45%, transparent);
+    isolation: isolate;
+  }
+
+  /* The subscription's card is washed in its vendor's hue — faint
+     enough that the meters, in the full hue, still carry the colour. */
+  .tk-plans .tk-plan[data-p] {
+    border-color: color-mix(in oklab, var(--p) 22%, var(--border));
+    background-color: color-mix(
+      in oklab,
+      var(--p) 5%,
+      color-mix(in oklab, var(--muted) 45%, var(--background))
+    );
+  }
+
+  /* The vendor mark as the card's backdrop, cropped by its corner (the
+     Uses cards do the same with theirs). */
+  .tk-plans .plan-mark {
+    position: absolute;
+    z-index: -1;
+    inset-block-end: -1.25rem;
+    inset-inline-end: -1.25rem;
+    inline-size: 8rem;
+    block-size: 8rem;
+    color: color-mix(in oklab, var(--p) 12%, transparent);
+    pointer-events: none;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .tk-plans .plan-mark svg {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .tk-plans .tk-plan:hover .plan-mark {
+      transform: rotate(-8deg) scale(1.04);
+    }
+  }
+
+  /* Mark, name and tier read as one phrase on one line — "Codex · Team"
+     — so the row never wraps and the mark sits on the text's centre
+     rather than its baseline. The age is pushed to the far end. */
+  .tk-plans .plan-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  .tk-plans .plan-age {
+    margin-inline-start: auto;
+    padding-inline-start: var(--space-2xs);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Past the staleness threshold the age is the headline, not a
+     footnote: this card's numbers may describe a window that ended. */
+  .tk-plans .plan-age[data-stale] {
+    color: var(--destructive);
+  }
+
+  .tk-plans .plan-name {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .tk-plans .plan-head .ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    inline-size: 1.1em;
+    block-size: 1.1em;
+  }
+
+  .tk-plans .plan-head .ico svg {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .tk-plans .plan-tier {
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  /* Three nested gaps that have to stay in that order, or the grouping
+     inverts: the lines of a window sit closer than two windows do, and
+     two windows closer than a plan's head, windows and credits. */
+  .tk-plans .tk-windows {
+    display: grid;
+    gap: var(--space-s);
+  }
+
+  /* Head, meter, foot — every window renders all three whatever its
+     state (quota.ts always writes a foot), so rows keep the same
+     height down a card and across the two cards. */
+  .tk-plans .tk-window {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  /* Label left, "9% used" right, on one baseline: the figure column
+     lines up down the card, and the manual-resets count ("3 left")
+     reuses the row so it lands in the same column. */
+  .tk-plans .win-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-s);
+    font-size: var(--step--1);
+  }
+
+  .tk-plans .win-used {
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .tk-plans .win-used b {
+    font-size: var(--step-0);
+    font-weight: var(--font-weight-medium);
+    color: var(--foreground);
+  }
+
+  /* A window past its reset reads 0% because the ceiling is back, not
+     because anyone reported it: the figure drops to the unit's colour,
+     and the foot — "awaiting report" — takes the page's colour for a
+     reading that is no longer current, as a stale card's age does. */
+  .tk-plans .tk-window[data-state="reset"] .win-used b {
+    font-weight: inherit;
+    color: inherit;
+  }
+
+  .tk-plans .tk-window[data-state="reset"] .win-foot {
+    color: var(--destructive);
+  }
+
+  /* A quota window is a gauge against a ceiling, not a share of a whole,
+     so it gets a gauge: a thin track carrying one rounded head, with a
+     floor under the head's width so a barely-touched week still shows
+     that it was touched. The track is a wash of the same hue as the
+     head — the vendor's own — so an empty window still says whose
+     ceiling it measures, and the ceiling itself stays visible at a
+     glance instead of being implied by an unfilled remainder. */
+  .tk-plans .tk-meter {
+    position: relative;
+    block-size: var(--tk-meter);
+    border-radius: var(--radius-full);
+    background-color: var(--gray-4);
+  }
+
+  .tk-plans .tk-meter[data-p] {
+    background-color: color-mix(in oklab, var(--p) 22%, var(--gray-3));
+  }
+
+  .tk-plans .tk-fill {
+    display: flex;
+    block-size: 100%;
+    min-inline-size: var(--tk-meter);
+    overflow: hidden;
+    border-radius: inherit;
+    background-color: var(--p, var(--gray-8));
+  }
+
+  /* The head cut by where the spend went: the largest share in the
+     full hue, each after it a step lighter, hairline gaps between. The
+     split legend under the foot (.win-split) keys its dots the same. */
+  .tk-plans .tk-fill i {
+    flex-basis: 0;
+    min-inline-size: 2px;
+  }
+
+  .tk-plans .tk-fill i + i {
+    border-inline-start: 1px solid var(--background);
+  }
+
+  /* A fourth surface and beyond fall back to grey; the listed shades
+     below override it, so this rule has to come first. */
+  .tk-plans [data-shade] {
+    --shade: var(--gray-8);
+  }
+
+  .tk-plans [data-shade="0"] {
+    --shade: var(--p);
+  }
+
+  .tk-plans [data-shade="1"] {
+    --shade: color-mix(in oklab, var(--p) 60%, var(--background));
+  }
+
+  .tk-plans [data-shade="2"] {
+    --shade: color-mix(in oklab, var(--p) 36%, var(--background));
+  }
+
+  .tk-plans .tk-fill i {
+    background-color: var(--shade);
+  }
+
+  /* Where the clock stands in the window. It stands proud of the track
+     so it reads as a mark on the gauge rather than a gap in the head,
+     and in the foreground's colour so it is plainly not spend. */
+  .tk-plans .tk-pace {
+    position: absolute;
+    inset-block: calc(var(--tk-meter) * -0.6);
+    inline-size: 2px;
+    margin-inline-start: -1px;
+    border-radius: 1px;
+    background-color: color-mix(in oklab, var(--foreground) 55%, transparent);
+    pointer-events: none;
+  }
+
+  /* The reset countdown at the start, what the clock makes of the spend
+     (or, on an allowance, what is left) at the end. */
+  .tk-plans .win-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-plans .win-pace,
+  .tk-plans .win-left {
+    white-space: nowrap;
+  }
+
+  .tk-plans .win-pace[data-pace="over"] {
+    color: var(--foreground);
+  }
+
+  /* The split's key: a dot in the share's shade, the surface, its
+     share. Inline and wrapping, since it is a caption, not a table.
+     [data-p] is for the hue alone, as on .plan-credits. */
+  .tk-plans .win-split {
+    background-color: transparent;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-s);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Transparent over the page-wide [data-shade] band fills: here the
+     shade only colours the dot. */
+  .tk-plans .win-split li {
+    background-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  .tk-plans .win-split li::before {
+    content: "";
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    border-radius: var(--radius-full);
+    background-color: var(--shade);
+  }
+
+  .tk-plans .win-split-name {
+    color: var(--foreground);
+  }
+
+  /* [data-p] is here for the hue alone (the tile to spend next wears
+     it); the background the bare rule paints on chips is not wanted. */
+  .tk-plans .plan-credits {
+    display: grid;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+    background-color: transparent;
+  }
+
+  /* Each banked reset is a tile, not a line: they are discrete things
+     spent one at a time, and a row of tokens reads as a count before
+     it reads as a list. Three equal columns, the count the account
+     banks, so they sit on one row at any width; a fourth would wrap. */
+  .tk-plans .credits-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* Three nowrap tiles would otherwise hold the list at their
+       combined width and push the last one past the card. */
+    min-inline-size: 0;
+    gap: var(--space-2xs);
+  }
+
+  .tk-plans .credit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    min-inline-size: 0;
+    padding: var(--space-3xs) var(--space-2xs);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+  }
+
+  .tk-plans .credit .ico {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  /* The one to spend next wears the plan's hue — the same wash the
+     meters' tracks use, so it reads as this subscription's. */
+  .tk-plans .credit[data-next] {
+    border-color: color-mix(in oklab, var(--p) 45%, var(--border));
+    background-color: color-mix(in oklab, var(--p) 10%, transparent);
+    color: var(--foreground);
+  }
+
+  .tk-plans .credit[data-next] .ico {
+    color: var(--p);
+  }
+
+  /* Lapsing within a day: spend it or lose it. */
+  .tk-plans .credit[data-urgent] {
+    --p: var(--red-9);
+    color: var(--destructive);
+  }
+
+  /* The brand hue says which subscription is being measured; red is
+     reserved for the one case where the reading is a warning rather
+     than a measurement. It is swapped in as --p, so the track's wash
+     turns with the head — a red head on a coral wash would read as two
+     subjects in one gauge. */
+  .tk-plans .tk-meter[data-high] {
+    --p: var(--red-9);
+  }
+}

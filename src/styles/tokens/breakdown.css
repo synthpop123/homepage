@@ -1,0 +1,185 @@
+/* Breakdown (tokens-dashboard/breakdown.ts): the expandable model,
+   client and provider lists. The day panel's legend is built from the
+   same rows; day.css adjusts them. */
+
+tokens-dashboard {
+  /* Breakdown lists */
+
+  .tk-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+  }
+
+  .tk-rows .tk-row {
+    position: relative;
+    /* Isolate the row so the fill can slot between its background and
+       its content via z-index: -1. */
+    z-index: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) max-content 3.2rem;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-block: var(--space-3xs);
+    font-size: var(--step--1);
+  }
+
+  /* Proportional fill behind each row — its share of the range total,
+     sized by the --w custom property the script sets. Soft-cornered
+     rectangle, the site's shape for data marks (heatmap cells, trend
+     bars, chips); tiny shares taper to a hairline rather than getting
+     a forced minimum width. */
+  .tk-rows .tk-row:not([data-skeleton])::before {
+    content: "";
+    position: absolute;
+    inset-block: 2px;
+    inset-inline-start: 0;
+    z-index: -1;
+    inline-size: calc(var(--w, 0) * 100%);
+    border-radius: var(--radius-xs);
+    background-color: color-mix(in oklab, var(--gray-5) 55%, transparent);
+  }
+
+  .tk-rows .ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.1em;
+    block-size: 1.1em;
+  }
+
+  .tk-rows .ico svg {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .tk-rows .name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .tk-rows .val {
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-rows .share {
+    justify-self: end;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-empty {
+    padding-block: var(--space-3xs);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  /* A row that opens onto the models behind it. The row itself is
+     the button — the whole width is the hit target, and it keeps the
+     four-column grid, so an expandable row and a plain one still line
+     up. The chevron rides inside the name cell. */
+  .tk-rows .tk-row-toggle {
+    inline-size: 100%;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .tk-rows .tk-row-toggle .name {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    min-inline-size: 0;
+  }
+
+  /* The label keeps its own box so a long model name still ellipsises
+     against the value column instead of shoving the chevron out. */
+  .tk-rows .tk-row-toggle .name > span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .tk-rows .tk-row-toggle .name svg {
+    flex-shrink: 0;
+    inline-size: 0.85em;
+    block-size: 0.85em;
+    color: var(--muted-foreground);
+    transition: rotate 0.15s;
+  }
+
+  .tk-rows .tk-row-toggle[aria-expanded="true"] .name svg {
+    rotate: 180deg;
+  }
+
+  .tk-rows .tk-row-toggle:hover .name svg {
+    color: var(--foreground);
+  }
+
+  /* The models under a client or vendor: same row grid, indented and quieter, so
+     the parent still reads as the total they add up to. */
+  .tk-rows .tk-sub {
+    margin-inline-start: calc(1.1em + var(--space-2xs));
+  }
+
+  .tk-rows .tk-sub .tk-row {
+    color: var(--muted-foreground);
+  }
+
+  .tk-rows .tk-sub .name {
+    color: var(--foreground);
+  }
+
+  .tk-rows .tk-more {
+    margin-block-start: var(--space-3xs);
+  }
+
+  .tk-rows .tk-more-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    inline-size: 100%;
+    padding-block: var(--space-2xs);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    cursor: pointer;
+  }
+
+  .tk-rows .tk-more-btn:hover {
+    color: var(--foreground);
+  }
+
+  .tk-rows .tk-more-btn svg {
+    inline-size: 1em;
+    block-size: 1em;
+    transition: rotate 0.15s;
+  }
+
+  .tk-rows .tk-more-btn[aria-expanded="true"] svg {
+    rotate: 180deg;
+  }
+
+  .tk-rows .more-amount {
+    margin-inline-start: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-split {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-s);
+    /* The models list (and its expand button) sits right above; keep the
+       same rhythm a .tk-label would bring. */
+    margin-block-start: var(--space-m);
+
+    @media (width >= 40rem) {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-m);
+    }
+  }
+
+  .tk-split .tk-label:first-child {
+    margin-block-start: 0;
+  }
+}

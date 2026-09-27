@@ -1,0 +1,203 @@
+/* Devices (tokens-dashboard/devices.ts): one card per device. */
+
+tokens-dashboard {
+  /* Devices — one card per device, in the quota cards' idiom: a faint
+     panel, washed green while the device is online, with its kind drawn
+     large and cropped by the corner as a backdrop the way the Uses cards
+     carry theirs. auto-fill sets the column count, so three sit side by
+     side in the column and stack on a phone with no query. */
+
+  .tk-devices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr));
+    gap: var(--space-xs);
+
+    & > .tk-empty {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .tk-devices .tk-device {
+    position: relative;
+    display: grid;
+    gap: var(--space-s);
+    align-content: start;
+    padding: var(--space-s);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: color-mix(
+      in oklab,
+      var(--muted) 45%,
+      var(--background)
+    );
+    isolation: isolate;
+  }
+
+  .tk-devices .tk-device[data-online] {
+    --dev-hue: var(--tk-accent);
+    border-color: color-mix(in oklab, var(--tk-accent) 28%, var(--border));
+    background-color: color-mix(
+      in oklab,
+      var(--tk-accent) 4%,
+      color-mix(in oklab, var(--muted) 45%, var(--background))
+    );
+  }
+
+  .tk-devices .dev-mark {
+    position: absolute;
+    z-index: -1;
+    inset-block-end: -0.18em;
+    inset-inline-end: -0.16em;
+    font-size: 7.5rem;
+    color: color-mix(in oklab, var(--foreground) 8%, transparent);
+    transition: rotate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+
+    & g {
+      stroke-width: 1.25;
+    }
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .tk-devices .tk-device:hover .dev-mark {
+      rotate: -6deg;
+    }
+  }
+
+  /* Status pill: a grey one reads as "not now", the online one takes
+     the card's green. */
+  .tk-devices .dev-head {
+    display: flex;
+  }
+
+  .tk-devices .dev-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.15em 0.6em 0.15em 0.5em;
+    border-radius: var(--radius-full);
+    background-color: color-mix(in oklab, var(--foreground) 6%, transparent);
+    color: var(--muted-foreground);
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .tk-devices [data-online] .dev-status {
+    background-color: color-mix(in oklab, var(--tk-accent) 14%, transparent);
+    color: color-mix(in oklab, var(--tk-accent) 55%, var(--foreground));
+  }
+
+  .tk-devices .dot {
+    inline-size: 0.4rem;
+    block-size: 0.4rem;
+    border-radius: var(--radius-full);
+    background-color: var(--gray-8);
+  }
+
+  .tk-devices [data-online] .dot {
+    background-color: var(--tk-accent);
+    animation: tk-dev-pulse 2.4s ease-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tk-devices [data-online] .dot {
+      animation: none;
+    }
+  }
+
+  .tk-devices .dev-id {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .tk-devices .dev-name {
+    margin: 0;
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .tk-devices .dev-since {
+    margin: 0;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The card's one large figure, then its share of every device's
+     tokens as a thin meter: green while online, ink otherwise. */
+  .tk-devices .dev-share {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .tk-devices .dev-tokens {
+    font-size: var(--step-3);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+
+    & .unit {
+      margin-inline-start: 0.1em;
+      font-size: 0.55em;
+      color: var(--muted-foreground);
+      letter-spacing: 0;
+    }
+  }
+
+  .tk-devices .dev-meter {
+    block-size: 0.25rem;
+    margin-block-start: var(--space-3xs);
+    border-radius: var(--radius-full);
+    background:
+      linear-gradient(
+        var(--dev-hue, var(--foreground)),
+        var(--dev-hue, var(--foreground))
+      )
+      no-repeat 0 / var(--share, 0%) 100%,
+      color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+
+  .tk-devices .dev-cap {
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tk-devices .dev-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2xs) var(--space-xs);
+    margin: 0;
+
+    & div {
+      display: grid;
+      gap: 0.1em;
+    }
+
+    & dt {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
+
+    & dd {
+      margin: 0;
+      font-weight: var(--font-weight-medium);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+/* Top level: lightningcss rejects @keyframes nested in a rule. */
+@keyframes tk-dev-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--tk-accent) 45%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}

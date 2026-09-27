@@ -1,0 +1,185 @@
+/* Overview (tokens-dashboard/overview.ts): the range and metric
+   controls at its head (read by tokens-dashboard/index.ts; the trend's
+   stack toggle wears them too, as .tk-seg-sm), the stat cards' deltas
+   and the token composition bar. */
+
+tokens-dashboard {
+  /* Controls */
+
+  .tk-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2xs);
+    margin-block-end: var(--space-s);
+  }
+
+  .tk-seg {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+  }
+
+  .tk-seg label {
+    position: relative;
+    display: inline-flex;
+  }
+
+  /* An option the loaded payload can't support (model stacking on a
+     collector that predates the per-day model slices). */
+  .tk-seg label[hidden] {
+    display: none;
+  }
+
+  .tk-seg input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tk-seg span {
+    padding: 0.125rem 0.625rem;
+    border-radius: var(--radius-full);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tk-seg input:checked + span {
+    background-color: var(--foreground);
+    color: var(--background);
+  }
+
+  .tk-seg label:hover input:not(:checked) + span {
+    color: var(--foreground);
+  }
+
+  .tk-seg input:focus-visible + span {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+
+  /* Compact variant for in-chart controls (the trend stack toggle). */
+  .tk-seg-sm span {
+    padding: 0.0625rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+
+  /* Stat cards: the readout is shared with the feeds (feed.css). */
+
+  .tk-card .delta:empty {
+    display: none;
+  }
+
+  .tk-card .delta .delta-val {
+    color: var(--foreground);
+  }
+
+  /* Three proportions on this page, three forms. A composition
+     (.tk-mix-composition) is one quantity cut into its parts, so it
+     stays one solid block; a client mix (.tk-donut) is separate actors
+     sharing a day, so its arcs stand apart; a quota window (.tk-meter)
+     is a gauge against a ceiling, so it is a thin track with a rounded
+     head. Sizing all three alike was what made a 10%-spent week read as
+     a stalled composition. */
+
+  .tk-mix {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  /* Composition: contiguous parts, shaded by the --c ramp below. */
+  .tk-mix-bar {
+    display: flex;
+    block-size: 0.875rem;
+    overflow: hidden;
+    border-radius: var(--radius-full);
+    background-color: var(--gray-4);
+  }
+
+  .tk-mix-bar span {
+    min-inline-size: 3px;
+    background-color: var(--c, var(--gray-6));
+  }
+
+  .tk-mix-bar span + span {
+    border-inline-start: 2px solid var(--background);
+  }
+
+  .tk-mix [data-k="0"] {
+    --c: var(--foreground);
+  }
+
+  .tk-mix [data-k="1"] {
+    --c: color-mix(in oklab, var(--foreground) 60%, var(--background));
+  }
+
+  .tk-mix [data-k="2"] {
+    --c: var(--tk-accent);
+  }
+
+  .tk-mix [data-k="3"] {
+    --c: color-mix(in oklab, var(--tk-accent) 50%, var(--background));
+  }
+
+  .tk-mix [data-k="4"] {
+    --c: var(--gray-8);
+  }
+
+  /* One row per part, largest first (overview.ts orders them), as the
+     Flights legends do: swatch and name, then the amount and its share
+     in columns of their own so the figures line up down the list. */
+  .tk-mix-legend {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--space-3xs) var(--space-s);
+    margin: 0;
+    padding: 0;
+    font-size: var(--step--1);
+    list-style: none;
+  }
+
+  .tk-mix-legend li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    margin: 0;
+  }
+
+  .tk-mix-legend .name {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    color: var(--muted-foreground);
+  }
+
+  .tk-mix-legend .chip {
+    flex-shrink: 0;
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    border-radius: var(--radius-xs);
+    background-color: var(--c, var(--gray-6));
+  }
+
+  .tk-mix-legend .value {
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  .tk-mix-legend .share {
+    min-inline-size: 3.5em;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  .tk-mix-legend .sk-line {
+    max-inline-size: 100%;
+  }
+}
