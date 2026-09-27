@@ -23,20 +23,27 @@ import MetaHead from "@/components/MetaHead.astro"
 import Sidebar from "@/components/Sidebar.astro"
 import { SITE } from "@/consts"
 
-type Props = { crumbs?: { label: string; href: string }[] }
+type Props = {
+  crumbs?: { label: string; href: string }[]
+  /** The page's language, when it is not the site's (a Chinese post). */
+  lang?: string
+}
 
-const { crumbs } = Astro.props
+const { crumbs, lang = SITE.locale } = Astro.props
+// The chrome is English on every page, so a page in another language says
+// so around it.
+const chromeLang = lang === SITE.locale ? undefined : SITE.locale
 ---
 
-<html lang={SITE.locale} dir={SITE.dir}>
+<html lang={lang} dir={SITE.dir}>
   <MetaHead>
     <slot name="head" />
   </MetaHead>
   <body>
-    <a href="#main" data-skip-link>Skip to content</a>
+    <a href="#main" data-skip-link lang={chromeLang}>Skip to content</a>
     <page-grid>
       <page-header>
-        <page-nav>
+        <page-nav lang={chromeLang}>
           <Sidebar crumbs={crumbs}
             ><slot name="actions" slot="actions" /></Sidebar
           >
@@ -47,7 +54,7 @@ const { crumbs } = Astro.props
       </page-header>
       <page-content>
         <main id="main" tabindex="-1"><slot /></main>
-        <page-footer><Footer /></page-footer>
+        <page-footer lang={chromeLang}><Footer /></page-footer>
       </page-content>
     </page-grid>
   </body>

@@ -1,9 +1,20 @@
 import { SITE } from "@/consts"
 import { getImage } from "astro:assets"
 import { getCollection, type CollectionEntry } from "astro:content"
+import { detectLang } from "@/lib/lang"
 import { isSubpost } from "@/lib/utils"
 
 export const pageTitle = (title: string) => `${title} | ${SITE.title}`
+
+/** The language a post is written in: its `lang`, or read from its body. */
+export const postLang = (post: CollectionEntry<"blog">): string =>
+  post.data.lang ?? detectLang(post.body ?? "", SITE.locale)
+
+/** A `lang` for a post's title on a page in the site's own locale. */
+export const titleLang = (post: CollectionEntry<"blog">) => {
+  const lang = postLang(post)
+  return lang === SITE.locale ? undefined : lang
+}
 
 export async function getPosts(): Promise<CollectionEntry<"blog">[]> {
   const posts = await getCollection("blog", ({ data }) => !data.draft)
@@ -81,6 +92,7 @@ export async function postMarkdown(
   if (updatedDate) frontmatter.push(`updated: ${day(updatedDate)}`)
   if (tags?.length) frontmatter.push(`tags: [${tags.map(quote).join(", ")}]`)
   if (ai) frontmatter.push("ai: true")
+  frontmatter.push(`lang: ${postLang(post)}`)
   frontmatter.push(`source: ${source}`)
   const body = await absoluteAssets(post, post.body?.trim() ?? "", source)
   return `---\n${frontmatter.join("\n")}\n---\n\n${body}\n`

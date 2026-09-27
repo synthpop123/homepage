@@ -1,6 +1,7 @@
 ---
 title: "使用 PyVmomi 构建 VMware 自动化工具"
 description: "Using PyVmomi to build some useful VMware automation tools"
+lang: zh-CN
 date: 2024-03-27
 authors:
   - lkw123

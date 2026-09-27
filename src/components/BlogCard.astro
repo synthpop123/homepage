@@ -1,5 +1,6 @@
 ---
 import Byline from "@/components/Byline.astro"
+import { titleLang } from "@/lib/content"
 import { formatDate } from "@/lib/utils"
 import { Image } from "astro:assets"
 import { getEntries, type CollectionEntry } from "astro:content"
@@ -17,7 +18,7 @@ const authors = await getEntries(post.data.authors)
       </a>
     )}
   <entry-info>
-    <a href={`/blog/${post.id}`}>{post.data.title}</a>
+    <a href={`/blog/${post.id}`} lang={titleLang(post)}>{post.data.title}</a>
     <entry-meta>
       <Byline authors={authors} ai={post.data.ai} />
       <time datetime={post.data.date.toISOString()}

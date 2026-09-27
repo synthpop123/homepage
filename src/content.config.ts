@@ -45,6 +45,11 @@ const blog = defineCollection({
       draft: z.boolean().optional(),
       mermaid: z.boolean().optional(),
       ai: z.boolean().optional(),
+      // BCP 47. Leave it out and postLang() reads it from the body.
+      lang: z
+        .string()
+        .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/)
+        .optional(),
     }),
 })
 

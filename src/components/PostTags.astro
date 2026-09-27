@@ -1,11 +1,11 @@
 ---
-type Props = { tags?: string[] }
+type Props = { tags?: string[]; lang?: string }
 
-const { tags } = Astro.props
+const { tags, lang } = Astro.props
 ---
 
 {tags && tags.length > 0 && (
-    <post-tags>
+    <post-tags lang={lang}>
       {tags.map((tag) => (
         <a href={`/tags/${tag}`}>#{tag}</a>
       ))}

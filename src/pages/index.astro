@@ -4,7 +4,7 @@ import Now from "@/components/Now.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { API, NOW } from "@/consts"
-import { getPosts } from "@/lib/content"
+import { getPosts, titleLang } from "@/lib/content"
 import { Image } from "astro:assets"
 // Downloaded at build time by scripts/prebuild.ts (random cat per build).
 import catImage from "@/assets/cat.jpg"
@@ -80,7 +80,7 @@ const toc = [
           <time datetime={post.data.date.toISOString()}>
             {postDate(post.data.date)}
           </time>
-          <a href={`/blog/${post.id}`}>{post.data.title}</a>
+          <a href={`/blog/${post.id}`} lang={titleLang(post)}>{post.data.title}</a>
         </li>
       ))}
     </ol>
