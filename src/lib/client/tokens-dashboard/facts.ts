@@ -33,9 +33,11 @@ export function renderFacts(q: Query, site: Site) {
     "biggest",
     facts.biggest ? formatTokens(facts.biggest.tokens) : "—",
     facts.biggest
-      ? `${formatDate(facts.biggest.date)} · ${formatCost(facts.biggest.cost)}`
+      ? `${formatDay(facts.biggest.date)} · ${formatCost(facts.biggest.cost)}`
       : "no usage yet",
-    facts.biggest ? `${formatExact(facts.biggest.tokens)} tokens` : undefined,
+    facts.biggest
+      ? `${formatExact(facts.biggest.tokens)} tokens on ${formatDate(facts.biggest.date)}`
+      : undefined,
   )
   setCard(
     cards,
@@ -52,7 +54,7 @@ export function renderFacts(q: Query, site: Site) {
     cards,
     "median",
     facts.median !== null ? formatTokens(facts.median) : "—",
-    "median across active days",
+    "on active days",
     facts.median !== null
       ? `${formatExact(Math.round(facts.median))} tokens`
       : undefined,
@@ -61,7 +63,7 @@ export function renderFacts(q: Query, site: Site) {
     cards,
     "weekday",
     facts.weekday?.name ?? "—",
-    facts.weekday ? `${formatShare(facts.weekday.share)} of all tokens` : "—",
+    facts.weekday ? `${formatShare(facts.weekday.share)} of tokens` : "—",
   )
   setCard(
     cards,
@@ -88,7 +90,7 @@ export function renderFacts(q: Query, site: Site) {
     "models",
     String(models.length),
     models.length > 0
-      ? `across ${site.ranges.all.byClient.length} ${site.ranges.all.byClient.length === 1 ? "client" : "clients"}`
+      ? `${site.ranges.all.byClient.length} ${site.ranges.all.byClient.length === 1 ? "client" : "clients"}`
       : "—",
     models.length > 0 ? `most used: ${modelLabel(models[0].model)}` : undefined,
   )
@@ -102,7 +104,7 @@ export function renderFacts(q: Query, site: Site) {
     "activeTime",
     tracked.ms > 0 ? formatDuration(tracked.ms) : "—",
     tracked.ms > 0
-      ? `≈ ${formatTokens(perHour(tracked.tokens, tracked.ms))} tokens per hour`
+      ? `${formatTokens(perHour(tracked.tokens, tracked.ms))} tokens/h`
       : "not reported yet",
     tracked.ms > 0
       ? `wall-clock agent time across ${tracked.days} tracked ${

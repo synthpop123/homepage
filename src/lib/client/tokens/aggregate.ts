@@ -400,14 +400,6 @@ export type DayView = {
   messages: number
   /** CLI-reported active time (ms), 0 where none was reported. */
   active: number
-  /** The day before, the baseline every delta is measured against. */
-  before: {
-    date: string
-    tokens: number
-    cost: number
-    messages: number
-    active: number
-  }
   /** The ring's slices: the day's top clients, with everything below
    *  the cutoff merged into one residual slice so the ring still closes
    *  on the day. A cap belongs to the ring alone — past a few slices the
@@ -433,10 +425,7 @@ export type DayView = {
  * hide the very card that has something to say.
  */
 export function dayView(site: Site, date: string): DayView {
-  const dayOf = (at: string) => site.daily.find((day) => day.date === at)
-  const day = dayOf(date)
-  const eve = shiftDays(date, -1)
-  const before = dayOf(eve)
+  const day = site.daily.find((entry) => entry.date === date)
   const tokens = day?.tokens ?? 0
 
   const slice = (id: string, value: number): DayMix => ({
@@ -480,13 +469,6 @@ export function dayView(site: Site, date: string): DayView {
     cost: day?.cost ?? 0,
     messages: day?.messages ?? 0,
     active: day?.active ?? 0,
-    before: {
-      date: eve,
-      tokens: before?.tokens ?? 0,
-      cost: before?.cost ?? 0,
-      messages: before?.messages ?? 0,
-      active: before?.active ?? 0,
-    },
     mix:
       clients.length === 0
         ? []

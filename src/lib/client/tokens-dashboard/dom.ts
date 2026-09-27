@@ -46,25 +46,26 @@ export function scopedQuery(root: HTMLElement) {
 
 export type Query = ReturnType<typeof scopedQuery>
 
-/** Fill one stat card (dt/value/sub) inside a .tk-cards readout. */
+/** Fill one stat card inside a .tk-cards readout: its figure, and the
+ *  line under it where the card has one. */
 export const setCard = (
   cards: HTMLElement | null,
   key: string,
   value: string,
-  sub: string,
+  sub?: string,
   exact?: string,
 ) => {
   const card = cards?.querySelector(`.tk-card[data-key="${key}"]`)
   const valueEl = card?.querySelector<HTMLElement>(".value")
-  const subEl = card?.querySelector<HTMLElement>(".sub")
-  if (!valueEl || !subEl) return
+  if (!valueEl) return
   setReadout(valueEl, value)
   if (exact) valueEl.title = exact
-  subEl.textContent = sub
+  const subEl = card?.querySelector<HTMLElement>(".sub")
+  if (subEl && sub !== undefined) subEl.textContent = sub
 }
 
 /**
- * Fill a comparison line — "↑ 34% vs yesterday". The arrow and the
+ * Fill a comparison line — "↑ 34% vs prior". The arrow and the
  * magnitude carry the emphasis, the baseline it is measured against
  * stays muted; an empty `text` clears the line (and `.delta:empty`
  * collapses it). `title` holds the number being compared to.

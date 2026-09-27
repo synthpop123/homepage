@@ -67,9 +67,9 @@
    figure missing. The column count switches on the panel's own width
    (the clamp resolves to half the width below --panel-wide and a quarter
    above it, less the gaps), so the panel needs no container around it to
-   query. Tokens raises the threshold, since its cells carry a comparison
-   line that has to fit on one line — a wrapped one is also a line its
-   skeleton didn't reserve. */
+   query. A panel is one row of four or two, so each cell holds a figure
+   and at most one short line under it; that line never wraps, since a
+   wrapped one is a line its skeleton didn't reserve. */
 .readout {
   /* The heatmap's green, which every panel but two sits above. */
   --readout-accent: light-dark(#30a14e, #39d353);
@@ -88,12 +88,8 @@
       1fr
     )
   );
-  gap: var(--space-s) var(--readout-gap);
+  gap: var(--space-xs) var(--readout-gap);
   margin: 0;
-}
-
-tokens-dashboard .readout {
-  --panel-wide: 44rem;
 }
 
 switch-feed .readout {
@@ -104,8 +100,8 @@ switch-feed .readout {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3xs);
-  padding-block: var(--space-xs) var(--space-3xs);
+  gap: 0.125rem;
+  padding-block-start: var(--space-2xs);
   background: linear-gradient(
       color-mix(in oklab, var(--readout-accent) 9%, transparent),
       transparent
@@ -210,9 +206,12 @@ switch-feed .readout {
 
 .readout dd:not(.value) {
   margin: 0;
+  overflow: hidden;
   font-size: var(--step--1);
   font-variant-numeric: tabular-nums;
   color: var(--muted-foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .readout :is(.value, dd):has(> .sk-line) {

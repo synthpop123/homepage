@@ -94,7 +94,7 @@ const stackOptions = [
 const factCards = [
   { key: "biggest", label: "Biggest day" },
   { key: "busiest", label: "Busiest week" },
-  { key: "median", label: "Typical day" },
+  { key: "median", label: "Median day" },
   { key: "weekday", label: "Top weekday" },
   { key: "longest", label: "Longest streak" },
   { key: "current", label: "Current streak" },
@@ -220,7 +220,6 @@ const LEGEND_CHIPS = 4
               <div class="tk-card" data-key={key}>
                 <dt>{label}</dt>
                 <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
-                <dd class="delta"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
               </div>
             ))}
           </dl>
@@ -279,7 +278,6 @@ const LEGEND_CHIPS = 4
           <div class="tk-card" data-key={key}>
             <dt>{label}</dt>
             <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
-            <dd class="sub"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
             <dd class="delta"><span class="sk-line sk-sub" style="inline-size: 5em" aria-hidden="true" /></dd>
           </div>
         ))}
@@ -399,7 +397,7 @@ const LEGEND_CHIPS = 4
     </section>
     <section>
       <h2 id="patterns">Patterns</h2>
-      <dl class="tk-cards tk-facts readout" data-cards="facts">
+      <dl class="tk-cards readout" data-cards="facts">
         {factCards.map(({ key, label }) => (
           <div class="tk-card" data-key={key}>
             <dt>{label}</dt>
@@ -780,13 +778,7 @@ const LEGEND_CHIPS = 4
       font-size: 0.6875rem;
     }
 
-    /* Stat cards: the readout is shared with the feeds (feed.css). The
-       Patterns figures are a size down — eight of them, and several are
-       words (`Thursday`) that would otherwise crowd their cell. */
-
-    .tk-facts .value {
-      font-size: var(--step-1);
-    }
+    /* Stat cards: the readout is shared with the feeds (feed.css). */
 
     .tk-card .delta:empty {
       display: none;

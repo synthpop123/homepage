@@ -1,7 +1,7 @@
 /**
  * The day panel under the heatmap: whichever day is picked — today
- * until the visitor clicks another — as four stat cards measured
- * against the day before, the client mix as a ring, and beside it every
+ * until the visitor clicks another — as one row of four stat cards, the
+ * client mix as a ring, and beside it every
  * client of the day, one at a time opened onto the models behind it.
  * All of it comes from `dayView` over the daily series, so a picked day
  * and today render through one path.
@@ -17,8 +17,6 @@ import {
   formatCostExact,
   formatCount,
   formatDate,
-  formatDay,
-  formatDelta,
   formatDuration,
   formatExact,
   formatShare,
@@ -33,7 +31,6 @@ import {
   type Icons,
   modelSubRows,
   type Query,
-  setDelta,
   setExpanded,
   usageRow,
 } from "./dom"
@@ -171,71 +168,29 @@ export function createDayPanel(q: Query, icons: Icons, onBack: () => void) {
   back?.addEventListener("click", onBack)
 
   const renderCards = (view: DayView) => {
-    const setStat = (
-      key: string,
-      value: string,
-      exact: string,
-      delta: string,
-      deltaTitle = "",
-    ) => {
-      const card = q(`[data-cards="day"] .tk-card[data-key="${key}"]`)
-      const valueEl = card?.querySelector<HTMLElement>(".value")
-      if (valueEl) {
-        setReadout(valueEl, value)
-        valueEl.title = exact
-      }
-      setDelta(
-        card?.querySelector<HTMLElement>(".delta") ?? null,
-        delta,
-        deltaTitle,
-      )
+    const setStat = (key: string, value: string, exact: string) => {
+      const valueEl = q(`[data-cards="day"] .tk-card[data-key="${key}"] .value`)
+      if (!valueEl) return
+      setReadout(valueEl, value)
+      valueEl.title = exact
     }
-
-    // Today is still running while its baseline is a finished day, so
-    // the tooltip says "full day" rather than letting a morning read as
-    // a collapse. A picked day is compared with a peer, and names it.
-    const baseline = view.isToday ? "yesterday" : formatDay(view.before.date)
-    const vsBefore = (current: number, base: number) =>
-      base > 0
-        ? `${formatDelta((current - base) / base)} vs ${baseline}`
-        : current > 0
-          ? `↑ new vs ${baseline}`
-          : ""
-    const baseTitle = (value: string) =>
-      view.isToday
-        ? `yesterday, full day: ${value}`
-        : `${formatDate(view.before.date)}: ${value}`
 
     setStat(
       "tokens",
       formatTokens(view.tokens),
       `${formatExact(view.tokens)} tokens`,
-      vsBefore(view.tokens, view.before.tokens),
-      baseTitle(`${formatExact(view.before.tokens)} tokens`),
     )
-    setStat(
-      "cost",
-      formatCost(view.cost),
-      formatCostExact(view.cost),
-      vsBefore(view.cost, view.before.cost),
-      baseTitle(formatCostExact(view.before.cost)),
-    )
+    setStat("cost", formatCost(view.cost), formatCostExact(view.cost))
     setStat(
       "messages",
       formatCount(view.messages),
       `${formatExact(view.messages)} messages`,
-      vsBefore(view.messages, view.before.messages),
-      baseTitle(`${formatExact(view.before.messages)} messages`),
     )
     setStat(
       "activeTime",
       view.active > 0 ? formatDuration(view.active) : "—",
       view.active > 0
         ? `${formatExact(Math.round(view.active / 60_000))} minutes`
-        : "",
-      vsBefore(view.active, view.before.active),
-      view.before.active > 0
-        ? baseTitle(formatDuration(view.before.active))
         : "",
     )
   }

@@ -559,42 +559,14 @@ describe("dayView", () => {
     expect(view.clients).toEqual([])
   })
 
-  it("baselines against the day before, active time included", () => {
+  it("reads a past day, not today", () => {
     const view = dayView(
-      daySite(
-        day(EVE, 100, { cost: 1, messages: 4, active: 600_000 }),
-        day(TODAY, 300, { cost: 3, messages: 9, active: 900_000 }),
-      ),
-      TODAY,
-    )
-    expect(view.isToday).toBe(true)
-    expect(view.before).toMatchObject({
-      date: EVE,
-      tokens: 100,
-      cost: 1,
-      messages: 4,
-      active: 600_000,
-    })
-    expect(view.active).toBe(900_000)
-  })
-
-  it("reads a past day against its own eve, not against today", () => {
-    const view = dayView(
-      daySite(
-        day("2026-07-18", 50, { cost: 2 }),
-        day(EVE, 100, { cost: 1 }),
-        day(TODAY, 300, { cost: 3 }),
-      ),
+      daySite(day(EVE, 100, { cost: 1 }), day(TODAY, 300, { cost: 3 })),
       EVE,
     )
     expect(view.isToday).toBe(false)
     expect(view.tokens).toBe(100)
-    expect(view.before).toMatchObject({ date: "2026-07-18", tokens: 50 })
-  })
-
-  it("reads no baseline when the day before is missing from the series", () => {
-    const view = dayView(daySite(day(TODAY, 300)), TODAY)
-    expect(view.before).toMatchObject({ date: EVE, tokens: 0, active: 0 })
+    expect(view.cost).toBe(1)
   })
 
   it("keeps the top clients and merges the tail into one segment", () => {

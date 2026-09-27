@@ -196,7 +196,7 @@ export function statCards(site: Site): StatCard[] {
       key: "distance",
       label: "Distance",
       value: formatKm(stats.km),
-      foot: `${laps.toFixed(laps < 10 ? 2 : 1)}× around the Earth`,
+      foot: `${laps.toFixed(laps < 10 ? 2 : 1)}× the equator`,
     },
     {
       key: "airtime",
