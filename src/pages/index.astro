@@ -4,12 +4,23 @@ import MetaPage from "@/components/MetaPage.astro"
 import Layout from "@/layouts/Layout.astro"
 import { PROFILE_TABS } from "@/consts"
 import { Image } from "astro:assets"
+import monoWoff2 from "@/assets/fonts/GeistMono-Variable.woff2?url"
 // Downloaded at build time by scripts/prebuild.ts (random cat per build).
 import catImage from "@/assets/cat.jpg"
 ---
 
 <Layout>
   <MetaPage slot="head" />
+  {/* The profile code block is above the fold here, and on a phone its
+      long lines wrap, so a late swap to Geist Mono moves the breaks. */}
+  <link
+    rel="preload"
+    href={monoWoff2}
+    as="font"
+    type="font/woff2"
+    crossorigin
+    slot="head"
+  >
   <dictionary-entry>
     <h1>lkw123</h1>
     <etymology-span>
@@ -83,10 +94,6 @@ import catImage from "@/assets/cat.jpg"
 
     @media (width >= 64rem) {
       margin-block-start: -0.2em;
-    }
-
-    ipa-span {
-      opacity: 0.6;
     }
 
     h1 {
