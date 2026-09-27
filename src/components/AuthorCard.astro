@@ -4,7 +4,7 @@ import GitHub from "@/assets/icons/github.svg"
 import Globe from "@/assets/icons/globe.svg"
 import Link from "@/assets/icons/link.svg"
 import Mastodon from "@/assets/icons/mastodon.svg"
-import Twitter from "@/assets/icons/twitter.svg"
+import X from "@/assets/icons/x.svg"
 import SocialIcons from "@/components/SocialIcons.astro"
 import { normalizePath } from "@/lib/utils"
 import type { SvgComponent } from "astro/types"
@@ -21,7 +21,7 @@ const { name, pronouns, avatar, bio, mail, socials } = author.data
 const ICONS: Record<string, { label: string; icon: SvgComponent }> = {
   website: { label: "Website", icon: Globe },
   github: { label: "GitHub", icon: GitHub },
-  twitter: { label: "Twitter", icon: Twitter },
+  twitter: { label: "X", icon: X },
   mastodon: { label: "Mastodon", icon: Mastodon },
 }
 

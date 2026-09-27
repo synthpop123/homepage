@@ -2,7 +2,7 @@ import type { SvgComponent } from "astro/types"
 import Email from "@/assets/icons/email.svg"
 import GitHub from "@/assets/icons/github.svg"
 import RSS from "@/assets/icons/rss.svg"
-import Twitter from "@/assets/icons/twitter.svg"
+import X from "@/assets/icons/x.svg"
 
 export const SITE = {
   title: "lkw123",
@@ -31,7 +31,7 @@ export const NAVIGATION: { href: string; label: string; wideOnly?: boolean }[] =
 
 export const SOCIALS: { href: string; label: string; icon: SvgComponent }[] = [
   { href: "https://github.com/synthpop123", label: "GitHub", icon: GitHub },
-  { href: "https://x.com/whoamamamiii", label: "Twitter", icon: Twitter },
+  { href: "https://x.com/whoamamamiii", label: "X", icon: X },
   { href: "mailto:hi@lkwplus.com", label: "Email", icon: Email },
   { href: "/rss.xml", label: "RSS", icon: RSS },
 ]
@@ -140,7 +140,7 @@ export const USES: {
         icon: "monitor",
       },
       {
-        name: "NuPhy BH65",
+        name: "NuPhyX BH65",
         note: "65% and wireless, arrow keys kept, numpad dropped.",
         icon: "keyboard",
       },

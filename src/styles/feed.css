@@ -2,20 +2,15 @@
    the static sections beside them. Row layouts stay local. */
 
 /* The small link at the far end of a heading row (SectionHead.astro, the
-   home page's section heads): muted, and underlined, since at that size
-   colour alone does not say "link". An external arrow sits outside the
-   underline. */
+   home page's section heads): muted, not underlined, brightening on
+   hover. An external one carries an arrow. */
 .section-link {
   flex-shrink: 0;
   font-size: var(--step--1);
   font-weight: var(--font-weight-normal);
   color: var(--muted-foreground);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
-  text-underline-offset: 0.2em;
-  transition:
-    color 0.15s ease,
-    text-decoration-color 0.15s ease;
+  text-decoration: none;
+  transition: color 0.15s ease;
 
   span {
     display: inline-block;
@@ -24,7 +19,6 @@
 
   &:hover {
     color: var(--foreground);
-    text-decoration-color: currentColor;
   }
 }
 
