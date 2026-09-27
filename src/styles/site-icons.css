@@ -1,0 +1,47 @@
+/* The mark after an external link in a post (src/lib/site-icons.ts): the
+   site's logo, or an arrow, drawn as a mask so it takes the link's colour,
+   dimmed, and outside the underline. Its last word is glued to it so it
+   never starts a line alone. */
+prose-content {
+  [data-glue] {
+    white-space: nowrap;
+  }
+
+  [data-site-icon] {
+    display: inline-block;
+    inline-size: 0.75em;
+    block-size: 0.75em;
+    margin-inline-start: 0.2em;
+    vertical-align: -0.04em;
+    background-color: currentColor;
+    opacity: 0.45;
+    mask: var(--site-icon) center / contain no-repeat;
+    transition: opacity 150ms;
+  }
+
+  a:hover [data-site-icon] {
+    opacity: 0.8;
+  }
+}
+
+[data-site-icon="external"] { --site-icon: url("../assets/icons/sites/external.svg"); }
+[data-site-icon="apple"] { --site-icon: url("../assets/icons/sites/apple.svg"); }
+[data-site-icon="caddy"] { --site-icon: url("../assets/icons/sites/caddy.svg"); }
+[data-site-icon="debian"] { --site-icon: url("../assets/icons/sites/debian.svg"); }
+[data-site-icon="docker"] { --site-icon: url("../assets/icons/sites/docker.svg"); }
+[data-site-icon="github"] { --site-icon: url("../assets/icons/sites/github.svg"); }
+[data-site-icon="grafana"] { --site-icon: url("../assets/icons/sites/grafana.svg"); }
+[data-site-icon="lastdotfm"] { --site-icon: url("../assets/icons/sites/lastdotfm.svg"); }
+[data-site-icon="launchpad"] { --site-icon: url("../assets/icons/sites/launchpad.svg"); }
+[data-site-icon="letterboxd"] { --site-icon: url("../assets/icons/sites/letterboxd.svg"); }
+[data-site-icon="n8n"] { --site-icon: url("../assets/icons/sites/n8n.svg"); }
+[data-site-icon="readthedocs"] { --site-icon: url("../assets/icons/sites/readthedocs.svg"); }
+[data-site-icon="reddit"] { --site-icon: url("../assets/icons/sites/reddit.svg"); }
+[data-site-icon="renovate"] { --site-icon: url("../assets/icons/sites/renovate.svg"); }
+[data-site-icon="stackexchange"] { --site-icon: url("../assets/icons/sites/stackexchange.svg"); }
+[data-site-icon="starship"] { --site-icon: url("../assets/icons/sites/starship.svg"); }
+[data-site-icon="ubuntu"] { --site-icon: url("../assets/icons/sites/ubuntu.svg"); }
+[data-site-icon="wakatime"] { --site-icon: url("../assets/icons/sites/wakatime.svg"); }
+[data-site-icon="wikipedia"] { --site-icon: url("../assets/icons/sites/wikipedia.svg"); }
+[data-site-icon="x"] { --site-icon: url("../assets/icons/sites/x.svg"); }
+[data-site-icon="zedindustries"] { --site-icon: url("../assets/icons/sites/zedindustries.svg"); }
