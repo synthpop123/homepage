@@ -8,7 +8,6 @@
  */
 
 import ClaudeIcon from "@/assets/icons/ai/claude.svg"
-import SparkleIcon from "@/assets/icons/sparkle.svg"
 import type { CollectionEntry } from "astro:content"
 
 type Props = {
@@ -39,7 +38,7 @@ const anchor = `--${id}-ai`
         ))}
         {ai && (
           <ai-mark>
-            <SparkleIcon aria-hidden="true" />
+            <ClaudeIcon aria-hidden="true" />
           </ai-mark>
         )}
       </author-avatars>
@@ -105,18 +104,19 @@ const anchor = `--${id}-ai`
     }
   }
 
-  /* The assistant's place in the stack: the same disc as a person's, but
-     drawn as an outline with a dashed edge — present, and plainly not
-     somebody. */
+  /* The assistant's place in the stack: the same disc as a person's,
+     carrying the Claude mark in its own colour, with a dashed edge so it
+     reads as present and plainly not somebody. */
   ai-mark {
+    --claude: #d97757;
     display: grid;
     place-items: center;
     inline-size: 18px;
     block-size: 18px;
-    background-color: var(--background);
-    border: 1px dashed var(--gray-9);
-    color: var(--muted-foreground);
-    font-size: 10px;
+    background-color: color-mix(in oklab, var(--claude) 12%, var(--background));
+    border: 1px dashed color-mix(in oklab, var(--claude) 60%, transparent);
+    color: var(--claude);
+    font-size: 11px;
   }
 
   author-names {
