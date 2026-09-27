@@ -1,3 +1,25 @@
+/* Moving between pages cross-fades: a cross-document view transition,
+   CSS only, with no client-side router. The theme is set before first
+   paint, so both sides of the fade carry it. The sidebar (named `sidebar`
+   in Sidebar.astro) is lifted out of the fade and swapped at once: fading
+   it into an identical copy of itself still flickered its logo mid-way,
+   and on a phone, where it scrolls away, its group would slide in from
+   the old scroll position. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+::view-transition-old(sidebar) {
+  display: none;
+}
+
+::view-transition-group(sidebar),
+::view-transition-new(sidebar) {
+  animation: none;
+}
+
 :root {
   /* https://utopia.fyi/grid/calculator?c=320,16,1.125,1024,18,1.2,6,1,&s=0.75%7C0.5%7C0.25,1.5%7C2%7C3%7C4%7C6,s-l%7Cs-m&g=s,m,2xl,12 */
   --space-3xs: clamp(0.25rem, 0.2269rem + 0.1127vw, 0.3125rem);

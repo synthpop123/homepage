@@ -75,6 +75,7 @@ All CSS is hand-written in `src/styles/*.css` and imported, in cascade order, at
 - **Utopia** fluid type/space scales: `--step-*` (font sizes) and `--space-*` (spacing). Use these tokens rather than hardcoded px/rem.
 - **Autonomous custom elements as layout primitives** — `<page-grid>`, `<page-nav>`, `<post-meta>`, `<dictionary-entry>`, `<movies-feed>`, etc. are styled by element selectors, not class names. Component-local styles go in the `.astro` file's `<style>` block. The Tokens dashboard is the one exception: its styles are too many for one block and live in `src/styles/tokens/` (see below).
 - The layout is a 12-column grid (sidebar / content / TOC) that collapses to a single column below `64rem`.
+- **Page transitions** are cross-document view transitions, CSS only (`@view-transition { navigation: auto }` in `layout.css`, inside `prefers-reduced-motion: no-preference`); there is no `ClientRouter`, so every navigation is a real page load and no script needs re-running. The page cross-fades, except the sidebar: it carries `view-transition-name: sidebar` and its old snapshot is hidden and its group unanimated, so it swaps at once. Fading it into an identical copy of itself flickered the logo's translucent squares mid-fade, and on a phone, where it scrolls away, its group would have slid in from the old scroll position. The theme needs nothing: the head script sets `data-theme` before first paint on both sides.
 
 ### Notable runtime behavior
 
