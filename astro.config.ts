@@ -9,6 +9,7 @@ import { temmlMath } from "./src/lib/math"
 import { mermaidDiagram } from "./src/lib/mermaid"
 import { calloutDirective } from "./src/lib/callout"
 import { externalLinks } from "./src/lib/external-links"
+import { asides } from "./src/lib/asides"
 import { headingNamespace } from "./src/lib/heading-namespace"
 import { headingAnchors } from "./src/lib/heading-anchors"
 
@@ -44,6 +45,7 @@ export default defineConfig({
       ],
       hastPlugins: [
         externalLinks,
+        asides,
         blockExpressiveCode,
         headingNamespace,
         headingAnchors,

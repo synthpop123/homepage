@@ -13,6 +13,16 @@ prose-content {
     font-style: normal;
   }
 
+  /* A parenthetical aside (src/lib/asides.ts) steps back a shade, links and
+     emphasis inside it included; a link keeps its underline. */
+  [data-aside] {
+    color: var(--prose-aside);
+
+    & :is(a, strong, b) {
+      color: inherit;
+    }
+  }
+
   :where(code) {
     font-family: var(--font-mono);
     font-size: 0.9em;

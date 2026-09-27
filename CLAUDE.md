@@ -12,7 +12,7 @@ Personal homepage/blog (lkwplus.com) built on the `astro-erudite` v2 template: A
 bun dev              # Dev server at http://localhost:4321
 bun run build        # Build static site to dist/
 bun run preview      # Preview the production build
-bun test             # Unit tests (src/lib/client/*.test.ts, bun:test)
+bun test             # Unit tests (src/lib/**/*.test.ts, bun:test)
 bun run check:links  # Static internal-link check over dist/ (build first)
 bun run format       # Format with Biome (writes)
 bun run format:check # Check formatting without writing
@@ -27,7 +27,7 @@ bun run astro ...    # Astro CLI (e.g. `bun run astro check`)
 
 `src/assets/fonts/og/` holds **subset** Noto Sans SC woffs for build-time OG rendering (all GB2312 hanzi + kana + punctuation + every character in current content). If a new post title needs a character outside that set, re-run `bun scripts/subset-og-fonts.ts` — it re-subsets from the pristine full fonts pinned in git history, so it is safe to run repeatedly.
 
-There is **no linter** — Biome runs format-only (linter and assist disabled in `biome.json`). The automated checks are formatting (`bun run format:check`), type checking (`bun run astro check`, strict tsconfig), unit tests (`bun test`, covering the pure data helpers in `src/lib/client/`), and a post-build internal-link check (`bun run check:links`, `scripts/check-links.ts` — verifies every internal href/src/srcset and `#fragment` in `dist/`, and the same for `[](…)` targets in the Markdown artifacts, where a surviving relative path means an image that only resolves from the source tree); CI (`.github/workflows/ci.yml`, actions pinned to SHAs) runs all of them. `@astrojs/check` requires TypeScript 6.x — the pinned `typescript@^6` devDependency must not be bumped to 7 until the native compiler exposes the programmatic API. A `.githooks/pre-commit` hook formats staged files via Biome on every commit (installed by the `prepare` script on `bun install`). Biome style: double quotes, semicolons as-needed, 2-space indent, 80 cols.
+There is **no linter** — Biome runs format-only (linter and assist disabled in `biome.json`). The automated checks are formatting (`bun run format:check`), type checking (`bun run astro check`, strict tsconfig), unit tests (`bun test`, covering the pure data helpers in `src/lib/client/` and the pure halves of the Markdown plugins in `src/lib/`), and a post-build internal-link check (`bun run check:links`, `scripts/check-links.ts` — verifies every internal href/src/srcset and `#fragment` in `dist/`, and the same for `[](…)` targets in the Markdown artifacts, where a surviving relative path means an image that only resolves from the source tree); CI (`.github/workflows/ci.yml`, actions pinned to SHAs) runs all of them. `@astrojs/check` requires TypeScript 6.x — the pinned `typescript@^6` devDependency must not be bumped to 7 until the native compiler exposes the programmatic API. A `.githooks/pre-commit` hook formats staged files via Biome on every commit (installed by the `prepare` script on `bun install`). Biome style: double quotes, semicolons as-needed, 2-space indent, 80 cols.
 
 ## Architecture
 
@@ -40,7 +40,9 @@ There is **no linter** — Biome runs format-only (linter and assist disabled in
 This site does **not** use remark/rehype. Markdown is processed by **Sätteri** (a Rust processor) configured in `astro.config.ts` with `syntaxHighlight: false`. Custom transforms live in `src/lib/` and come in two kinds, both registered in `astro.config.ts`:
 
 - **mdast plugins** (`defineMdastPlugin` from `satteri`) operate on the Markdown AST → `callout.ts` (`:::note` GitHub-style callouts), `math.ts` (`$…$`/`$$…$$` → MathML via **Temml**, not KaTeX), `expressive-code/inline.ts` (inline `` `code{:lang}` ``).
-- **hast plugins** (`defineHastPlugin`) operate on the HTML AST → `external-links.ts`, `expressive-code` block rendering, `heading-namespace.ts` (subpost-scoped heading IDs), `heading-anchors.ts` (clickable `#` permalinks).
+- **hast plugins** (`defineHastPlugin`) operate on the HTML AST → `external-links.ts`, `asides.ts` (parenthetical asides), `expressive-code` block rendering, `heading-namespace.ts` (subpost-scoped heading IDs), `heading-anchors.ts` (clickable `#` permalinks).
+
+**Parenthetical asides are dimmed.** `asides.ts` wraps each outermost balanced `( … )` or full-width `（ … ）` in post prose, parentheses included, in `span[data-aside]`, coloured `--prose-aside` (`typography.css`: the foreground at 62%, a step below prose's 80% that still passes AA; `--muted-foreground` sits too close to prose in dark mode to read as a step). A run may take in whole inline elements (links, `strong`, inline code), which dim with it; a pair split across an element boundary, an unbalanced parenthesis, a half-width `(` straight after a Latin letter or digit (`f(x)`, `O(n)`) and anything inside code, `pre`, `kbd`, maths, SVG or a heading are left alone. The plugin rewrites each top-level block as a whole (`wrapAsides`, pure and covered by `asides.test.ts`) so no two rewrites touch one subtree.
 
 When adding a Markdown feature, write a `define{Mdast,Hast}Plugin` and add it to the corresponding array in `astro.config.ts` — do not reach for unified/remark packages.
 
