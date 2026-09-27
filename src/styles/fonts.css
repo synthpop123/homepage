@@ -7,29 +7,10 @@
 }
 
 @font-face {
-  font-family: "Geist";
-  src: url("../assets/fonts/Geist-Italic-Variable.woff2") format("woff2");
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
   font-family: "Geist Fallback";
   src: local("Arial");
   font-weight: 100 900;
   font-style: normal;
-  size-adjust:       104.7553%;
-  ascent-override:   95.9379%;
-  descent-override:  28.1609%;
-  line-gap-override: 0%;
-}
-
-@font-face {
-  font-family: "Geist Fallback";
-  src: local("Arial");
-  font-weight: 100 900;
-  font-style: italic;
   size-adjust:       104.7553%;
   ascent-override:   95.9379%;
   descent-override:  28.1609%;
@@ -45,29 +26,10 @@
 }
 
 @font-face {
-  font-family: "Geist Mono";
-  src: url("../assets/fonts/GeistMono-Italic-Variable.woff2") format("woff2");
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
   font-family: "Geist Mono Fallback";
   src: local("Courier New");
   font-weight: 100 900;
   font-style: normal;
-  size-adjust:       99.9837%;
-  ascent-override:   100.5164%;
-  descent-override:  29.5048%;
-  line-gap-override: 0%;
-}
-
-@font-face {
-  font-family: "Geist Mono Fallback";
-  src: local("Courier New");
-  font-weight: 100 900;
-  font-style: italic;
   size-adjust:       99.9837%;
   ascent-override:   100.5164%;
   descent-override:  29.5048%;
@@ -83,6 +45,9 @@
 }
 
 :root {
+  /* There are no italic faces: emphasis is set upright, never slanted by
+     the browser. */
+  font-synthesis-style: none;
   --font-sans: "Geist", "Geist Fallback", sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
   --font-math: "STIX Two Math", math;

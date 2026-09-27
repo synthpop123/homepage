@@ -10,7 +10,7 @@ prose-content {
   }
 
   :is(em, i) {
-    font-style: italic;
+    font-style: normal;
   }
 
   :where(code) {
