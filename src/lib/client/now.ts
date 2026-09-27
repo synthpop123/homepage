@@ -1,7 +1,7 @@
 /**
  * Data layer for the home page's Now section: types for cf-workers-api's
  * /now/site view (see src/services/now/ there), the latest listen, the
- * latest film, today's token totals and the newest memo, plus the decoder
+ * latest film, today's token totals and the last flight, plus the decoder
  * Now.astro validates against and every line of text the tiles print.
  * Pure and browser-safe.
  */
@@ -11,25 +11,28 @@ import {
   isCalendarDay,
   isCount,
   isRecord,
-  safeHttpUrl,
   swr,
   TIME_ZONE,
 } from "./feed"
+import { formatDuration, formatKm } from "./flights"
 import { isFilm, type SiteFilm } from "./movies"
 import { isListen, type SiteListen } from "./music"
 import { formatCost, formatCount } from "./tokens/format"
 
 export type TokensToday = { tokens: number; cost: number; messages: number }
 
-export type Memo = {
-  /** ISO instant the status was posted. */
-  at: string
-  url: string
-  /** Plain text: the content warning when `cw`, else the body. */
-  text: string
-  cw: boolean
-  /** Attachments of any kind. */
-  media: number
+export type Place = { code: string; city: string | null }
+
+export type Flight = {
+  /** The calendar day flown. */
+  date: string
+  /** In the direction flown. */
+  from: Place
+  to: Place
+  km: number
+  minutes: number | null
+  airline: string | null
+  aircraft: string | null
 }
 
 export type Site = {
@@ -38,11 +41,11 @@ export type Site = {
   listen: SiteListen | null
   film: SiteFilm | null
   tokens: TokensToday | null
-  memo: Memo | null
+  flight: Flight | null
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/now/index.ts. */
-export const SITE_SCHEMA_VERSION = 1
+export const SITE_SCHEMA_VERSION = 2
 
 const isTokens = (value: unknown): value is TokensToday =>
   isRecord(value) &&
@@ -50,14 +53,23 @@ const isTokens = (value: unknown): value is TokensToday =>
   isCount(value.cost) &&
   isCount(value.messages)
 
-const isMemo = (value: unknown): value is Memo =>
+const isNullableString = (value: unknown): value is string | null =>
+  value === null || typeof value === "string"
+
+const isPlace = (value: unknown): value is Place =>
   isRecord(value) &&
-  typeof value.at === "string" &&
-  !Number.isNaN(Date.parse(value.at)) &&
-  safeHttpUrl(value.url) !== null &&
-  typeof value.text === "string" &&
-  typeof value.cw === "boolean" &&
-  isCount(value.media)
+  typeof value.code === "string" &&
+  isNullableString(value.city)
+
+const isFlight = (value: unknown): value is Flight =>
+  isRecord(value) &&
+  isCalendarDay(value.date) &&
+  isPlace(value.from) &&
+  isPlace(value.to) &&
+  isCount(value.km) &&
+  (value.minutes === null || isCount(value.minutes)) &&
+  isNullableString(value.airline) &&
+  isNullableString(value.aircraft)
 
 const nullOr =
   <T>(is: (value: unknown) => value is T) =>
@@ -72,7 +84,7 @@ export function isSite(data: unknown): data is Site {
     nullOr(isListen)(data.listen) &&
     nullOr(isFilm)(data.film) &&
     nullOr(isTokens)(data.tokens) &&
-    nullOr(isMemo)(data.memo)
+    nullOr(isFlight)(data.flight)
   )
 }
 
@@ -133,14 +145,41 @@ export const tokensFoot = ({ cost, messages }: TokensToday) => [
   `${formatCount(messages)} ${messages === 1 ? "message" : "messages"}`,
 ]
 
-/**
- * What the memo tile says: the text, or for a status that is only
- * attachments, how many ("3 photos" reads as a post, "" as a bug). A
- * content warning is shown as one, never the body behind it.
- */
-export function memoText({ text, cw, media }: Memo): string {
-  if (cw) return `CW: ${text}`
-  if (text) return text
-  if (media === 0) return "(empty)"
-  return media === 1 ? "1 attachment" : `${media} attachments`
+const longDate = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: TIME_ZONE,
+})
+
+/** The day a flight was flown: "Aug 16", with the year only when it is
+ *  not this one. A flight is rare enough that a count of days would be
+ *  arithmetic, not news. */
+export function flownLabel(date: string, today: string): string {
+  const format = date.slice(0, 4) === today.slice(0, 4) ? shortDate : longDate
+  return format.format(dayStart(date))
+}
+
+/** A place by its city, or its code when the city is unknown. */
+const placeName = ({ code, city }: Place) => city ?? code
+
+/** ["Jiaxing → Beijing", "1,106 km"]: two runs, like `tokensFoot`. */
+export const flightFoot = (flight: Flight) => [
+  `${placeName(flight.from)} → ${placeName(flight.to)}`,
+  formatKm(flight.km),
+]
+
+/** Everything the tile leaves out, for its tooltip: the date in full,
+ *  the time aloft, the airline and the aircraft. */
+export function flightTitle(flight: Flight): string {
+  const parts = [
+    longDate.format(dayStart(flight.date)),
+    formatKm(flight.km),
+    flight.minutes === null ? null : formatDuration(flight.minutes),
+    [flight.airline, flight.aircraft].filter(Boolean).join(", ") || null,
+  ]
+  return [
+    `${placeName(flight.from)} → ${placeName(flight.to)}`,
+    parts.filter(Boolean).join(" · "),
+  ].join("\n")
 }

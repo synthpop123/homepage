@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "today": "2026-09-27",
   "listen": {
     "at": "2026-09-26T05:50:34.000Z",
@@ -20,16 +20,14 @@
     "rewatch": false,
     "poster": "https://img.lkwplus.com/movies/posters/1416032-make-zhonghe-great-again-da62303ed1-320.webp"
   },
-  "tokens": {
-    "tokens": 39684363,
-    "cost": 14.482494,
-    "messages": 155
-  },
-  "memo": {
-    "at": "2026-09-27T09:25:27.717Z",
-    "url": "https://mastodon.lkwplus.com/@lkw123/117342281905751669",
-    "text": "I like Opus 5.5",
-    "cw": false,
-    "media": 0
+  "tokens": { "tokens": 39928067, "cost": 14.488198, "messages": 168 },
+  "flight": {
+    "date": "2026-08-16",
+    "from": { "code": "JNH", "city": "Jiaxing" },
+    "to": { "code": "PEK", "city": "Beijing" },
+    "km": 1106,
+    "minutes": 135,
+    "airline": "Air China",
+    "aircraft": "Airbus A321"
   }
 }

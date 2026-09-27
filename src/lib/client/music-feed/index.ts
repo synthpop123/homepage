@@ -8,6 +8,7 @@
  */
 
 import { loadSite } from "@/lib/client/music"
+import { pauseOffscreen } from "@/lib/client/vinyl"
 import { buildHeatmap, buildRow, fillStats } from "./render"
 
 export function mountMusic(feed: HTMLElement) {
@@ -19,13 +20,7 @@ export function mountMusic(feed: HTMLElement) {
 
   const limit = Number(feed.dataset.limit) || 10
 
-  // The lead's record turns on an infinite CSS animation; off screen it
-  // would keep costing frames nobody sees, so it pauses there. Reduced
-  // motion is the stylesheet's to honour (reset.css stops it outright).
-  const spin = new IntersectionObserver((entries) => {
-    for (const entry of entries)
-      entry.target.toggleAttribute("data-offscreen", !entry.isIntersecting)
-  })
+  const spin = pauseOffscreen()
 
   // Cached and refreshed payloads land in the same renderer, which
   // replaces rather than appends, so a second delivery just repaints.

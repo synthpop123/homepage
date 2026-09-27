@@ -55,9 +55,22 @@ export type SiteStats = {
   lastDate: string | null
 }
 
+/** The last flight flown, in the direction flown: the one single flight
+ *  the payload carries, for the home page. No flight number, no time. */
+export type SiteLast = {
+  date: string
+  from: string
+  to: string
+  km: number
+  minutes: number | null
+  airline: string | null
+  aircraft: string | null
+}
+
 export type Site = {
   schemaVersion: number
   today: string
+  last: SiteLast | null
   stats: SiteStats
   /** Most visited first. */
   airports: SiteAirport[]
@@ -69,7 +82,7 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/flights/compose.ts. */
-export const SITE_SCHEMA_VERSION = 1
+export const SITE_SCHEMA_VERSION = 2
 
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === "string"
@@ -109,6 +122,16 @@ const isTally = (value: unknown): value is SiteCount[] =>
       isCount(item.flights),
   )
 
+const isLast = (value: unknown): value is SiteLast =>
+  isRecord(value) &&
+  isCalendarDay(value.date) &&
+  typeof value.from === "string" &&
+  typeof value.to === "string" &&
+  isCount(value.km) &&
+  (value.minutes === null || isCount(value.minutes)) &&
+  isNullableString(value.airline) &&
+  isNullableString(value.aircraft)
+
 const isStats = (value: unknown): value is SiteStats =>
   isRecord(value) &&
   isCount(value.flights) &&
@@ -133,6 +156,7 @@ export function isSite(data: unknown): data is Site {
   if (
     data.schemaVersion !== SITE_SCHEMA_VERSION ||
     !isCalendarDay(data.today) ||
+    !(data.last === null || isLast(data.last)) ||
     !isStats(data.stats) ||
     !Array.isArray(data.airports) ||
     !data.airports.every(isAirport) ||

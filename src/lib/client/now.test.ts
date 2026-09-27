@@ -1,8 +1,10 @@
 import { describe, expect, it } from "bun:test"
 import {
   ago,
+  flightFoot,
+  flightTitle,
+  flownLabel,
   isSite,
-  memoText,
   SITE_SCHEMA_VERSION,
   tokensFoot,
   watchedLabel,
@@ -22,17 +24,22 @@ describe("isSite", () => {
         listen: null,
         film: null,
         tokens: null,
-        memo: null,
+        flight: null,
       }),
     ).toBe(true)
   })
 
-  it("rejects another schema version and a non-http memo link", () => {
+  it("rejects another schema version, a non-http link and a bad flight", () => {
     expect(isSite({ ...fixture, schemaVersion: SITE_SCHEMA_VERSION + 1 })).toBe(
       false,
     )
-    const memo = { ...fixture.memo, url: "javascript:alert(1)" }
-    expect(isSite({ ...fixture, memo })).toBe(false)
+    const listen = { ...fixture.listen, url: "javascript:alert(1)" }
+    expect(isSite({ ...fixture, listen })).toBe(false)
+    const flight = { ...fixture.flight, date: "Aug 16" }
+    expect(isSite({ ...fixture, flight })).toBe(false)
+    expect(
+      isSite({ ...fixture, flight: { ...fixture.flight, from: "JNH" } }),
+    ).toBe(false)
   })
 })
 
@@ -69,12 +76,31 @@ describe("tile text", () => {
     ])
   })
 
-  it("never prints a memo body behind a content warning", () => {
-    const memo = { at: "", url: "", text: "spoilers", cw: true, media: 0 }
-    expect(memoText(memo)).toBe("CW: spoilers")
-    expect(memoText({ ...memo, cw: false, text: "", media: 4 })).toBe(
-      "4 attachments",
+  const flight = {
+    date: "2026-08-16",
+    from: { code: "JNH", city: "Jiaxing" },
+    to: { code: "PEK", city: "Beijing" },
+    km: 1106,
+    minutes: 135,
+    airline: "Air China",
+    aircraft: "Airbus A321",
+  }
+
+  it("names the last flight's day, the year only when it is another", () => {
+    expect(flownLabel("2026-08-16", "2026-09-27")).toBe("Aug 16")
+    expect(flownLabel("2025-12-30", "2026-01-02")).toBe("Dec 30, 2025")
+  })
+
+  it("puts the cities and the distance under the codes, the rest in the tooltip", () => {
+    expect(flightFoot(flight)).toEqual(["Jiaxing → Beijing", "1,106 km"])
+    expect(
+      flightFoot({ ...flight, from: { code: "JNH", city: null } })[0],
+    ).toBe("JNH → Beijing")
+    expect(flightTitle(flight)).toBe(
+      "Jiaxing → Beijing\nAug 16, 2026 · 1,106 km · 2h 15m · Air China, Airbus A321",
     )
-    expect(memoText({ ...memo, cw: false, text: "hi" })).toBe("hi")
+    expect(
+      flightTitle({ ...flight, minutes: null, airline: null, aircraft: null }),
+    ).toBe("Jiaxing → Beijing\nAug 16, 2026 · 1,106 km")
   })
 })

@@ -271,3 +271,115 @@ flights-feed .sk-line {
 .memos-fallback {
   color: var(--muted-foreground);
 }
+
+/* Vinyl: a sleeve with the record half out of it, for the newest listen
+   (the Music lead on /misc, the listen tile on the home page). The markup
+   is `.sleeve > .disc > .disc-label > img` beside `.sleeve > .cover > img`;
+   `--sleeve` sets the cover's size and everything scales with it. The
+   grooves are radial, so turning them would show nothing; the label is
+   printed with the cover art, and it is the label that shows the record
+   turning. */
+
+.sleeve {
+  --sleeve: 6.5rem;
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  inline-size: calc(var(--sleeve) * 1.45);
+  block-size: var(--sleeve);
+
+  > .cover {
+    position: relative;
+    z-index: 1;
+    display: block;
+    inline-size: var(--sleeve);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background-color: var(--muted);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent),
+      0 1px 2px rgb(0 0 0 / 0.1),
+      0 8px 18px -10px rgb(0 0 0 / 0.45);
+
+    img {
+      inline-size: 100%;
+      block-size: 100%;
+      object-fit: cover;
+    }
+  }
+}
+
+.disc {
+  position: absolute;
+  inset-block-start: 4%;
+  inset-inline-start: 36%;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  inline-size: calc(var(--sleeve) * 0.92);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      transparent 0 30%,
+      rgb(255 255 255 / 0.05) 31%,
+      transparent 32%
+    ),
+    repeating-radial-gradient(circle, #161616 0 1.5px, #0c0c0c 1.5px 3px);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent),
+    0 6px 14px -8px rgb(0 0 0 / 0.5);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* A fixed sheen over the grooves: light doesn't turn with the record. */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(
+      from 20deg,
+      transparent 0 8%,
+      rgb(255 255 255 / 0.1) 13%,
+      transparent 20% 55%,
+      rgb(255 255 255 / 0.07) 62%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+}
+
+.disc-label {
+  inline-size: 36%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  background-color: var(--gray-8);
+  animation: vinyl-spin 3.2s linear infinite;
+
+  img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    mask: radial-gradient(circle, transparent 0 6%, #000 7%);
+  }
+}
+
+/* Off screen the record stops where it is (vinyl.ts sets the attribute),
+   and picks up from there when it scrolls back. */
+.disc[data-offscreen] .disc-label {
+  animation-play-state: paused;
+}
+
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (hover: hover) {
+  a:hover .sleeve .disc {
+    transform: translateX(12%);
+  }
+}
