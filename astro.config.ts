@@ -14,6 +14,7 @@ import { headingAnchors } from "./src/lib/heading-anchors"
 
 export default defineConfig({
   site: "https://lkwplus.com",
+  trailingSlash: "never",
   compressHTML: true,
   prefetch: { prefetchAll: true },
   redirects: {

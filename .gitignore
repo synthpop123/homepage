@@ -1,5 +1,6 @@
 dist/
 .astro/
+.wrangler/
 # Downloaded by scripts/prebuild.ts on every build
 src/assets/cat.jpg
 public/headache.js
