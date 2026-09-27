@@ -507,7 +507,7 @@ const { endpoint = NOW.endpoint } = Astro.props
           inline-size: 100%;
           block-size: 100%;
           object-fit: cover;
-          filter: saturate(0.6);
+          filter: saturate(0.85);
           transition: filter 0.3s ease;
         }
 
@@ -520,7 +520,7 @@ const { endpoint = NOW.endpoint } = Astro.props
           inset: 0;
           background-color: color-mix(
             in oklab,
-            var(--background) 55%,
+            var(--background) 30%,
             transparent
           );
           transition: background-color 0.3s ease;
