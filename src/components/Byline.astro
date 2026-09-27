@@ -105,8 +105,7 @@ const anchor = `--${id}-ai`
   }
 
   /* The assistant's place in the stack: the same disc as a person's,
-     carrying the Claude mark in its own colour, with a dashed edge so it
-     reads as present and plainly not somebody. */
+     carrying the Claude mark in its own colour on a faint tint of it. */
   ai-mark {
     --claude: #d97757;
     display: grid;
@@ -114,7 +113,6 @@ const anchor = `--${id}-ai`
     inline-size: 18px;
     block-size: 18px;
     background-color: color-mix(in oklab, var(--claude) 12%, var(--background));
-    border: 1px dashed color-mix(in oklab, var(--claude) 60%, transparent);
     color: var(--claude);
     font-size: 11px;
   }
