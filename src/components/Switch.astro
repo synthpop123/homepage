@@ -1,6 +1,7 @@
 ---
 /**
- * Switch play activity from the self-hosted switch-play worker.
+ * Switch play activity from cf-workers-api's switch service, delivered in
+ * the /misc bundle.
  *
  * The question this answers is "what am I actually playing", not "what did
  * I touch last" — so the list is the catalog ranked by lifetime play time,
@@ -8,7 +9,7 @@
  */
 
 import Heatmap from "@/components/Heatmap.astro"
-import { MISC, SWITCH } from "@/consts"
+import { API, MISC, SWITCH } from "@/consts"
 
 type Props = {
   endpoint?: string
@@ -23,9 +24,9 @@ const stats = ["Playtime", "Games", "", "Per active day"]
 ---
 
 <p class="switch-intro">
-  Synced daily from Nintendo's Parental Controls API via self-hosted
-  <a href={endpoint} target="_blank" rel="noopener noreferrer">switch-play</a>
-  worker.
+  Play time from Nintendo's Parental Controls API, synced daily by my
+  <a href={API} target="_blank" rel="noopener noreferrer">self-hosted Worker</a
+  >.
 </p>
 <switch-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
   <div class="switch-body">
@@ -56,9 +57,7 @@ const stats = ["Playtime", "Games", "", "Per active day"]
     </ol>
   </div>
   <p class="switch-fallback" hidden>
-    Couldn't load right now — play activity is synced to
-    <a href={endpoint} target="_blank" rel="noopener noreferrer">switch-play</a
-    >.
+    Couldn't load the play activity right now.
   </p>
 </switch-feed>
 

@@ -74,6 +74,7 @@ const toc = [
   />
   <TableOfContents slot="toc" title="About" sections={toc} />
   <header>
+    <h1>About</h1>
     <ul>
       <AuthorCard author={author} standalone />
     </ul>
@@ -188,6 +189,17 @@ const toc = [
 <style>
   header {
     margin-block-end: var(--space-l);
+
+    /* The author card is the visible heading; this one names the page for
+       assistive technology, as every other page's h1 does. */
+    h1 {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
 
   section + section {

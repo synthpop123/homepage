@@ -30,7 +30,7 @@ import Qwen from "@/assets/icons/ai/qwen.svg"
 import XAI from "@/assets/icons/ai/xai.svg"
 import Zai from "@/assets/icons/ai/zai.svg"
 import Zed from "@/assets/icons/ai/zed.svg"
-import { type DeviceKind, TOKENS } from "@/consts"
+import { API, type DeviceKind, TOKENS } from "@/consts"
 import { COMPOSITION, RANGES, TOP_ROWS } from "@/lib/client/tokens"
 import { SKELETON_ROWS } from "@/lib/utils"
 
@@ -150,7 +150,7 @@ const LEGEND_CHIPS = 4
   </div>
   <p class="tk-intro">
     Token usage across my AI coding agents, live from my
-    <a href={endpoint} target="_blank" rel="noopener noreferrer"
+    <a href={API} target="_blank" rel="noopener noreferrer"
       >self-hosted collector</a
     >.
   </p>
@@ -449,8 +449,8 @@ const LEGEND_CHIPS = 4
     <p class="fallback-title">Couldn’t reach the collector</p>
     <p class="fallback-body">
       These numbers come live from
-      <a href={endpoint} target="_blank" rel="noopener noreferrer"
-        >{new URL(endpoint).host}</a
+      <a href={API} target="_blank" rel="noopener noreferrer"
+        >{new URL(API).host}</a
       >, and it didn’t answer this time. That is usually the Worker waking up,
       or the network between here and there — a second try tends to do it.
     </p>
@@ -667,6 +667,11 @@ const LEGEND_CHIPS = 4
       margin: 0;
       text-align: center;
       pointer-events: none;
+      /* The hole the text sits in, painted: a circle inside the arcs'
+         inner edge (r 30 against 37.5), so contrast checkers read the
+         page behind the text rather than the slice under the svg's box. */
+      border-radius: 50%;
+      background-color: var(--background);
     }
 
     .tk-donut-focus .value {
@@ -1867,7 +1872,7 @@ const LEGEND_CHIPS = 4
 
     .tk-devices [data-online] .dev-status {
       background-color: color-mix(in oklab, var(--tk-accent) 14%, transparent);
-      color: color-mix(in oklab, var(--tk-accent) 70%, var(--foreground));
+      color: color-mix(in oklab, var(--tk-accent) 55%, var(--foreground));
     }
 
     .tk-devices .dot {
