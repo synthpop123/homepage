@@ -2,6 +2,7 @@
 import Lightbox from "@/components/Lightbox.astro"
 import Memos from "@/components/Memos.astro"
 import MetaPage from "@/components/MetaPage.astro"
+import { API, MEMOS } from "@/consts"
 import Layout from "@/layouts/Layout.astro"
 ---
 
@@ -11,6 +12,8 @@ import Layout from "@/layouts/Layout.astro"
     title="Memos"
     description="Short notes, pulled live from my Mastodon."
   />
+  <link rel="preconnect" href={API} crossorigin slot="head">
+  <link rel="preload" as="fetch" href={MEMOS.endpoint} crossorigin slot="head">
   <header>
     <h1>Memos</h1>
   </header>

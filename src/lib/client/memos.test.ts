@@ -1,153 +1,165 @@
 /**
- * Tests for the pure data layer behind the Memos feed: status → memo
- * normalization (the URL trust boundary, boost/empty filtering),
- * emoji tokenization, and image/srcset selection.
+ * Tests for the pure data layer behind the Memos feed: the /memos/site
+ * decoder (pinned against a captured production payload, and the URL
+ * trust boundary on every link the renderer writes), payload → memo
+ * (alt text fallbacks), emoji tokenization and the media grid's sizes.
  */
 
 import { describe, expect, it } from "bun:test"
 import {
-  emojiMap,
-  isStatusList,
-  type MastodonStatus,
+  isSite,
+  SITE_SCHEMA_VERSION,
+  type SiteMedia,
+  type SiteMemo,
   sizesFor,
   splitEmojiText,
   splitMedia,
-  toMedia,
   toMemo,
 } from "./memos"
+import fixture from "./memos.site-fixture.json"
 
 /* Fixtures ------------------------------------------------------------ */
 
-const status = (extra: Partial<MastodonStatus> = {}): MastodonStatus => ({
-  url: "https://mastodon.example/@me/1",
-  content: "<p>Hello world</p>",
-  created_at: "2026-06-30T15:23:21.058Z",
+const photo = (extra: Partial<SiteMedia> = {}): SiteMedia => ({
+  kind: "image",
+  href: "https://files.example/original.png",
+  src: "https://img.example/1-640.webp",
+  srcset:
+    "https://img.example/1-640.webp 640w, https://img.example/1-1600.webp 1600w",
+  width: 1988,
+  height: 1954,
+  alt: null,
+  loop: false,
   ...extra,
 })
 
-const image = (extra = {}) => ({
-  type: "image",
-  url: "https://files.example/original.png",
-  preview_url: "https://files.example/small.png",
-  meta: {
-    original: { width: 1988, height: 1954 },
-    small: { width: 484, height: 476 },
-  },
+const memo = (extra: Partial<SiteMemo> = {}): SiteMemo => ({
+  url: "https://mastodon.example/@me/1",
+  at: "2026-06-30T15:23:21.058Z",
+  edited: false,
+  html: "<p>Hello world</p>",
+  spoiler: "",
+  sensitive: false,
+  language: "zh-CN",
+  emojis: [],
+  media: [],
   ...extra,
+})
+
+const site = (memos: unknown[]) => ({ ...fixture, memos })
+
+/* isSite --------------------------------------------------------------- */
+
+describe("isSite", () => {
+  it("accepts the pinned production fixture", () => {
+    expect(isSite(fixture)).toBe(true)
+    expect(fixture.schemaVersion).toBe(SITE_SCHEMA_VERSION)
+  })
+
+  it("accepts an account with nothing to show", () => {
+    expect(isSite(site([]))).toBe(true)
+  })
+
+  it("rejects another schema version", () => {
+    expect(isSite({ ...fixture, schemaVersion: SITE_SCHEMA_VERSION + 1 })).toBe(
+      false,
+    )
+  })
+
+  it("rejects a link that is not http(s), wherever it sits", () => {
+    const bad = "javascript:alert(1)"
+    expect(isSite({ ...fixture, profileUrl: bad })).toBe(false)
+    expect(isSite(site([memo({ url: bad })]))).toBe(false)
+    expect(isSite(site([memo({ media: [photo({ href: bad })] })]))).toBe(false)
+    expect(isSite(site([memo({ media: [photo({ src: bad })] })]))).toBe(false)
+    expect(
+      isSite(site([memo({ media: [photo({ srcset: `${bad} 640w` })] })])),
+    ).toBe(false)
+    expect(
+      isSite(site([memo({ emojis: [{ shortcode: "blob", url: bad }] })])),
+    ).toBe(false)
+  })
+
+  it("rejects an unknown kind, a bad date or a missing field", () => {
+    const kind = { ...photo(), kind: "gifv" }
+    expect(isSite(site([memo({ media: [kind as SiteMedia] })]))).toBe(false)
+    expect(isSite(site([memo({ at: "yesterday" })]))).toBe(false)
+    const { spoiler: _, ...partial } = memo()
+    expect(isSite(site([partial]))).toBe(false)
+  })
+
+  it("takes nulls where the Worker has nothing to say", () => {
+    const bare = photo({ src: null, srcset: null, width: null, height: null })
+    const audio = photo({ kind: "audio", src: null, srcset: null })
+    expect(isSite(site([memo({ language: null, media: [bare, audio] })]))).toBe(
+      true,
+    )
+  })
 })
 
 /* toMemo --------------------------------------------------------------- */
 
 describe("toMemo", () => {
-  it("normalizes a plain text status", () => {
-    const result = toMemo(status({ language: "zh-CN" }))
-    expect(result).not.toBeNull()
-    expect(result?.text).toBe("Hello world")
-    expect(result?.language).toBe("zh-CN")
-    expect(result?.edited).toBe(false)
-    expect(result?.media).toEqual([])
+  it("reads the plain text out of the HTML", () => {
+    const result = toMemo(memo({ html: "<p>Hello</p><p>world</p>" }))
+    expect(result.text).toBe("Helloworld")
+    expect(result.createdAt).toBe("2026-06-30T15:23:21.058Z")
   })
 
-  it("flags edited statuses", () => {
-    expect(toMemo(status({ edited_at: "2026-07-01T00:00:00Z" }))?.edited).toBe(
-      true,
-    )
+  it("keeps the Worker's copies as the image and its srcset", () => {
+    const [shot] = toMemo(memo({ media: [photo()] })).media
+    expect(shot?.src).toBe("https://img.example/1-640.webp")
+    expect(shot?.srcset).toContain("1600w")
+    expect(shot?.href).toBe("https://files.example/original.png")
+    expect(shot?.width).toBe(1988)
   })
 
-  it("rejects boosts, bad permalinks, and bad dates", () => {
-    expect(toMemo(status({ reblog: {} }))).toBeNull()
-    expect(toMemo(status({ url: "javascript:alert(1)" }))).toBeNull()
-    expect(toMemo(status({ url: undefined }))).toBeNull()
-    expect(toMemo(status({ created_at: "not a date" }))).toBeNull()
-    expect(toMemo(status({ created_at: undefined }))).toBeNull()
-    expect(toMemo(null)).toBeNull()
-    expect(toMemo("nope")).toBeNull()
+  it("falls back to the original for an image with no copy yet", () => {
+    const [shot] = toMemo(
+      memo({ media: [photo({ src: null, srcset: null })] }),
+    ).media
+    expect(shot?.src).toBe("https://files.example/original.png")
+    expect(shot?.srcset).toBeUndefined()
   })
 
-  it("rejects statuses with nothing to show at all", () => {
-    expect(toMemo(status({ content: "<p> </p>" }))).toBeNull()
-  })
-
-  it("keeps image-only statuses", () => {
-    const result = toMemo(status({ content: "", media_attachments: [image()] }))
-    expect(result?.text).toBe("")
-    expect(result?.media).toHaveLength(1)
-    expect(result?.media[0]?.alt).toBe("Attached image")
-  })
-
-  it("carries the content warning and the sensitive flag", () => {
-    const warned = toMemo(status({ spoiler_text: "  spoilers  " }))
-    expect(warned?.spoiler).toBe("spoilers")
-    expect(warned?.sensitive).toBe(false)
-    expect(toMemo(status({ sensitive: true }))?.sensitive).toBe(true)
-    expect(toMemo(status())?.spoiler).toBe("")
-  })
-
-  it("keeps a status that is nothing but a content warning", () => {
-    expect(toMemo(status({ content: "", spoiler_text: "cw" }))).not.toBeNull()
+  it("describes an attachment by its own words, then the memo's", () => {
+    const [own] = toMemo(memo({ media: [photo({ alt: "A cat" })] })).media
+    expect(own?.alt).toBe("A cat")
+    const [borrowed] = toMemo(memo({ media: [photo()] })).media
+    expect(borrowed?.alt).toBe("Hello world")
+    const [named] = toMemo(
+      memo({ html: "", media: [photo({ kind: "video" })] }),
+    ).media
+    expect(named?.alt).toBe("Attached video")
   })
 
   it("describes warned attachments by the warning, never the hidden text", () => {
-    const result = toMemo(
-      status({ spoiler_text: "food", media_attachments: [image()] }),
+    const [shot] = toMemo(
+      memo({
+        spoiler: "Spoilers",
+        html: "<p>The butler did it</p>",
+        media: [photo()],
+      }),
+    ).media
+    expect(shot?.alt).toBe("Spoilers")
+  })
+
+  it("keeps a gifv's loop and nothing else's", () => {
+    const [gif, clip] = toMemo(
+      memo({
+        media: [photo({ kind: "video", loop: true }), photo({ kind: "video" })],
+      }),
+    ).media
+    expect(gif?.loop).toBe(true)
+    expect(clip?.loop).toBeUndefined()
+  })
+
+  it("keys emoji by shortcode without reaching Object.prototype", () => {
+    const { emojis } = toMemo(
+      memo({ emojis: [{ shortcode: "blob", url: "https://e.example/b.png" }] }),
     )
-    expect(result?.media[0]?.alt).toBe("food")
-  })
-})
-
-/* toMedia -------------------------------------------------------------- */
-
-describe("toMedia", () => {
-  it("builds a srcset from preview + original widths", () => {
-    const result = toMedia(image(), "fallback")
-    expect(result?.href).toBe("https://files.example/original.png")
-    expect(result?.src).toBe("https://files.example/small.png")
-    expect(result?.srcset).toBe(
-      "https://files.example/small.png 484w, https://files.example/original.png 1988w",
-    )
-    expect(result?.width).toBe(1988)
-    expect(result?.height).toBe(1954)
-  })
-
-  it("falls back to the original when widths are missing", () => {
-    const result = toMedia(image({ meta: undefined }), "fallback")
-    expect(result?.src).toBe("https://files.example/original.png")
-    expect(result?.srcset).toBeUndefined()
-    expect(result?.width).toBeUndefined()
-  })
-
-  it("prefers the attachment description for alt text", () => {
-    expect(toMedia(image({ description: "A cat" }), "fallback")?.alt).toBe(
-      "A cat",
-    )
-    expect(toMedia(image({ description: "  " }), "fallback")?.alt).toBe(
-      "fallback",
-    )
-  })
-
-  it("renders video from the original with the preview as its poster", () => {
-    const result = toMedia(image({ type: "video" }), "fallback")
-    expect(result?.kind).toBe("video")
-    expect(result?.href).toBe("https://files.example/original.png")
-    expect(result?.src).toBe("https://files.example/small.png")
-    expect(result?.srcset).toBeUndefined()
-    expect(result?.loop).toBeUndefined()
-  })
-
-  it("marks gifv as a silent loop", () => {
-    expect(toMedia(image({ type: "gifv" }), "x")?.loop).toBe(true)
-  })
-
-  it("names attachments by kind when nothing else describes them", () => {
-    expect(toMedia(image({ type: "audio" }), "")?.alt).toBe("Attached audio")
-    expect(toMedia(image({ type: "video" }), "")?.alt).toBe("Attached video")
-  })
-
-  it("rejects unsupported types and unsafe URLs", () => {
-    expect(toMedia(image({ type: "unknown" }), "x")).toBeNull()
-    expect(toMedia(image({ type: undefined }), "x")).toBeNull()
-    expect(toMedia(image({ url: "data:image/png;base64,x" }), "x")).toBeNull()
-    expect(toMedia(image({ url: undefined }), "x")).toBeNull()
+    expect(emojis.get("blob")).toBe("https://e.example/b.png")
+    expect(emojis.get("constructor")).toBeUndefined()
   })
 })
 
@@ -155,12 +167,10 @@ describe("toMedia", () => {
 
 describe("splitMedia", () => {
   it("keeps audio out of the grid", () => {
-    const media = toMemo(
-      status({
-        media_attachments: [image(), image({ type: "audio" })],
-      }),
-    )?.media
-    const { grid, audio } = splitMedia(media ?? [])
+    const { media } = toMemo(
+      memo({ media: [photo(), photo({ kind: "audio", src: null })] }),
+    )
+    const { grid, audio } = splitMedia(media)
     expect(grid).toHaveLength(1)
     expect(grid[0]?.kind).toBe("image")
     expect(audio).toHaveLength(1)
@@ -193,54 +203,23 @@ describe("sizesFor", () => {
   })
 })
 
-/* isStatusList --------------------------------------------------------- */
-
-describe("isStatusList", () => {
-  it("accepts an empty timeline but not a list of junk", () => {
-    expect(isStatusList([])).toBe(true)
-    expect(isStatusList([status()])).toBe(true)
-    expect(isStatusList([status(), { url: "x" }])).toBe(false)
-    expect(isStatusList([null])).toBe(false)
-    expect(isStatusList(["nope"])).toBe(false)
-    expect(isStatusList({ statuses: [] })).toBe(false)
-  })
-})
-
 /* Emoji ---------------------------------------------------------------- */
 
-describe("emojiMap", () => {
-  it("maps shortcodes to safe URLs, preferring the animated one", () => {
-    expect(
-      emojiMap([
-        {
-          shortcode: "blob",
-          url: "https://files.example/blob.gif",
-          static_url: "https://files.example/blob.png",
-        },
-        { shortcode: "bad", url: "javascript:alert(1)" },
-        { shortcode: "half", static_url: "https://files.example/half.png" },
-      ]),
-    ).toEqual({
-      blob: "https://files.example/blob.gif",
-      half: "https://files.example/half.png",
-    })
-  })
-})
-
 describe("splitEmojiText", () => {
-  const map = { wave: "https://files.example/wave.png" }
+  const url = "https://files.example/wave.png"
+  const map = new Map([["wave", url]])
 
   it("splits resolvable shortcodes into emoji tokens", () => {
     expect(splitEmojiText("hi :wave: bye", map)).toEqual([
       { type: "text", value: "hi " },
-      { type: "emoji", shortcode: ":wave:", url: map.wave },
+      { type: "emoji", shortcode: ":wave:", url },
       { type: "text", value: " bye" },
     ])
   })
 
   it("leaves unknown shortcodes as plain text", () => {
-    expect(splitEmojiText("hi :nope:", map)).toEqual([
-      { type: "text", value: "hi :nope:" },
+    expect(splitEmojiText("hi :nope: :toString:", map)).toEqual([
+      { type: "text", value: "hi :nope: :toString:" },
     ])
   })
 })

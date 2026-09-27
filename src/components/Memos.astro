@@ -1,24 +1,12 @@
 ---
 import MastodonIcon from "@/assets/icons/mastodon.svg"
-import { MASTODON } from "@/consts"
+import { MASTODON, MEMOS } from "@/consts"
 import { SKELETON_ROWS } from "@/lib/utils"
 
-type Props = {
-  limit?: number
-}
-
-const { limit = MASTODON.limit } = Astro.props
-const { instance, username, accountId } = MASTODON
-
-const profileUrl = `${instance}/@${username}`
+const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
 ---
 
-<memos-feed
-  data-instance={instance}
-  data-account-id={accountId}
-  data-limit={limit}
-  aria-busy="true"
->
+<memos-feed data-endpoint={MEMOS.endpoint} aria-busy="true">
   <p class="memos-intro">
     Short notes, pulled live from my
     <MastodonIcon class="memos-mark" aria-hidden="true" />

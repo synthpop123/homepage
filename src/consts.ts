@@ -36,11 +36,10 @@ export const SOCIALS: { href: string; label: string; icon: SvgComponent }[] = [
   { href: "/rss.xml", label: "RSS", icon: RSS },
 ]
 
+/** The Mastodon account /memos links to; its statuses come from MEMOS. */
 export const MASTODON = {
   instance: "https://mastodon.lkwplus.com",
   username: "lkw123",
-  accountId: "114671030739656846",
-  limit: 20,
 } as const
 
 /**
@@ -66,6 +65,11 @@ export const TOKENS = {
 
 export const MISC = {
   endpoint: `${API}/misc`,
+} as const
+
+/** /memos: the latest statuses, photos copied as WebP by the Worker. */
+export const MEMOS = {
+  endpoint: `${API}/memos/site`,
 } as const
 
 /** The home page's Now tiles: the latest listen, film, today's tokens and

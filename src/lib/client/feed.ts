@@ -1,9 +1,7 @@
 /**
- * Shared client-side plumbing for the live feeds (Music, Movies,
- * Memos, Tokens, Switch): a Web Storage cache with two reading
- * disciplines (a short TTL in sessionStorage for the leisurely feeds,
- * stale-while-revalidate over localStorage for the freshness-critical
- * ones), JSON fetching with a timeout, URL sanitizing for remote
+ * Shared client-side plumbing for the live feeds (Now, Memos, Tokens
+ * and the /misc sections): a stale-while-revalidate cache over
+ * localStorage, JSON fetching with a timeout, URL sanitizing for remote
  * payloads, the decoder primitives every payload validator is built
  * from, and the site's display time zone. Imported from component
  * <script> blocks, so everything here must be browser-safe.
@@ -25,9 +23,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 export const isCalendarDay = (value: unknown): value is string =>
   typeof value === "string" && DATE_RE.test(value)
 
-/* Session cache --------------------------------------------------------- */
-
-const CACHE_TTL = 60_000
+/* Cache --------------------------------------------------------------- */
 
 export const TIME_ZONE = "Asia/Shanghai"
 
@@ -39,38 +35,33 @@ export const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: TIME_ZONE,
 })
 
-/** Either Web Storage area; resolved lazily because merely touching
- *  `localStorage` can throw under some privacy settings. */
-type Area = "sessionStorage" | "localStorage"
-
-const storage = (area: Area): Storage | null => {
+/** Resolved lazily because merely touching `localStorage` can throw
+ *  under some privacy settings. */
+const storage = (): Storage | null => {
   try {
-    return globalThis[area] ?? null
+    return globalThis.localStorage ?? null
   } catch {
     return null
   }
 }
 
 function readCache<T>(
-  area: Area,
   key: string,
   valid: (data: unknown) => boolean,
-  maxAge = CACHE_TTL,
 ): T | null {
   try {
-    const raw = storage(area)?.getItem(key)
+    const raw = storage()?.getItem(key)
     if (!raw) return null
-    const { t, data } = JSON.parse(raw)
-    if (Date.now() - t > maxAge) return null
+    const { data } = JSON.parse(raw)
     return valid(data) ? (data as T) : null
   } catch {
     return null
   }
 }
 
-function writeCache(area: Area, key: string, data: unknown) {
+function writeCache(key: string, data: unknown) {
   try {
-    storage(area)?.setItem(key, JSON.stringify({ t: Date.now(), data }))
+    storage()?.setItem(key, JSON.stringify({ t: Date.now(), data }))
   } catch {
     // Storage full or unavailable (e.g. private mode) — cache is optional.
   }
@@ -80,15 +71,15 @@ function writeCache(area: Area, key: string, data: unknown) {
  * A cache key names its feed, its schema version and its endpoint —
  * `tokens:site:v14:https://…` — so a deploy that bumps the version
  * writes a new key and never reads the previous build's entry. In
- * sessionStorage the old entry died with the tab; in localStorage it
- * would outlive every deploy, so the writer sweeps its own family:
- * every key of the same feed under any other version.
+ * localStorage the old entry would outlive every deploy, so the writer
+ * sweeps its own family: every key of the same feed under any other
+ * version.
  */
-function evictSiblings(area: Area, key: string) {
+function evictSiblings(key: string) {
   const family = key.replace(/:v\d+:.*$/, ":v")
   if (family === key) return
   try {
-    const store = storage(area)
+    const store = storage()
     if (!store) return
     for (let i = store.length - 1; i >= 0; i--) {
       const other = store.key(i)
@@ -102,28 +93,6 @@ function evictSiblings(area: Area, key: string) {
 }
 
 /**
- * Wraps a loader in the sessionStorage cache so quick revisits skip the
- * network. `valid` is the feed's payload decoder: it gates both cache
- * reads (stale shape from an older deploy) and fresh responses (a
- * misbehaving endpoint), so nothing unvalidated is ever cached or
- * handed to a renderer — a bad payload rejects into the feed's
- * fallback UI instead.
- */
-export function cached<T>(
-  key: string,
-  load: () => Promise<T>,
-  valid: (data: unknown) => boolean,
-): Promise<T> {
-  const hit = readCache<T>("sessionStorage", key, valid)
-  if (hit) return Promise.resolve(hit)
-  return load().then((data) => {
-    if (!valid(data)) throw new Error("Unexpected payload shape")
-    writeCache("sessionStorage", key, data)
-    return data
-  })
-}
-
-/**
  * Stale-while-revalidate, for a feed whose endpoint revalidates cheaply
  * (the tokens collector serves `no-cache` + ETag, so an unchanged
  * payload costs a ~0-byte 304): any cached copy paints immediately
@@ -131,13 +100,15 @@ export function cached<T>(
  * hands the network's answer to the same callback — deciding whether
  * it actually changed is the caller's business.
  *
- * The cache is localStorage, not the session cache `cached` uses: this
- * discipline already accepts a copy of any age, so there is no reason
- * to forget it when the tab closes — a new tab or next week's visit
- * paints from the last payload instead of from skeletons, and the
- * revalidation that follows is the same one a same-tab revisit makes.
+ * The cache is localStorage: this discipline already accepts a copy of
+ * any age, so there is no reason to forget it when the tab closes — a
+ * new tab or next week's visit paints from the last payload instead of
+ * from skeletons, and the revalidation that follows is the same one a
+ * same-tab revisit makes.
  *
- * `valid` gates both deliveries, exactly as in `cached`. The cached
+ * `valid` is the feed's payload decoder and gates both deliveries (a
+ * stale shape from an older deploy, a misbehaving endpoint), so nothing
+ * unvalidated is ever cached or handed to a renderer. The cached
  * paint is fenced: if rendering the stale copy throws, the failure must
  * not abort the revalidation — the network answer is exactly what
  * recovers from a bad cache. Rejects only when there is nothing on
@@ -151,7 +122,7 @@ export async function swr<T>(
   valid: (data: unknown) => boolean,
   onData: (data: T) => void,
 ): Promise<void> {
-  const hit = readCache<T>("localStorage", key, valid, Number.POSITIVE_INFINITY)
+  const hit = readCache<T>(key, valid)
   let painted = false
   if (hit) {
     try {
@@ -164,8 +135,8 @@ export async function swr<T>(
   try {
     const data = await load()
     if (!valid(data)) throw new Error("Unexpected payload shape")
-    writeCache("localStorage", key, data)
-    evictSiblings("localStorage", key)
+    writeCache(key, data)
+    evictSiblings(key)
     onData(data)
   } catch (error) {
     if (!painted) throw error

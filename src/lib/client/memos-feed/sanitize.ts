@@ -41,7 +41,7 @@ const ALLOWED = new Set([
 const ALLOWED_CLASSES = new Set(["invisible", "ellipsis", "mention", "hashtag"])
 
 /** Text with its :shortcode: runs replaced by inline emoji images. */
-export const emojify = (text: string, emojis: Record<string, string>) =>
+export const emojify = (text: string, emojis: ReadonlyMap<string, string>) =>
   splitEmojiText(text, emojis).map((token) => {
     if (token.type === "text") return document.createTextNode(token.value)
     const img = el("img", "emoji") as HTMLImageElement
@@ -60,7 +60,7 @@ const keepClasses = (source: Element, clone: Element) => {
 
 const sanitize = (
   node: Node,
-  emojis: Record<string, string>,
+  emojis: ReadonlyMap<string, string>,
 ): DocumentFragment => {
   const fragment = document.createDocumentFragment()
   node.childNodes.forEach((child) => {
@@ -92,5 +92,5 @@ const sanitize = (
 }
 
 /** Remote status HTML → a fragment safe to append. */
-export const toFragment = (html: string, emojis: Record<string, string>) =>
+export const toFragment = (html: string, emojis: ReadonlyMap<string, string>) =>
   sanitize(new DOMParser().parseFromString(html, "text/html").body, emojis)
