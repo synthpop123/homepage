@@ -30,10 +30,12 @@
         "@types/d3-geo": "^3.1.1",
         "@types/topojson-client": "^3.1.5",
         "@types/topojson-server": "^3.0.4",
+        "@types/topojson-simplify": "^3.0.3",
         "@types/topojson-specification": "^1.0.5",
         "sharp": "^0.35.4",
         "subset-font": "^2.6.0",
         "topojson-server": "^3.0.1",
+        "topojson-simplify": "^3.0.3",
         "typescript": "^6.0.3",
         "world-atlas": "^2.0.2",
         "wrangler": "^4.141.0",
@@ -486,6 +488,8 @@
     "@types/topojson-client": ["@types/topojson-client@3.1.5", "", { "dependencies": { "@types/geojson": "*", "@types/topojson-specification": "*" } }, "sha512-C79rySTyPxnQNNguTZNI1Ct4D7IXgvyAs3p9HPecnl6mNrJ5+UhvGNYcZfpROYV2lMHI48kJPxwR+F9C6c7nmw=="],
 
     "@types/topojson-server": ["@types/topojson-server@3.0.4", "", { "dependencies": { "@types/geojson": "*", "@types/topojson-specification": "*" } }, "sha512-5+ieK8ePfP+K2VH6Vgs1VCt+fO1U8XZHj0UsF+NktaF0DavAo1q3IvCBXgokk/xmtvoPltSUs6vxuR/zMdOE1g=="],
+
+    "@types/topojson-simplify": ["@types/topojson-simplify@3.0.3", "", { "dependencies": { "@types/geojson": "*", "@types/topojson-specification": "*" } }, "sha512-sBO5UZ0O2dB0bNwo0vut2yLHhj3neUGi9uL7/ROdm8Gs6dtt4jcB9OGDKr+M2isZwQM2RuzVmifnMZpxj4IGNw=="],
 
     "@types/topojson-specification": ["@types/topojson-specification@1.0.5", "", { "dependencies": { "@types/geojson": "*" } }, "sha512-C7KvcQh+C2nr6Y2Ub4YfgvWvWCgP2nOQMtfhlnwsRL4pYmmwzBS7HclGiS87eQfDOU/DLQpX6GEscviaz4yLIQ=="],
 
@@ -1056,6 +1060,8 @@
     "topojson-client": ["topojson-client@3.1.0", "", { "dependencies": { "commander": "2" }, "bin": { "topo2geo": "bin/topo2geo", "topomerge": "bin/topomerge", "topoquantize": "bin/topoquantize" } }, "sha512-605uxS6bcYxGXw9qi62XyrV6Q3xwbndjachmNxu8HWTtVPxZfEJN9fd/SZS1Q54Sn2y0TMyMxFj/cJINqGHrKw=="],
 
     "topojson-server": ["topojson-server@3.0.1", "", { "dependencies": { "commander": "2" }, "bin": { "geo2topo": "bin/geo2topo" } }, "sha512-/VS9j/ffKr2XAOjlZ9CgyyeLmgJ9dMwq6Y0YEON8O7p/tGGk+dCWnrE03zEdu7i4L7YsFZLEPZPzCvcB7lEEXw=="],
+
+    "topojson-simplify": ["topojson-simplify@3.0.3", "", { "dependencies": { "commander": "2", "topojson-client": "3" }, "bin": { "toposimplify": "bin/toposimplify" } }, "sha512-V+pBjLVzSQ3+hSOxBiV01OVXgFiCmMO8ia3huxKEyIMTC1ApQHBcdXdOqcQ6U2JJJD31TZduwY6KyF15R8sUgg=="],
 
     "trim-lines": ["trim-lines@3.0.1", "http://registry.npmjs.org/trim-lines/-/trim-lines-3.0.1.tgz", {}, "sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg=="],
 
