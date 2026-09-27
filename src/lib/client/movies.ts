@@ -35,7 +35,7 @@ export const SITE_SCHEMA_VERSION = 1
 const isNullableCount = (value: unknown): value is number | null =>
   value === null || isCount(value)
 
-const isFilm = (value: unknown): value is SiteFilm =>
+export const isFilm = (value: unknown): value is SiteFilm =>
   isRecord(value) &&
   typeof value.title === "string" &&
   isNullableCount(value.year) &&

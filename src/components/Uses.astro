@@ -35,12 +35,6 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
 }
 ---
 
-<p class="uses-intro">
-  This section is inspired by
-  <a href="https://uses.tech/" target="_blank" rel="noopener noreferrer"
-    >uses.tech</a
-  >.
-</p>
 <uses-list>
   {USES.map(({ group, items }) => (
     <uses-group>
@@ -106,7 +100,6 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
     display: flex;
     flex-direction: column;
     gap: var(--space-3xs);
-    min-block-size: 10rem;
     padding: var(--space-s);
     overflow: hidden;
     border: 1px solid var(--border);
@@ -118,6 +111,13 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
     &:first-child,
     &:last-child:nth-child(even) {
       grid-column: span 2;
+    }
+
+    /* Two across, a card is as tall as its words. Three across, the
+       words are short enough that the mark would crowd them, so the
+       card keeps a little room under them. */
+    @container (width >= 34rem) {
+      min-block-size: 7rem;
     }
   }
 

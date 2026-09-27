@@ -1,13 +1,31 @@
 /* Shared section typography and loading surfaces for the /misc feeds and
    the static sections beside them. Row layouts stay local. */
 
-.music-intro,
-.movies-intro,
-.switch-intro,
-.flights-intro,
-.uses-intro {
-  margin-block-end: var(--space-s);
+/* The small link at the far end of a heading row (SectionHead.astro, the
+   home page's section heads): muted, and underlined, since at that size
+   colour alone does not say "link". An external arrow sits outside the
+   underline. */
+.section-link {
+  flex-shrink: 0;
+  font-size: var(--step--1);
+  font-weight: var(--font-weight-normal);
   color: var(--muted-foreground);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+  text-underline-offset: 0.2em;
+  transition:
+    color 0.15s ease,
+    text-decoration-color 0.15s ease;
+
+  span {
+    display: inline-block;
+    margin-inline-start: 0.2em;
+  }
+
+  &:hover {
+    color: var(--foreground);
+    text-decoration-color: currentColor;
+  }
 }
 
 .music-fallback,
@@ -18,18 +36,13 @@
   color: var(--muted-foreground);
 }
 
-.music-intro a,
 .music-fallback a,
-.movies-intro a,
 .movies-fallback a,
 .memos-intro a,
 .memos-empty a,
 .memos-fallback a,
-.switch-intro a,
 .switch-fallback a,
-.flights-intro a,
-.tk-intro a,
-.uses-intro a {
+.tk-intro a {
   color: var(--foreground);
   text-decoration: underline;
 }

@@ -9,7 +9,7 @@
  */
 
 import Heatmap from "@/components/Heatmap.astro"
-import { API, MISC, SWITCH } from "@/consts"
+import { MISC, SWITCH } from "@/consts"
 
 type Props = {
   endpoint?: string
@@ -23,11 +23,6 @@ const { endpoint = MISC.endpoint, limit = SWITCH.limit } = Astro.props
 const stats = ["Playtime", "Games", "", "Per active day"]
 ---
 
-<p class="switch-intro">
-  Play time from Nintendo's Parental Controls API, synced daily by my
-  <a href={API} target="_blank" rel="noopener noreferrer">self-hosted Worker</a
-  >.
-</p>
 <switch-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
   <div class="switch-body">
     <h3 class="switch-label">All-time stats</h3>

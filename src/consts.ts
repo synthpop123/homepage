@@ -3,7 +3,6 @@ import Email from "@/assets/icons/email.svg"
 import GitHub from "@/assets/icons/github.svg"
 import RSS from "@/assets/icons/rss.svg"
 import Twitter from "@/assets/icons/twitter.svg"
-import type { CodeTab } from "@/lib/expressive-code/render"
 
 export const SITE = {
   title: "lkw123",
@@ -67,6 +66,12 @@ export const TOKENS = {
 
 export const MISC = {
   endpoint: `${API}/misc`,
+} as const
+
+/** The home page's Now tiles: the latest listen, film, today's tokens and
+ *  memo, composed by the Worker from the views above. */
+export const NOW = {
+  endpoint: `${API}/now/site`,
 } as const
 
 /** The Koito instance the Music section links to (its data comes from
@@ -162,7 +167,7 @@ export const USES: {
       },
       {
         name: "HUAWEI FreeClip 2",
-        note: "Open-ear clips — music without sealing the room out.",
+        note: "Open-ear clips that play music without sealing the room out.",
         icon: "headphones",
       },
       {
@@ -171,175 +176,5 @@ export const USES: {
         icon: "book-open",
       },
     ],
-  },
-]
-
-export const PROFILE_TABS: CodeTab[] = [
-  {
-    label: "JSON",
-    lang: "json",
-    title: "/home/lkw123/profile.json",
-    code: `{
-  "pronouns": ["He", "Him"],
-  "motto": "Be creative & keep learning.",
-  "mbti": "INTP (introverted, intuitive, thinking and perceiving)",
-  "homepageURL": "https://lkwplus.com",
-  "statuspageURL": "https://status.lkwplus.com",
-  "contactInfo": {
-    "email": "mailto:hi@lkwplus.com",
-    "telegram": "https://t.me/lkw123",
-    "twitter": "https://x.com/whoamamamiii"
-  }
-}`,
-  },
-  {
-    label: "YAML",
-    lang: "yaml",
-    title: "/home/lkw123/profile.yaml",
-    code: `pronouns:
-  - He
-  - Him
-motto: Be creative & keep learning.
-mbti: INTP (introverted, intuitive, thinking and perceiving)
-homepageURL: https://lkwplus.com
-statuspageURL: https://status.lkwplus.com
-contactInfo:
-  email: mailto:hi@lkwplus.com
-  telegram: https://t.me/lkw123
-  twitter: https://x.com/whoamamamiii`,
-  },
-  {
-    label: "TOML",
-    lang: "toml",
-    title: "/home/lkw123/profile.toml",
-    code: `pronouns = ["He", "Him"]
-motto = "Be creative & keep learning."
-mbti = "INTP (introverted, intuitive, thinking and perceiving)"
-homepageURL = "https://lkwplus.com"
-statuspageURL = "https://status.lkwplus.com"
-
-[contactInfo]
-email = "mailto:hi@lkwplus.com"
-telegram = "https://t.me/lkw123"
-twitter = "https://x.com/whoamamamiii"`,
-  },
-  {
-    label: "TypeScript",
-    lang: "ts",
-    title: "/home/lkw123/profile.ts",
-    code: `const lkw123 = {
-  pronouns: ["He", "Him"],
-  motto: "Be creative & keep learning.",
-  mbti: "INTP (introverted, intuitive, thinking and perceiving)",
-  homepageURL: "https://lkwplus.com",
-  statuspageURL: "https://status.lkwplus.com",
-  contactInfo: {
-    email: "mailto:hi@lkwplus.com",
-    telegram: "https://t.me/lkw123",
-    twitter: "https://x.com/whoamamamiii",
-  },
-}`,
-  },
-  {
-    label: "Python",
-    lang: "python",
-    title: "/home/lkw123/profile.py",
-    code: `lkw123 = {
-    "pronouns": ["He", "Him"],
-    "motto": "Be creative & keep learning.",
-    "mbti": "INTP (introverted, intuitive, thinking and perceiving)",
-    "homepageURL": "https://lkwplus.com",
-    "statuspageURL": "https://status.lkwplus.com",
-    "contactInfo": {
-        "email": "mailto:hi@lkwplus.com",
-        "telegram": "https://t.me/lkw123",
-        "twitter": "https://x.com/whoamamamiii",
-    },
-}`,
-  },
-  {
-    label: "Go",
-    lang: "go",
-    title: "/home/lkw123/profile.go",
-    code: `lkw123 := Profile{
-    Pronouns:      []string{"He", "Him"},
-    Motto:         "Be creative & keep learning.",
-    MBTI:          "INTP (introverted, intuitive, thinking and perceiving)",
-    HomepageURL:   "https://lkwplus.com",
-    StatuspageURL: "https://status.lkwplus.com",
-    ContactInfo: ContactInfo{
-        Email:    "mailto:hi@lkwplus.com",
-        Telegram: "https://t.me/lkw123",
-        Twitter:  "https://x.com/whoamamamiii",
-    },
-}`,
-  },
-  {
-    label: "Rust",
-    lang: "rust",
-    title: "/home/lkw123/profile.rs",
-    code: `let lkw123 = Profile {
-    pronouns: vec!["He", "Him"],
-    motto: "Be creative & keep learning.",
-    mbti: "INTP (introverted, intuitive, thinking and perceiving)",
-    homepage_url: "https://lkwplus.com",
-    statuspage_url: "https://status.lkwplus.com",
-    contact_info: ContactInfo {
-        email: "mailto:hi@lkwplus.com",
-        telegram: "https://t.me/lkw123",
-        twitter: "https://x.com/whoamamamiii",
-    },
-};`,
-  },
-  {
-    label: "Ruby",
-    lang: "ruby",
-    title: "/home/lkw123/profile.rb",
-    code: `lkw123 = {
-  pronouns: ["He", "Him"],
-  motto: "Be creative & keep learning.",
-  mbti: "INTP (introverted, intuitive, thinking and perceiving)",
-  homepage_url: "https://lkwplus.com",
-  statuspage_url: "https://status.lkwplus.com",
-  contact_info: {
-    email: "mailto:hi@lkwplus.com",
-    telegram: "https://t.me/lkw123",
-    twitter: "https://x.com/whoamamamiii"
-  }
-}`,
-  },
-  {
-    label: "Lua",
-    lang: "lua",
-    title: "/home/lkw123/profile.lua",
-    code: `local lkw123 = {
-  pronouns = { "He", "Him" },
-  motto = "Be creative & keep learning.",
-  mbti = "INTP (introverted, intuitive, thinking and perceiving)",
-  homepageURL = "https://lkwplus.com",
-  statuspageURL = "https://status.lkwplus.com",
-  contactInfo = {
-    email = "mailto:hi@lkwplus.com",
-    telegram = "https://t.me/lkw123",
-    twitter = "https://x.com/whoamamamiii",
-  },
-}`,
-  },
-  {
-    label: "Kotlin",
-    lang: "kotlin",
-    title: "/home/lkw123/profile.kt",
-    code: `val lkw123 = Profile(
-    pronouns = listOf("He", "Him"),
-    motto = "Be creative & keep learning.",
-    mbti = "INTP (introverted, intuitive, thinking and perceiving)",
-    homepageURL = "https://lkwplus.com",
-    statuspageURL = "https://status.lkwplus.com",
-    contactInfo = ContactInfo(
-        email = "mailto:hi@lkwplus.com",
-        telegram = "https://t.me/lkw123",
-        twitter = "https://x.com/whoamamamiii",
-    ),
-)`,
   },
 ]

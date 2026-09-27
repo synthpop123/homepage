@@ -11,10 +11,6 @@ const { endpoint = MISC.endpoint, limit = LETTERBOXD.limit } = Astro.props
 const profileUrl = `https://letterboxd.com/${LETTERBOXD.username}/`
 ---
 
-<p class="movies-intro">
-  Films I recently watched, pulled live from
-  <a href={profileUrl} target="_blank" rel="noopener noreferrer">Letterboxd</a>.
-</p>
 <movies-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
   <ol class="movies-grid">
     {Array.from({ length: limit }).map(() => (
@@ -147,8 +143,18 @@ const profileUrl = `https://letterboxd.com/${LETTERBOXD.username}/`
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-m) var(--space-xs);
 
+    /* Two full rows either way: six posters three across, eight four
+       across. */
+    > :global(:nth-child(n + 7)) {
+      display: none;
+    }
+
     @container (width >= 30rem) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
+
+      > :global(:nth-child(n + 7)) {
+        display: block;
+      }
     }
   }
 

@@ -1,0 +1,614 @@
+---
+import { NOW } from "@/consts"
+
+type Props = {
+  endpoint?: string
+}
+
+const { endpoint = NOW.endpoint } = Astro.props
+---
+
+{/* A bento of four tiles from one small payload (/now/site): the two with
+    artwork are the large ones, the two that are a number or a line of
+    text sit small beside them. Every tile's size comes from the grid and
+    the artwork's aspect ratio, never from what loads into it, so the
+    skeleton and the loaded section are the same height. */}
+<now-feed data-endpoint={endpoint} aria-busy="true">
+  <ul class="now-grid">
+    <li class="now-tile" data-tile="listen">
+      <a class="now-link" target="_blank" rel="noopener noreferrer">
+        <span class="now-art"
+          ><img alt="" width="300" height="300" hidden></span
+        >
+        <span class="now-body">
+          <span class="now-label">Listening</span>
+          <span class="now-title"><span class="sk-line sk-title"></span></span>
+          <span class="now-sub"><span class="sk-line sk-sub"></span></span>
+          <span class="now-foot"><span class="sk-line sk-foot"></span></span>
+        </span>
+      </a>
+    </li>
+    <li class="now-tile" data-tile="film">
+      <a class="now-link" target="_blank" rel="noopener noreferrer">
+        <span class="now-art"
+          ><img alt="" width="320" height="480" hidden></span
+        >
+        <span class="now-body">
+          <span class="now-label">Watched</span>
+          <span class="now-title"><span class="sk-line sk-title"></span></span>
+          <span class="now-foot"><span class="sk-line sk-foot"></span></span>
+        </span>
+      </a>
+    </li>
+    <li class="now-tile" data-tile="tokens">
+      <a class="now-link" href="/tokens">
+        <span class="now-label">Tokens today</span>
+        <span class="now-figure"><span class="sk-line sk-figure"></span></span>
+        <span class="now-foot"><span class="sk-line sk-foot"></span></span>
+      </a>
+    </li>
+    <li class="now-tile" data-tile="memo">
+      <a class="now-link" target="_blank" rel="noopener noreferrer">
+        <span class="now-label">Memo<time class="now-when"></time></span>
+        <span class="now-text">
+          <span class="sk-line sk-text"></span>
+          <span class="sk-line sk-text"></span>
+        </span>
+      </a>
+    </li>
+  </ul>
+</now-feed>
+
+<script>
+  import { el } from "@/lib/client/dom"
+  import { dateFormatter } from "@/lib/client/feed"
+  import { isPlaying } from "@/lib/client/music"
+  import {
+    ago,
+    loadSite,
+    memoText,
+    type Site,
+    tokensFoot,
+    watchedLabel,
+  } from "@/lib/client/now"
+  import { setReadout } from "@/lib/client/readout"
+  import { formatTokens } from "@/lib/client/tokens/format"
+
+  const exact = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Shanghai",
+  })
+
+  /** A time element whose text is relative and whose title is exact. */
+  const setTime = (time: HTMLTimeElement, at: string, text: string) => {
+    time.dateTime = at
+    time.textContent = text
+    time.title = exact.format(new Date(at))
+  }
+
+  /** Swap an image only when its source moved, so a repaint with the
+   *  same payload never flashes the artwork. */
+  const setImage = (img: HTMLImageElement | null, src: string | null) => {
+    if (!img) return
+    img.hidden = !src
+    if (src && img.getAttribute("src") !== src) img.src = src
+  }
+
+  const empty = (tile: HTMLElement, what: string) => {
+    tile.dataset.empty = ""
+    tile.querySelector("a")?.removeAttribute("href")
+    tile
+      .querySelector(".now-title, .now-figure, .now-text")
+      ?.replaceChildren(what)
+    for (const extra of tile.querySelectorAll(".now-sub, .now-foot"))
+      extra.replaceChildren()
+  }
+
+  const text = (tile: HTMLElement, selector: string, value: string) => {
+    tile.querySelector(selector)?.replaceChildren(value)
+  }
+
+  function renderListen(tile: HTMLElement, site: Site, now: number) {
+    const listen = site.listen
+    if (!listen) return empty(tile, "Nothing yet")
+    delete tile.dataset.empty
+    const link = tile.querySelector("a")!
+    link.href = listen.url
+    setImage(
+      tile.querySelector("img"),
+      listen.cover.medium ?? listen.cover.small,
+    )
+    const playing = isPlaying(listen.at, now)
+    tile.toggleAttribute("data-playing", playing)
+    text(tile, ".now-label", playing ? "Now playing" : "Listening")
+    text(tile, ".now-title", listen.title)
+    text(tile, ".now-sub", listen.artists.join(", "))
+    const time = el("time") as HTMLTimeElement
+    setTime(time, listen.at, ago(listen.at, now))
+    tile.querySelector(".now-foot")?.replaceChildren(time)
+  }
+
+  function renderFilm(tile: HTMLElement, site: Site) {
+    const film = site.film
+    if (!film) return empty(tile, "Nothing yet")
+    delete tile.dataset.empty
+    tile.querySelector("a")!.href = film.url
+    setImage(tile.querySelector("img"), film.poster)
+    text(tile, ".now-label", film.rewatch ? "Rewatched" : "Watched")
+    const title = el("span", undefined, film.title)
+    if (film.year) title.append(" ", el("span", "now-year", String(film.year)))
+    tile.querySelector(".now-title")?.replaceChildren(title)
+
+    const foot: Node[] = []
+    if (film.rating !== null) {
+      const rating = el("span", "now-rating")
+      rating.style.setProperty("--score", String(film.rating))
+      rating.setAttribute("role", "img")
+      rating.setAttribute("aria-label", `${film.rating} out of 5 stars`)
+      rating.append(el("span"))
+      foot.push(rating)
+    }
+    const time = el(
+      "time",
+      undefined,
+      watchedLabel(film.watched, site.today),
+    ) as HTMLTimeElement
+    time.dateTime = film.watched
+    time.title = dateFormatter.format(
+      new Date(`${film.watched}T00:00:00+08:00`),
+    )
+    foot.push(time)
+    tile.querySelector(".now-foot")?.replaceChildren(...foot)
+  }
+
+  function renderTokens(tile: HTMLElement, site: Site) {
+    const tokens = site.tokens
+    if (!tokens) return empty(tile, "—")
+    delete tile.dataset.empty
+    tile.querySelector("a")?.setAttribute("href", "/tokens")
+    const figure = tile.querySelector<HTMLElement>(".now-figure")
+    if (figure) setReadout(figure, formatTokens(tokens.tokens))
+    tile
+      .querySelector(".now-foot")
+      ?.replaceChildren(
+        ...tokensFoot(tokens).map((run) => el("span", undefined, run)),
+      )
+  }
+
+  function renderMemo(tile: HTMLElement, site: Site, now: number) {
+    const memo = site.memo
+    const when = tile.querySelector<HTMLTimeElement>(".now-when")
+    if (!memo) {
+      when?.replaceChildren()
+      return empty(tile, "Nothing yet")
+    }
+    delete tile.dataset.empty
+    tile.querySelector("a")!.href = memo.url
+    if (when) setTime(when, memo.at, ago(memo.at, now))
+    tile.toggleAttribute("data-cw", memo.cw)
+    text(tile, ".now-text", memoText(memo))
+  }
+
+  document.querySelectorAll<HTMLElement>("now-feed").forEach((feed) => {
+    const endpoint = feed.dataset.endpoint
+    if (!endpoint) return
+    const tile = (name: string) =>
+      feed.querySelector<HTMLElement>(`[data-tile="${name}"]`)!
+
+    let last: Site | null = null
+    const render = (site: Site) => {
+      const now = Date.now()
+      renderListen(tile("listen"), site, now)
+      renderFilm(tile("film"), site)
+      renderTokens(tile("tokens"), site)
+      renderMemo(tile("memo"), site, now)
+      feed.setAttribute("aria-busy", "false")
+      last = site
+    }
+
+    loadSite(endpoint, render).catch(() => {
+      // Nothing cached and nothing answered: a home page has no reason to
+      // explain a backend, so the section steps aside.
+      feed.closest("section")?.setAttribute("hidden", "")
+    })
+
+    // "3m ago" is only true for a minute; keep it honest while the tab is
+    // open without asking the network again.
+    setInterval(() => {
+      if (last && document.visibilityState === "visible") render(last)
+    }, 60_000)
+  })
+</script>
+
+<style is:global>
+  /* Global and nested under the element: the tiles' insides are built at
+     runtime, where Astro's scoped styles cannot see them. */
+  now-feed {
+    display: block;
+    container-type: inline-size;
+
+    /* Phone: two columns. The cover and the poster share the first row, the
+       number and the memo the second. From 34rem of column: three, with the
+       listen stretched across two (its cover in the first, its words in the
+       second, a subgrid so they line up with the small tiles under them)
+       and the poster standing the height of both rows. */
+    .now-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-xs);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      @container (width >= 34rem) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: auto 1fr;
+
+        [data-tile="listen"] {
+          grid-column: 1 / 3;
+          display: grid;
+          grid-template-columns: subgrid;
+
+          .now-link {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: subgrid;
+            gap: 0;
+          }
+
+          .now-body {
+            padding-block: var(--space-s);
+          }
+
+          .now-title {
+            font-size: var(--step-1);
+            line-height: 1.25;
+          }
+        }
+
+        [data-tile="film"] {
+          grid-column: 3;
+          grid-row: 1 / 3;
+        }
+
+        [data-tile="memo"] .now-text {
+          -webkit-line-clamp: 2;
+        }
+      }
+    }
+
+    .now-tile {
+      display: grid;
+      min-inline-size: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .now-link {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3xs);
+      min-inline-size: 0;
+      padding: var(--space-s);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      background-color: color-mix(in oklab, var(--muted) 45%, transparent);
+      color: var(--foreground);
+      text-decoration: none;
+      isolation: isolate;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+    }
+
+    @media (hover: hover) {
+      .now-link[href]:hover {
+        border-color: var(--ring);
+        background-color: var(--muted);
+      }
+    }
+
+    .now-label {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-2xs);
+      font-size: 0.6875rem;
+      font-weight: var(--font-weight-medium);
+      letter-spacing: 0.08em;
+      line-height: 1.4;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+    }
+
+    .now-when {
+      letter-spacing: 0;
+      text-transform: none;
+      font-weight: var(--font-weight-normal);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .now-title {
+      display: -webkit-box;
+      overflow: hidden;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.3;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      text-wrap: pretty;
+    }
+
+    .now-sub,
+    .now-foot {
+      min-block-size: 1lh;
+      overflow: hidden;
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .now-foot {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2xs);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* The artwork is the tile's own edge, not a thumbnail inside it: the
+       link has no padding where it sits, and the image fills its box. */
+    .now-art {
+      display: block;
+      overflow: hidden;
+      background-color: var(--muted);
+
+      img {
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: cover;
+      }
+    }
+
+    /* Listen: the square cover over the words on a phone; beside them, in
+       the first column, from 34rem. */
+    [data-tile="listen"] {
+      .now-link {
+        padding: 0;
+        gap: 0;
+      }
+
+      .now-art {
+        aspect-ratio: 1;
+      }
+
+      .now-body {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--space-3xs);
+        min-inline-size: 0;
+        padding: var(--space-xs) var(--space-s) var(--space-s);
+      }
+
+      .now-foot {
+        margin-block-start: auto;
+        padding-block-start: var(--space-3xs);
+      }
+
+      &[data-playing] .now-label::before {
+        content: "";
+        order: -1;
+        inline-size: 0.5rem;
+        block-size: 0.5rem;
+        margin-block: auto;
+        border-radius: var(--radius-full);
+        background-color: light-dark(#30a14e, #3dd68c);
+      }
+
+      &[data-playing] .now-label {
+        justify-content: start;
+        color: light-dark(#216e39, #3dd68c);
+      }
+    }
+
+    /* Film: the poster is the tile, 2:3, with the words laid over its foot
+       on a scrim, so the words cost the poster no height. */
+    [data-tile="film"] {
+      /* The poster sets the tile's height (2:3 of its width, held open by
+         a spacer, since aspect-ratio on a stretched item would widen it
+         instead) and fills whatever taller row the tile is stretched into. */
+      .now-link {
+        padding: 0;
+        border-color: transparent;
+        background-color: var(--muted);
+      }
+
+      .now-link::before {
+        content: "";
+        padding-block-start: 150%;
+      }
+
+      .now-art {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+      }
+
+      .now-body {
+        position: absolute;
+        inset: auto 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3xs);
+        padding: var(--space-xl) var(--space-s) var(--space-s);
+        background-image: linear-gradient(
+          to top,
+          rgb(0 0 0 / 0.86),
+          rgb(0 0 0 / 0.62) 50%,
+          transparent
+        );
+        color: #fff;
+      }
+
+      .now-label,
+      .now-foot,
+      .now-year {
+        color: rgb(255 255 255 / 0.78);
+      }
+
+      .now-year {
+        font-weight: var(--font-weight-normal);
+      }
+
+      .sk-line {
+        background-color: rgb(255 255 255 / 0.25);
+      }
+    }
+
+    /* An inset hairline, so a pale poster keeps its edge on a pale page. */
+    [data-tile="film"] .now-link::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow: inset 0 0 0 1px
+        color-mix(in oklab, var(--foreground) 12%, transparent);
+      pointer-events: none;
+    }
+
+    /* No film: no poster to lay words over, so no scrim either. */
+    [data-tile="film"][data-empty] .now-body {
+      background-image: none;
+      color: var(--muted-foreground);
+
+      .now-label {
+        color: var(--muted-foreground);
+      }
+    }
+
+    .now-rating {
+      --score: 0;
+      position: relative;
+      font-size: 0.8125rem;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      color: rgb(255 255 255 / 0.35);
+
+      &::before {
+        content: "★★★★★";
+      }
+
+      > span {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: 0;
+        inline-size: calc(var(--score) / 5 * 100%);
+        overflow: hidden;
+        color: #fff;
+
+        &::before {
+          content: "★★★★★";
+        }
+      }
+    }
+
+    /* The two small tiles: a figure and a line, and a line of text. */
+    /* Cost and messages: one line where the tile has room, two where it
+       does not, never one cut short. Every run carries its separator in
+       front, in a strip the clip cuts away at the start of each line, so
+       a wrapped run never begins with a stray dot. */
+    [data-tile="tokens"] .now-foot {
+      flex-wrap: wrap;
+      gap: 0;
+      margin-inline-start: -0.9em;
+      overflow: visible;
+      white-space: normal;
+      clip-path: inset(0 0 0 0.9em);
+
+      span {
+        position: relative;
+        padding-inline-start: 0.9em;
+        white-space: nowrap;
+      }
+
+      span::before {
+        content: "·";
+        position: absolute;
+        inset-inline-start: 0;
+        inline-size: 0.9em;
+        text-align: center;
+      }
+    }
+
+    .now-figure {
+      min-block-size: 1lh;
+      margin-block-start: auto;
+      font-size: var(--step-2);
+      font-weight: var(--font-weight-medium);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+
+      .unit {
+        margin-inline: 0.05em;
+        font-size: 0.56em;
+        font-weight: var(--font-weight-normal);
+        letter-spacing: 0;
+        color: var(--muted-foreground);
+      }
+    }
+
+    .now-text {
+      display: -webkit-box;
+      min-block-size: 2lh;
+      overflow: hidden;
+      font-size: var(--step--1);
+      line-height: 1.45;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow-wrap: anywhere;
+    }
+
+    [data-tile="memo"][data-cw] .now-text {
+      color: var(--muted-foreground);
+    }
+
+    [data-empty] :is(.now-title, .now-figure, .now-text) {
+      color: var(--muted-foreground);
+      font-weight: var(--font-weight-normal);
+    }
+
+    .sk-line {
+      display: block;
+      block-size: 0.85em;
+      margin-block: 0.2em;
+      border-radius: var(--radius-sm);
+      background-color: var(--gray-5);
+      animation: var(--sk-pulse);
+    }
+
+    .sk-title {
+      inline-size: 70%;
+    }
+
+    .sk-sub {
+      inline-size: 45%;
+    }
+
+    .sk-foot {
+      inline-size: 35%;
+    }
+
+    .sk-figure {
+      inline-size: 3.5em;
+      block-size: 0.8em;
+    }
+
+    .sk-text:last-child {
+      inline-size: 60%;
+    }
+  }
+</style>

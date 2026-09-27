@@ -1,26 +1,29 @@
 ---
-import CodeTabs from "@/components/CodeTabs.astro"
 import MetaPage from "@/components/MetaPage.astro"
+import Now from "@/components/Now.astro"
 import Layout from "@/layouts/Layout.astro"
-import { PROFILE_TABS } from "@/consts"
+import { API, NOW } from "@/consts"
+import { getPosts } from "@/lib/content"
 import { Image } from "astro:assets"
-import monoWoff2 from "@/assets/fonts/GeistMono-Variable.woff2?url"
 // Downloaded at build time by scripts/prebuild.ts (random cat per build).
 import catImage from "@/assets/cat.jpg"
+
+const posts = (await getPosts()).slice(0, 3)
+const thisYear = new Date().getUTCFullYear()
+// A post from this year needs no year beside it; an older one does.
+const postDate = (date: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(date.getUTCFullYear() === thisYear ? {} : { year: "numeric" }),
+    timeZone: "UTC",
+  }).format(date)
 ---
 
 <Layout>
   <MetaPage slot="head" />
-  {/* The profile code block is above the fold here, and on a phone its
-      long lines wrap, so a late swap to Geist Mono moves the breaks. */}
-  <link
-    rel="preload"
-    href={monoWoff2}
-    as="font"
-    type="font/woff2"
-    crossorigin
-    slot="head"
-  >
+  <link rel="preconnect" href={API} crossorigin slot="head">
+  <link rel="preload" as="fetch" href={NOW.endpoint} crossorigin slot="head">
   <dictionary-entry>
     <h1>lkw123</h1>
     <etymology-span>
@@ -50,8 +53,27 @@ import catImage from "@/assets/cat.jpg"
         </svg>
       </button>
     </cat-figure>
-    <CodeTabs tabs={PROFILE_TABS} />
   </dictionary-entry>
+  <section aria-labelledby="now">
+    <div class="home-head"><h2 id="now">Now</h2></div>
+    <Now />
+  </section>
+  <section aria-labelledby="writing">
+    <div class="home-head">
+      <h2 id="writing">Writing</h2>
+      <a class="section-link" href="/blog">All posts</a>
+    </div>
+    <ol class="home-posts">
+      {posts.map((post) => (
+        <li>
+          <time datetime={post.data.date.toISOString()}>
+            {postDate(post.data.date)}
+          </time>
+          <a href={`/blog/${post.id}`}>{post.data.title}</a>
+        </li>
+      ))}
+    </ol>
+  </section>
 </Layout>
 
 <script>
@@ -149,10 +171,66 @@ import catImage from "@/assets/cat.jpg"
         }
       }
     }
+  }
 
-    :global(code-tabs) {
-      display: block;
-      margin-block-start: var(--space-m);
+  section {
+    margin-block-start: var(--space-l);
+  }
+
+  /* A section's name as a quiet label, and on the far end of its row the
+     one link it has (.section-link, feed.css). */
+  .home-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-s);
+    margin-block-end: var(--space-xs);
+
+    h2 {
+      margin: 0;
+      font-size: var(--step--1);
+      font-weight: var(--font-weight-medium);
+      letter-spacing: 0.08em;
+      line-height: 1.4;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+    }
+  }
+
+  /* Date and title, the dates in a column of their own so the titles
+     start on one line however long each date is. */
+  .home-posts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--space-2xs) var(--space-s);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+      align-items: baseline;
+      margin: 0;
+      padding: 0;
+    }
+
+    time {
+      font-size: var(--step--1);
+      font-variant-numeric: tabular-nums;
+      color: var(--muted-foreground);
+    }
+
+    a {
+      color: var(--foreground);
+      text-decoration: none;
+      text-wrap: pretty;
+
+      &:hover {
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+      }
     }
   }
 

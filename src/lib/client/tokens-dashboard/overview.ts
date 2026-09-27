@@ -113,8 +113,12 @@ export function renderOverview(q: Query, site: Site, range: RangeKey) {
     )
     bar.removeAttribute("data-skeleton")
   }
-  for (const part of COMPOSITION) {
+  // The legend reads largest first; the bar keeps one order, so a part's
+  // shade never moves between ranges.
+  const ranked = [...COMPOSITION].sort((a, b) => totals[b.key] - totals[a.key])
+  for (const part of ranked) {
     const item = legend?.querySelector<HTMLElement>(`[data-key="${part.key}"]`)
+    if (item) legend?.append(item)
     const value = item?.querySelector<HTMLElement>(".value")
     const share = item?.querySelector<HTMLElement>(".share")
     if (!value || !share) continue

@@ -14,20 +14,11 @@ const instance = KOITO.instance
 const stats: { key: keyof SiteStats; label: string }[] = [
   { key: "plays", label: "Plays" },
   { key: "tracks", label: "Tracks" },
-  { key: "albums", label: "Albums" },
   { key: "artists", label: "Artists" },
-  { key: "minutes", label: "Minutes" },
   { key: "daysActive", label: "Days active" },
-  { key: "avgDailyPlays", label: "Avg. daily plays" },
-  { key: "longestStreak", label: "Day streak" },
 ]
 ---
 
-<p class="music-intro">
-  Music I've been listening to, pulled live from my self-hosted
-  <a href={instance} target="_blank" rel="noopener noreferrer">Koito</a>
-  instance.
-</p>
 <music-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
   <div class="music-body">
     <h3 class="music-label">All-time stats</h3>

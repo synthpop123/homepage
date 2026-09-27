@@ -125,16 +125,7 @@ export function renderDevices(q: Query, site: Site, icons: Icons) {
         stats.append(pair)
       }
 
-      // Always present, so every card ends on the same line.
-      const mcp = el("p", "dev-mcp")
-      mcp.append(
-        ...(device.mcpServers?.length
-          ? device.mcpServers.map((server) => el("span", "chip", server))
-          : [el("span", "chip", "No MCP servers")]),
-      )
-      if (!device.mcpServers?.length) mcp.dataset.none = ""
-
-      card.append(head, id, share, stats, mcp)
+      card.append(head, id, share, stats)
       return card
     }),
   )

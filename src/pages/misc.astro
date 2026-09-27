@@ -4,10 +4,11 @@ import Flights from "@/components/Flights.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import Movies from "@/components/Movies.astro"
 import Music from "@/components/Music.astro"
+import SectionHead from "@/components/SectionHead.astro"
 import Switch from "@/components/Switch.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Uses from "@/components/Uses.astro"
-import { API, MISC } from "@/consts"
+import { API, KOITO, LETTERBOXD, MISC } from "@/consts"
 import Layout from "@/layouts/Layout.astro"
 import { getCollection } from "astro:content"
 
@@ -20,14 +21,50 @@ const friends = (await getCollection("friends")).sort((a, b) =>
 // below starts it with the CSS and JS, and the scripts pick up the
 // in-flight response (default fetch mode/credentials, which is what a bare
 // `crossorigin` matches).
-const sections = [
+//
+// Each section names where its data comes from as one small link at the
+// far end of its heading, rather than a sentence under it.
+const sections: {
+  id: string
+  label: string
+  source?: { href: string; label: string }
+}[] = [
   { id: "friends", label: "Friends" },
-  { id: "flights", label: "Flights" },
-  { id: "movies", label: "Movies" },
-  { id: "music", label: "Music" },
-  { id: "switch", label: "Switch" },
-  { id: "uses", label: "Uses" },
+  {
+    id: "flights",
+    label: "Flights",
+    source: {
+      href: "https://github.com/johanohly/AirTrail",
+      label: "AirTrail",
+    },
+  },
+  {
+    id: "movies",
+    label: "Movies",
+    source: {
+      href: `https://letterboxd.com/${LETTERBOXD.username}/`,
+      label: "Letterboxd",
+    },
+  },
+  {
+    id: "music",
+    label: "Music",
+    source: { href: KOITO.instance, label: "Koito" },
+  },
+  {
+    id: "switch",
+    label: "Switch",
+    source: { href: API, label: "Parental Controls" },
+  },
+  {
+    id: "uses",
+    label: "Uses",
+    source: { href: "https://uses.tech/", label: "uses.tech" },
+  },
 ]
+const head = Object.fromEntries(
+  sections.map((section) => [section.id, section]),
+)
 const toc = [
   {
     label: "Misc",
@@ -49,7 +86,7 @@ const toc = [
     <h1>Misc</h1>
   </header>
   <section>
-    <h2 id="friends">Friends</h2>
+    <SectionHead {...head.friends} />
     <ul>
       {friends.map((friend) => (
         <AuthorCard author={friend} standalone />
@@ -57,23 +94,23 @@ const toc = [
     </ul>
   </section>
   <section>
-    <h2 id="flights">Flights</h2>
+    <SectionHead {...head.flights} />
     <Flights />
   </section>
   <section>
-    <h2 id="movies">Movies</h2>
+    <SectionHead {...head.movies} />
     <Movies limit={8} />
   </section>
   <section>
-    <h2 id="music">Music</h2>
+    <SectionHead {...head.music} />
     <Music limit={11} />
   </section>
   <section>
-    <h2 id="switch">Switch</h2>
+    <SectionHead {...head.switch} />
     <Switch limit={10} />
   </section>
   <section>
-    <h2 id="uses">Uses</h2>
+    <SectionHead {...head.uses} />
     <Uses />
   </section>
 </Layout>
@@ -91,17 +128,6 @@ const toc = [
 
   section + section {
     margin-block-start: var(--space-l);
-  }
-
-  h2 {
-    margin-block-end: var(--space-s);
-    font-size: var(--step-1);
-    line-height: calc(var(--leading-offset) + 1em);
-    font-weight: var(--font-weight-medium);
-
-    @media (width >= 64rem) {
-      scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
-    }
   }
 
   a {

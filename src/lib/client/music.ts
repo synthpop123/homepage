@@ -62,7 +62,7 @@ const isStats = (value: unknown): value is SiteStats =>
 const isDay = (value: unknown) =>
   isRecord(value) && isCalendarDay(value.date) && isCount(value.plays)
 
-const isListen = (value: unknown): value is SiteListen =>
+export const isListen = (value: unknown): value is SiteListen =>
   isRecord(value) &&
   typeof value.at === "string" &&
   !Number.isNaN(Date.parse(value.at)) &&

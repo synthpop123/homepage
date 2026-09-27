@@ -13,11 +13,6 @@ export interface CodeInput {
   meta?: string
 }
 
-/** A single switchable tab: a renderable code block plus its tab label. */
-export interface CodeTab extends CodeInput {
-  label: string
-}
-
 function buildMeta({ title, meta }: CodeInput): string {
   const parts: string[] = []
   if (title) parts.push(`title=${JSON.stringify(title)}`)
