@@ -24,7 +24,7 @@ export const NAVIGATION: { href: string; label: string; wideOnly?: boolean }[] =
   [
     { href: "/blog", label: "Blog" },
     { href: "/tags", label: "Tags", wideOnly: true },
-    { href: "/memos", label: "Memos", wideOnly: true },
+    { href: "/memos", label: "Memos" },
     { href: "/tokens", label: "Tokens" },
     { href: "/misc", label: "Misc" },
     { href: "/about", label: "About" },

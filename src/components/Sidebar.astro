@@ -157,6 +157,19 @@ const section = NAVIGATION.find(
       align-items: center;
       gap: var(--space-s);
 
+      /* Five entries and the theme toggle share a phone's width. */
+      @media (width < 26rem) {
+        gap: var(--space-xs);
+      }
+
+      @media (width < 24rem) {
+        gap: var(--space-2xs);
+      }
+
+      @media (width < 22rem) {
+        font-size: var(--step--1);
+      }
+
       ul {
         display: none;
       }
