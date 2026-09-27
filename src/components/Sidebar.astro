@@ -108,7 +108,9 @@ const section = NAVIGATION.find(
         flex-shrink: 0;
       }
 
-      @media (width < 26rem) {
+      /* On one row with the nav, the name crowds the entries: the logo
+         alone says whose site it is. */
+      @media (width < 64rem) {
         span {
           display: none;
         }

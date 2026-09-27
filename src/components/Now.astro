@@ -1,4 +1,6 @@
 ---
+import Claude from "@/assets/icons/ai/claude.svg"
+import Spotify from "@/assets/icons/spotify.svg"
 import { NOW } from "@/consts"
 
 type Props = {
@@ -19,6 +21,7 @@ const { endpoint = NOW.endpoint } = Astro.props
   <ul class="now-grid">
     <li class="now-tile" data-tile="listen">
       <a class="now-link" target="_blank" rel="noopener noreferrer">
+        <span class="now-mark" aria-hidden="true"><Spotify /></span>
         <span class="sleeve" aria-hidden="true">
           <span class="disc"
             ><span class="disc-label"
@@ -51,6 +54,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     </li>
     <li class="now-tile" data-tile="tokens">
       <a class="now-link" href="/tokens">
+        <span class="now-mark" aria-hidden="true"><Claude /></span>
         <span class="now-label">Tokens today</span>
         <span class="now-figure"><span class="sk-line sk-figure"></span></span>
         <span class="now-foot"><span class="sk-line sk-foot"></span></span>
@@ -353,6 +357,35 @@ const { endpoint = NOW.endpoint } = Astro.props
       }
     }
 
+    /* A brand mark as the tile's backdrop, large, faint and cropped by its
+       corner, the way the quota and Uses cards carry theirs. */
+    .now-mark {
+      position: absolute;
+      z-index: -1;
+      inset-block-end: -1.5rem;
+      inset-inline-end: -1.25rem;
+      font-size: 7rem;
+      line-height: 0;
+      color: color-mix(in oklab, var(--mark) 10%, transparent);
+      pointer-events: none;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-tile="listen"] .now-mark {
+      --mark: light-dark(#1db954, #1ed760);
+    }
+
+    [data-tile="tokens"] .now-mark {
+      --mark: #d97757;
+      font-size: 6rem;
+    }
+
+    @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+      .now-link[href]:hover .now-mark {
+        transform: rotate(-8deg) scale(1.04);
+      }
+    }
+
     .now-label {
       display: flex;
       justify-content: space-between;
@@ -474,6 +507,39 @@ const { endpoint = NOW.endpoint } = Astro.props
           inline-size: 100%;
           block-size: 100%;
           object-fit: cover;
+          filter: saturate(0.6);
+          transition: filter 0.3s ease;
+        }
+
+        /* A veil in the page's own colour, so the poster sits back among
+           tiles of flat fill instead of outshouting them; it lifts on
+           hover. */
+        &::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-color: color-mix(
+            in oklab,
+            var(--background) 55%,
+            transparent
+          );
+          transition: background-color 0.3s ease;
+        }
+      }
+
+      @media (hover: hover) {
+        .now-link[href]:hover .now-art {
+          img {
+            filter: none;
+          }
+
+          &::after {
+            background-color: color-mix(
+              in oklab,
+              var(--background) 10%,
+              transparent
+            );
+          }
         }
       }
 
