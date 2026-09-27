@@ -5,10 +5,9 @@
  * map rather than the log: airports, routes and totals, never a single
  * flight).
  *
- * A flat map framed to the airports carries the section, with one strip
- * under it naming the route in focus, then the readout, every route
- * ranked, and what the flights were made of (airlines, aircraft) as two
- * composition bars. Markup, skeletons and styles only: the runtime is
+ * The readout, then a flat map framed to the airports, with one strip
+ * under it naming the route in focus, then the routes ranked and what the
+ * flights were made of (airlines, aircraft) as two composition bars. Markup, skeletons and styles only: the runtime is
  * src/lib/client/flights-feed/, the decisions src/lib/client/flights.ts.
  */
 
@@ -47,6 +46,19 @@ const tallies = [
   aria-busy="true"
 >
   <div class="flights-body">
+    <dl class="readout">
+      {stats.map((label) => (
+          <div>
+            <dt>{label}</dt>
+            <dd class="value">
+              <span class="sk-line sk-stat" aria-hidden="true" />
+            </dd>
+            <dd class="foot">
+              <span class="sk-line sk-foot" aria-hidden="true" />
+            </dd>
+          </div>
+        ))}
+    </dl>
     <div class="flights-map"></div>
     <div class="flights-strip" aria-hidden="true">
       <b data-part="from"><span class="sk-line"></span></b>
@@ -67,24 +79,11 @@ const tallies = [
         <span data-part="to-name"></span>
       </span>
     </div>
-    <dl class="readout">
-      {stats.map((label) => (
-          <div>
-            <dt>{label}</dt>
-            <dd class="value">
-              <span class="sk-line sk-stat" aria-hidden="true" />
-            </dd>
-            <dd class="foot">
-              <span class="sk-line sk-foot" aria-hidden="true" />
-            </dd>
-          </div>
-        ))}
-    </dl>
     <div class="flights-lists">
       <section class="flights-routes">
         <h3 class="flights-label">Routes <span>flights</span></h3>
         <ol>
-          {Array.from({ length: FLIGHTS.routes }).map(() => (
+          {Array.from({ length: FLIGHTS.routes + 1 }).map(() => (
               <li class="route" aria-hidden="true">
                 <span class="route-hit" data-skeleton>
                   <span class="sk-line" />
@@ -160,7 +159,7 @@ const tallies = [
     & .flights-map {
       position: relative;
       aspect-ratio: 3 / 2;
-      margin-block: var(--space-2xs) var(--space-s);
+      margin-block: var(--space-m) var(--space-s);
 
       @media (width < 40rem) {
         aspect-ratio: 1;
@@ -306,7 +305,7 @@ const tallies = [
       grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       gap: var(--space-3xs) var(--space-s);
-      margin-block-end: var(--space-m);
+      margin-block-end: 0;
 
       & b {
         display: grid;
@@ -509,6 +508,12 @@ const tallies = [
       text-overflow: ellipsis;
       white-space: nowrap;
       color: var(--muted-foreground);
+    }
+
+    /* The routes' fold row lines its chevron up with the codes above. */
+    & .flights-routes .comp-more-btn {
+      min-block-size: 2rem;
+      padding-inline: var(--space-2xs);
     }
 
     & .flights-tally + .flights-tally .flights-label {

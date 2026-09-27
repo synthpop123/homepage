@@ -84,6 +84,27 @@ function mount(feed: HTMLElement) {
     line.setAttribute("data-drawn", "")
   }
 
+  /** Flips a list's fold, renders it again, and keeps focus on its toggle. */
+  const toggler =
+    (key: string, render: () => void, scope: HTMLElement) => () => {
+      if (open.has(key)) open.delete(key)
+      else open.add(key)
+      render()
+      scope.querySelector<HTMLElement>(".comp-more-btn")?.focus()
+    }
+
+  const renderRouteList = () => {
+    if (!site) return
+    renderRoutes(
+      routeList,
+      site,
+      FLIGHTS.routes,
+      open.has("routes"),
+      toggler("routes", renderRouteList, routeList),
+    )
+    markRoute(routeList, focus)
+  }
+
   const renderTallies = () => {
     if (!site) return
     for (const [block, tally, noun] of [
@@ -97,12 +118,7 @@ function mount(feed: HTMLElement) {
         FLIGHTS.named,
         noun,
         open.has(key),
-        () => {
-          if (open.has(key)) open.delete(key)
-          else open.add(key)
-          renderTallies()
-          block.querySelector<HTMLElement>(".comp-more-btn")?.focus()
-        },
+        toggler(key, renderTallies, block),
       )
     }
   }
@@ -146,7 +162,7 @@ function mount(feed: HTMLElement) {
       setReadout(value, card.value)
       foot.textContent = card.foot
     })
-    renderRoutes(routeList, next)
+    renderRouteList()
     renderTallies()
     const start = focus ?? 0
     focus = null

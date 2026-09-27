@@ -1,13 +1,15 @@
 /**
- * The lists under the map: every route flown, ranked, each row a bar of
+ * The lists under the map: the routes flown, ranked, each row a bar of
  * its share of the most flown and a way to show it on the map; and the
- * airline and aircraft composition bars, which name the first few and
- * fold the rest behind a "Show N more" row, as the Tokens breakdowns do.
+ * airline and aircraft composition bars. Each shows its first few and
+ * folds the rest behind a "Show N more" row, as the Tokens breakdowns do.
  */
 
 import { el } from "@/lib/client/dom"
 import {
   composition,
+  flownRoutes,
+  fold,
   type Site,
   type SiteCount,
   share,
@@ -18,33 +20,46 @@ const numberFormatter = new Intl.NumberFormat("en-US")
 const plural = (n: number, word: string) =>
   `${numberFormatter.format(n)} ${word}${n === 1 ? "" : "s"}`
 
-/** One row per route flown; `index` is the route's place in `site.routes`. */
-export function renderRoutes(list: HTMLOListElement, site: Site) {
-  const top = Math.max(...site.routes.map((route) => route.flights), 0)
+/**
+ * One row per route flown, the first `named` of them unless `open`;
+ * `data-route` is the route's place in `site.routes`.
+ */
+export function renderRoutes(
+  list: HTMLOListElement,
+  site: Site,
+  named: number,
+  open: boolean,
+  toggle: () => void,
+) {
+  const flown = flownRoutes(site)
+  const top = flown[0]?.flights ?? 0
   const city = (code: string) =>
     site.airports.find((airport) => airport.code === code)?.city ?? code
-  list.replaceChildren(
-    ...site.routes.flatMap((route, index) => {
-      if (route.flights === 0) return []
-      const row = el("li", "route")
-      const button = el("button", "route-hit")
-      button.setAttribute("type", "button")
-      button.dataset.route = String(index)
-      button.setAttribute("aria-pressed", "false")
-      button.setAttribute(
-        "aria-label",
-        `${city(route.from)} and ${city(route.to)}, ${plural(route.flights, "flight")}: show on the map`,
-      )
-      button.style.setProperty("--share", `${share(route.flights, top) * 100}%`)
-      button.append(
-        el("span", "route-code", `${route.from} ⇄ ${route.to}`),
-        el("span", "route-name", `${city(route.from)} ⇄ ${city(route.to)}`),
-        el("span", "route-count", numberFormatter.format(route.flights)),
-      )
-      row.append(button)
-      return row
-    }),
-  )
+  const { named: shown, rest } = fold(flown, named)
+  const rows = [...shown, ...(open ? rest : [])].map((route) => {
+    const row = el("li", "route")
+    const button = el("button", "route-hit")
+    button.setAttribute("type", "button")
+    button.dataset.route = String(site.routes.indexOf(route))
+    button.setAttribute("aria-pressed", "false")
+    button.setAttribute(
+      "aria-label",
+      `${city(route.from)} and ${city(route.to)}, ${plural(route.flights, "flight")}: show on the map`,
+    )
+    button.style.setProperty("--share", `${share(route.flights, top) * 100}%`)
+    button.append(
+      el("span", "route-code", `${route.from} ⇄ ${route.to}`),
+      el("span", "route-name", `${city(route.from)} ⇄ ${city(route.to)}`),
+      el("span", "route-count", numberFormatter.format(route.flights)),
+    )
+    row.append(button)
+    return row
+  })
+  if (rest.length > 0) {
+    const flights = rest.reduce((sum, route) => sum + route.flights, 0)
+    rows.push(moreRow(rest.length, flights, open, toggle))
+  }
+  list.replaceChildren(...rows)
 }
 
 /** The route rows' pressed state, following the map's selection. */
@@ -69,6 +84,28 @@ const chevron = () => {
   path.setAttribute("d", "m6 9 6 6 6-6")
   icon.append(path)
   return icon
+}
+
+/** The fold row: `Show 6 more` and the flights behind it, or `Show less`. */
+function moreRow(
+  count: number,
+  flights: number,
+  open: boolean,
+  toggle: () => void,
+) {
+  const row = el("li", "comp-more")
+  const button = el("button", "comp-more-btn")
+  button.setAttribute("type", "button")
+  button.setAttribute("aria-expanded", String(open))
+  button.append(
+    chevron(),
+    el("span", "comp-more-label", open ? "Show less" : `Show ${count} more`),
+  )
+  if (!open)
+    button.append(el("span", "comp-n", numberFormatter.format(flights)))
+  button.addEventListener("click", toggle)
+  row.append(button)
+  return row
 }
 
 /**
@@ -141,24 +178,7 @@ export function renderComposition(
       )
       return row
     })
-  if (rest.length > 0) {
-    const row = el("li", "comp-more")
-    const button = el("button", "comp-more-btn")
-    button.setAttribute("type", "button")
-    button.setAttribute("aria-expanded", String(open))
-    button.append(
-      chevron(),
-      el(
-        "span",
-        "comp-more-label",
-        open ? "Show less" : `Show ${rest.length} more ${noun}s`,
-      ),
-    )
-    if (!open)
-      button.append(el("span", "comp-n", numberFormatter.format(restFlights)))
-    button.addEventListener("click", toggle)
-    row.append(button)
-    rows.push(row)
-  }
+  if (rest.length > 0)
+    rows.push(moreRow(rest.length, restFlights, open, toggle))
   block.querySelector("ul")?.replaceChildren(...rows)
 }

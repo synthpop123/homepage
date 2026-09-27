@@ -4,6 +4,7 @@ import {
   clusters,
   composition,
   emptiestCorner,
+  fold,
   flownRoutes,
   formatDuration,
   isSite,
@@ -115,6 +116,17 @@ describe("formatting", () => {
     expect(routeLabel({ from: "PEK", to: "SHA" })).toBe("PEK ⇄ SHA")
     expect(share(3, 6)).toBe(0.5)
     expect(share(3, 0)).toBe(0)
+  })
+})
+
+describe("fold", () => {
+  it("cuts after the named rows, unless only one would fold", () => {
+    const items = Array.from({ length: 14 }, (_, i) => i)
+    expect(fold(items, 10).rest).toEqual([10, 11, 12, 13])
+    expect(fold(items.slice(0, 11), 10)).toEqual({
+      named: items.slice(0, 11),
+      rest: [],
+    })
   })
 })
 

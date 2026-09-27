@@ -222,22 +222,27 @@ export const flownRoutes = (site: Site) =>
   site.routes.filter((route) => route.flights > 0)
 
 /**
- * A composition bar's rows: the first `named` by flights, then the rest,
- * which fold behind a "Show more" row. A rest of one is shown instead,
- * since a row that reveals a single row saves nothing.
+ * A list cut after its first `named` items, the rest to fold behind a
+ * "Show N more" row. A rest of one is shown instead, since a row that
+ * reveals a single row saves nothing.
  */
+export function fold<T>(items: T[], named: number): { named: T[]; rest: T[] } {
+  if (items.length <= named + 1) return { named: items, rest: [] }
+  return { named: items.slice(0, named), rest: items.slice(named) }
+}
+
+/** A composition bar's rows (`fold`), leaving out what was never flown. */
 export function composition(
   tally: SiteCount[],
   named: number,
 ): { named: SiteCount[]; rest: SiteCount[]; restFlights: number } {
-  const counted = tally.filter((item) => item.flights > 0)
-  if (counted.length <= named + 1)
-    return { named: counted, rest: [], restFlights: 0 }
-  const rest = counted.slice(named)
+  const cut = fold(
+    tally.filter((item) => item.flights > 0),
+    named,
+  )
   return {
-    named: counted.slice(0, named),
-    rest,
-    restFlights: rest.reduce((sum, item) => sum + item.flights, 0),
+    ...cut,
+    restFlights: cut.rest.reduce((sum, item) => sum + item.flights, 0),
   }
 }
 

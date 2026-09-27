@@ -86,15 +86,14 @@ export const SWITCH = {
 } as const
 
 /**
- * Flights on /misc: how many airlines and aircraft types each composition
- * bar names before folding the rest behind "Show N more", and how many
- * route rows the skeleton reserves. The list itself shows every route, so
- * keep `routes` at the real count: a skeleton short of it shifts every
- * section below when the data lands.
+ * Flights on /misc: how many routes the route list, and how many airlines
+ * and aircraft types each composition bar, shows before folding the rest
+ * behind "Show N more". The route skeleton reserves `routes` rows plus the
+ * fold row.
  */
 export const FLIGHTS = {
   named: 4,
-  routes: 14,
+  routes: 10,
 } as const
 
 /**
