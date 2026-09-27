@@ -19,6 +19,14 @@ export function mountMusic(feed: HTMLElement) {
 
   const limit = Number(feed.dataset.limit) || 10
 
+  // The lead's record turns on an infinite CSS animation; off screen it
+  // would keep costing frames nobody sees, so it pauses there. Reduced
+  // motion is the stylesheet's to honour (reset.css stops it outright).
+  const spin = new IntersectionObserver((entries) => {
+    for (const entry of entries)
+      entry.target.toggleAttribute("data-offscreen", !entry.isIntersecting)
+  })
+
   // Cached and refreshed payloads land in the same renderer, which
   // replaces rather than appends, so a second delivery just repaints.
   loadSite(endpoint, (site) => {
@@ -30,6 +38,9 @@ export function mountMusic(feed: HTMLElement) {
       .slice(0, limit)
       .forEach((listen, i) => fragment.append(buildRow(listen, i === 0)))
     list.replaceChildren(fragment)
+    spin.disconnect()
+    const disc = list.querySelector(".disc")
+    if (disc) spin.observe(disc)
     feed.setAttribute("aria-busy", "false")
   }).catch(() => {
     body.hidden = true

@@ -251,6 +251,12 @@ const stats: { key: keyof SiteStats; label: string }[] = [
     mask: radial-gradient(circle, transparent 0 6%, #000 7%);
   }
 
+  /* Off screen the record stops where it is (music-feed/index.ts sets
+     the attribute), and picks up from there when it scrolls back. */
+  music-feed :global(.disc[data-offscreen] .disc-label) {
+    animation-play-state: paused;
+  }
+
   @keyframes music-spin {
     to {
       transform: rotate(1turn);
