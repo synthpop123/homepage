@@ -29,6 +29,36 @@ const gridMetrics = (grid: HTMLElement) => {
 export const weekdayIndex = (day: string) =>
   (new Date(`${day.slice(0, 10)}T12:00:00Z`).getUTCDay() + 6) % 7
 
+/** Arrow keys over the grid's own axes: a column is a week, a row is a
+ *  weekday (Monday on top), so across is ±7 days and up/down ±1. */
+const KEY_STEPS: Record<string, number> = {
+  ArrowUp: -1,
+  ArrowDown: 1,
+  ArrowLeft: -7,
+  ArrowRight: 7,
+}
+
+/**
+ * Where a key moves the pick on a selectable grid that shows `first`
+ * through `last`: an arrow steps along the grid, Home goes to `last`
+ * (today). A step off either end stays put, as a cursor at the edge of
+ * a grid does. Null for a key the grid does not handle.
+ */
+export function stepDay(
+  day: string,
+  key: string,
+  first: string,
+  last: string,
+): string | null {
+  if (key === "Home") return last
+  const step = KEY_STEPS[key]
+  if (step === undefined) return null
+  const date = new Date(`${day}T12:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + step)
+  const next = date.toISOString().slice(0, 10)
+  return next < first || next > last ? day : next
+}
+
 export type HeatCell = {
   level: number
   title: string

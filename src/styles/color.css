@@ -23,7 +23,10 @@
   --muted-foreground:   var(--gray-11);
   --destructive:        var(--red-11);
   --border:             var(--gray-6);
-  --ring:               var(--gray-8);
+  /* A focus ring is the only sign of where the keyboard is, so it needs
+     3:1 against the page (and the muted fills it lands on); --gray-8,
+     Radix's own ring step, is 1.9:1 on the light page. */
+  --ring:               var(--gray-10);
 
   color-scheme: light dark;
 }

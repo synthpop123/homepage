@@ -11,6 +11,12 @@
  * whose wrapping permalink (the full-size original) keeps working
  * without JS and for modified clicks. A multi-image memo opens as one
  * swipeable gallery.
+ *
+ * Keyboard: a memo card is a link, so Enter on it opens the gallery
+ * like a click. A bare image has no control of its own, so the mount
+ * makes each one a button (focusable, Enter or Space) — only once the
+ * script that answers it is running. PhotoSwipe traps focus while open,
+ * closes on Escape and hands focus back to the thumbnail.
  */
 
 import type { SlideData } from "photoswipe"
@@ -80,14 +86,36 @@ async function openGallery(
   }
 }
 
+const BARE = "prose-content img:not(.emoji), post-banner img"
+
 export function mountLightbox() {
+  for (const img of document.querySelectorAll<HTMLImageElement>(BARE)) {
+    if (img.closest("a")) continue
+    img.tabIndex = 0
+    img.setAttribute("role", "button")
+    img.setAttribute("aria-haspopup", "dialog")
+    if (!img.alt) img.setAttribute("aria-label", "Enlarge image")
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return
+    const img = event.target
+    if (!(img instanceof HTMLImageElement) || !img.matches(BARE)) return
+    if (img.closest("a")) return
+    event.preventDefault()
+    img.click()
+  })
+
   document.addEventListener("click", (event) => {
     if (event.defaultPrevented || busy) return
     if (event.button !== 0) return
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
 
+    // Enter on a memo card clicks its link, not the image inside it.
     const target = event.target instanceof Element ? event.target : null
-    const img = target?.closest("img")
+    const img =
+      target?.closest("img") ??
+      target?.closest(".memo-shot a")?.querySelector("img")
     if (!(img instanceof HTMLImageElement)) return
     if (!img.complete || img.naturalWidth === 0) return
 
@@ -112,7 +140,7 @@ export function mountLightbox() {
       if (slides.length === 0) return
       event.preventDefault()
       openGallery(thumbs, slides, Math.max(0, thumbs.indexOf(img)))
-    } else if (img.matches("prose-content img:not(.emoji), post-banner img")) {
+    } else if (img.matches(BARE)) {
       openGallery([img], [slideFor(img, largestSrc(img))], 0)
     }
   })

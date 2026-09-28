@@ -5,7 +5,7 @@
  * renders once per payload.
  */
 
-import { mountHeatmap } from "../heatmap"
+import { mountHeatmap, stepDay } from "../heatmap"
 import {
   fillDaily,
   formatAgo,
@@ -28,6 +28,7 @@ const WINDOW_DAYS = 365
 
 export function createActivity(q: Query, icons: Icons) {
   const grid = q(".heat-grid")
+  const status = q(".heat-status")
   const panel = createDayPanel(q, icons, () => select(null))
 
   let site: Site | null = null
@@ -47,6 +48,13 @@ export function createActivity(q: Query, icons: Icons) {
       []) {
       cell.toggleAttribute("data-selected", cell.dataset.date === chosen)
     }
+  }
+
+  /** Says the picked day and its figures, since the only other sign of
+   *  a pick is the ring drawn around its cell. */
+  const announce = () => {
+    const cell = grid?.querySelector<HTMLElement>("[data-selected]")
+    if (status && cell) status.textContent = cell.title
   }
 
   /** Pick a day (null = back to today), clamped to what is on screen. */
@@ -70,27 +78,21 @@ export function createActivity(q: Query, icons: Icons) {
       event.target instanceof Element
         ? event.target.closest<HTMLElement>("[data-date]")
         : null
-    if (cell?.dataset.date) select(cell.dataset.date)
+    if (!cell?.dataset.date) return
+    select(cell.dataset.date)
+    announce()
   })
 
   // A picker that only answers the mouse would put a third of the
-  // dashboard behind a pointer. Left/right walk days, up/down weeks —
-  // the grid's own axes — and Home returns to today.
+  // dashboard behind a pointer. The arrows follow the grid's own axes
+  // (up/down a day, left/right a week) and Home returns to today.
   grid?.addEventListener("keydown", (event) => {
-    const steps: Record<string, number> = {
-      ArrowLeft: -1,
-      ArrowRight: 1,
-      ArrowUp: -7,
-      ArrowDown: 7,
-    }
-    if (event.key === "Home") {
-      select(null)
-    } else if (event.key in steps) {
-      select(shiftDays(day(), steps[event.key]))
-    } else {
-      return
-    }
+    if (!site || event.altKey || event.ctrlKey || event.metaKey) return
+    const next = stepDay(day(), event.key, first, site.today)
+    if (next === null) return
     event.preventDefault()
+    select(next)
+    announce()
   })
 
   const renderHeatmap = (loaded: Site) => {
@@ -151,5 +153,11 @@ export function createActivity(q: Query, icons: Icons) {
     panel.render(loaded, day())
   }
 
-  return { render }
+  return {
+    render,
+    /** The sync age is relative to now, so it repaints on the minute. */
+    tick: () => {
+      if (site) renderSync(site)
+    },
+  }
 }
