@@ -82,11 +82,7 @@ const authors = await getEntries(post.data.authors)
           gap: var(--space-3xs);
 
           span {
-            color: color-mix(
-              in oklab,
-              var(--muted-foreground) 50%,
-              transparent
-            );
+            color: var(--faint-foreground);
           }
         }
 

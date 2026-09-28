@@ -210,7 +210,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   }
 
   memos-feed :global(.memo-edited) {
-    color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+    color: var(--faint-foreground);
   }
 
   memos-feed :global(.memo-main) {
@@ -261,7 +261,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
 
   memos-feed :global(.memo-cw summary::after) {
     content: " · Show";
-    color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+    color: var(--faint-foreground);
   }
 
   memos-feed :global(.memo-cw[open] summary::after) {

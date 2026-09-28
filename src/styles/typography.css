@@ -15,8 +15,9 @@
     --prose-foreground: color-mix(in oklab, var(--foreground) 80%, transparent);
     --prose-marker: color-mix(in oklab, var(--foreground) 30%, transparent);
     /* Parenthetical asides: a visible step below prose, still AA on both
-       themes. --muted-foreground is too close to prose in dark mode. */
-    --prose-aside: color-mix(in oklab, var(--foreground) 62%, transparent);
+       themes, including inline code on its tinted fill inside an aside.
+       --muted-foreground is too close to prose in dark mode. */
+    --prose-aside: color-mix(in oklab, var(--foreground) 66%, transparent);
 
     --measure: 40rem;
 }

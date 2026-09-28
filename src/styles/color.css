@@ -21,6 +21,10 @@
   --primary-foreground: var(--gray-1);
   --muted:              var(--gray-3);
   --muted-foreground:   var(--gray-11);
+  /* The quietest text that is still read (tags, footnote-grade labels):
+     just clear of 4.5:1 on the page and its lighter fills in both
+     schemes. Anything fainter is decoration, not text. */
+  --faint-foreground:   light-dark(#707070, #858585);
   --destructive:        var(--red-11);
   --border:             var(--gray-6);
   /* A focus ring is the only sign of where the keyboard is, so it needs
