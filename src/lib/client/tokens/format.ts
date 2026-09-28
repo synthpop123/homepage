@@ -1,16 +1,12 @@
 /** Date arithmetic and every number-to-text rule the dashboard prints. */
+import { dayInstant } from "../feed"
 import type { MetricKey } from "./schema"
 
 /* Dates ------------------------------------------------------------- */
 
-const noon = (day: string) => new Date(`${day.slice(0, 10)}T12:00:00Z`)
-
-/** Shift an ISO day by whole days; anchoring at noon UTC is DST-proof. */
-export const shiftDays = (day: string, delta: number) => {
-  const date = noon(day)
-  date.setUTCDate(date.getUTCDate() + delta)
-  return date.toISOString().slice(0, 10)
-}
+// Shared with every feed; re-exported so the dashboard keeps one entry
+// point for its date arithmetic.
+export { shiftDays } from "../feed"
 
 export const WEEKDAYS = [
   "Monday",
@@ -116,13 +112,14 @@ export const formatShare = (ratio: number) => {
 }
 
 /** "Jul 12" */
-export const formatDay = (day: string) => dayLabel.format(noon(day))
+export const formatDay = (day: string) => dayLabel.format(dayInstant(day))
 
 /** "Jul 12, 2026" */
-export const formatDate = (day: string) => dateLabel.format(noon(day))
+export const formatDate = (day: string) => dateLabel.format(dayInstant(day))
 
 /** "Sun, Jul 12" — a picked day, where the weekday is half the answer. */
-export const formatWeekdayDay = (day: string) => weekdayLabel.format(noon(day))
+export const formatWeekdayDay = (day: string) =>
+  weekdayLabel.format(dayInstant(day))
 
 /** "Aug 8, 21:28" — an absolute instant, in the collector's zone. */
 export const formatInstant = (iso: string) => {
@@ -132,20 +129,11 @@ export const formatInstant = (iso: string) => {
 
 /** "May ’25" — compact axis label for monthly buckets. */
 export const formatMonth = (month: string) =>
-  `${monthName.format(noon(`${month}-15`))} ’${month.slice(2, 4)}`
+  `${monthName.format(dayInstant(`${month}-15`))} ’${month.slice(2, 4)}`
 
 /** "May 2025" */
 export const formatMonthTitle = (month: string) =>
-  monthTitle.format(noon(`${month}-15`))
-
-/** "just now" / "5m ago" / "3h ago" / "2d ago" — for device sync times. */
-export const formatAgo = (epochMs: number, now = Date.now()) => {
-  const minutes = Math.round((now - epochMs) / 60_000)
-  if (minutes < 1) return "just now"
-  if (minutes < 60) return `${minutes}m ago`
-  if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`
-  return `${Math.round(minutes / (60 * 24))}d ago`
-}
+  monthTitle.format(dayInstant(`${month}-15`))
 
 /**
  * "4m" / "1h 8m" / "3d 4h" — how long until an instant that lies ahead:
@@ -157,7 +145,7 @@ export const formatAgo = (epochMs: number, now = Date.now()) => {
  * Two units, not one: "1h" for a session that resets in 1h 59m is off
  * by half the answer. A zero second unit is dropped ("3h").
  *
- * Rounds *down*, unlike formatAgo. These are deadlines, and rounding a
+ * Rounds *down*, like relativeTime. These are deadlines, and rounding a
  * credit that lapses in five and a half days up to "6d" tells the reader
  * they have a day they do not have. Under a minute still reads "1m"
  * rather than "0m" — it has not expired yet, which is the only thing

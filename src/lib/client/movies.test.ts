@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { dateFormatter } from "./feed"
-import { isSite, SITE_SCHEMA_VERSION, watchedInstant } from "./movies"
+import { isSite, SITE_SCHEMA_VERSION } from "./movies"
 import fixture from "./movies.site-fixture.json"
 
 describe("isSite", () => {
@@ -19,13 +18,5 @@ describe("isSite", () => {
     const [first, ...rest] = fixture.films
     const bad = { ...first, url: "javascript:alert(1)" }
     expect(isSite({ ...fixture, films: [bad, ...rest] })).toBe(false)
-  })
-})
-
-describe("watchedInstant", () => {
-  it("formats back to the same calendar day in the site's zone", () => {
-    expect(dateFormatter.format(watchedInstant("2026-09-22"))).toBe(
-      "Sep 22, 2026",
-    )
   })
 })

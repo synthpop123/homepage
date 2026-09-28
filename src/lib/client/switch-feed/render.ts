@@ -4,7 +4,7 @@
  */
 
 import { el } from "@/lib/client/dom"
-import { safeHttpUrl, TIME_ZONE } from "@/lib/client/feed"
+import { dayInstant, monthDay, safeHttpUrl } from "@/lib/client/feed"
 import { HEAT_MAX_WEEKS, mountHeatmap } from "@/lib/client/heatmap"
 import { setReadout } from "@/lib/client/readout"
 import {
@@ -17,15 +17,6 @@ import {
 } from "@/lib/client/switch"
 
 const numberFormatter = new Intl.NumberFormat("en-US")
-const dayFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  timeZone: TIME_ZONE,
-})
-
-// Calendar days from the payload are Asia/Shanghai already; anchoring at
-// noon UTC keeps them from sliding a day in either direction.
-const asDate = (day: string) => new Date(`${day}T12:00:00Z`)
 
 export const fillStats = (feed: HTMLElement, stats: Site["stats"]) => {
   const cards = statCards(stats)
@@ -50,7 +41,7 @@ export const buildHeatmap = (feed: HTMLElement, site: Site) => {
     return shown.map((day) => ({
       level:
         day.minutes === 0 ? 0 : Math.max(1, Math.ceil((day.minutes / max) * 4)),
-      title: `${day.minutes === 0 ? "No play" : formatPlaytime(day.minutes)} on ${dayFormatter.format(asDate(day.date))}`,
+      title: `${day.minutes === 0 ? "No play" : formatPlaytime(day.minutes)} on ${monthDay.format(dayInstant(day.date))}`,
     }))
   })
 }

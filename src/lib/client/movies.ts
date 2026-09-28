@@ -55,10 +55,6 @@ export function isSite(data: unknown): data is Site {
   )
 }
 
-/** A calendar day as the instant it began in the site's zone, so the
- *  shared formatters (which render in TIME_ZONE) print that same day. */
-export const watchedInstant = (day: string) => new Date(`${day}T00:00:00+08:00`)
-
 export const loadSite = (
   endpoint: string,
   onData: (site: Site) => void,

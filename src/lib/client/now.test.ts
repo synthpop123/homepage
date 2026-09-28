@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test"
 import {
-  ago,
   flightFoot,
   flightTitle,
   flownLabel,
@@ -41,18 +40,6 @@ describe("isSite", () => {
     expect(
       isSite({ ...fixture, flight: { ...fixture.flight, from: "JNH" } }),
     ).toBe(false)
-  })
-})
-
-describe("ago", () => {
-  const now = Date.parse("2026-09-27T12:00:00Z")
-  it("counts up through minutes, hours and days, then names the date", () => {
-    expect(ago("2026-09-27T11:59:30Z", now)).toBe("just now")
-    expect(ago("2026-09-27T11:48:00Z", now)).toBe("12m ago")
-    expect(ago("2026-09-27T09:00:00Z", now)).toBe("3h ago")
-    expect(ago("2026-09-26T05:00:00Z", now)).toBe("yesterday")
-    expect(ago("2026-09-23T12:00:00Z", now)).toBe("4d ago")
-    expect(ago("2026-09-12T12:00:00Z", now)).toBe("Sep 12")
   })
 })
 

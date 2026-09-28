@@ -6,16 +6,8 @@
  */
 
 import { el } from "@/lib/client/dom"
-import { dateFormatter, TIME_ZONE } from "@/lib/client/feed"
-import { type SiteFilm, watchedInstant } from "@/lib/client/movies"
-
-// The wall is recent by construction, so the year is noise on the card;
-// the full date is on hover.
-const shortDate = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  timeZone: TIME_ZONE,
-})
+import { dateFormatter, dayInstant, monthDay } from "@/lib/client/feed"
+import type { SiteFilm } from "@/lib/client/movies"
 
 export const buildCard = (film: SiteFilm) => {
   const card = el("li", "movie-card")
@@ -50,8 +42,10 @@ export const buildCard = (film: SiteFilm) => {
     rating.append(el("span"))
     foot.append(rating)
   }
-  const watched = watchedInstant(film.watched)
-  const time = el("time", "date", shortDate.format(watched)) as HTMLTimeElement
+  // The wall is recent by construction, so the year is noise on the
+  // card; the full date is on hover.
+  const watched = dayInstant(film.watched)
+  const time = el("time", "date", monthDay.format(watched)) as HTMLTimeElement
   time.dateTime = film.watched
   time.title = dateFormatter.format(watched)
   foot.append(time)

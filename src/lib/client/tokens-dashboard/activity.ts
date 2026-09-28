@@ -5,10 +5,10 @@
  * renders once per payload.
  */
 
+import { relativeTime } from "../feed"
 import { mountHeatmap, stepDay } from "../heatmap"
 import {
   fillDaily,
-  formatAgo,
   formatCostExact,
   formatCount,
   formatDate,
@@ -136,7 +136,7 @@ export function createActivity(q: Query, icons: Icons) {
     if (!meta) return
     const seen = lastReport(loaded)
     const stamp = seen ?? Date.parse(loaded.generatedAt)
-    meta.textContent = `${seen === null ? "collected" : "synced"} ${formatAgo(stamp)}`
+    meta.textContent = `${seen === null ? "collected" : "synced"} ${relativeTime(stamp)}`
     meta.title = `${formatDate(loaded.today)} · ${
       seen === null ? "collector last ran" : "last device report"
     } ${new Date(stamp).toLocaleString()}`

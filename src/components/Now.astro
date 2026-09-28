@@ -82,10 +82,15 @@ const { endpoint = NOW.endpoint } = Astro.props
 
 <script>
   import { el } from "@/lib/client/dom"
-  import { calendarDay, dateFormatter, keepFresh } from "@/lib/client/feed"
+  import {
+    calendarDay,
+    dateFormatter,
+    dayInstant,
+    keepFresh,
+    relativeTime,
+  } from "@/lib/client/feed"
   import { isPlaying } from "@/lib/client/music"
   import {
-    ago,
     flightFoot,
     flightTitle,
     flownLabel,
@@ -154,7 +159,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     text(tile, ".now-title", listen.title)
     text(tile, ".now-sub", listen.artists.join(", "))
     const time = el("time") as HTMLTimeElement
-    setTime(time, listen.at, ago(listen.at, now))
+    setTime(time, listen.at, relativeTime(listen.at, now))
     tile.querySelector(".now-foot")?.replaceChildren(time)
   }
 
@@ -184,9 +189,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       watchedLabel(film.watched, today),
     ) as HTMLTimeElement
     time.dateTime = film.watched
-    time.title = dateFormatter.format(
-      new Date(`${film.watched}T00:00:00+08:00`),
-    )
+    time.title = dateFormatter.format(dayInstant(film.watched))
     foot.push(time)
     tile.querySelector(".now-foot")?.replaceChildren(...foot)
   }

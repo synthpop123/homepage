@@ -15,9 +15,9 @@
  * is open turns into its reset state without a reload.
  */
 
+import { relativeTime } from "../feed"
 import {
   aiIcon,
-  formatAgo,
   formatIn,
   formatInstant,
   formatRemaining,
@@ -235,7 +235,7 @@ export function windowView(
     return {
       state: "reset",
       used: 0,
-      foot: `reset ${formatAgo(at, now)} · awaiting report`,
+      foot: `reset ${relativeTime(at, now)} · awaiting report`,
       title: `Reset ${instant}`,
     }
   }
@@ -298,7 +298,7 @@ export function allowanceView(
       state: "reset",
       used: 0,
       figure: formatMoney(0),
-      foot: `reset ${formatAgo(at, now)} · awaiting report`,
+      foot: `reset ${relativeTime(at, now)} · awaiting report`,
       title: `Reset ${formatInstant(allowance.resetsAt ?? "")}`,
       left: `${formatMoney(limit)} left`,
     }
@@ -497,7 +497,7 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   if (plan.plan) head.append(el("span", "plan-tier", `· ${plan.plan}`))
 
   const capturedAt = Date.parse(plan.capturedAt)
-  const age = el("span", "plan-age", formatAgo(capturedAt, now))
+  const age = el("span", "plan-age", relativeTime(capturedAt, now))
   age.title = `Read ${new Date(capturedAt).toLocaleString()}`
   // Beyond the threshold the age is the headline, not a footnote: the
   // numbers beside it may describe a window that has since ended.

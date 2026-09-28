@@ -8,8 +8,8 @@
  * age are relative to now.
  */
 
+import { relativeTime } from "../feed"
 import {
-  formatAgo,
   formatCost,
   formatDate,
   formatDuration,
@@ -86,7 +86,7 @@ export function renderDevices(q: Query, site: Site, icons: Icons) {
         el("span", "dot"),
         device.lastSeen === null
           ? "Never reported"
-          : `${online ? "Online" : "Offline"} · ${formatAgo(device.lastSeen)}`,
+          : `${online ? "Online" : "Offline"} · ${relativeTime(device.lastSeen)}`,
       )
       const head = el("div", "dev-head")
       head.append(status)

@@ -8,7 +8,56 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "bun:test"
-import { calendarDay, safeHttpUrl, swr } from "./feed"
+import {
+  calendarDay,
+  dateFormatter,
+  dayInstant,
+  daysBetween,
+  safeHttpUrl,
+  relativeTime,
+  shiftDays,
+  swr,
+} from "./feed"
+
+describe("dayInstant", () => {
+  it("reads back as the same day in UTC and in the site's zone", () => {
+    const at = dayInstant("2026-09-22")
+    expect(at.toISOString().slice(0, 10)).toBe("2026-09-22")
+    expect(dateFormatter.format(at)).toBe("Sep 22, 2026")
+  })
+
+  it("takes a timestamp's date part", () => {
+    expect(dayInstant("2026-09-22T23:30:00+08:00").getUTCDate()).toBe(22)
+  })
+})
+
+describe("shiftDays and daysBetween", () => {
+  it("step across months, years and leap days", () => {
+    expect(shiftDays("2026-02-28", 1)).toBe("2026-03-01")
+    expect(shiftDays("2024-02-28", 1)).toBe("2024-02-29")
+    expect(shiftDays("2026-01-01", -1)).toBe("2025-12-31")
+    expect(daysBetween("2025-12-31", "2026-01-02")).toBe(2)
+    expect(daysBetween("2026-09-27", "2026-09-20")).toBe(-7)
+  })
+})
+
+describe("relativeTime", () => {
+  const now = Date.parse("2026-09-27T12:00:00Z")
+  it("counts up through minutes, hours and days, then names the date", () => {
+    expect(relativeTime("2026-09-27T11:59:30Z", now)).toBe("just now")
+    expect(relativeTime("2026-09-27T11:48:00Z", now)).toBe("12m ago")
+    expect(relativeTime("2026-09-27T09:00:00Z", now)).toBe("3h ago")
+    expect(relativeTime("2026-09-26T05:00:00Z", now)).toBe("yesterday")
+    expect(relativeTime("2026-09-23T12:00:00Z", now)).toBe("4d ago")
+    expect(relativeTime("2026-09-12T12:00:00Z", now)).toBe("Sep 12")
+  })
+
+  it("rounds down, so one listen reads the same everywhere", () => {
+    expect(relativeTime("2026-09-27T10:30:00Z", now)).toBe("1h ago")
+    expect(relativeTime(now - 90_000, now)).toBe("1m ago")
+    expect(relativeTime(new Date(now - 47 * 3_600_000), now)).toBe("yesterday")
+  })
+})
 
 describe("calendarDay", () => {
   it("names the day in the site's zone, not the visitor's", () => {

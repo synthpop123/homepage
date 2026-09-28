@@ -6,6 +6,8 @@
  * browser-safe.
  */
 
+import { dayInstant, shiftDays } from "./feed"
+
 export const HEAT_MAX_WEEKS = 52
 
 /**
@@ -27,7 +29,7 @@ const gridMetrics = (grid: HTMLElement) => {
  * boundaries, not the visitor's local time zone.
  */
 export const weekdayIndex = (day: string) =>
-  (new Date(`${day.slice(0, 10)}T12:00:00Z`).getUTCDay() + 6) % 7
+  (dayInstant(day).getUTCDay() + 6) % 7
 
 /** Arrow keys over the grid's own axes: a column is a week, a row is a
  *  weekday (Monday on top), so across is ±7 days and up/down ±1. */
@@ -53,9 +55,7 @@ export function stepDay(
   if (key === "Home") return last
   const step = KEY_STEPS[key]
   if (step === undefined) return null
-  const date = new Date(`${day}T12:00:00Z`)
-  date.setUTCDate(date.getUTCDate() + step)
-  const next = date.toISOString().slice(0, 10)
+  const next = shiftDays(day, step)
   return next < first || next > last ? day : next
 }
 

@@ -7,10 +7,13 @@
  */
 
 import {
+  dayInstant,
+  daysBetween,
   fetchJson,
   isCalendarDay,
   isCount,
   isRecord,
+  monthDay,
   swr,
   TIME_ZONE,
 } from "./feed"
@@ -99,43 +102,14 @@ export const loadSite = (
     onData,
   )
 
-const shortDate = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  timeZone: TIME_ZONE,
-})
-
-/**
- * "just now" / "12m ago" / "3h ago" / "yesterday" / "4d ago", then the
- * date: past a week, a count of days is arithmetic the reader has to do.
- * "yesterday" counts elapsed hours, not calendar days, like the rest.
- */
-export function ago(at: string | Date, now = Date.now()): string {
-  const then = typeof at === "string" ? Date.parse(at) : at.getTime()
-  const minutes = Math.floor((now - then) / 60_000)
-  if (minutes < 1) return "just now"
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 2) return "yesterday"
-  if (days < 7) return `${days}d ago`
-  return shortDate.format(then)
-}
-
-/** A calendar day as the instant it began in the site's zone. */
-const dayStart = (day: string) => new Date(`${day}T00:00:00+08:00`)
-
 /** When a film was watched, against today: a diary day has no time, so
  *  this speaks in days ("today", "yesterday", "3d ago", "Sep 22"). */
 export function watchedLabel(watched: string, today: string): string {
-  const days = Math.round(
-    (dayStart(today).getTime() - dayStart(watched).getTime()) / 86_400_000,
-  )
+  const days = daysBetween(watched, today)
   if (days <= 0) return "today"
   if (days === 1) return "yesterday"
   if (days < 7) return `${days}d ago`
-  return shortDate.format(dayStart(watched))
+  return monthDay.format(dayInstant(watched))
 }
 
 /**
@@ -146,12 +120,9 @@ export function watchedLabel(watched: string, today: string): string {
  */
 export function tokensLabel(day: string, today: string): string {
   if (day >= today) return "Tokens today"
-  const days = Math.round(
-    (dayStart(today).getTime() - dayStart(day).getTime()) / 86_400_000,
-  )
-  return days === 1
+  return daysBetween(day, today) === 1
     ? "Tokens yesterday"
-    : `Tokens · ${shortDate.format(dayStart(day))}`
+    : `Tokens · ${monthDay.format(dayInstant(day))}`
 }
 
 /** ["$14.48", "155 messages"]: two runs, so a narrow tile can put the
@@ -172,8 +143,8 @@ const longDate = new Intl.DateTimeFormat("en-US", {
  *  not this one. A flight is rare enough that a count of days would be
  *  arithmetic, not news. */
 export function flownLabel(date: string, today: string): string {
-  const format = date.slice(0, 4) === today.slice(0, 4) ? shortDate : longDate
-  return format.format(dayStart(date))
+  const format = date.slice(0, 4) === today.slice(0, 4) ? monthDay : longDate
+  return format.format(dayInstant(date))
 }
 
 /** A place by its city, or its code when the city is unknown. */
@@ -189,7 +160,7 @@ export const flightFoot = (flight: Flight) => [
  *  the time aloft, the airline and the aircraft. */
 export function flightTitle(flight: Flight): string {
   const parts = [
-    longDate.format(dayStart(flight.date)),
+    longDate.format(dayInstant(flight.date)),
     formatKm(flight.km),
     flight.minutes === null ? null : formatDuration(flight.minutes),
     [flight.airline, flight.aircraft].filter(Boolean).join(", ") || null,

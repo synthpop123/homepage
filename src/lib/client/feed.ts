@@ -35,6 +35,65 @@ export const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: TIME_ZONE,
 })
 
+/* Days and times ------------------------------------------------------ */
+
+/**
+ * A calendar day as one instant inside it: noon UTC, which is the same
+ * date in UTC and in the site's zone, so a formatter in either zone and
+ * the UTC getters all read the day back unchanged (and a daylight-saving
+ * shift elsewhere cannot move it).
+ */
+export const dayInstant = (day: string) =>
+  new Date(`${day.slice(0, 10)}T12:00:00Z`)
+
+/** Shift a calendar day by whole days. */
+export function shiftDays(day: string, delta: number): string {
+  const date = dayInstant(day)
+  date.setUTCDate(date.getUTCDate() + delta)
+  return date.toISOString().slice(0, 10)
+}
+
+/** Whole days from one calendar day to another. */
+export const daysBetween = (from: string, to: string) =>
+  Math.round(
+    (dayInstant(to).getTime() - dayInstant(from).getTime()) / 86_400_000,
+  )
+
+/** "Sep 22", in the site's zone. */
+export const monthDay = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: TIME_ZONE,
+})
+
+/**
+ * The one relative time on the site: "just now" / "12m ago" / "3h ago"
+ * / "yesterday" / "4d ago", then the date, since past a week a count of
+ * days is arithmetic the reader has to do. Every unit is whole and
+ * rounded down (a play 90 minutes ago was an hour ago, not two), so the
+ * home tile and the Music list never disagree about the same listen.
+ */
+export function relativeTime(
+  at: string | number | Date,
+  now = Date.now(),
+): string {
+  const then =
+    typeof at === "string"
+      ? Date.parse(at)
+      : typeof at === "number"
+        ? at
+        : at.getTime()
+  const minutes = Math.floor((now - then) / 60_000)
+  if (minutes < 1) return "just now"
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 2) return "yesterday"
+  if (days < 7) return `${days}d ago`
+  return monthDay.format(then)
+}
+
 const dayParts = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "2-digit",

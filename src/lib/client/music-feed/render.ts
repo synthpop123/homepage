@@ -4,7 +4,12 @@
  */
 
 import { el } from "@/lib/client/dom"
-import { TIME_ZONE } from "@/lib/client/feed"
+import {
+  dayInstant,
+  monthDay,
+  relativeTime,
+  TIME_ZONE,
+} from "@/lib/client/feed"
 import { mountHeatmap } from "@/lib/client/heatmap"
 import {
   isPlaying,
@@ -17,11 +22,6 @@ import { setReadout } from "@/lib/client/readout"
 const numberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 1,
 })
-const dayFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  timeZone: TIME_ZONE,
-})
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
@@ -29,16 +29,6 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
   timeZone: TIME_ZONE,
 })
-// Short enough to sit beside the artists on a half-width row without
-// either one being cut; the full instant is on hover.
-const formatWhen = (iso: string) => {
-  const value = new Date(iso)
-  const minutes = Math.round((Date.now() - value.getTime()) / 60_000)
-  if (minutes < 1) return "just now"
-  if (minutes < 60) return `${minutes}m ago`
-  if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`
-  return dayFormatter.format(value)
-}
 
 export const fillStats = (feed: HTMLElement, stats: Site["stats"]) => {
   feed.querySelectorAll<HTMLElement>(".stat").forEach((stat) => {
@@ -59,7 +49,7 @@ export const buildHeatmap = (feed: HTMLElement, activity: Site["activity"]) => {
     return shown.map((day) => ({
       level:
         day.plays === 0 ? 0 : Math.max(1, Math.ceil((day.plays / max) * 4)),
-      title: `${day.plays} ${day.plays === 1 ? "play" : "plays"} on ${dayFormatter.format(new Date(`${day.date}T00:00:00+08:00`))}`,
+      title: `${day.plays} ${day.plays === 1 ? "play" : "plays"} on ${monthDay.format(dayInstant(day.date))}`,
     }))
   })
 }
@@ -109,7 +99,9 @@ export const buildRow = (listen: SiteListen, lead: boolean) => {
     link.append(cover)
   }
 
-  const when = el("time", "when", formatWhen(listen.at)) as HTMLTimeElement
+  // Short enough to sit beside the artists on a half-width row without
+  // either one being cut; the full instant is on hover.
+  const when = el("time", "when", relativeTime(listen.at)) as HTMLTimeElement
   when.dateTime = listen.at
   when.title = timeFormatter.format(new Date(listen.at))
 
@@ -136,7 +128,7 @@ export const buildRow = (listen: SiteListen, lead: boolean) => {
  */
 export const refreshTimes = (list: HTMLElement) => {
   for (const when of list.querySelectorAll<HTMLTimeElement>("time.when")) {
-    when.textContent = formatWhen(when.dateTime)
+    when.textContent = relativeTime(when.dateTime)
   }
   const lead = list.querySelector<HTMLElement>("[data-lead]")
   const at = lead?.querySelector<HTMLTimeElement>("time.when")?.dateTime
