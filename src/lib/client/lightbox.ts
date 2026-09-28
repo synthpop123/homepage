@@ -20,8 +20,30 @@
  */
 
 import type { SlideData } from "photoswipe"
+import stylesheetUrl from "photoswipe/style.css?url"
 
 let busy = false
+
+/**
+ * PhotoSwipe's stylesheet, linked on first open. A dynamic import of the
+ * CSS would not stay lazy: the bundler hoists it into a render-blocking
+ * <link> on every page that mounts the lightbox. A failed load is
+ * forgotten, so the next click tries again.
+ */
+let stylesheet: Promise<void> | undefined
+const loadStylesheet = () =>
+  (stylesheet ??= new Promise<void>((resolve, reject) => {
+    const link = document.createElement("link")
+    link.rel = "stylesheet"
+    link.href = stylesheetUrl
+    link.onload = () => resolve()
+    link.onerror = () => {
+      link.remove()
+      stylesheet = undefined
+      reject(new Error("PhotoSwipe stylesheet failed to load"))
+    }
+    document.head.append(link)
+  }))
 
 /** Largest srcset candidate, falling back to the rendered source. */
 function largestSrc(img: HTMLImageElement): string {
@@ -59,7 +81,7 @@ async function openGallery(
   try {
     const [{ default: PhotoSwipe }] = await Promise.all([
       import("photoswipe"),
-      import("photoswipe/style.css"),
+      loadStylesheet(),
     ])
     const single = slides.length === 1
     const pswp = new PhotoSwipe({

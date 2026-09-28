@@ -1,0 +1,22 @@
+---
+/**
+ * The heading an index page opens with (Blog, Tags, Memos, Misc,
+ * Tokens): the page's one h1, set large above whatever it lists.
+ */
+---
+
+<header>
+  <h1><slot /></h1>
+</header>
+
+<style>
+  header {
+    margin-block-end: var(--space-m);
+  }
+
+  h1 {
+    font-size: var(--step-3);
+    line-height: calc(var(--leading-offset) + 1em);
+    font-weight: var(--font-weight-medium);
+  }
+</style>

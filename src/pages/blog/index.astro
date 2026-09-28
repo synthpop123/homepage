@@ -1,20 +1,46 @@
 ---
 import BlogCard from "@/components/BlogCard.astro"
 import MetaPage from "@/components/MetaPage.astro"
+import PageTitle from "@/components/PageTitle.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getPosts } from "@/lib/content"
 
-const posts = await getPosts()
+// Newest first, so each year's group opens where the last one closed.
+const years = Map.groupBy(await getPosts(), (post) =>
+  post.data.date.getUTCFullYear(),
+)
 ---
 
 <Layout>
   <MetaPage slot="head" title="Blog" />
-  <ul>
-    {posts.map((post) => <BlogCard post={post} />)}
-  </ul>
+  <PageTitle>Blog</PageTitle>
+  {[...years].map(([year, posts]) => (
+    <section aria-labelledby={`y${year}`}>
+      <h2 id={`y${year}`}>{year}</h2>
+      <ul>
+        {posts.map((post) => <BlogCard post={post} />)}
+      </ul>
+    </section>
+  ))}
 </Layout>
 
 <style>
+  section + section {
+    margin-block-start: var(--space-l);
+  }
+
+  /* A quiet label, like the home page's section heads: the posts are
+     the content, the year only files them. */
+  h2 {
+    margin-block-end: var(--space-s);
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
   ul {
     display: flex;
     flex-direction: column;

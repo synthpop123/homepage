@@ -1,5 +1,6 @@
 ---
 import MetaPage from "@/components/MetaPage.astro"
+import PageTitle from "@/components/PageTitle.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getTags } from "@/lib/content"
 
@@ -8,6 +9,7 @@ const tags = await getTags()
 
 <Layout crumbs={[{ label: "Tags", href: "/tags" }]}>
   <MetaPage slot="head" title="Tags" noindex />
+  <PageTitle>Tags</PageTitle>
   <ul>
     {[...tags].map(([tag, posts]) => (
         <li>

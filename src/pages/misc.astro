@@ -2,6 +2,7 @@
 import AuthorCard from "@/components/AuthorCard.astro"
 import Flights from "@/components/Flights.astro"
 import MetaPage from "@/components/MetaPage.astro"
+import PageTitle from "@/components/PageTitle.astro"
 import Movies from "@/components/Movies.astro"
 import Music from "@/components/Music.astro"
 import SectionHead from "@/components/SectionHead.astro"
@@ -82,9 +83,7 @@ const toc = [
   <link rel="preconnect" href={API} crossorigin slot="head">
   <link rel="preload" as="fetch" href={MISC.endpoint} crossorigin slot="head">
   <TableOfContents slot="toc" title="Misc" sections={toc} />
-  <header>
-    <h1>Misc</h1>
-  </header>
+  <PageTitle>Misc</PageTitle>
   <section>
     <SectionHead {...head.friends} />
     <ul>
@@ -116,16 +115,6 @@ const toc = [
 </Layout>
 
 <style>
-  header {
-    margin-block-end: var(--space-m);
-
-    h1 {
-      font-size: var(--step-3);
-      line-height: calc(var(--leading-offset) + 1em);
-      font-weight: var(--font-weight-medium);
-    }
-  }
-
   section + section {
     margin-block-start: var(--space-l);
   }

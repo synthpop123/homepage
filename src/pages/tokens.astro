@@ -1,5 +1,6 @@
 ---
 import MetaPage from "@/components/MetaPage.astro"
+import PageTitle from "@/components/PageTitle.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Tokens from "@/components/Tokens.astro"
 import { API, TOKENS } from "@/consts"
@@ -44,20 +45,6 @@ const toc = [
   <link rel="preconnect" href={API} crossorigin slot="head">
   <link rel="preload" as="fetch" href={TOKENS.endpoint} crossorigin slot="head">
   <TableOfContents slot="toc" title="Tokens" sections={toc} />
-  <header>
-    <h1>Tokens</h1>
-  </header>
+  <PageTitle>Tokens</PageTitle>
   <Tokens />
 </Layout>
-
-<style>
-  header {
-    margin-block-end: var(--space-m);
-
-    h1 {
-      font-size: var(--step-3);
-      line-height: calc(var(--leading-offset) + 1em);
-      font-weight: var(--font-weight-medium);
-    }
-  }
-</style>
