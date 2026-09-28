@@ -1,0 +1,15 @@
+# Workers Static Assets redirects (see wrangler.jsonc), applied at the
+# edge before any file is served: real 301s, not meta-refresh pages.
+
+# Pre-rebuild URLs.
+/posts        /blog           301
+/posts/*      /blog/:splat    301
+/movies       /misc#movies    301
+/music        /misc#music     301
+
+# html_handling drops a trailing slash with a temporary 307; a permanent
+# redirect tells crawlers the slashless URL is the one. The site is at
+# most three segments deep (/blog/<post>/<subpost>).
+/:a/          /:a             301
+/:a/:b/       /:a/:b          301
+/:a/:b/:c/    /:a/:b/:c       301
