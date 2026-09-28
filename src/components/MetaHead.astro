@@ -1,6 +1,9 @@
 ---
 import sansWoff2 from "@/assets/fonts/Geist-Variable.woff2?url"
 import { SITE, UMAMI } from "@/consts"
+
+// Mirrors --gray-1 (the page background) in src/styles/color.css.
+const themeColor = { light: "#fcfcfc", dark: "#111111" }
 ---
 
 <head>
@@ -21,17 +24,14 @@ import { SITE, UMAMI } from "@/consts"
     content="telephone=no,date=no,address=no,email=no,url=no"
   >
 
-  <!-- Mirrors --gray-1 (the page background) in src/styles/color.css. -->
-  <meta
-    name="theme-color"
-    content="#111111"
-    media="(prefers-color-scheme: dark)"
-  >
-  <meta
-    name="theme-color"
-    content="#fcfcfc"
-    media="(prefers-color-scheme: light)"
-  >
+  {(["light", "dark"] as const).map((scheme) => (
+    <meta
+      name="theme-color"
+      content={themeColor[scheme]}
+      media={`(prefers-color-scheme: ${scheme})`}
+      data-scheme={scheme}
+    >
+  ))}
 
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -48,10 +48,22 @@ import { SITE, UMAMI } from "@/consts"
 
   <link rel="preload" href={sansWoff2} as="font" type="font/woff2" crossorigin>
 
-  <script is:inline>
-    const theme = localStorage.theme
-    if (theme === "light" || theme === "dark")
-      document.documentElement.dataset.theme = theme
+  <script is:inline define:vars={{ themeColor }}>
+    const root = document.documentElement
+    try {
+      const theme = localStorage.theme
+      if (theme === "light" || theme === "dark") root.dataset.theme = theme
+    } catch {}
+    // A chosen theme overrides the system's, so the browser's own chrome
+    // follows it: both theme-color entries take the chosen colour.
+    const paint = () => {
+      for (const meta of document.querySelectorAll('meta[name="theme-color"]'))
+        meta.content = themeColor[root.dataset.theme ?? meta.dataset.scheme]
+    }
+    paint()
+    new MutationObserver(paint).observe(root, {
+      attributeFilter: ["data-theme"],
+    })
   </script>
 
   {import.meta.env.PROD && (

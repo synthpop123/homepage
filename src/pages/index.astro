@@ -45,7 +45,13 @@ const toc = [
         (•‾⌣‾•)
       </etymology-span>
       <cat-figure>
-        <Image src={catImage} alt="A random cat" width={1280} priority />
+        <Image
+          src={catImage}
+          alt="A random cat"
+          widths={[480, 800, 1280]}
+          sizes="(width >= 64rem) 35rem, 80vw"
+          priority
+        />
         <button
           id="cat-refresh"
           data-icon-button

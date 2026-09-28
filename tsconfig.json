@@ -6,5 +6,6 @@
     }
   },
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  // The Umami tracker is vendored minified output, not source to check.
+  "exclude": ["dist", "public", "src/assets/headache-fallback.js"]
 }

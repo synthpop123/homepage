@@ -1,7 +1,10 @@
 <script>
+  // Mermaid is by far the heaviest chunk on the site, so it is fetched
+  // only as the first diagram nears the viewport; a reader who never
+  // scrolls that far never pays for it.
   const diagrams = [...document.querySelectorAll<HTMLElement>("pre.mermaid")]
 
-  if (diagrams.length > 0) {
+  async function mount() {
     const sources = new Map(diagrams.map((el) => [el, el.textContent ?? ""]))
     const { default: mermaid } = await import("mermaid")
 
@@ -32,5 +35,17 @@
     prefersDark.addEventListener("change", () => {
       if (!document.documentElement.dataset.theme) render()
     })
+  }
+
+  if (diagrams.length > 0) {
+    const near = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return
+        near.disconnect()
+        mount()
+      },
+      { rootMargin: "100% 0px" },
+    )
+    for (const diagram of diagrams) near.observe(diagram)
   }
 </script>

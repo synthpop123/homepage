@@ -26,7 +26,6 @@ import {
   type Site,
 } from "../tokens"
 import {
-  el,
   expandableRow,
   type Icons,
   modelSubRows,

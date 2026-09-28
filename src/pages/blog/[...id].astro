@@ -137,11 +137,13 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
   }
 
   /* Tags close the header, set apart from the meta row and nearer the
-     body they index. */
+     body they index. Astro leaves `:has()` arguments unscoped, so the
+     child component's element is named bare (a :global() here would
+     ship verbatim, and the browser would drop the rule). */
   header {
     margin-block-end: var(--space-m);
 
-    &:has(:global(post-tags)) {
+    &:has(post-tags) {
       margin-block-end: var(--space-xs);
     }
 

@@ -20,7 +20,7 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - run: bun run format:check
-      - run: bun run astro check
       - run: bun test
+      # `build` runs `astro check` first, so there is no separate step.
       - run: bun run build
       - run: bun run check:links
