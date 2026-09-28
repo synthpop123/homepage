@@ -3,6 +3,7 @@ import sitemap from "@astrojs/sitemap"
 import { satteri } from "@astrojs/markdown-satteri"
 import {
   blockExpressiveCode,
+  expressiveCodeAssets,
   inlineExpressiveCode,
 } from "./src/lib/expressive-code"
 import { temmlMath } from "./src/lib/math"
@@ -18,19 +19,15 @@ export default defineConfig({
   trailingSlash: "never",
   compressHTML: true,
   prefetch: { prefetchAll: true },
-  redirects: {
-    "/posts": "/blog",
-    "/posts/[...id]": "/blog/[...id]",
-    // Pre-rebuild standalone pages, now sections on /misc.
-    "/movies": "/misc#movies",
-    "/music": "/misc#music",
-  },
+  vite: { plugins: [expressiveCodeAssets()] },
+  // Every image, Markdown ones included, ships a width srcset, so a phone
+  // is not handed a 1600px screenshot. The layout CSS stays ours
+  // (reset.css already caps images at their container).
+  image: { layout: "constrained", responsiveStyles: false },
   integrations: [
     sitemap({
       filter: (page) =>
-        !/\/blog\/[^/]+\/[^/]+\/?$/.test(page) &&
-        !page.includes("/tags/") &&
-        !page.includes("/posts/"),
+        !/\/blog\/[^/]+\/[^/]+\/?$/.test(page) && !page.includes("/tags/"),
     }),
   ],
   markdown: {

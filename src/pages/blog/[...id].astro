@@ -16,6 +16,8 @@ import { getPosts, getSubposts, pageTitle, postLang } from "@/lib/content"
 import { isSubpost, subpostSlug } from "@/lib/utils"
 import { Image } from "astro:assets"
 import { getEntries, render, type CollectionEntry } from "astro:content"
+// Expressive Code's shared styles, one cached file for every post.
+import "virtual:expressive-code.css"
 
 export async function getStaticPaths() {
   const posts = await getPosts()
@@ -177,3 +179,8 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
     }
   }
 </style>
+
+<script>
+  // Expressive Code's copy buttons and scroll-region focus, likewise.
+  import "virtual:expressive-code.js"
+</script>
