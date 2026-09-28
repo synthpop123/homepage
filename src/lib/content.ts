@@ -76,6 +76,11 @@ async function absoluteAssets(
   })
 }
 
+/** A post's Markdown body with its colocated assets as absolute,
+ *  published URLs: readable anywhere the post file itself is not. */
+export const postBody = (post: CollectionEntry<"blog">, source: URL) =>
+  absoluteAssets(post, post.body?.trim() ?? "", source)
+
 /** Frontmatter + body, the source behind `/blog/<id>.md`. */
 export async function postMarkdown(
   post: CollectionEntry<"blog">,
@@ -94,7 +99,7 @@ export async function postMarkdown(
   if (ai) frontmatter.push("ai: true")
   frontmatter.push(`lang: ${postLang(post)}`)
   frontmatter.push(`source: ${source}`)
-  const body = await absoluteAssets(post, post.body?.trim() ?? "", source)
+  const body = await postBody(post, source)
   return `---\n${frontmatter.join("\n")}\n---\n\n${body}\n`
 }
 
