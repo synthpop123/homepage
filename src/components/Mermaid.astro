@@ -22,6 +22,9 @@
       mermaid.initialize({
         startOnLoad: false,
         theme: isDark() ? "dark" : "neutral",
+        // Mermaid 12 lays flowcharts out with ELK by default, a much larger
+        // chunk that also moves every node; dagre keeps them as drawn.
+        layout: "dagre",
         fontFamily: "var(--font-sans)",
       })
       await mermaid.run({ nodes: diagrams })
