@@ -1,0 +1,69 @@
+---
+import { titleLang } from "@/lib/content"
+import type { CollectionEntry } from "astro:content"
+
+/** A compact list of posts, date then title (the home page's Writing,
+ *  the 404 page's way back in). */
+type Props = { posts: CollectionEntry<"blog">[] }
+
+const { posts } = Astro.props
+const thisYear = new Date().getUTCFullYear()
+// A post from this year needs no year beside it; an older one does.
+const postDate = (date: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(date.getUTCFullYear() === thisYear ? {} : { year: "numeric" }),
+    timeZone: "UTC",
+  }).format(date)
+---
+
+<ol>
+  {posts.map((post) => (
+    <li>
+      <time datetime={post.data.date.toISOString()}>
+        {postDate(post.data.date)}
+      </time>
+      <a href={`/blog/${post.id}`} lang={titleLang(post)}>{post.data.title}</a>
+    </li>
+  ))}
+</ol>
+
+<style>
+  /* Date and title, the dates in a column of their own so the titles
+     start on one line however long each date is. */
+  ol {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--space-2xs) var(--space-s);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    margin: 0;
+    padding: 0;
+  }
+
+  time {
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  a {
+    color: var(--foreground);
+    text-decoration: none;
+    text-wrap: pretty;
+
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+  }
+</style>
