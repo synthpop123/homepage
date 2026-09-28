@@ -14,6 +14,7 @@ import {
   type Site,
   statCards,
 } from "@/lib/client/flights"
+import { keepFresh } from "@/lib/client/feed"
 import { setReadout } from "@/lib/client/readout"
 import { markRoute, renderComposition, renderRoutes } from "./lists"
 import { createRouteMap } from "./map"
@@ -137,13 +138,27 @@ function mount(feed: HTMLElement) {
     if (row) pick(Number(row.dataset.route))
   })
 
+  // A base map that fails to load leaves the map blank, not the section,
+  // and the next draw tries it again: on a resize, a new payload, the
+  // network coming back, or failing that the minute clock.
+  const draw = () => {
+    if (!site) return
+    map
+      .draw(site)
+      .then(() => stage.removeAttribute("data-failed"))
+      .catch(() => stage.setAttribute("data-failed", ""))
+  }
+
   let frame = 0
   new ResizeObserver(() => {
     cancelAnimationFrame(frame)
-    frame = requestAnimationFrame(() => {
-      if (site) map.draw(site).catch(() => {})
-    })
+    frame = requestAnimationFrame(draw)
   }).observe(stage)
+  const retry = () => {
+    if (stage.hasAttribute("data-failed")) draw()
+  }
+  addEventListener("online", retry)
+  keepFresh({ tick: retry })
 
   loadSite(endpoint, (next) => {
     if (next.routes.length === 0) throw new Error("No routes")
@@ -167,8 +182,7 @@ function mount(feed: HTMLElement) {
     const start = focus ?? 0
     focus = null
     pick(Math.min(start, next.routes.length - 1))
-    // A base map that fails to load leaves the map blank, not the section.
-    map.draw(next).catch(() => stage.setAttribute("data-failed", ""))
+    draw()
     feed.setAttribute("aria-busy", "false")
   }).catch(() => {
     body.hidden = true

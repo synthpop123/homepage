@@ -11,6 +11,7 @@
  * themselves persist for the session.
  */
 
+import { keepFresh } from "../feed"
 import {
   loadSite,
   DEFAULT_RANGE,
@@ -168,27 +169,38 @@ export function mountTokensDashboard(root: HTMLElement) {
   }
 
   // Data may arrive twice (cached paint, then the revalidated answer);
-  // an unchanged generatedAt means the second is a no-op. Rejects only
-  // when there is nothing to paint at all — a failed refresh keeps the
-  // stale render instead of swapping it for the fallback.
+  // an unchanged generatedAt means the second is a no-op.
+  const fetchSite = () =>
+    loadSite(endpoint, (loaded) => {
+      if (site?.generatedAt !== loaded.generatedAt) renderAll(loaded)
+    })
+
+  // Rejects only when there is nothing to paint at all — a failed
+  // refresh keeps the stale render instead of swapping it for the
+  // fallback.
   const load = () => {
     if (fallback) fallback.hidden = true
     body.hidden = false
     root.setAttribute("aria-busy", "true")
-    loadSite(endpoint, (loaded) => {
-      if (site?.generatedAt !== loaded.generatedAt) renderAll(loaded)
-    }).catch(showFallback)
+    fetchSite().catch(showFallback)
   }
 
-  // Quota is the one section that ages on screen without a new payload:
-  // its countdowns tick, and a window can roll over while the page is
-  // open. Re-rendering it on the minute keeps both true; a hidden tab
-  // skips the work and catches up the moment it is shown again.
-  const tick = () => {
-    if (site && !document.hidden) renderQuota(q, site, icons)
-  }
-  setInterval(tick, 60_000)
-  document.addEventListener("visibilitychange", tick)
+  // Three sections age on screen without a new payload: the quota
+  // countdowns (a window can even roll over), each device's Online and
+  // "synced … ago", and the header's own sync age. The minute clock
+  // repaints just those; the charts only change with the payload, which
+  // the same clock asks for again while the page stays open.
+  keepFresh({
+    tick: () => {
+      if (!site) return
+      renderQuota(q, site, icons)
+      renderDevices(q, site, icons)
+      activity.tick()
+    },
+    reload: () => {
+      if (site) fetchSite().catch(() => {})
+    },
+  })
 
   retry?.addEventListener("click", load)
   load()

@@ -8,7 +8,15 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "bun:test"
-import { safeHttpUrl, swr } from "./feed"
+import { calendarDay, safeHttpUrl, swr } from "./feed"
+
+describe("calendarDay", () => {
+  it("names the day in the site's zone, not the visitor's", () => {
+    expect(calendarDay(Date.parse("2026-09-27T15:59:00Z"))).toBe("2026-09-27")
+    expect(calendarDay(Date.parse("2026-09-27T16:00:00Z"))).toBe("2026-09-28")
+    expect(calendarDay(Date.parse("2026-01-01T00:00:00Z"))).toBe("2026-01-01")
+  })
+})
 
 describe("safeHttpUrl", () => {
   it("passes plain http(s) URLs through", () => {

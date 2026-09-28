@@ -128,3 +128,17 @@ export const buildRow = (listen: SiteListen, lead: boolean) => {
   row.append(link)
   return row
 }
+
+/**
+ * Brings a rendered list's times up to now without rebuilding it (and
+ * reloading its artwork): each "12m ago", and whether the lead record
+ * still turns.
+ */
+export const refreshTimes = (list: HTMLElement) => {
+  for (const when of list.querySelectorAll<HTMLTimeElement>("time.when")) {
+    when.textContent = formatWhen(when.dateTime)
+  }
+  const lead = list.querySelector<HTMLElement>("[data-lead]")
+  const at = lead?.querySelector<HTMLTimeElement>("time.when")?.dateTime
+  if (lead && at) lead.toggleAttribute("data-recent", isPlaying(at))
+}

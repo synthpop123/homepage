@@ -7,6 +7,7 @@ import {
   isSite,
   SITE_SCHEMA_VERSION,
   tokensFoot,
+  tokensLabel,
   watchedLabel,
 } from "./now"
 import fixture from "./now.site-fixture.json"
@@ -61,6 +62,14 @@ describe("watchedLabel", () => {
     expect(watchedLabel("2026-09-26", "2026-09-27")).toBe("yesterday")
     expect(watchedLabel("2026-09-22", "2026-09-27")).toBe("5d ago")
     expect(watchedLabel("2026-09-02", "2026-09-27")).toBe("Sep 2")
+  })
+})
+
+describe("tokensLabel", () => {
+  it("claims today only for today's payload", () => {
+    expect(tokensLabel("2026-09-27", "2026-09-27")).toBe("Tokens today")
+    expect(tokensLabel("2026-09-26", "2026-09-27")).toBe("Tokens yesterday")
+    expect(tokensLabel("2026-09-20", "2026-09-27")).toBe("Tokens · Sep 20")
   })
 })
 

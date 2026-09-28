@@ -7,9 +7,10 @@
  * loads.
  */
 
+import { keepFresh } from "@/lib/client/feed"
 import { loadSite } from "@/lib/client/music"
 import { pauseOffscreen } from "@/lib/client/vinyl"
-import { buildHeatmap, buildRow, fillStats } from "./render"
+import { buildHeatmap, buildRow, fillStats, refreshTimes } from "./render"
 
 export function mountMusic(feed: HTMLElement) {
   const endpoint = feed.dataset.endpoint
@@ -42,4 +43,7 @@ export function mountMusic(feed: HTMLElement) {
     if (fallback) fallback.hidden = false
     feed.setAttribute("aria-busy", "false")
   })
+
+  // "just now" is only true for a minute.
+  keepFresh({ tick: () => refreshTimes(list) })
 }

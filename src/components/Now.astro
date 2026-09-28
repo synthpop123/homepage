@@ -82,7 +82,7 @@ const { endpoint = NOW.endpoint } = Astro.props
 
 <script>
   import { el } from "@/lib/client/dom"
-  import { dateFormatter } from "@/lib/client/feed"
+  import { calendarDay, dateFormatter, keepFresh } from "@/lib/client/feed"
   import { isPlaying } from "@/lib/client/music"
   import {
     ago,
@@ -92,6 +92,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     loadSite,
     type Site,
     tokensFoot,
+    tokensLabel,
     watchedLabel,
   } from "@/lib/client/now"
   import { setReadout } from "@/lib/client/readout"
@@ -157,7 +158,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     tile.querySelector(".now-foot")?.replaceChildren(time)
   }
 
-  function renderFilm(tile: HTMLElement, site: Site) {
+  function renderFilm(tile: HTMLElement, site: Site, today: string) {
     const film = site.film
     if (!film) return empty(tile, "Nothing yet")
     delete tile.dataset.empty
@@ -180,7 +181,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     const time = el(
       "time",
       undefined,
-      watchedLabel(film.watched, site.today),
+      watchedLabel(film.watched, today),
     ) as HTMLTimeElement
     time.dateTime = film.watched
     time.title = dateFormatter.format(
@@ -196,7 +197,8 @@ const { endpoint = NOW.endpoint } = Astro.props
       .querySelector(".now-foot")
       ?.replaceChildren(...values.map((run) => el("span", undefined, run)))
 
-  function renderTokens(tile: HTMLElement, site: Site) {
+  function renderTokens(tile: HTMLElement, site: Site, today: string) {
+    text(tile, ".now-label", tokensLabel(site.today, today))
     const tokens = site.tokens
     if (!tokens) return empty(tile, "—")
     delete tile.dataset.empty
@@ -206,7 +208,12 @@ const { endpoint = NOW.endpoint } = Astro.props
     runs(tile, tokensFoot(tokens))
   }
 
-  function renderFlight(tile: HTMLElement, site: Site, track: Element) {
+  function renderFlight(
+    tile: HTMLElement,
+    site: Site,
+    today: string,
+    track: Element,
+  ) {
     const flight = site.flight
     const when = tile.querySelector<HTMLTimeElement>(".now-when")
     if (!flight) {
@@ -219,7 +226,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     link.title = flightTitle(flight)
     if (when) {
       when.dateTime = flight.date
-      when.textContent = flownLabel(flight.date, site.today)
+      when.textContent = flownLabel(flight.date, today)
     }
     tile
       .querySelector(".now-figure")
@@ -246,12 +253,17 @@ const { endpoint = NOW.endpoint } = Astro.props
 
     let last: Site | null = null
     const render = (site: Site) => {
+      // Relative days count from the reader's today, not the payload's:
+      // a cached copy can be a day behind.
       const now = Date.now()
+      const today = calendarDay(now)
       renderListen(tile("listen"), site, now)
-      renderFilm(tile("film"), site)
-      renderTokens(tile("tokens"), site)
-      renderFlight(tile("flight"), site, track)
+      renderFilm(tile("film"), site, today)
+      renderTokens(tile("tokens"), site, today)
+      renderFlight(tile("flight"), site, today, track)
       feed.setAttribute("aria-busy", "false")
+      // A section that stepped aside on a failed first load comes back.
+      feed.closest("section")?.removeAttribute("hidden")
       last = site
     }
 
@@ -261,11 +273,17 @@ const { endpoint = NOW.endpoint } = Astro.props
       feed.closest("section")?.setAttribute("hidden", "")
     })
 
-    // "3m ago" is only true for a minute; keep it honest while the tab is
-    // open without asking the network again.
-    setInterval(() => {
-      if (last && document.visibilityState === "visible") render(last)
-    }, 60_000)
+    // "3m ago" is only true for a minute, and a payload only for its day:
+    // repaint on the minute, and ask again when the tab comes back or
+    // midnight passes. A failed refresh keeps what is on screen.
+    keepFresh({
+      tick: () => {
+        if (last) render(last)
+      },
+      reload: () => {
+        loadSite(endpoint, render).catch(() => {})
+      },
+    })
   })
 </script>
 

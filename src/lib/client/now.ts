@@ -138,6 +138,22 @@ export function watchedLabel(watched: string, today: string): string {
   return shortDate.format(dayStart(watched))
 }
 
+/**
+ * The tokens tile's label. The figure is the payload's day, which is
+ * today only while the payload is: a cached copy painted after a failed
+ * refresh, or a page left open past midnight, names its day instead of
+ * passing yesterday's total off as today's.
+ */
+export function tokensLabel(day: string, today: string): string {
+  if (day >= today) return "Tokens today"
+  const days = Math.round(
+    (dayStart(today).getTime() - dayStart(day).getTime()) / 86_400_000,
+  )
+  return days === 1
+    ? "Tokens yesterday"
+    : `Tokens · ${shortDate.format(dayStart(day))}`
+}
+
 /** ["$14.48", "155 messages"]: two runs, so a narrow tile can put the
  *  second on a line of its own instead of cutting it off. */
 export const tokensFoot = ({ cost, messages }: TokensToday) => [

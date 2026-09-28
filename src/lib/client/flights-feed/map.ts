@@ -20,6 +20,7 @@ import {
 } from "d3-geo"
 import { feature, mesh } from "topojson-client"
 import type { GeometryCollection, Topology } from "topojson-specification"
+import { fetchJson } from "@/lib/client/feed"
 import {
   type Box,
   bow,
@@ -222,13 +223,21 @@ export type RouteMap = {
   select(index: number | null, animate: boolean): void
 }
 
-const loadBaseMap = (url: string) =>
-  fetch(url)
-    .then((response) => {
-      if (!response.ok) throw new Error(`Base map answered ${response.status}`)
-      return response.json() as Promise<Countries>
-    })
-    .then(toBaseMap)
+/**
+ * A base map, fetched once and shared by every draw — until it fails:
+ * a rejected load is forgotten, so the next draw (a resize, a payload,
+ * the network coming back) asks again instead of reusing the failure.
+ */
+const baseMap = (url: string) => {
+  let pending: Promise<BaseMap> | undefined
+  return () =>
+    (pending ??= fetchJson<Countries>(url, 15_000)
+      .then(toBaseMap)
+      .catch((error) => {
+        pending = undefined
+        throw error
+      }))
+}
 
 export function createRouteMap(
   root: HTMLElement,
@@ -237,8 +246,9 @@ export function createRouteMap(
 ): RouteMap {
   // The regional map is wanted on every visit, so it leaves now, beside
   // the payload; the world map only when a frame reaches past it.
-  const region = loadBaseMap(urls.region)
-  let world: Promise<BaseMap> | undefined
+  const region = baseMap(urls.region)
+  const world = baseMap(urls.world)
+  region().catch(() => {})
   let drawn: { site: Site; key: string } | undefined
   let pending = 0
   let selected: number | null = null
@@ -255,11 +265,8 @@ export function createRouteMap(
     if (width === 0 || (drawn?.site === site && drawn.key === key)) return
     const ticket = ++pending
     const projection = frame(site, width, height)
-    let base = await region
-    if (!covers(base, projection, width, height)) {
-      world ??= loadBaseMap(urls.world)
-      base = await world
-    }
+    let base = await region()
+    if (!covers(base, projection, width, height)) base = await world()
     // A later draw (a resize, a newer payload) has taken over.
     if (ticket !== pending) return
     drawn = { site, key }

@@ -35,6 +35,24 @@ export const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: TIME_ZONE,
 })
 
+const dayParts = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: TIME_ZONE,
+})
+
+/**
+ * The calendar day it is in the site's zone, `YYYY-MM-DD`: what a
+ * payload's `today` meant when it was composed, and what it stops
+ * meaning at midnight, or the moment a cached copy outlives its day.
+ */
+export function calendarDay(now = Date.now()): string {
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    dayParts.formatToParts(now).find((entry) => entry.type === type)?.value
+  return `${part("year")}-${part("month")}-${part("day")}`
+}
+
 /** Resolved lazily because merely touching `localStorage` can throw
  *  under some privacy settings. */
 const storage = (): Storage | null => {
@@ -174,4 +192,42 @@ export function fetchJson<T>(url: string, timeoutMs = 10_000): Promise<T> {
       return response.json() as Promise<T>
     },
   )
+}
+
+/** How long a visible page keeps a payload before asking again. */
+const REVALIDATE_MS = 5 * 60_000
+
+/**
+ * The one clock the live sections keep time by. `tick` runs every
+ * minute while the page is visible, and at once when a hidden tab comes
+ * back, so every relative time ("3m ago", "Online", a quota countdown)
+ * stays true without a new payload. `reload` runs on the same clock but
+ * only when what is on screen may have gone stale behind the reader's
+ * back: five minutes since the last ask, or the site's calendar day
+ * turning over (a payload's "today" is yesterday by then). Both are
+ * cheap, since the workers answer an unchanged payload with a 304.
+ * Browser-only.
+ */
+export function keepFresh({
+  tick,
+  reload,
+}: {
+  tick?: () => void
+  reload?: () => void
+}) {
+  let day = calendarDay()
+  let asked = Date.now()
+  const run = () => {
+    if (document.hidden) return
+    const now = Date.now()
+    const today = calendarDay(now)
+    if (reload && (today !== day || now - asked >= REVALIDATE_MS)) {
+      day = today
+      asked = now
+      reload()
+    }
+    tick?.()
+  }
+  setInterval(run, 60_000)
+  document.addEventListener("visibilitychange", run)
 }

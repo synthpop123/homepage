@@ -4,7 +4,8 @@
  * is on the card at once, because a disclosure is one more thing a touch
  * device has to find; the rarer figures (longest stretch, peak
  * concurrency) ride in the `title` of the active-time cell they qualify.
- * Rendered once per load.
+ * Rendered per payload and again on the minute: Online and the report
+ * age are relative to now.
  */
 
 import {
