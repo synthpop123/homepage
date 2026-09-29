@@ -22,7 +22,7 @@ Personal homepage and blog at [lkwplus.com](https://lkwplus.com) — built with 
 | `bun run format:check` | Check formatting without writing                       |
 | `bun run astro check`  | Type checking (strict tsconfig)                        |
 
-`bun dev` and `bun run build` first run `scripts/prebuild.ts`, which syncs the self-hosted Umami tracker and downloads a random cat photo for the homepage; both steps fall back to committed assets when offline.
+`bun dev` and `bun run build` first run `scripts/prebuild.ts`, which syncs the self-hosted Umami tracker (falling back to a committed copy offline) and writes the homepage cat: `src/assets/cat-default.jpg`, or the image at `CAT_IMAGE` (URL or local path) when that env var is set.
 
 ## Layout of the repo
 

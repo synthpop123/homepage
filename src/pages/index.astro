@@ -7,7 +7,7 @@ import Layout from "@/layouts/Layout.astro"
 import { API, NOW } from "@/consts"
 import { getPosts } from "@/lib/content"
 import { Image } from "astro:assets"
-// Downloaded at build time by scripts/prebuild.ts (random cat per build).
+// Written by scripts/prebuild.ts: cat-default.jpg, or the CAT_IMAGE override.
 import catImage from "@/assets/cat.jpg"
 
 const posts = (await getPosts()).slice(0, 3)
@@ -39,7 +39,7 @@ const toc = [
       <cat-figure>
         <Image
           src={catImage}
-          alt="A random cat"
+          alt="A cat"
           widths={[480, 800, 1280]}
           sizes="(width >= 64rem) 35rem, 80vw"
           priority

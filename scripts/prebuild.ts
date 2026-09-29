@@ -3,16 +3,17 @@
  *
  * 1. Syncs the self-hosted Umami tracker script into public/headache.js
  *    (gitignored, like cat.jpg below).
- * 2. Downloads a random cat from cataas.com into src/assets/cat.jpg
- *    (gitignored), so the homepage ships a build-time snapshot instead
- *    of hitting cataas on every visit.
+ * 2. Writes the homepage cat to src/assets/cat.jpg (gitignored): the
+ *    committed src/assets/cat-default.jpg, or the image named by the
+ *    CAT_IMAGE env var (an http(s) URL or a local path) to override it
+ *    for one build/deploy.
  *
  * Both steps degrade gracefully: on network failure the committed
- * fallback (src/assets/headache-fallback.js / cat-fallback.jpg) or the
- * previously downloaded file is used, so offline builds and CI never
- * break.
+ * fallback (src/assets/headache-fallback.js) or previous tracker is
+ * used, and an unreadable CAT_IMAGE falls back to the default cat, so
+ * offline builds and CI never break.
  */
-import { copyFileSync, existsSync, writeFileSync } from "node:fs"
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import sharp from "sharp"
 // Runs under bun, which resolves the tsconfig path alias and the svg
@@ -26,9 +27,9 @@ const UMAMI_SCRIPT_URL = `${UMAMI.hostUrl}/script.js`
 const UMAMI_DEST = path.join(root, "public", UMAMI.src)
 const UMAMI_FALLBACK = path.join(root, "src/assets/headache-fallback.js")
 
-const CAT_URL = "https://cataas.com/cat"
+const CAT_SOURCE = process.env.CAT_IMAGE?.trim()
 const CAT_DEST = path.join(root, "src/assets/cat.jpg")
-const CAT_FALLBACK = path.join(root, "src/assets/cat-fallback.jpg")
+const CAT_DEFAULT = path.join(root, "src/assets/cat-default.jpg")
 
 const fetchWithTimeout = (url: string, ms = 15_000) =>
   fetch(url, { signal: AbortSignal.timeout(ms) })
@@ -51,27 +52,31 @@ async function syncUmami() {
   }
 }
 
+async function readCatSource(source: string) {
+  if (!/^https?:\/\//.test(source)) return readFileSync(path.resolve(source))
+  const response = await fetchWithTimeout(source)
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return Buffer.from(await response.arrayBuffer())
+}
+
 async function syncCat() {
-  try {
-    const response = await fetchWithTimeout(CAT_URL)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const raw = Buffer.from(await response.arrayBuffer())
-    // Normalize whatever cataas returns (jpeg/png/gif/webp) to a bounded jpeg.
-    const jpeg = await sharp(raw, { animated: false })
-      .rotate()
-      .resize({ width: 1600, withoutEnlargement: true })
-      .jpeg({ quality: 82 })
-      .toBuffer()
-    writeFileSync(CAT_DEST, jpeg)
-    console.log(`[prebuild] cat: downloaded a fresh cat (${jpeg.length}B)`)
-  } catch (error) {
-    if (existsSync(CAT_DEST)) {
-      console.warn(`[prebuild] cat: fetch failed (${error}), keeping previous`)
-    } else {
-      copyFileSync(CAT_FALLBACK, CAT_DEST)
-      console.warn(`[prebuild] cat: fetch failed (${error}), using fallback`)
+  if (CAT_SOURCE) {
+    try {
+      const raw = await readCatSource(CAT_SOURCE)
+      // Normalize whatever the override is (jpeg/png/gif/webp) to a bounded jpeg.
+      const jpeg = await sharp(raw, { animated: false })
+        .rotate()
+        .resize({ width: 1600, withoutEnlargement: true })
+        .jpeg({ quality: 82 })
+        .toBuffer()
+      writeFileSync(CAT_DEST, jpeg)
+      console.log(`[prebuild] cat: using CAT_IMAGE ${CAT_SOURCE}`)
+      return
+    } catch (error) {
+      console.warn(`[prebuild] cat: CAT_IMAGE failed (${error}), using default`)
     }
   }
+  copyFileSync(CAT_DEFAULT, CAT_DEST)
 }
 
 await Promise.all([syncUmami(), syncCat()])
