@@ -28,6 +28,8 @@ describe("labels and icons", () => {
     expect(clientLabel("craft-agent")).toBe("Craft Agents")
     expect(aiIcon("client", "claude")).toBe("claudecode")
     expect(aiIcon("client", "craft-agent")).toBe("craftagents")
+    expect(clientLabel("dsh")).toBe("DeepSeek Harness")
+    expect(aiIcon("client", "dsh")).toBe("deepseek")
     expect(aiIcon("provider", "moonshotai")).toBe("moonshot")
     expect(aiIcon("provider", "deepseek")).toBe("deepseek")
     expect(aiIcon("provider", "alibaba")).toBe("alibaba")
