@@ -171,7 +171,8 @@ tokens-dashboard {
     color: inherit;
   }
 
-  .tk-plans .tk-window[data-state="reset"] .win-foot {
+  .tk-plans .tk-window[data-state="reset"] .win-foot,
+  .tk-plans .tk-window[data-state="expired"] .win-foot {
     color: var(--destructive);
   }
 

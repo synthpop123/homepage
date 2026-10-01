@@ -250,7 +250,7 @@ describe("allowanceView", () => {
     label: "Cloud session credits",
     usedDollars: 25.5,
     limitDollars: 100,
-    resetsAt: "2026-09-01T06:00:00Z",
+    expiresAt: "2026-09-01T06:00:00Z",
   }
 
   it("measures dollars against the ceiling", () => {
@@ -258,27 +258,28 @@ describe("allowanceView", () => {
       state: "open",
       used: 25.5,
       figure: "$25.50",
-      foot: "resets in 5d",
+      foot: "expires in 5d",
       left: "$74.50 of $100 left",
     })
   })
 
-  it("reads a passed reset as a full allowance awaiting a report", () => {
+  it("reads a passed expiry as lapsed, not refilled", () => {
     const view = allowanceView(
-      { ...allowance, resetsAt: "2026-08-27T05:00:00Z" },
+      { ...allowance, expiresAt: "2026-08-27T05:00:00Z" },
       now,
     )
     expect(view).toMatchObject({
-      state: "reset",
-      used: 0,
-      left: "$100 left",
+      state: "expired",
+      used: 25.5,
+      figure: "$25.50",
+      left: "none left",
     })
-    expect(view.foot).toBe("reset 1h ago · awaiting report")
+    expect(view.foot).toBe("expired 1h ago · awaiting report")
   })
 
   it("says so when the vendor dates nothing", () => {
-    expect(allowanceView({ ...allowance, resetsAt: null }, now).foot).toBe(
-      "no reset date reported",
+    expect(allowanceView({ ...allowance, expiresAt: null }, now).foot).toBe(
+      "no expiry reported",
     )
   })
 })

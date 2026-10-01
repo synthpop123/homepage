@@ -269,15 +269,15 @@ export function formatMoney(value: number, currency: string | null = "USD") {
 }
 
 /**
- * One allowance's row, decided the way windowView decides a window's:
- * spend against a dollar ceiling, the foot saying when it comes back.
- * An allowance has no drifting placeholder to see through — the vendor
- * either dates it or does not — so there is no idle state, and a reset
- * that has passed since the report reads as reset exactly as a window
- * does.
+ * One allowance's row: spend against a dollar ceiling, the foot saying
+ * when it lapses. An allowance is a grant, not a window — Claude's cloud
+ * session credits expire rather than refill — so a passed expiry does
+ * not read as a full allowance the way a passed reset does: what was
+ * spent stays, and the rest is gone until a report says otherwise. The
+ * vendor either dates it or does not, so there is no idle state.
  */
 export type AllowanceView = {
-  state: "open" | "reset"
+  state: "open" | "expired"
   used: number
   figure: string
   foot: string
@@ -292,27 +292,27 @@ export function allowanceView(
   const limit = allowance.limitDollars
   const of = `of ${formatMoney(limit)}`
   const at =
-    allowance.resetsAt === null ? Number.NaN : Date.parse(allowance.resetsAt)
+    allowance.expiresAt === null ? Number.NaN : Date.parse(allowance.expiresAt)
+  const spent = Math.min(limit, Math.max(0, allowance.usedDollars))
   if (Number.isFinite(at) && at <= now) {
     return {
-      state: "reset",
-      used: 0,
-      figure: formatMoney(0),
-      foot: `reset ${relativeTime(at, now)} · awaiting report`,
-      title: `Reset ${formatInstant(allowance.resetsAt ?? "")}`,
-      left: `${formatMoney(limit)} left`,
+      state: "expired",
+      used: (spent / limit) * 100,
+      figure: formatMoney(spent),
+      foot: `expired ${relativeTime(at, now)} · awaiting report`,
+      title: `Expired ${formatInstant(allowance.expiresAt ?? "")}`,
+      left: "none left",
     }
   }
-  const spent = Math.min(limit, Math.max(0, allowance.usedDollars))
   return {
     state: "open",
     used: (spent / limit) * 100,
     figure: formatMoney(spent),
     foot: Number.isFinite(at)
-      ? `resets ${formatIn(at, now)}`
-      : "no reset date reported",
+      ? `expires ${formatIn(at, now)}`
+      : "no expiry reported",
     ...(Number.isFinite(at)
-      ? { title: `Resets ${formatInstant(allowance.resetsAt ?? "")}` }
+      ? { title: `Expires ${formatInstant(allowance.expiresAt ?? "")}` }
       : {}),
     // The ceiling is only worth restating once some of it is gone: an
     // untouched "$100 left" under "$0 used" already says what it is.

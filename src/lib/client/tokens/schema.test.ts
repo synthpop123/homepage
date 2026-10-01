@@ -87,9 +87,13 @@ describe("isSite", () => {
       label: "Cloud session credits",
       usedDollars: 0,
       limitDollars: 100,
-      resetsAt: null,
+      expiresAt: null,
     }
     expect(isSite(withPlan({ allowances: [allowance] }))).toBe(true)
+    // An expiry must be an instant.
+    expect(
+      isSite(withPlan({ allowances: [{ ...allowance, expiresAt: "soon" }] })),
+    ).toBe(false)
     expect(
       isSite(withPlan({ allowances: [{ ...allowance, limitDollars: 0 }] })),
     ).toBe(false)

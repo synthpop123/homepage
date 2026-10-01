@@ -100,12 +100,13 @@ export type QuotaWindow = {
 export type QuotaShare = { label: string; percent: number }
 
 /** A dollar-metered allowance beside the percentage windows — Claude's
- *  cloud session credits. */
+ *  cloud session credits. A grant that lapses, not a window that
+ *  refills, hence `expiresAt`. */
 export type QuotaAllowance = {
   label: string
   usedDollars: number
   limitDollars: number
-  resetsAt: string | null
+  expiresAt: string | null
 }
 
 /** A banked manual reset: when it lapses, and what spending it resets
@@ -167,7 +168,7 @@ export type Site = {
  * number is also part of the localStorage cache key, so a deploy never
  * reads the previous build's entries.
  */
-export const SITE_SCHEMA_VERSION = 15
+export const SITE_SCHEMA_VERSION = 16
 
 export type RangeKey = "week" | "month" | "quarter" | "all"
 export type MetricKey = "tokens" | "cost"
@@ -347,7 +348,7 @@ const isQuotaPlan = (plan: unknown): boolean =>
       // The gauge divides by it.
       isCount(allowance.limitDollars) &&
       allowance.limitDollars > 0 &&
-      isOptionalInstant(allowance.resetsAt),
+      isOptionalInstant(allowance.expiresAt),
   ) &&
   Array.isArray(plan.resetCredits) &&
   plan.resetCredits.every(
