@@ -253,6 +253,23 @@ export function fetchJson<T>(url: string, timeoutMs = 10_000): Promise<T> {
   )
 }
 
+/**
+ * A renderer that draws a payload only when it differs from the last one
+ * it drew. `swr` delivers the cached copy and then the network's, and a
+ * reload does both again; most of those are what is already on screen,
+ * and redrawing a list would rebuild its rows and their images for
+ * nothing. A delivery the renderer rejects (throws on) is not remembered.
+ */
+export function whenChanged<T>(render: (data: T) => void): (data: T) => void {
+  let drawn: string | undefined
+  return (data) => {
+    const signature = JSON.stringify(data)
+    if (signature === drawn) return
+    render(data)
+    drawn = signature
+  }
+}
+
 /** How long a visible page keeps a payload before asking again. */
 const REVALIDATE_MS = 5 * 60_000
 

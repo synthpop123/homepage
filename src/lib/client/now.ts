@@ -22,11 +22,11 @@ import { isFilm, type SiteFilm } from "./movies"
 import { isListen, type SiteListen } from "./music"
 import { formatCost, formatCount } from "./tokens/format"
 
-export type TokensToday = { tokens: number; cost: number; messages: number }
+type TokensToday = { tokens: number; cost: number; messages: number }
 
-export type Place = { code: string; city: string | null }
+type Place = { code: string; city: string | null }
 
-export type Flight = {
+type Flight = {
   /** The calendar day flown. */
   date: string
   /** In the direction flown. */

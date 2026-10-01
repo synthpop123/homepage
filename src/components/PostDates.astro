@@ -6,21 +6,16 @@
  * drops a year the second already states.
  */
 
-import { formatDate } from "@/lib/utils"
+import { formatDate, formatMonthDay } from "@/lib/utils"
 
 type Props = { date: Date; updated?: Date }
 
 const { date, updated } = Astro.props
 const revised =
   updated && formatDate(updated) !== formatDate(date) ? updated : undefined
-const monthDay = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  timeZone: "UTC",
-})
 const since =
   revised && revised.getUTCFullYear() === date.getUTCFullYear()
-    ? monthDay.format(date)
+    ? formatMonthDay(date)
     : formatDate(date)
 const title = revised
   ? `Published ${formatDate(date)} · Updated ${formatDate(revised)}`

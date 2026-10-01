@@ -59,7 +59,7 @@ export function stepDay(
   return next < first || next > last ? day : next
 }
 
-export type HeatCell = {
+type HeatCell = {
   level: number
   title: string
   /** Marks the picked day on a selectable grid (Tokens). Re-read on

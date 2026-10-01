@@ -91,7 +91,7 @@ export const setDelta = (
 }
 
 /** One breakdown row: a brand mark, name, metric value, share. */
-export type RowSpec = {
+type RowSpec = {
   icon: string | null
   name: string
   value: string

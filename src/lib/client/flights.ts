@@ -22,7 +22,7 @@ export type SiteAirport = {
   visits: number
 }
 
-export type SiteRoute = {
+type SiteRoute = {
   /** The pair in code order: flown either way, drawn once. */
   from: string
   to: string
@@ -57,7 +57,7 @@ export type SiteStats = {
 
 /** The last flight flown, in the direction flown: the one single flight
  *  the payload carries, for the home page. No flight number, no time. */
-export type SiteLast = {
+type SiteLast = {
   date: string
   from: string
   to: string
@@ -191,7 +191,7 @@ export const routeLabel = (route: Pick<SiteRoute, "from" | "to">) =>
   `${route.from} ⇄ ${route.to}`
 
 /** Once round the equator. */
-export const EARTH_KM = 40_075
+const EARTH_KM = 40_075
 
 export type StatCard = {
   key: string

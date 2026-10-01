@@ -1,5 +1,5 @@
 /** Date arithmetic and every number-to-text rule the dashboard prints. */
-import { dayInstant } from "../feed"
+import { dayInstant, TIME_ZONE } from "../feed"
 import type { MetricKey } from "./schema"
 
 /* Dates ------------------------------------------------------------- */
@@ -59,10 +59,9 @@ const weekdayLabel = new Intl.DateTimeFormat("en-US", {
  * time rendered in the visitor's zone would disagree with the day
  * boundaries drawn right above it.
  */
-const COLLECTOR_ZONE = "Asia/Shanghai"
 
 const zonedDay = new Intl.DateTimeFormat("en-US", {
-  timeZone: COLLECTOR_ZONE,
+  timeZone: TIME_ZONE,
   month: "short",
   day: "numeric",
 })
@@ -70,7 +69,7 @@ const zonedDay = new Intl.DateTimeFormat("en-US", {
 // Split from the day rather than asked for in one call, which would
 // render as "Aug 8 at 21:28".
 const zonedTime = new Intl.DateTimeFormat("en-GB", {
-  timeZone: COLLECTOR_ZONE,
+  timeZone: TIME_ZONE,
   hour: "2-digit",
   minute: "2-digit",
   hour12: false,

@@ -165,7 +165,7 @@ export function windowHasReset(
  * the wall-clock instant, which is what you plan around, rides in
  * `title` for whoever wants it.
  */
-export type WindowView = {
+type WindowView = {
   state: "idle" | "open" | "reset"
   used: number
   foot: string
@@ -197,7 +197,7 @@ export function windowElapsed(
  * reset. The verdict is words, the numbers ride in the title — and it is
  * withheld early in a window, where any spend at all reads as a sprint.
  */
-export type PaceView = {
+type PaceView = {
   verdict: "under" | "on" | "over" | null
   text: string | null
   title: string
@@ -276,7 +276,7 @@ export function formatMoney(value: number, currency: string | null = "USD") {
  * spent stays, and the rest is gone until a report says otherwise. The
  * vendor either dates it or does not, so there is no idle state.
  */
-export type AllowanceView = {
+type AllowanceView = {
   state: "open" | "expired"
   used: number
   figure: string

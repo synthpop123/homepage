@@ -1,7 +1,8 @@
 import { SITE } from "@/consts"
 import { getPosts, postBody } from "@/lib/content"
-import { feedCallouts, feedHtml } from "@/lib/feed-html"
-import { temmlMath } from "@/lib/math"
+import { feedCallouts, feedHtml } from "@/lib/markdown/feed-html"
+import { temmlMath } from "@/lib/markdown/math"
+import { unhandledDirectives } from "@/lib/markdown/unhandled-directives"
 import rss from "@astrojs/rss"
 import type { APIContext } from "astro"
 import { markdownToHtml } from "satteri"
@@ -19,7 +20,7 @@ export async function GET(context: APIContext) {
     posts.map(async (post) => {
       const { html } = await markdownToHtml(await postBody(post, site), {
         features: { directive: true, math: true },
-        mdastPlugins: [feedCallouts, temmlMath],
+        mdastPlugins: [feedCallouts, temmlMath, unhandledDirectives],
       })
       return {
         title: post.data.title,

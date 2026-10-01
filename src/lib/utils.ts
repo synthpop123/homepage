@@ -1,11 +1,30 @@
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(date)
-}
+/* Post dates. Frontmatter dates are calendar days parsed as midnight UTC,
+   so they are formatted in UTC, never in the build machine's zone. */
+
+const fullDate = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+})
+
+const monthDayDate = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+})
+
+/** "Jun 16, 2023". */
+export const formatDate = (date: Date) => fullDate.format(date)
+
+/** "Jun 16". */
+export const formatMonthDay = (date: Date) => monthDayDate.format(date)
+
+/** "Jun 16" for a post from the build's year, "Jun 16, 2023" otherwise. */
+export const formatPostDate = (date: Date) =>
+  date.getUTCFullYear() === new Date().getUTCFullYear()
+    ? formatMonthDay(date)
+    : formatDate(date)
 
 export const isSubpost = (id: string) => id.includes("/")
 

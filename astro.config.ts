@@ -2,17 +2,10 @@ import { defineConfig } from "astro/config"
 import sitemap from "@astrojs/sitemap"
 import { satteri } from "@astrojs/markdown-satteri"
 import {
-  blockExpressiveCode,
   expressiveCodeAssets,
-  inlineExpressiveCode,
-} from "./src/lib/expressive-code"
-import { temmlMath } from "./src/lib/math"
-import { mermaidDiagram } from "./src/lib/mermaid"
-import { calloutDirective } from "./src/lib/callout"
-import { externalLinks } from "./src/lib/external-links"
-import { asides } from "./src/lib/asides"
-import { headingNamespace } from "./src/lib/heading-namespace"
-import { headingAnchors } from "./src/lib/heading-anchors"
+  hastPlugins,
+  mdastPlugins,
+} from "./src/lib/markdown"
 
 export default defineConfig({
   site: "https://lkwplus.com",
@@ -34,19 +27,8 @@ export default defineConfig({
     syntaxHighlight: false,
     processor: satteri({
       features: { directive: true, math: true },
-      mdastPlugins: [
-        calloutDirective,
-        inlineExpressiveCode,
-        temmlMath,
-        mermaidDiagram,
-      ],
-      hastPlugins: [
-        externalLinks,
-        asides,
-        blockExpressiveCode,
-        headingNamespace,
-        headingAnchors,
-      ],
+      mdastPlugins,
+      hastPlugins,
     }),
   },
 })

@@ -1,5 +1,6 @@
 ---
 import { titleLang } from "@/lib/content"
+import { formatPostDate } from "@/lib/utils"
 import type { CollectionEntry } from "astro:content"
 
 /** A compact list of posts, date then title (the home page's Writing,
@@ -7,22 +8,13 @@ import type { CollectionEntry } from "astro:content"
 type Props = { posts: CollectionEntry<"blog">[] }
 
 const { posts } = Astro.props
-const thisYear = new Date().getUTCFullYear()
-// A post from this year needs no year beside it; an older one does.
-const postDate = (date: Date) =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    ...(date.getUTCFullYear() === thisYear ? {} : { year: "numeric" }),
-    timeZone: "UTC",
-  }).format(date)
 ---
 
 <ol>
   {posts.map((post) => (
     <li>
       <time datetime={post.data.date.toISOString()}>
-        {postDate(post.data.date)}
+        {formatPostDate(post.data.date)}
       </time>
       <a href={`/blog/${post.id}`} lang={titleLang(post)}>{post.data.title}</a>
     </li>

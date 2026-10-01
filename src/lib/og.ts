@@ -3,6 +3,7 @@ import path from "node:path"
 import { Resvg } from "@resvg/resvg-js"
 import satori from "satori"
 import { SITE } from "@/consts"
+import { formatDate } from "@/lib/utils"
 
 // Colors mirror the light theme grays in src/styles/color.css.
 const BG = "#fcfcfc"
@@ -108,7 +109,7 @@ const render = async (node: Node) => {
   return new Resvg(svg).render().asPng()
 }
 
-export type PostCard = {
+type PostCard = {
   title: string
   description: string
   date: Date
@@ -123,14 +124,8 @@ export function renderPostCard({
   tags,
   hostname,
 }: PostCard) {
-  const formatted = new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(date)
   const meta = [
-    formatted,
+    formatDate(date),
     (tags ?? [])
       .slice(0, 3)
       .map((tag) => `#${tag}`)

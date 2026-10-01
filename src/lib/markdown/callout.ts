@@ -9,7 +9,7 @@ import { defineMdastPlugin } from "satteri"
 
 const ICONS_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
-  "../assets/icons/callouts",
+  "../../assets/icons/callouts",
 )
 
 const loadIcon = (name: string) =>

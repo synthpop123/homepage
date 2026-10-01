@@ -1,16 +1,21 @@
 prose-content {
+  /* The scroller around every table (table-scroll.ts): it takes the
+     overflow, so the table stays `display: table` and keeps its
+     semantics for assistive tech. */
+  table-scroll {
+    display: block;
+    max-inline-size: fit-content;
+    margin-inline: auto;
+    overflow-x: auto;
+    font-size: var(--step--1);
+  }
+
   table {
     --table-border: color-mix(
       in oklab,
       var(--muted-foreground) 30%,
       transparent
     );
-
-    display: block;
-    max-inline-size: fit-content;
-    margin-inline: auto;
-    overflow-x: auto;
-    font-size: var(--step--1);
 
     thead {
       border-block-end: 1.5px solid var(--table-border);

@@ -4,11 +4,11 @@
  * browser. One mount per <music-feed> root: load the Music section of
  * /misc stale-while-revalidate and render the all-time readout, the
  * heatmap and the last-played list, or show the fallback when nothing
- * loads.
+ * loads, and reload it when it may have gone stale.
  */
 
-import { keepFresh } from "@/lib/client/feed"
-import { loadSite } from "@/lib/client/music"
+import { keepFresh, whenChanged } from "@/lib/client/feed"
+import { loadSite, type Site } from "@/lib/client/music"
 import { pauseOffscreen } from "@/lib/client/vinyl"
 import { buildHeatmap, buildRow, fillStats, refreshTimes } from "./render"
 
@@ -24,8 +24,8 @@ export function mountMusic(feed: HTMLElement) {
   const spin = pauseOffscreen()
 
   // Cached and refreshed payloads land in the same renderer, which
-  // replaces rather than appends, so a second delivery just repaints.
-  loadSite(endpoint, (site) => {
+  // replaces rather than appends, and skips one already on screen.
+  const render = whenChanged<Site>((site) => {
     if (site.listens.length === 0) throw new Error("No listens")
     fillStats(feed, site.stats)
     buildHeatmap(feed, site.activity)
@@ -38,12 +38,18 @@ export function mountMusic(feed: HTMLElement) {
     const disc = list.querySelector(".disc")
     if (disc) spin.observe(disc)
     feed.setAttribute("aria-busy", "false")
-  }).catch(() => {
+  })
+
+  loadSite(endpoint, render).catch(() => {
     body.hidden = true
     if (fallback) fallback.hidden = false
     feed.setAttribute("aria-busy", "false")
   })
 
-  // "just now" is only true for a minute.
-  keepFresh({ tick: () => refreshTimes(list) })
+  // "just now" is only true for a minute; the list only until the next
+  // listen. A failed reload keeps what is on screen.
+  keepFresh({
+    tick: () => refreshTimes(list),
+    reload: () => loadSite(endpoint, render).catch(() => {}),
+  })
 }

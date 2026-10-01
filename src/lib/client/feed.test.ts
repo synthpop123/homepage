@@ -17,6 +17,7 @@ import {
   relativeTime,
   shiftDays,
   swr,
+  whenChanged,
 } from "./feed"
 
 describe("dayInstant", () => {
@@ -239,5 +240,30 @@ describe("swr", () => {
       ),
     ).rejects.toThrow("Unexpected payload shape")
     expect(delivered).toEqual([])
+  })
+})
+
+describe("whenChanged", () => {
+  it("draws a payload once, however often it is delivered", () => {
+    const drawn: number[] = []
+    const render = whenChanged<{ n: number }>(({ n }) => drawn.push(n))
+    render({ n: 1 })
+    render({ n: 1 })
+    render({ n: 2 })
+    render({ n: 1 })
+    expect(drawn).toEqual([1, 2, 1])
+  })
+
+  it("does not remember a payload the renderer rejected", () => {
+    let fail = true
+    const drawn: number[] = []
+    const render = whenChanged<{ n: number }>(({ n }) => {
+      if (fail) throw new Error("rejected")
+      drawn.push(n)
+    })
+    expect(() => render({ n: 1 })).toThrow()
+    fail = false
+    render({ n: 1 })
+    expect(drawn).toEqual([1])
   })
 })

@@ -11,7 +11,7 @@ import type { Element, ElementContent, Text } from "hast"
 const OWN_HOSTS = new Set(["lkwplus.com", "www.lkwplus.com"])
 
 /** A host, or any subdomain of it, and the mark it wears. */
-export const SITE_ICONS: readonly (readonly [string, string])[] = [
+const SITE_ICONS: readonly (readonly [string, string])[] = [
   ["github.com", "github"],
   ["x.com", "x"],
   ["twitter.com", "x"],
@@ -35,7 +35,7 @@ export const SITE_ICONS: readonly (readonly [string, string])[] = [
   ["n8n.io", "n8n"],
 ]
 
-export const GENERIC_ICON = "external"
+const GENERIC_ICON = "external"
 
 /** Every slug a link can wear, the generic one included. */
 export const iconSlugs = () => [

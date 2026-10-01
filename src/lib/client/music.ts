@@ -88,7 +88,7 @@ export function isSite(data: unknown): data is Site {
 }
 
 /** Within this many minutes the lead listen counts as just played. */
-export const RECENT_MINUTES = 10
+const RECENT_MINUTES = 10
 
 /** Whether a listen at `at` is recent enough to spin the lead record. */
 export const isPlaying = (at: string, now = Date.now()) =>

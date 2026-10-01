@@ -24,7 +24,7 @@ export type SiteStats = {
   pricedGameCount: number
 }
 
-export type SiteActivity = {
+type SiteActivity = {
   date: string
   minutes: number
 }

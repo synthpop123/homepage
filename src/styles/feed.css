@@ -1,5 +1,24 @@
-/* Shared section typography and loading surfaces for the /misc feeds and
-   the static sections beside them. Row layouts stay local. */
+/* Shared section typography and loading surfaces for the live sections
+   (home's Now, /misc, /memos, /tokens) and the static sections beside
+   them. Row layouts stay local. Each component that draws one imports
+   this file, so a page without one — a post, /about — ships none of it. */
+
+/* The pulse every skeleton placeholder shares, referenced as
+   `animation: var(--sk-pulse)` so the name and timing live in one place;
+   the global reduced-motion rule in reset.css neutralizes it. */
+:root {
+  --sk-pulse: sk-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sk-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
 
 /* The small link at the far end of a heading row (SectionHead.astro, the
    home page's section heads): muted, not underlined, brightening on

@@ -1,0 +1,29 @@
+---
+import { SITE } from "@/consts"
+
+/**
+ * The link-preview tags every page carries. X reads `og:title`,
+ * `og:description` and `og:image` when its own are absent, so of the
+ * `twitter:*` set only the card type (and a post's creator) is written.
+ */
+type Props = {
+  title: string
+  description: string
+  url: URL
+  type: "website" | "article"
+  locale: string
+  image: URL
+}
+
+const { title, description, url, type, locale, image } = Astro.props
+---
+
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:type" content={type}>
+<meta property="og:url" content={url}>
+<meta property="og:site_name" content={SITE.title}>
+<meta property="og:locale" content={locale.replace("-", "_")}>
+<meta property="og:image" content={image}>
+<meta property="og:image:alt" content={title}>
+<meta name="twitter:card" content="summary_large_image">

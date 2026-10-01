@@ -387,7 +387,7 @@ export type DayMix = {
 export type DayModel = { model: string; tokens: number; cost: number }
 
 /** A client of the day, plus the models behind it. */
-export type DayClientView = DayMix & { models: DayModel[] }
+type DayClientView = DayMix & { models: DayModel[] }
 
 export type DayView = {
   date: string
@@ -518,7 +518,7 @@ export function weekdayProfile(
   return stats
 }
 
-export type Facts = {
+type Facts = {
   biggest: SiteDay | null
   /** Calendar week (Monday-based) with the most tokens. */
   busiestWeek: { from: string; to: string; tokens: number } | null

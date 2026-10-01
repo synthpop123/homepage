@@ -41,14 +41,14 @@ type Countries = Topology<{ countries: GeometryCollection }> & {
 }
 
 /** A base map, parsed once: fill, coastline and borders. */
-export type BaseMap = {
+type BaseMap = {
   land: GeoPermissibleObjects
   coast: GeoPermissibleObjects
   borders: GeoPermissibleObjects
   region?: [[number, number], [number, number]]
 }
 
-export const toBaseMap = (topo: Countries): BaseMap => {
+const toBaseMap = (topo: Countries): BaseMap => {
   const countries = topo.objects.countries
   return {
     land: feature(topo, countries),
@@ -213,7 +213,7 @@ function drawLabels(
   }
 }
 
-export type RouteMap = {
+type RouteMap = {
   /**
    * Draws `site` at the box's current size, on the regional base map when
    * it covers the frame and the world map when it doesn't. A no-op when

@@ -4,11 +4,12 @@
  * the browser. One mount per <switch-feed> root: load the Switch section
  * of /misc stale-while-revalidate and render the all-time readout, the
  * heatmap and the catalog ranked by lifetime play time, or show the
- * fallback when nothing loads. A payload identical to the one on screen
- * is not rendered again.
+ * fallback when nothing loads, and reload it when it may have gone stale.
+ * A payload identical to the one on screen is not rendered again.
  */
 
-import { loadSite } from "@/lib/client/switch"
+import { keepFresh, whenChanged } from "@/lib/client/feed"
+import { loadSite, type Site } from "@/lib/client/switch"
 import { buildHeatmap, buildRow, fillStats } from "./render"
 
 export function mountSwitch(feed: HTMLElement) {
@@ -20,14 +21,10 @@ export function mountSwitch(feed: HTMLElement) {
 
   const limit = Number(feed.dataset.limit) || 8
 
-  let rendered = ""
-  loadSite(endpoint, (site) => {
+  const render = whenChanged<Site>((site) => {
     if (site.games.length === 0 && site.activity.length === 0) {
       throw new Error("No play data")
     }
-
-    const signature = JSON.stringify(site)
-    if (signature === rendered) return
 
     fillStats(feed, site.stats)
     buildHeatmap(feed, site)
@@ -40,11 +37,15 @@ export function mountSwitch(feed: HTMLElement) {
         buildRow(game, i + 1, max, site.recentDays, site.today),
       ),
     )
-    rendered = signature
     feed.setAttribute("aria-busy", "false")
-  }).catch(() => {
+  })
+
+  loadSite(endpoint, render).catch(() => {
     body.hidden = true
     if (fallback) fallback.hidden = false
     feed.setAttribute("aria-busy", "false")
   })
+
+  // A failed reload keeps what is on screen.
+  keepFresh({ reload: () => loadSite(endpoint, render).catch(() => {}) })
 }

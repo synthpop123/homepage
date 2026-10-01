@@ -14,7 +14,7 @@ import {
   type Site,
   statCards,
 } from "@/lib/client/flights"
-import { keepFresh } from "@/lib/client/feed"
+import { keepFresh, whenChanged } from "@/lib/client/feed"
 import { setReadout } from "@/lib/client/readout"
 import { markRoute, renderComposition, renderRoutes } from "./lists"
 import { createRouteMap } from "./map"
@@ -47,7 +47,6 @@ function mount(feed: HTMLElement) {
     return
 
   let site: Site | null = null
-  let rendered = ""
   let focus: number | null = null
   const open = new Set<string>()
 
@@ -158,13 +157,9 @@ function mount(feed: HTMLElement) {
     if (stage.hasAttribute("data-failed")) draw()
   }
   addEventListener("online", retry)
-  keepFresh({ tick: retry })
 
-  loadSite(endpoint, (next) => {
+  const render = whenChanged<Site>((next) => {
     if (next.routes.length === 0) throw new Error("No routes")
-    const signature = JSON.stringify(next)
-    if (signature === rendered) return
-    rendered = signature
     site = next
 
     const cards = statCards(next)
@@ -184,10 +179,18 @@ function mount(feed: HTMLElement) {
     pick(Math.min(start, next.routes.length - 1))
     draw()
     feed.setAttribute("aria-busy", "false")
-  }).catch(() => {
+  })
+
+  loadSite(endpoint, render).catch(() => {
     body.hidden = true
     if (fallback) fallback.hidden = false
     feed.setAttribute("aria-busy", "false")
+  })
+
+  // A failed reload keeps what is on screen.
+  keepFresh({
+    tick: retry,
+    reload: () => loadSite(endpoint, render).catch(() => {}),
   })
 }
 

@@ -26,7 +26,7 @@ import {
  * in for an animated GIF, so the Worker makes it a video that loops
  * silently (`loop`) rather than a kind of its own.
  */
-export type MemoMediaKind = "image" | "video" | "audio"
+type MemoMediaKind = "image" | "video" | "audio"
 
 export type SiteMedia = {
   kind: MemoMediaKind
@@ -173,7 +173,7 @@ export type Memo = {
   media: MemoMedia[]
 }
 
-export const stripTags = (html?: string) => (html ?? "").replace(/<[^>]*>/g, "")
+const stripTags = (html?: string) => (html ?? "").replace(/<[^>]*>/g, "")
 
 const DEFAULT_ALT: Record<MemoMediaKind, string> = {
   image: "Attached image",
@@ -213,7 +213,7 @@ export function toMemo(memo: SiteMemo): Memo {
   }
 }
 
-export type EmojiToken =
+type EmojiToken =
   | { type: "text"; value: string }
   | { type: "emoji"; shortcode: string; url: string }
 

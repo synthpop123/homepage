@@ -16,6 +16,8 @@ import { getPosts, getSubposts, pageTitle, postLang } from "@/lib/content"
 import { isSubpost, subpostSlug } from "@/lib/utils"
 import { Image } from "astro:assets"
 import { getEntries, render, type CollectionEntry } from "astro:content"
+// MathML styles: only posts render maths.
+import "@/styles/typography-math.css"
 // Expressive Code's shared styles, one cached file for every post.
 import "virtual:expressive-code.css"
 

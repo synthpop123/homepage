@@ -47,7 +47,7 @@ export type DaySlice = { tokens: number; cost: number }
 /** A client of one day, carrying the models behind it — the same
  *  client × model join the ranges have, which is what lets the day panel
  *  open any day the visitor clicks the way it opens today. */
-export type DayClient = DaySlice & {
+type DayClient = DaySlice & {
   /** Keyed by *canonical* model id, so the slices agree with
    *  `ranges.*.byModel`. */
   models: Record<string, DaySlice>
@@ -116,7 +116,7 @@ export type QuotaCredit = { expiresAt: string; title: string | null }
 /** Pay-as-you-go usage past the plan's ceilings. Amounts are in
  *  `currency`'s major unit, null where the vendor reports none (Codex
  *  only says whether credits exist). */
-export type QuotaExtraUsage = {
+type QuotaExtraUsage = {
   enabled: boolean
   used: number | null
   limit: number | null

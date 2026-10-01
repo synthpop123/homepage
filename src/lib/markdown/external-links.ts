@@ -11,7 +11,7 @@ import {
 
 // A mark mapped in site-icons.ts with no file behind it fails the build
 // here rather than rendering an empty square.
-const ICONS = new URL("../assets/icons/sites/", import.meta.url)
+const ICONS = new URL("../../assets/icons/sites/", import.meta.url)
 const missing = iconSlugs().filter(
   (slug) => !existsSync(new URL(`${slug}.svg`, ICONS)),
 )
