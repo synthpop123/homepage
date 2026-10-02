@@ -325,21 +325,18 @@ const { endpoint = NOW.endpoint } = Astro.props
           inline-size: 100%;
           block-size: 100%;
           object-fit: cover;
-          filter: saturate(0.85);
-          transition: filter 0.3s ease;
         }
 
-        /* A veil in the page's own colour, so the poster sits back among
-           tiles of flat fill instead of outshouting them; it lifts on
-           hover. */
+        /* Keep the poster's original colours on a light page. Only the
+           dark scheme needs a veil to temper its brightness; the foot's
+           scrim provides text contrast in both schemes. */
         &::after {
           content: "";
           position: absolute;
           inset: 0;
-          background-color: color-mix(
-            in oklab,
-            var(--background) 30%,
-            transparent
+          background-color: light-dark(
+            transparent,
+            color-mix(in oklab, var(--background) 30%, transparent)
           );
           transition: background-color 0.3s ease;
         }
@@ -347,15 +344,10 @@ const { endpoint = NOW.endpoint } = Astro.props
 
       @media (hover: hover) {
         .now-link[href]:hover .now-art {
-          img {
-            filter: none;
-          }
-
           &::after {
-            background-color: color-mix(
-              in oklab,
-              var(--background) 10%,
-              transparent
+            background-color: light-dark(
+              transparent,
+              color-mix(in oklab, var(--background) 10%, transparent)
             );
           }
         }
