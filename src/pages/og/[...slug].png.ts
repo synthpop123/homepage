@@ -1,14 +1,12 @@
+import { getSeries } from "@/lib/content"
 import { renderPostCard, renderSiteCard } from "@/lib/og"
 import type { APIRoute } from "astro"
-import { getCollection, type CollectionEntry } from "astro:content"
+import type { CollectionEntry } from "astro:content"
 
 // Build-time OG cards: /og/site.png for pages, /og/blog/<id>.png for posts
 // without a hand-made frontmatter image (those keep their own banner).
 export async function getStaticPaths() {
-  const posts = await getCollection(
-    "blog",
-    ({ data }) => !data.draft && !data.image,
-  )
+  const posts = (await getSeries()).flat().filter(({ data }) => !data.image)
   return [
     { params: { slug: "site" }, props: {} },
     ...posts.map((post) => ({

@@ -1,13 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { stepDay, weekdayIndex } from "./heatmap"
-
-describe("weekdayIndex", () => {
-  it("counts from Monday, by the date alone", () => {
-    expect(weekdayIndex("2026-09-28")).toBe(0)
-    expect(weekdayIndex("2026-09-27")).toBe(6)
-    expect(weekdayIndex("2026-09-27T23:30:00+08:00")).toBe(6)
-  })
-})
+import { stepDay } from "./heatmap"
 
 describe("stepDay", () => {
   const first = "2025-09-29"

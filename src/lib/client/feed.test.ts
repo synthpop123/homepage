@@ -13,10 +13,12 @@ import {
   dateFormatter,
   dayInstant,
   daysBetween,
+  isCalendarDay,
   safeHttpUrl,
   relativeTime,
   shiftDays,
   swr,
+  weekdayIndex,
   whenChanged,
 } from "./feed"
 
@@ -29,6 +31,14 @@ describe("dayInstant", () => {
 
   it("takes a timestamp's date part", () => {
     expect(dayInstant("2026-09-22T23:30:00+08:00").getUTCDate()).toBe(22)
+  })
+})
+
+describe("weekdayIndex", () => {
+  it("counts from Monday, by the date alone", () => {
+    expect(weekdayIndex("2026-09-28")).toBe(0)
+    expect(weekdayIndex("2026-09-27")).toBe(6)
+    expect(weekdayIndex("2026-09-27T23:30:00+08:00")).toBe(6)
   })
 })
 
@@ -57,6 +67,29 @@ describe("relativeTime", () => {
     expect(relativeTime("2026-09-27T10:30:00Z", now)).toBe("1h ago")
     expect(relativeTime(now - 90_000, now)).toBe("1m ago")
     expect(relativeTime(new Date(now - 47 * 3_600_000), now)).toBe("yesterday")
+  })
+})
+
+describe("isCalendarDay", () => {
+  it("accepts a day that exists, leap day included", () => {
+    expect(isCalendarDay("2026-10-02")).toBe(true)
+    expect(isCalendarDay("2028-02-29")).toBe(true)
+    expect(isCalendarDay("2000-02-29")).toBe(true)
+  })
+
+  it("rejects a day the calendar does not have", () => {
+    expect(isCalendarDay("2026-99-99")).toBe(false)
+    expect(isCalendarDay("2026-13-01")).toBe(false)
+    expect(isCalendarDay("2026-00-10")).toBe(false)
+    expect(isCalendarDay("2026-04-31")).toBe(false)
+    expect(isCalendarDay("2026-02-29")).toBe(false)
+    expect(isCalendarDay("1900-02-29")).toBe(false)
+  })
+
+  it("rejects anything not spelled YYYY-MM-DD", () => {
+    expect(isCalendarDay("2026-10-02T00:00:00Z")).toBe(false)
+    expect(isCalendarDay("2026-1-2")).toBe(false)
+    expect(isCalendarDay(20261002)).toBe(false)
   })
 })
 

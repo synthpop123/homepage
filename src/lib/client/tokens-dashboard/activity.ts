@@ -155,9 +155,11 @@ export function createActivity(q: Query, icons: Icons) {
 
   return {
     render,
-    /** The sync age is relative to now, so it repaints on the minute. */
+    /** The sync age is relative to now, and the day panel's "Today"
+     *  to the reader's day, so both repaint on the minute. */
     tick: () => {
       if (site) renderSync(site)
+      panel.relabel()
     },
   }
 }

@@ -12,7 +12,7 @@ import SeriesReader from "@/components/SeriesReader.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { SITE } from "@/consts"
-import { getPosts, getSubposts, pageTitle, postLang } from "@/lib/content"
+import { getSeries, pageTitle, postLang } from "@/lib/content"
 import { isSubpost, subpostSlug } from "@/lib/utils"
 import { Image } from "astro:assets"
 import { getEntries, render, type CollectionEntry } from "astro:content"
@@ -22,15 +22,18 @@ import "@/styles/typography-math.css"
 import "virtual:expressive-code.css"
 
 export async function getStaticPaths() {
-  const posts = await getPosts()
-  const series = await getSubposts()
-  return posts.flatMap((parent, i) => {
-    const chain = [parent, ...(series.get(parent.id) ?? [])]
-    return chain.map((post) => ({
+  const series = await getSeries()
+  return series.flatMap((chain, i) =>
+    chain.map((post) => ({
       params: { id: post.id },
-      props: { post, chain, prev: posts[i + 1], next: posts[i - 1] },
-    }))
-  })
+      props: {
+        post,
+        chain,
+        prev: series[i + 1]?.[0],
+        next: series[i - 1]?.[0],
+      },
+    })),
+  )
 }
 
 type Props = {

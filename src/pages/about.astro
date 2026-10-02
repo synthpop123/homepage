@@ -3,16 +3,16 @@ import AuthorCard from "@/components/AuthorCard.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
-import { getTags } from "@/lib/content"
-import { isSubpost } from "@/lib/utils"
-import { getCollection, getEntry } from "astro:content"
+import { getSeries, getTags } from "@/lib/content"
+import { getEntry } from "astro:content"
 
 const author = await getEntry("authors", "lkw123")
 if (!author) throw new Error("Missing author: lkw123")
 
 // Build-time blog stats: every deploy re-counts the content collection.
-const entries = await getCollection("blog", ({ data }) => !data.draft)
-const posts = entries.filter((entry) => !isSubpost(entry.id))
+const series = await getSeries()
+const entries = series.flat()
+const posts = series.map(([post]) => post)
 const tags = await getTags()
 
 const CJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/g

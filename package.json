@@ -9,7 +9,7 @@
   "scripts": {
     "prebuild:assets": "bun scripts/prebuild.ts",
     "dev": "bun run prebuild:assets && astro dev",
-    "build": "bun run prebuild:assets && astro check && astro build",
+    "build": "bun run prebuild:assets && astro check && astro build --force",
     "preview": "astro preview",
     "astro": "astro",
     "test": "bun test",

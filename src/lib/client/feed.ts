@@ -19,9 +19,17 @@ export const isCount = (value: unknown): value is number =>
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
-/** A calendar day as the workers spell it, `YYYY-MM-DD`. */
-export const isCalendarDay = (value: unknown): value is string =>
-  typeof value === "string" && DATE_RE.test(value)
+/** A calendar day as the workers spell it, `YYYY-MM-DD`, and one that
+ *  exists: the shape alone passes `2026-99-99`, which every day helper
+ *  below then throws on, and `2026-02-30`, which `Date` quietly rolls
+ *  into March. A real day reads back unchanged. */
+export const isCalendarDay = (value: unknown): value is string => {
+  if (typeof value !== "string" || !DATE_RE.test(value)) return false
+  const date = new Date(`${value}T12:00:00Z`)
+  return (
+    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+  )
+}
 
 /* Cache --------------------------------------------------------------- */
 
@@ -52,6 +60,14 @@ export function shiftDays(day: string, delta: number): string {
   date.setUTCDate(date.getUTCDate() + delta)
   return date.toISOString().slice(0, 10)
 }
+
+/**
+ * Monday = 0 … Sunday = 6, derived from the date part alone (anchored
+ * at noon UTC) so grids stay aligned to the data source's day
+ * boundaries, not the visitor's local time zone.
+ */
+export const weekdayIndex = (day: string) =>
+  (dayInstant(day).getUTCDay() + 6) % 7
 
 /** Whole days from one calendar day to another. */
 export const daysBetween = (from: string, to: string) =>
@@ -268,6 +284,23 @@ export function whenChanged<T>(render: (data: T) => void): (data: T) => void {
     render(data)
     drawn = signature
   }
+}
+
+/**
+ * A live section's slot shows either its body (skeletons, then data) or
+ * its fallback. A failed first load puts up the fallback; the first
+ * render that lands after it, a reload minutes later, has to take it
+ * down again, or fresh data sits hidden behind the error. Browser-only.
+ */
+export function settle(
+  root: HTMLElement,
+  body: HTMLElement,
+  fallback: HTMLElement | null,
+  loaded: boolean,
+) {
+  body.hidden = !loaded
+  if (fallback) fallback.hidden = loaded
+  root.setAttribute("aria-busy", "false")
 }
 
 /** How long a visible page keeps a payload before asking again. */

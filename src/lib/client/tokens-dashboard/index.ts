@@ -145,6 +145,10 @@ export function mountTokensDashboard(root: HTMLElement) {
     site = loaded
     // New numbers behind unchanged controls: every section is stale.
     shown = null
+    // A reload can land here with the fallback up, after a failed first
+    // load; the sections draw into a visible body, which they measure.
+    body.hidden = false
+    if (fallback) fallback.hidden = true
     try {
       renderQuota(q, loaded, icons)
       activity.render(loaded)
@@ -197,8 +201,12 @@ export function mountTokensDashboard(root: HTMLElement) {
       renderDevices(q, site, icons)
       activity.tick()
     },
+    // Also after a failed first load, which a later answer recovers
+    // from without the visitor finding the retry button.
     reload: () => {
-      if (site) fetchSite().catch(() => {})
+      fetchSite().catch(() => {
+        if (!site) showFallback()
+      })
     },
   })
 

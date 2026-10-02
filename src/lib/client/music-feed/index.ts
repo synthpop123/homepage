@@ -7,7 +7,7 @@
  * loads, and reload it when it may have gone stale.
  */
 
-import { keepFresh, whenChanged } from "@/lib/client/feed"
+import { keepFresh, settle, whenChanged } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/music"
 import { pauseOffscreen } from "@/lib/client/vinyl"
 import { buildHeatmap, buildRow, fillStats, refreshTimes } from "./render"
@@ -37,17 +37,14 @@ export function mountMusic(feed: HTMLElement) {
     spin.disconnect()
     const disc = list.querySelector(".disc")
     if (disc) spin.observe(disc)
-    feed.setAttribute("aria-busy", "false")
+    settle(feed, body, fallback, true)
   })
 
-  loadSite(endpoint, render).catch(() => {
-    body.hidden = true
-    if (fallback) fallback.hidden = false
-    feed.setAttribute("aria-busy", "false")
-  })
+  loadSite(endpoint, render).catch(() => settle(feed, body, fallback, false))
 
   // "just now" is only true for a minute; the list only until the next
-  // listen. A failed reload keeps what is on screen.
+  // listen. A failed reload keeps what is on screen; one after a failed
+  // first load is what brings the section back.
   keepFresh({
     tick: () => refreshTimes(list),
     reload: () => loadSite(endpoint, render).catch(() => {}),

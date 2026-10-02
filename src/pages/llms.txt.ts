@@ -1,12 +1,11 @@
 import { NAVIGATION, SITE } from "@/consts"
-import { getPosts, getSubposts } from "@/lib/content"
+import { getSeries } from "@/lib/content"
 import type { APIRoute } from "astro"
 import type { CollectionEntry } from "astro:content"
 
 export const GET: APIRoute = async ({ site, url }) => {
   const origin = site ?? url
-  const posts = await getPosts()
-  const series = await getSubposts()
+  const series = await getSeries()
   const link = (post: CollectionEntry<"blog">, indent = "") =>
     `${indent}- [${post.data.title}](${new URL(`/blog/${post.id}.md`, origin)}): ${post.data.description}`
 
@@ -17,9 +16,9 @@ export const GET: APIRoute = async ({ site, url }) => {
     "",
     "## Blog",
     "",
-    ...posts.flatMap((post) => [
+    ...series.flatMap(([post, ...subposts]) => [
       link(post),
-      ...(series.get(post.id) ?? []).map((subpost) => link(subpost, "  ")),
+      ...subposts.map((subpost) => link(subpost, "  ")),
     ]),
     "",
     "## Pages",

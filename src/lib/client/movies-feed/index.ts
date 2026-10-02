@@ -7,7 +7,7 @@
  * reload it when it may have gone stale.
  */
 
-import { keepFresh, whenChanged } from "@/lib/client/feed"
+import { keepFresh, settle, whenChanged } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/movies"
 import { buildCard } from "./render"
 
@@ -25,15 +25,12 @@ export function mountMovies(feed: HTMLElement) {
     for (const film of site.films.slice(0, limit))
       fragment.append(buildCard(film))
     grid.replaceChildren(fragment)
-    feed.setAttribute("aria-busy", "false")
+    settle(feed, grid, fallback, true)
   })
 
-  loadSite(endpoint, render).catch(() => {
-    grid.hidden = true
-    if (fallback) fallback.hidden = false
-    feed.setAttribute("aria-busy", "false")
-  })
+  loadSite(endpoint, render).catch(() => settle(feed, grid, fallback, false))
 
-  // A failed reload keeps what is on screen.
+  // A failed reload keeps what is on screen; one after a failed first
+  // load is what brings the wall back.
   keepFresh({ reload: () => loadSite(endpoint, render).catch(() => {}) })
 }

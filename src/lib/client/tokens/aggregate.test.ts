@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { weekdayIndex } from "../heatmap"
+import { weekdayIndex } from "../feed"
 import {
   activeTotals,
   computeFacts,
@@ -564,7 +564,7 @@ describe("dayView", () => {
       daySite(day(EVE, 100, { cost: 1 }), day(TODAY, 300, { cost: 3 })),
       EVE,
     )
-    expect(view.isToday).toBe(false)
+    expect(view.isLatest).toBe(false)
     expect(view.tokens).toBe(100)
     expect(view.cost).toBe(1)
   })

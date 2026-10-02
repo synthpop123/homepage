@@ -4,9 +4,26 @@
   // scrolls that far never pays for it.
   const diagrams = [...document.querySelectorAll<HTMLElement>("pre.mermaid")]
 
+  /** Without Mermaid (a blocked chunk, offline) or for a diagram it
+   *  cannot parse, the source is still the diagram's content: shown as
+   *  code rather than left as an invisible block. */
+  const showSource = () => {
+    for (const el of diagrams) {
+      if (!el.hasAttribute("data-processed")) el.dataset.failed = ""
+    }
+  }
+
   async function mount() {
     const sources = new Map(diagrams.map((el) => [el, el.textContent ?? ""]))
-    const { default: mermaid } = await import("mermaid")
+    let mermaid: typeof import("mermaid").default
+    try {
+      ;({ default: mermaid } = await import("mermaid"))
+    } catch {
+      showSource()
+      // The chunk is worth another try once the network is back.
+      addEventListener("online", () => mount(), { once: true })
+      return
+    }
 
     const prefersDark = matchMedia("(prefers-color-scheme: dark)")
     const isDark = () => {
@@ -17,6 +34,7 @@
     const render = async () => {
       for (const [el, source] of sources) {
         el.removeAttribute("data-processed")
+        delete el.dataset.failed
         el.textContent = source
       }
       mermaid.initialize({
@@ -30,13 +48,21 @@
       await mermaid.run({ nodes: diagrams })
     }
 
-    await render()
+    // One render at a time: a theme flip mid-render would otherwise reset
+    // the nodes under the run still drawing into them.
+    let queue = Promise.resolve()
+    const rerender = () => {
+      queue = queue.then(render).catch(showSource)
+      return queue
+    }
 
-    new MutationObserver(render).observe(document.documentElement, {
+    await rerender()
+
+    new MutationObserver(rerender).observe(document.documentElement, {
       attributeFilter: ["data-theme"],
     })
     prefersDark.addEventListener("change", () => {
-      if (!document.documentElement.dataset.theme) render()
+      if (!document.documentElement.dataset.theme) rerender()
     })
   }
 

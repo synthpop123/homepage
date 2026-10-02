@@ -14,7 +14,7 @@ import {
   type Site,
   statCards,
 } from "@/lib/client/flights"
-import { keepFresh, whenChanged } from "@/lib/client/feed"
+import { keepFresh, settle, whenChanged } from "@/lib/client/feed"
 import { setReadout } from "@/lib/client/readout"
 import { markRoute, renderComposition, renderRoutes } from "./lists"
 import { createRouteMap } from "./map"
@@ -177,17 +177,14 @@ function mount(feed: HTMLElement) {
     const start = focus ?? 0
     focus = null
     pick(Math.min(start, next.routes.length - 1))
+    settle(feed, body, fallback, true)
     draw()
-    feed.setAttribute("aria-busy", "false")
   })
 
-  loadSite(endpoint, render).catch(() => {
-    body.hidden = true
-    if (fallback) fallback.hidden = false
-    feed.setAttribute("aria-busy", "false")
-  })
+  loadSite(endpoint, render).catch(() => settle(feed, body, fallback, false))
 
-  // A failed reload keeps what is on screen.
+  // A failed reload keeps what is on screen; one after a failed first
+  // load is what brings the map back.
   keepFresh({
     tick: retry,
     reload: () => loadSite(endpoint, render).catch(() => {}),

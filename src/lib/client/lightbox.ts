@@ -23,6 +23,8 @@ import type { SlideData } from "photoswipe"
 import stylesheetUrl from "photoswipe/style.css?url"
 
 let busy = false
+/** Set while a link the lightbox gave up on is clicked again for real. */
+let passThrough = false
 
 /**
  * PhotoSwipe's stylesheet, linked on first open. A dynamic import of the
@@ -72,11 +74,12 @@ function slideFor(img: HTMLImageElement, src: string): SlideData {
   }
 }
 
+/** Resolves false when PhotoSwipe could not be loaded. */
 async function openGallery(
   thumbs: HTMLImageElement[],
   slides: SlideData[],
   index: number,
-) {
+): Promise<boolean> {
   busy = true
   try {
     const [{ default: PhotoSwipe }] = await Promise.all([
@@ -102,9 +105,11 @@ async function openGallery(
       busy = false
     })
     pswp.init()
+    return true
   } catch {
     // Chunk failed to load (offline?) — allow the next click to retry.
     busy = false
+    return false
   }
 }
 
@@ -129,7 +134,7 @@ export function mountLightbox() {
   })
 
   document.addEventListener("click", (event) => {
-    if (event.defaultPrevented || busy) return
+    if (event.defaultPrevented || busy || passThrough) return
     if (event.button !== 0) return
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
 
@@ -161,7 +166,16 @@ export function mountLightbox() {
       }
       if (slides.length === 0) return
       event.preventDefault()
-      openGallery(thumbs, slides, Math.max(0, thumbs.indexOf(img)))
+      // The click was taken from the link on the promise of a gallery;
+      // without one it goes back to the link, the full-size original.
+      openGallery(thumbs, slides, Math.max(0, thumbs.indexOf(img))).then(
+        (opened) => {
+          if (opened) return
+          passThrough = true
+          anchor.click()
+          passThrough = false
+        },
+      )
     } else if (img.matches(BARE)) {
       openGallery([img], [slideFor(img, largestSrc(img))], 0)
     }

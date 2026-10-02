@@ -1,10 +1,11 @@
-import { postMarkdown } from "@/lib/content"
+import { getSeries, postMarkdown } from "@/lib/content"
 import type { APIRoute } from "astro"
-import { getCollection, type CollectionEntry } from "astro:content"
+import type { CollectionEntry } from "astro:content"
 
 export async function getStaticPaths() {
-  const posts = await getCollection("blog", ({ data }) => !data.draft)
-  return posts.map((post) => ({ params: { id: post.id }, props: { post } }))
+  return (await getSeries())
+    .flat()
+    .map((post) => ({ params: { id: post.id }, props: { post } }))
 }
 
 type Props = { post: CollectionEntry<"blog"> }

@@ -76,7 +76,7 @@ describe("/tokens/site fixture contract", () => {
     for (const date of [fixture.today, busiest.date]) {
       const view = dayView(fixture, date)
       const day = fixture.daily.find((entry) => entry.date === date)
-      expect(view.isToday).toBe(date === fixture.today)
+      expect(view.isLatest).toBe(date === fixture.today)
       expect(view.idle).toBe(false)
       expect(view.tokens).toBe(day?.tokens ?? 0)
       expect(view.messages).toBe(day?.messages ?? 0)

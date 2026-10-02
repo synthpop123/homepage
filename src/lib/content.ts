@@ -39,6 +39,19 @@ export async function getSubposts(): Promise<
 }
 
 /**
+ * Every published post as the series it is read in: a top-level post,
+ * newest first, followed by its subposts in order. This is the one
+ * answer to "what is published" — the post pages, `/blog/<id>.md`, the
+ * OG cards, llms.txt, the RSS feed and the About counts all read it, so
+ * a subpost under a draft parent is nowhere rather than half-published.
+ */
+export async function getSeries(): Promise<CollectionEntry<"blog">[][]> {
+  const posts = await getPosts()
+  const series = await getSubposts()
+  return posts.map((post) => [post, ...(series.get(post.id) ?? [])])
+}
+
+/**
  * Colocated assets a body links to as `./assets/…`. A `.md` served at
  * `/blog/<id>.md` is one directory shallower than its source, so those
  * targets have to become the published URLs of the same images before
@@ -106,11 +119,9 @@ export async function postMarkdown(
 export async function getTags(): Promise<
   Map<string, CollectionEntry<"blog">[]>
 > {
-  const posts = await getPosts()
-  const series = await getSubposts()
   const tags = new Map<string, CollectionEntry<"blog">[]>()
-  for (const post of posts) {
-    const chain = [post, ...(series.get(post.id) ?? [])]
+  for (const chain of await getSeries()) {
+    const [post] = chain
     for (const tag of new Set(
       chain.flatMap((entry) => entry.data.tags ?? []),
     )) {

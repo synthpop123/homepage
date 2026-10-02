@@ -7,6 +7,7 @@
  * and today render through one path.
  */
 
+import { calendarDay } from "../feed"
 import { setReadout } from "../readout"
 import {
   aiIcon,
@@ -194,14 +195,22 @@ export function createDayPanel(q: Query, icons: Icons, onBack: () => void) {
     )
   }
 
+  /** "Today" only while the day is the reader's: the newest day of a
+   *  cached payload is yesterday once midnight passes, so the heading
+   *  is renamed on the minute rather than once per payload. */
+  const relabel = () => {
+    const label = q(".tk-day-label")
+    if (label && view)
+      label.textContent =
+        view.date === calendarDay() ? "Today" : formatWeekdayDay(view.date)
+  }
+
   const render = (site: Site, date: string) => {
     view = dayView(site, date)
 
-    const label = q(".tk-day-label")
-    if (label)
-      label.textContent = view.isToday ? "Today" : formatWeekdayDay(date)
+    relabel()
     if (back) {
-      back.hidden = view.isToday
+      back.hidden = view.isLatest
       back.title = `Back to ${formatDate(site.today)}`
     }
 
@@ -268,5 +277,5 @@ export function createDayPanel(q: Query, icons: Icons, onBack: () => void) {
     )
   }
 
-  return { render }
+  return { render, relabel }
 }

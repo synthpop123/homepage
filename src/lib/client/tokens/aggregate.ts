@@ -5,7 +5,7 @@
  * profile, fact cards and heatmap scale. Pure functions over `Site`, so
  * all of it is covered by aggregate.test.ts without a browser.
  */
-import { weekdayIndex } from "../heatmap"
+import { weekdayIndex } from "../feed"
 import {
   shiftDays,
   formatDay,
@@ -391,7 +391,9 @@ type DayClientView = DayMix & { models: DayModel[] }
 
 export type DayView = {
   date: string
-  isToday: boolean
+  /** The newest day the payload covers — not necessarily the reader's
+   *  today, which a cached payload can lag behind. */
+  isLatest: boolean
   /** Nothing recorded — the panel collapses to a single line rather
    *  than showing a wall of zeroes. */
   idle: boolean
@@ -459,7 +461,7 @@ export function dayView(site: Site, date: string): DayView {
 
   return {
     date,
-    isToday: date === site.today,
+    isLatest: date === site.today,
     idle:
       tokens === 0 &&
       (day?.messages ?? 0) === 0 &&

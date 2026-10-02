@@ -39,9 +39,22 @@ prose-content {
   pre.mermaid {
     display: flex;
     justify-content: center;
+    /* A wide diagram scrolls in place, and the hidden source waiting to
+       be drawn never widens the page. */
+    overflow-x: auto;
 
-    &:not([data-processed]) {
+    &:not([data-processed], [data-failed]) {
       visibility: hidden;
+    }
+
+    /* Mermaid never arrived: the source stands in for the diagram. */
+    &[data-failed] {
+      justify-content: start;
+      padding: var(--space-s);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: var(--step--1);
     }
 
     svg {

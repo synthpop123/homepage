@@ -8,6 +8,7 @@
  * answer both go through `render`, which rebuilds the list whole.
  */
 
+import { keepFresh } from "../feed"
 import { loadSite, type Site, toMemo } from "../memos"
 import { memoYear, renderMemo, renderYear } from "./render"
 
@@ -18,11 +19,12 @@ export function mountMemos(root: HTMLElement) {
   const { endpoint } = root.dataset
   if (!endpoint || !list) return
 
-  const done = () => root.setAttribute("aria-busy", "false")
-  const show = (message: HTMLElement | null) => {
-    list.hidden = true
-    if (message) message.hidden = false
-    done()
+  /** Exactly one of the list and the two quiet states is on screen. */
+  const show = (state: HTMLElement | null) => {
+    list.hidden = state !== list
+    if (empty) empty.hidden = state !== empty
+    if (fallback) fallback.hidden = state !== fallback
+    root.setAttribute("aria-busy", "false")
   }
 
   let shown = ""
@@ -30,25 +32,28 @@ export function mountMemos(root: HTMLElement) {
     // The revalidated answer is usually the payload already on screen.
     const text = JSON.stringify(site.memos)
     if (text === shown) return
-    shown = text
-    if (empty) empty.hidden = true
     if (site.memos.length === 0) {
       show(empty)
-      return
+    } else {
+      // Newest first, so a year's marker goes in ahead of its first memo.
+      const fragment = document.createDocumentFragment()
+      let year = ""
+      for (const memo of site.memos.map(toMemo)) {
+        const next = memoYear(memo)
+        if (next !== year) fragment.append(renderYear(next))
+        year = next
+        fragment.append(renderMemo(memo))
+      }
+      list.replaceChildren(fragment)
+      show(list)
     }
-    // Newest first, so a year's marker goes in ahead of its first memo.
-    const fragment = document.createDocumentFragment()
-    let year = ""
-    for (const memo of site.memos.map(toMemo)) {
-      const next = memoYear(memo)
-      if (next !== year) fragment.append(renderYear(next))
-      year = next
-      fragment.append(renderMemo(memo))
-    }
-    list.replaceChildren(fragment)
-    list.hidden = false
-    done()
+    // Only once drawn: a render that threw must not block the next try.
+    shown = text
   }
 
   loadSite(endpoint, render).catch(() => show(fallback))
+
+  // A failed reload keeps what is on screen; one after a failed first
+  // load is what brings the thread back.
+  keepFresh({ reload: () => loadSite(endpoint, render).catch(() => {}) })
 }

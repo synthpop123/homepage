@@ -8,7 +8,7 @@
  * A payload identical to the one on screen is not rendered again.
  */
 
-import { keepFresh, whenChanged } from "@/lib/client/feed"
+import { calendarDay, keepFresh, settle, whenChanged } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/switch"
 import { buildHeatmap, buildRow, fillStats } from "./render"
 
@@ -21,31 +21,41 @@ export function mountSwitch(feed: HTMLElement) {
 
   const limit = Number(feed.dataset.limit) || 8
 
-  const render = whenChanged<Site>((site) => {
-    if (site.games.length === 0 && site.activity.length === 0) {
-      throw new Error("No play data")
-    }
+  // "Played today" counts from the reader's day, not the payload's: a
+  // cached copy can be a day behind. The day is part of what is drawn,
+  // so midnight redraws the rows even when no new payload comes.
+  let last: Site | null = null
+  const render = whenChanged<{ site: Site; today: string }>(
+    ({ site, today }) => {
+      if (site.games.length === 0 && site.activity.length === 0) {
+        throw new Error("No play data")
+      }
 
-    fillStats(feed, site.stats)
-    buildHeatmap(feed, site)
+      fillStats(feed, site.stats)
+      buildHeatmap(feed, site)
 
-    const games = site.games.slice(0, limit)
-    const max = Math.max(...games.map((game) => game.totalMinutes), 1)
-    list.hidden = games.length === 0
-    list.replaceChildren(
-      ...games.map((game, i) =>
-        buildRow(game, i + 1, max, site.recentDays, site.today),
-      ),
-    )
-    feed.setAttribute("aria-busy", "false")
+      const games = site.games.slice(0, limit)
+      const max = Math.max(...games.map((game) => game.totalMinutes), 1)
+      list.hidden = games.length === 0
+      list.replaceChildren(
+        ...games.map((game, i) =>
+          buildRow(game, i + 1, max, site.recentDays, today),
+        ),
+      )
+      settle(feed, body, fallback, true)
+      last = site
+    },
+  )
+  const draw = (site: Site) => render({ site, today: calendarDay() })
+
+  loadSite(endpoint, draw).catch(() => settle(feed, body, fallback, false))
+
+  // A failed reload keeps what is on screen; one after a failed first
+  // load is what brings the section back.
+  keepFresh({
+    tick: () => {
+      if (last) draw(last)
+    },
+    reload: () => loadSite(endpoint, draw).catch(() => {}),
   })
-
-  loadSite(endpoint, render).catch(() => {
-    body.hidden = true
-    if (fallback) fallback.hidden = false
-    feed.setAttribute("aria-busy", "false")
-  })
-
-  // A failed reload keeps what is on screen.
-  keepFresh({ reload: () => loadSite(endpoint, render).catch(() => {}) })
 }

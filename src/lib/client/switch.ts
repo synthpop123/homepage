@@ -131,7 +131,8 @@ export function heatmapWindow(
 }
 
 /**
- * How lately a title was played, relative to the payload's own `today`.
+ * How lately a title was played, relative to the reader's `today`
+ * (`calendarDay()`), which a cached payload's own may lag behind.
  * Days rather than a date: on a list ranked by lifetime hours the question
  * is whether something is still in rotation, not when it happened.
  */

@@ -1,12 +1,12 @@
 /**
  * Shared client-side plumbing for the GitHub-style activity heatmaps
- * (Music, Tokens): cell geometry, weekday math, and the
+ * (Music, Tokens): cell geometry, keyboard stepping, and the
  * fit-to-width renderer. The matching markup and styles live in Heatmap.astro.
  * Imported from component <script> blocks, so everything here must be
  * browser-safe.
  */
 
-import { dayInstant, shiftDays } from "./feed"
+import { shiftDays, weekdayIndex } from "./feed"
 
 export const HEAT_MAX_WEEKS = 52
 
@@ -22,14 +22,6 @@ const gridMetrics = (grid: HTMLElement) => {
     gap: Number.parseFloat(styles.getPropertyValue("--heat-gap")),
   }
 }
-
-/**
- * Monday = 0 … Sunday = 6, derived from the date part alone (anchored
- * at noon UTC) so grids stay aligned to the data source's day
- * boundaries, not the visitor's local time zone.
- */
-export const weekdayIndex = (day: string) =>
-  (dayInstant(day).getUTCDay() + 6) % 7
 
 /** Arrow keys over the grid's own axes: a column is a week, a row is a
  *  weekday (Monday on top), so across is ±7 days and up/down ±1. */
