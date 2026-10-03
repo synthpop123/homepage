@@ -7,6 +7,7 @@ import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { API, NOW } from "@/consts"
 import { getSeries, timeline } from "@/lib/content"
+import { catSerial } from "@/lib/utils"
 import { Image } from "astro:assets"
 // Written by scripts/prebuild.ts: cat-default.jpg, or the CAT_IMAGE override.
 import catImage from "@/assets/cat.jpg"
@@ -54,7 +55,11 @@ const toc = [
             priority
           />
           <figcaption>
-            <span>cat no. <span id="cat-count">1</span></span>
+            <span
+              >Cat as a service #<span id="cat-serial"
+                >{catSerial()}</span
+              ></span
+            >
             <button
               id="cat-refresh"
               data-icon-button
@@ -102,16 +107,17 @@ const toc = [
 </Layout>
 
 <script>
+  import { catSerial } from "@/lib/utils"
+
   const stack = document.querySelector("cat-figure")
   const print = stack?.querySelector("figure")
   const img = print?.querySelector("img")
-  const count = document.getElementById("cat-count")
+  const serial = document.getElementById("cat-serial")
   const button = document.getElementById(
     "cat-refresh",
   ) as HTMLButtonElement | null
 
-  if (stack && print && img && count && button) {
-    let cats = 1
+  if (stack && print && img && serial && button) {
     const still = matchMedia("(prefers-reduced-motion: reduce)")
     // Each new print lands at its own slight angle, never square.
     const tilt = () => {
@@ -139,7 +145,7 @@ const toc = [
         img.removeAttribute("srcset")
         img.src = url
         await img.decode().catch(() => {})
-        count.textContent = String(++cats)
+        serial.textContent = catSerial()
         tilt()
       }
       next.onload = async () => {

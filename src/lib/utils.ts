@@ -34,6 +34,9 @@ const compact = new Intl.NumberFormat("en-US", {
 /** "3.4K", "36K": a count for a glance, not for adding up. */
 export const formatCompact = (value: number) => compact.format(value)
 
+/** The home cat's caption serial: four random digits, per cat. */
+export const catSerial = () => String(1000 + Math.floor(Math.random() * 9000))
+
 export const isSubpost = (id: string) => id.includes("/")
 
 export const subpostSlug = (id: string) => id.split("/")[1]
