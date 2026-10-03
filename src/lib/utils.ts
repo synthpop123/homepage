@@ -26,6 +26,14 @@ export const formatPostDate = (date: Date) =>
     ? formatMonthDay(date)
     : formatDate(date)
 
+const compact = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+})
+
+/** "3.4K", "36K": a count for a glance, not for adding up. */
+export const formatCompact = (value: number) => compact.format(value)
+
 export const isSubpost = (id: string) => id.includes("/")
 
 export const subpostSlug = (id: string) => id.split("/")[1]

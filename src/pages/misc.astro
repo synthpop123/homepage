@@ -29,6 +29,7 @@ const sections: {
   id: string
   label: string
   source?: { href: string; label: string }
+  spark?: boolean
 }[] = [
   { id: "friends", label: "Friends" },
   {
@@ -51,11 +52,13 @@ const sections: {
     id: "music",
     label: "Music",
     source: { href: KOITO.instance, label: "Koito" },
+    spark: true,
   },
   {
     id: "switch",
     label: "Switch",
     source: { href: API, label: "Parental Controls" },
+    spark: true,
   },
   {
     id: "uses",

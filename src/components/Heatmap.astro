@@ -3,7 +3,8 @@
  * GitHub-style activity heatmap shell: weekday labels, the cell grid
  * (skeleton until the parent feed's script fills it via mountHeatmap
  * from @/lib/client/heatmap), and the Less–More legend. Owns the shared
- * cell geometry and green palette for every heatmap on the site.
+ * cell geometry for every heatmap on the site; the green scale is
+ * color.css's --heat-*, which the accent comes from.
  *
  * `selectable` makes the grid a day picker: cells take a pointer cursor
  * and the grid takes focus, so the owning feed can read clicks and
@@ -35,7 +36,7 @@ const { selectable = false } = Astro.props
         : undefined}
     ></div>
   </div>
-  {selectable && <p class="heat-status" role="status"></p>}
+  {selectable && <p class="heat-status sr" role="status"></p>}
   <div class="heat-scale" aria-hidden="true">
     <span>Less</span>
     {[0, 1, 2, 3, 4].map((level) => <i data-level={level} />)}
@@ -49,11 +50,6 @@ const { selectable = false } = Astro.props
        @/lib/client/heatmap reads these computed values to fit weeks. */
     --heat-cell: 12px;
     --heat-gap: 3px;
-    --heat-0: var(--gray-4);
-    --heat-1: light-dark(#9be9a8, #0e4429);
-    --heat-2: light-dark(#40c463, #006d32);
-    --heat-3: light-dark(#30a14e, #26a641);
-    --heat-4: light-dark(#216e39, #39d353);
 
     display: block;
   }
@@ -130,16 +126,6 @@ const { selectable = false } = Astro.props
      outline on an edge cell would be cut in half. */
   .heat-grid :global(span[data-selected]) {
     box-shadow: inset 0 0 0 1.5px var(--foreground);
-  }
-
-  /* Heard, not drawn. */
-  .heat-status {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 
   .heat-scale {

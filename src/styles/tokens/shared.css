@@ -10,9 +10,6 @@
    changes nothing for it. */
 
 tokens-dashboard {
-  /* Level-3 green of the shared heatmap palette (see Heatmap.astro). */
-  --tk-accent: light-dark(#30a14e, #26a641);
-
   /* The quota meters' height. Thin enough that a bar reads as a
      reading rather than as a block of colour, and thick enough that the
      smallest segment still has a shape. It doubles as the minimum

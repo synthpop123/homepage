@@ -1,0 +1,189 @@
+---
+/**
+ * A card for each post this page's prose links to: hover a link (or
+ * focus it from the keyboard) and its title, date, length and summary
+ * open beneath it, so a reader knows where a link goes before leaving.
+ * The cards' content is written at build time, for only the posts the
+ * bodies link to; one popover shows them, anchored to the link with CSS
+ * anchor positioning. Where anchoring is unsupported, or on a touch
+ * screen, links are just links.
+ */
+
+import { getSeries, postWords, titleLang } from "@/lib/content"
+import { postLinks } from "@/lib/site-links"
+import { formatCompact, formatDate } from "@/lib/utils"
+import type { CollectionEntry } from "astro:content"
+
+type Props = { entries: CollectionEntry<"blog">[] }
+
+const { entries } = Astro.props
+const linked = new Set(entries.flatMap((entry) => postLinks(entry.body ?? "")))
+const previews = Object.fromEntries(
+  (await getSeries()).flatMap((chain) =>
+    chain
+      .filter((entry) => linked.has(entry.id))
+      .map((entry) => [
+        `/blog/${entry.id}`,
+        {
+          title: entry.data.title,
+          lang: titleLang(entry),
+          description: entry.data.description,
+          meta: `${formatDate(entry.data.date)} · ${formatCompact(
+            postWords(chain, entry),
+          )} words`,
+        },
+      ]),
+  ),
+)
+---
+
+{Object.keys(previews).length > 0 && (
+    <link-preview id="link-preview" popover="hint" role="tooltip">
+      <span class="meta"></span>
+      <strong></strong>
+      <p></p>
+      <script
+        is:inline
+        type="application/json"
+        set:html={JSON.stringify(previews).replaceAll("<", "\\u003c")}
+      />
+    </link-preview>
+  )}
+
+<style>
+  /* Opens under the link, its left edge on the link's, flipping above
+     or leftward near the viewport's edges. */
+  link-preview {
+    position-anchor: --link-preview;
+    position-area: block-end span-inline-end;
+    position-try-fallbacks:
+      flip-block,
+      flip-inline,
+      flip-block flip-inline;
+    display: none;
+    inline-size: min(20rem, calc(100vw - 2 * var(--space-s)));
+    margin: var(--space-2xs) 0;
+    padding: var(--space-xs) var(--space-s);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--background);
+    box-shadow: 0 12px 32px -16px rgb(0 0 0 / 0.3);
+    color: var(--foreground);
+    font-size: var(--step--1);
+    line-height: 1.5;
+    text-wrap: pretty;
+
+    &:popover-open {
+      display: grid;
+      gap: var(--space-3xs);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: opacity 0.15s ease;
+
+      @starting-style {
+        opacity: 0;
+      }
+    }
+  }
+
+  /* The date and length, after a lit cell of the logo. */
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+    color: var(--faint-foreground);
+
+    &::before {
+      content: "";
+      inline-size: 0.375rem;
+      block-size: 0.375rem;
+      border-radius: 1.5px;
+      background-color: var(--accent-fill);
+    }
+  }
+
+  strong {
+    font-size: var(--step-0);
+    font-weight: var(--font-weight-display);
+    line-height: 1.35;
+  }
+
+  p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    color: var(--muted-foreground);
+  }
+</style>
+
+<script>
+  type Preview = {
+    title: string
+    lang?: string
+    description: string
+    meta: string
+  }
+
+  const card = document.querySelector<HTMLElement>("link-preview")
+  const data = card?.querySelector("script")?.textContent
+
+  if (card && data && CSS.supports("anchor-name: --a")) {
+    const previews = JSON.parse(data) as Record<string, Preview>
+    const title = card.querySelector("strong")!
+    const meta = card.querySelector<HTMLElement>(".meta")!
+    const summary = card.querySelector("p")!
+    let current: HTMLAnchorElement | null = null
+    let timer = 0
+
+    const show = (link: HTMLAnchorElement, preview: Preview) => {
+      if (current !== link) {
+        current?.style.removeProperty("anchor-name")
+        current?.removeAttribute("aria-describedby")
+        current = link
+        link.style.setProperty("anchor-name", "--link-preview")
+        link.setAttribute("aria-describedby", card.id)
+        title.textContent = preview.title
+        if (preview.lang) title.lang = preview.lang
+        else title.removeAttribute("lang")
+        meta.textContent = preview.meta
+        summary.textContent = preview.description
+      }
+      if (!card.matches(":popover-open")) card.showPopover()
+    }
+    const hide = () => {
+      if (card.matches(":popover-open")) card.hidePopover()
+    }
+    // A short wait either way: a pointer crossing a paragraph opens
+    // nothing, and one moving from the link onto the card keeps it.
+    const later = (action: () => void, ms: number) => {
+      clearTimeout(timer)
+      timer = window.setTimeout(action, ms)
+    }
+
+    for (const link of document.querySelectorAll<HTMLAnchorElement>(
+      "prose-content a[href^='/blog/']",
+    )) {
+      const preview = previews[new URL(link.href).pathname]
+      if (!preview) continue
+      link.addEventListener("pointerenter", (event) => {
+        if (event.pointerType === "mouse") later(() => show(link, preview), 350)
+      })
+      link.addEventListener("pointerleave", () => later(hide, 200))
+      link.addEventListener("focus", () => {
+        if (link.matches(":focus-visible")) show(link, preview)
+      })
+      link.addEventListener("blur", () => later(hide, 0))
+      link.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") hide()
+      })
+    }
+    card.addEventListener("pointerenter", () => clearTimeout(timer))
+    card.addEventListener("pointerleave", () => later(hide, 200))
+  }
+</script>

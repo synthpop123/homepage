@@ -97,8 +97,9 @@
    and at most one short line under it; that line never wraps, since a
    wrapped one is a line its skeleton didn't reserve. */
 .readout {
-  /* The heatmap's green, which every panel but two sits above. */
-  --readout-accent: light-dark(#30a14e, #39d353);
+  /* The site's accent, the heatmap's green, which every panel but two
+     sits above. */
+  --readout-accent: var(--accent-fill);
   --panel-wide: 32rem;
   --readout-gap: var(--space-s);
 

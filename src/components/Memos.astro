@@ -141,8 +141,9 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     }
   }
 
-  /* A year opens with its number on the thread; its node is filled and
-     the one step larger, so the years read as the thread's joints. */
+  /* A year opens with its number on the thread; its node is a filled
+     square, a cell of the logo, so the years read as the thread's
+     joints. */
   memos-feed :global(.memos-list > .memo-year) {
     --gap-after: var(--space-s);
     --node-y: 1rem;
@@ -150,6 +151,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   }
 
   memos-feed :global(.memos-list > .memo-year::after) {
+    border-radius: var(--radius-xs);
     border-color: var(--foreground);
     background-color: var(--foreground);
     box-shadow: 0 0 0 4px var(--background);
@@ -224,6 +226,15 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
 
   memos-feed :global(.memo-content) {
     overflow-wrap: anywhere;
+  }
+
+  /* A note that is only words is set a step larger, so the thread
+     alternates between something to read and something to look at. */
+  memos-feed
+  :global(
+    .memo-main:not(:has(.memo-media, .memo-audio, .memo-cw)) > .memo-content
+  ) {
+    font-size: var(--step-1);
   }
 
   memos-feed :global(.invisible) {

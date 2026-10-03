@@ -2,9 +2,10 @@
 /**
  * Who wrote a post: the avatar stack and the names beside it, shared by
  * the list card and the post header. An AI-assisted post (`ai: true`)
- * names the assistant here, as a second hand in the byline, rather than
- * in a badge further along the row — the disclosure is about authorship,
- * so it sits with the authors.
+ * says so here, in a credit beside the names rather than in a badge
+ * further along the row — the disclosure is about authorship, so it
+ * sits with the authors, and it is spelled out rather than hidden
+ * behind a hover, so it reads the same on a phone.
  */
 
 import ClaudeIcon from "@/assets/icons/ai/claude.svg"
@@ -13,35 +14,27 @@ import type { CollectionEntry } from "astro:content"
 type Props = {
   authors: CollectionEntry<"authors">[]
   ai?: boolean
-  /** Link names to /about and let "with AI" open its note (post header). */
+  /** Link names to /about (post header). */
   interactive?: boolean
-  /** Unique per page — a series renders several bylines on one page. */
-  id?: string
 }
 
-const { authors, ai = false, interactive = false, id = "byline" } = Astro.props
-const note = "Drafted with an AI assistant."
-const popover = `${id}-ai`
-const anchor = `--${id}-ai`
+const { authors, ai = false, interactive = false } = Astro.props
 ---
 
 {(authors.length > 0 || ai) && (
     <post-byline>
-      <author-avatars>
-        {authors.map((author) => (
-          <img
-            src={author.data.avatar}
-            alt={author.data.name}
-            width="18"
-            height="18"
-          />
-        ))}
-        {ai && (
-          <ai-mark>
-            <ClaudeIcon aria-hidden="true" />
-          </ai-mark>
-        )}
-      </author-avatars>
+      {authors.length > 0 && (
+        <author-avatars>
+          {authors.map((author) => (
+            <img
+              src={author.data.avatar}
+              alt={author.data.name}
+              width="18"
+              height="18"
+            />
+          ))}
+        </author-avatars>
+      )}
       <author-names>
         {authors.map((author, i) => (
           <>
@@ -53,33 +46,13 @@ const anchor = `--${id}-ai`
             )}
           </>
         ))}
-        {ai && " "}
-        {ai &&
-          (interactive ? (
-            <>
-              <button
-                type="button"
-                popovertarget={popover}
-                style={`anchor-name: ${anchor}`}
-              >
-                with AI
-              </button>
-              <ai-note
-                id={popover}
-                popover="auto"
-                style={`position-anchor: ${anchor}`}
-              >
-                <strong>
-                  <ClaudeIcon aria-hidden="true" />
-                  AI-assisted
-                </strong>
-                {note}
-              </ai-note>
-            </>
-          ) : (
-            <span title={note}>with AI</span>
-          ))}
       </author-names>
+      {ai && (
+        <ai-credit title="Drafted with an AI assistant">
+          <ClaudeIcon aria-hidden="true" />
+          AI-assisted
+        </ai-credit>
+      )}
     </post-byline>
   )}
 
@@ -104,73 +77,34 @@ const anchor = `--${id}-ai`
     }
   }
 
-  /* The assistant's place in the stack: the same disc as a person's,
-     carrying the Claude mark in its own colour on a faint tint of it. */
-  ai-mark {
+  author-names a {
+    color: var(--foreground);
+  }
+
+  /* A second hand in the byline, in the assistant's own colour: its
+     mark, and a hairline capsule tinted with it, the height of an
+     avatar so the row keeps one centre line. */
+  ai-credit {
     --claude: #d97757;
-    display: grid;
-    place-items: center;
-    inline-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
     block-size: 18px;
-    background-color: color-mix(in oklab, var(--claude) 12%, var(--background));
-    color: var(--claude);
-    font-size: 11px;
-  }
-
-  author-names {
-    display: inline;
-
-    a {
-      color: var(--foreground);
-    }
-
-    > span,
-    > button {
-      color: var(--faint-foreground);
-    }
-  }
-
-  button {
-    font: inherit;
-    cursor: help;
-
-    &:hover {
-      color: var(--foreground);
-    }
-  }
-
-  /* Opens centred under its button where anchor positioning exists
-     (anchor-center slides it back inside the margins near a screen edge),
-     and as the UA's centred popover where it does not. Either way a note,
-     not a dialog: light-dismissed, gone on the next click. */
-  ai-note {
-    position-area: block-end;
-    position-try-fallbacks: flip-block;
-    justify-self: anchor-center;
-    inline-size: max-content;
-    max-inline-size: 18rem;
-    margin: var(--space-3xs) var(--space-s);
-    padding: var(--space-xs) var(--space-s);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    background-color: var(--background);
-    box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.25);
+    margin-inline-start: 0.15em;
+    padding-inline: 0.45em 0.55em;
+    border: 1px solid color-mix(in oklab, var(--claude) 30%, var(--border));
+    border-radius: var(--radius-full);
+    background-color: color-mix(in oklab, var(--claude) 7%, var(--background));
     color: var(--muted-foreground);
-    font-size: var(--step--1);
-    line-height: 1.5;
-    text-wrap: pretty;
+    font-size: 0.75rem;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: default;
 
-    strong {
-      display: flex;
-      align-items: center;
-      gap: 0.35em;
-      margin-block-end: var(--space-3xs);
-      color: var(--foreground);
-      font-weight: var(--font-weight-medium);
-    }
-
-    @supports not (position-area: block-end) {
-      margin: auto;
+    svg {
+      inline-size: 0.8rem;
+      block-size: 0.8rem;
+      color: var(--claude);
     }
   }
 </style>

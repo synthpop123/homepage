@@ -9,7 +9,13 @@
  */
 
 import { calendarDay, keepFresh, settle, whenChanged } from "@/lib/client/feed"
-import { loadSite, type Site } from "@/lib/client/switch"
+import { drawSpark, SPARK_DAYS } from "@/lib/client/spark"
+import {
+  formatPlaytime,
+  heatmapWindow,
+  loadSite,
+  type Site,
+} from "@/lib/client/switch"
 import { buildHeatmap, buildRow, fillStats } from "./render"
 
 export function mountSwitch(feed: HTMLElement) {
@@ -33,6 +39,13 @@ export function mountSwitch(feed: HTMLElement) {
 
       fillStats(feed, site.stats)
       buildHeatmap(feed, site)
+      drawSpark(
+        "switch",
+        heatmapWindow(site.activity, site.today, SPARK_DAYS).map(
+          (day) => day.minutes,
+        ),
+        (minutes) => `${formatPlaytime(minutes)} played`,
+      )
 
       const games = site.games.slice(0, limit)
       const max = Math.max(...games.map((game) => game.totalMinutes), 1)

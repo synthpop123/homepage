@@ -3,7 +3,8 @@ import AuthorCard from "@/components/AuthorCard.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
-import { getSeries, getTags } from "@/lib/content"
+import { countEntryWords, getSeries, getTags } from "@/lib/content"
+import { formatCompact } from "@/lib/utils"
 import { getEntry } from "astro:content"
 
 const author = await getEntry("authors", "lkw123")
@@ -15,36 +16,14 @@ const entries = series.flat()
 const posts = series.map(([post]) => post)
 const tags = await getTags()
 
-const CJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/g
-
-/** CJK characters count as one word each, the rest as space-ish tokens. */
-const countWords = (text: string) => {
-  const prose = text
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`]+`/g, " ")
-    .replace(/https?:\/\/\S+/g, " ")
-  const cjk = prose.match(CJK)?.length ?? 0
-  const latin =
-    prose.replace(CJK, " ").match(/[A-Za-z0-9][A-Za-z0-9'’.-]*/g)?.length ?? 0
-  return cjk + latin
-}
-
-const words = entries.reduce(
-  (sum, entry) => sum + countWords(entry.body ?? ""),
-  0,
-)
+const words = countEntryWords(entries)
 const sinceYear = new Date(
   Math.min(...posts.map((post) => post.data.date.getTime())),
 ).getUTCFullYear()
 
-const compactFormatter = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-})
-
 const stats = [
   { label: "Posts", value: String(posts.length) },
-  { label: "Words", value: compactFormatter.format(words) },
+  { label: "Words", value: formatCompact(words) },
   { label: "Tags", value: String(tags.size) },
   { label: "Since", value: String(sinceYear) },
 ]

@@ -209,25 +209,25 @@ tokens-dashboard {
   }
 
   .tk-rhythm-plot .area {
-    fill: color-mix(in oklab, var(--tk-accent) 12%, transparent);
+    fill: color-mix(in oklab, var(--accent-fill) 12%, transparent);
   }
 
   .tk-rhythm-plot .line {
     fill: none;
-    stroke: var(--tk-accent);
+    stroke: var(--accent-fill);
     stroke-width: 1.5;
     stroke-linejoin: round;
     stroke-linecap: round;
   }
 
   .tk-rhythm-plot .dot {
-    fill: var(--tk-accent);
+    fill: var(--accent-fill);
     stroke: var(--background);
     stroke-width: 1.5;
   }
 
   .tk-rhythm-plot .dot[data-peak] {
-    stroke: color-mix(in oklab, var(--tk-accent) 35%, var(--background));
+    stroke: color-mix(in oklab, var(--accent-fill) 35%, var(--background));
     stroke-width: 2.5;
   }
 

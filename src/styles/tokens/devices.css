@@ -35,11 +35,11 @@ tokens-dashboard {
   }
 
   .tk-devices .tk-device[data-online] {
-    --dev-hue: var(--tk-accent);
-    border-color: color-mix(in oklab, var(--tk-accent) 28%, var(--border));
+    --dev-hue: var(--accent-fill);
+    border-color: color-mix(in oklab, var(--accent-fill) 28%, var(--border));
     background-color: color-mix(
       in oklab,
-      var(--tk-accent) 4%,
+      var(--accent-fill) 4%,
       color-mix(in oklab, var(--muted) 45%, var(--background))
     );
   }
@@ -84,8 +84,8 @@ tokens-dashboard {
   }
 
   .tk-devices [data-online] .dev-status {
-    background-color: color-mix(in oklab, var(--tk-accent) 14%, transparent);
-    color: color-mix(in oklab, var(--tk-accent) 55%, var(--foreground));
+    background-color: color-mix(in oklab, var(--accent-fill) 14%, transparent);
+    color: color-mix(in oklab, var(--accent-fill) 55%, var(--foreground));
   }
 
   .tk-devices .dot {
@@ -96,7 +96,7 @@ tokens-dashboard {
   }
 
   .tk-devices [data-online] .dot {
-    background-color: var(--tk-accent);
+    background-color: var(--accent-fill);
     animation: tk-dev-pulse 2.4s ease-out infinite;
   }
 
@@ -194,7 +194,7 @@ tokens-dashboard {
 /* Top level: lightningcss rejects @keyframes nested in a rule. */
 @keyframes tk-dev-pulse {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--tk-accent) 45%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent-fill) 45%, transparent);
   }
   70%,
   100% {

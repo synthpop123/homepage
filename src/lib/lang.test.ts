@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { detectLang, prose } from "./lang"
+import { countWords, detectLang, prose } from "./lang"
 
 describe("prose", () => {
   it("drops code, maths, HTML and link targets", () => {
@@ -37,5 +37,17 @@ describe("detectLang", () => {
 
   it("falls back when there is no prose at all", () => {
     expect(detectLang("```sh\nls\n```", "en-US")).toBe("en-US")
+  })
+})
+
+describe("countWords", () => {
+  it("counts each Han character and each Latin word or number", () => {
+    expect(countWords("用 Docker 部署 k3s 集群，跑了 4 个节点。")).toBe(13)
+  })
+
+  it("counts code, but not link targets or fences", () => {
+    const markdown =
+      "看[文档](https://example.com/docs)\n```sh\nrun this now\n```"
+    expect(countWords(markdown)).toBe(6)
   })
 })

@@ -31,7 +31,7 @@ const { href } = Astro.props
   >
     <ArrowUpRight aria-hidden="true" />
   </a>
-  <span aria-live="polite"></span>
+  <span class="sr" aria-live="polite"></span>
 </copy-markdown>
 
 <style>
@@ -128,15 +128,6 @@ const { href } = Astro.props
 
   button[data-state="error"] {
     color: var(--destructive);
-  }
-
-  /* Announces the result to a screen reader without drawing anything. */
-  [aria-live] {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
   }
 
   @media (prefers-reduced-motion: reduce) {

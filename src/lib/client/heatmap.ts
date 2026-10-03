@@ -63,6 +63,52 @@ type HeatCell = {
  *  leave the previous mount's observer re-rendering its stale days. */
 const observers = new WeakMap<HTMLElement, ResizeObserver>()
 
+/** Grids whose entrance has played. It plays once per grid per page
+ *  load: never again for a cached-then-fresh repaint, a reload, a
+ *  re-fit or a remount (Tokens remounts on every pick). */
+const entered = new WeakSet<HTMLElement>()
+
+/**
+ * The grid's one flourish: the first time it is seen, its cells light
+ * up along the diagonals, oldest corner first, a wave running toward
+ * today in about half a second. Waits until the grid is on screen, so
+ * a heatmap below the fold still has its moment; under reduced motion
+ * the cells are simply there.
+ */
+function enter(grid: HTMLElement) {
+  if (entered.has(grid)) return
+  entered.add(grid)
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return
+
+  const play = () => {
+    Array.from(grid.children).forEach((cell, index) => {
+      if (cell instanceof HTMLElement && "pad" in cell.dataset) return
+      const diagonal = Math.floor(index / 7) + (index % 7)
+      cell.animate(
+        [
+          { opacity: 0, transform: "scale(0.4)" },
+          { opacity: 1, transform: "none" },
+        ],
+        {
+          duration: 360,
+          delay: diagonal * 10,
+          easing: "cubic-bezier(0.2, 0, 0, 1)",
+          fill: "backwards",
+        },
+      )
+    })
+  }
+  const seen = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      seen.disconnect()
+      play()
+    },
+    { threshold: 0.35 },
+  )
+  seen.observe(grid)
+}
+
 /**
  * Fill a Heatmap.astro grid with as many trailing weeks of `days` as
  * fit its width, pad the first column down to the right weekday, and
@@ -110,6 +156,7 @@ export function mountHeatmap<T extends { date: string }>(
 
   render()
   grid.removeAttribute("data-skeleton")
+  enter(grid)
   const observer = new ResizeObserver(render)
   observer.observe(grid)
   observers.set(grid, observer)

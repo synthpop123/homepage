@@ -108,7 +108,7 @@ const { title, sections } = Astro.props
       &:last-child {
         --circumference: calc(2 * pi * 18px);
 
-        stroke: var(--foreground);
+        stroke: var(--accent-fill);
         stroke-linecap: round;
         stroke-dasharray: var(--circumference);
         stroke-dashoffset: calc(
@@ -157,7 +157,7 @@ const { title, sections } = Astro.props
           &:last-child {
             --circumference: calc(2 * pi * 6.5px);
 
-            stroke: var(--muted-foreground);
+            stroke: var(--accent-fill);
             stroke-dasharray: var(--circumference);
             stroke-dashoffset: calc(
               var(--circumference) *

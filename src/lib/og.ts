@@ -3,13 +3,16 @@ import path from "node:path"
 import { Resvg } from "@resvg/resvg-js"
 import satori from "satori"
 import { SITE } from "@/consts"
-import { formatDate } from "@/lib/utils"
+import { formatCompact, formatDate } from "@/lib/utils"
 
 // Colors mirror the light theme grays in src/styles/color.css.
 const BG = "#fcfcfc"
 const FG = "#202020"
 const MUTED = "#646464"
-const BORDER = "#d9d9d9"
+// The timeline's cells: the heatmap's empty, faintest and accent steps.
+const CELL = "#e8e8e8"
+const RELATED = "#9be9a8"
+const ACCENT = "#30a14e"
 
 const WIDTH = 1200
 const HEIGHT = 630
@@ -68,7 +71,13 @@ const h = (
   ...children: (Node | string)[]
 ): Node => ({
   type,
-  props: { ...props, children: children.length === 1 ? children[0] : children },
+  props: {
+    ...props,
+    // Satori reads an empty array as children to lay out, not as none.
+    ...(children.length > 0 && {
+      children: children.length === 1 ? children[0] : children,
+    }),
+  },
 })
 
 const logo = (size: number) =>
@@ -93,21 +102,52 @@ const frame = (...children: Node[]) =>
     ...children,
   )
 
-const footer = (hostname: string, meta?: string) =>
+/** Where a post sits among the rest, oldest first: this one, one
+ *  sharing a tag with it, or another. */
+export type TimelineCell = "current" | "related" | "other"
+
+const CELL_COLORS: Record<TimelineCell, string> = {
+  current: ACCENT,
+  related: RELATED,
+  other: CELL,
+}
+
+/** Every post on the site as one cell of a strip, like a row of the
+ *  heatmap: on a post's card the post is lit, its kin tinted. */
+const timeline = (cells: TimelineCell[]) =>
   h(
     "div",
-    {
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "baseline",
-        paddingTop: 32,
-        borderTop: `1px solid ${BORDER}`,
-        fontSize: 26,
+    { style: { display: "flex", gap: 6, marginBottom: 28 } },
+    ...cells.map((cell) =>
+      h("div", {
+        style: {
+          flex: 1,
+          height: 14,
+          borderRadius: 3,
+          backgroundColor: CELL_COLORS[cell],
+        },
+      }),
+    ),
+  )
+
+const footer = (hostname: string, cells: TimelineCell[], meta?: string) =>
+  h(
+    "div",
+    { style: { display: "flex", flexDirection: "column" } },
+    timeline(cells),
+    h(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          fontSize: 26,
+        },
       },
-    },
-    h("div", { style: { fontWeight: 500 } }, hostname),
-    h("div", { style: { color: MUTED } }, meta ?? ""),
+      h("div", { style: { fontWeight: 500 } }, hostname),
+      h("div", { style: { color: MUTED } }, meta ?? ""),
+    ),
   )
 
 const render = async (node: Node) => {
@@ -119,19 +159,24 @@ type PostCard = {
   title: string
   description: string
   date: Date
+  words: number
   tags?: string[]
   hostname: string
+  timeline: TimelineCell[]
 }
 
 export function renderPostCard({
   title,
   description,
   date,
+  words,
   tags,
   hostname,
+  timeline: cells,
 }: PostCard) {
   const meta = [
     formatDate(date),
+    `${formatCompact(words)} words`,
     (tags ?? [])
       .slice(0, 3)
       .map((tag) => `#${tag}`)
@@ -189,12 +234,12 @@ export function renderPostCard({
           description,
         ),
       ),
-      footer(hostname, meta),
+      footer(hostname, cells, meta),
     ),
   )
 }
 
-export function renderSiteCard(hostname: string) {
+export function renderSiteCard(hostname: string, cells: TimelineCell[]) {
   return render(
     frame(
       logo(48),
@@ -218,7 +263,7 @@ export function renderSiteCard(hostname: string) {
           `/${SITE.description.replace(/\.$/, "")}/`,
         ),
       ),
-      footer(hostname),
+      footer(hostname, cells),
     ),
   )
 }

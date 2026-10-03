@@ -131,6 +131,7 @@ const section = NAVIGATION.find(
     gap: var(--space-3xs);
 
     a {
+      position: relative;
       display: block;
       color: var(--muted-foreground);
 
@@ -138,6 +139,24 @@ const section = NAVIGATION.find(
       &[aria-current="page"] {
         color: var(--foreground);
       }
+    }
+
+    /* Where you are: one cell of the logo, lit in the accent, in the
+       gutter before the current entry (under it, on the phone's row). */
+    a::before {
+      content: "";
+      position: absolute;
+      inset-block-start: calc(50% - 0.15625rem);
+      inset-inline-start: -0.75rem;
+      inline-size: 0.3125rem;
+      block-size: 0.3125rem;
+      border-radius: 1.5px;
+      background-color: var(--accent-fill);
+      visibility: hidden;
+    }
+
+    a[aria-current="page"]::before {
+      visibility: visible;
     }
 
     li[data-depth="1"] a {
@@ -184,9 +203,22 @@ const section = NAVIGATION.find(
     }
   }
 
+  /* On the phone the crumbs are hidden, so the section they sit under
+     is the current entry. */
   nav li:has(> ul) > a {
     @media (width < 64rem) {
       color: var(--foreground);
+    }
+  }
+
+  @media (width < 64rem) {
+    nav ul a::before {
+      inset-block-start: calc(100% + 0.125rem);
+      inset-inline-start: calc(50% - 0.15625rem);
+    }
+
+    nav li:has(> ul) > a::before {
+      visibility: visible;
     }
   }
 

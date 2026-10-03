@@ -1,7 +1,7 @@
 import { SITE } from "@/consts"
 import { getImage } from "astro:assets"
 import { getCollection, type CollectionEntry } from "astro:content"
-import { detectLang } from "@/lib/lang"
+import { countWords, detectLang } from "@/lib/lang"
 import { isSubpost } from "@/lib/utils"
 
 export const pageTitle = (title: string) => `${title} | ${SITE.title}`
@@ -15,6 +15,15 @@ export const titleLang = (post: CollectionEntry<"blog">) => {
   const lang = postLang(post)
   return lang === SITE.locale ? undefined : lang
 }
+
+/** How many words a set of entries holds between them. */
+export const countEntryWords = (entries: CollectionEntry<"blog">[]) =>
+  entries.reduce((sum, entry) => sum + countWords(entry.body ?? ""), 0)
+
+/** A post's length in words, as its page reads: a series' opening post
+ *  counts the series whole (its page is the series), a subpost itself. */
+export const postWords = (chain: CollectionEntry<"blog">[], post = chain[0]) =>
+  countEntryWords(post === chain[0] ? chain : [post])
 
 export async function getPosts(): Promise<CollectionEntry<"blog">[]> {
   const posts = await getCollection("blog", ({ data }) => !data.draft)

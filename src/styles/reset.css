@@ -213,6 +213,16 @@ input:where([type="button"], [type="reset"], [type="submit"]),
   display: none !important;
 }
 
+/* Heard, not drawn: text only a screen reader needs. */
+.sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

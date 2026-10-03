@@ -6,9 +6,10 @@ import {
   hastPlugins,
   mdastPlugins,
 } from "./src/lib/markdown"
+import { SITE_ORIGIN } from "./src/lib/site-links"
 
 export default defineConfig({
-  site: "https://lkwplus.com",
+  site: SITE_ORIGIN,
   trailingSlash: "never",
   compressHTML: true,
   prefetch: { prefetchAll: true },

@@ -8,7 +8,8 @@
  */
 
 import { keepFresh, settle, whenChanged } from "@/lib/client/feed"
-import { loadSite, type Site } from "@/lib/client/music"
+import { formatPlays, loadSite, type Site } from "@/lib/client/music"
+import { drawSpark } from "@/lib/client/spark"
 import { pauseOffscreen } from "@/lib/client/vinyl"
 import { buildHeatmap, buildRow, fillStats, refreshTimes } from "./render"
 
@@ -29,6 +30,11 @@ export function mountMusic(feed: HTMLElement) {
     if (site.listens.length === 0) throw new Error("No listens")
     fillStats(feed, site.stats)
     buildHeatmap(feed, site.activity)
+    drawSpark(
+      "music",
+      site.activity.map((day) => day.plays),
+      formatPlays,
+    )
     const fragment = document.createDocumentFragment()
     site.listens
       .slice(0, limit)

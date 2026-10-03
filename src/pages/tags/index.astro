@@ -4,44 +4,102 @@ import PageTitle from "@/components/PageTitle.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getTags } from "@/lib/content"
 
-const tags = await getTags()
+// Laid out as the index at the back of a book: alphabetical, under
+// letter heads, each entry dotted across to its count.
+const tags = [...(await getTags())].sort(([a], [b]) => a.localeCompare(b))
+const letters = Map.groupBy(tags, ([tag]) => tag[0].toUpperCase())
 ---
 
 <Layout crumbs={[{ label: "Tags", href: "/tags" }]}>
   <MetaPage slot="head" title="Tags" noindex />
   <PageTitle>Tags</PageTitle>
-  <ul>
-    {[...tags].map(([tag, posts]) => (
-        <li>
-          <a href={`/tags/${tag}`}>#{tag}<tag-count>{posts.length}</tag-count></a>
-        </li>
-      ))}
-  </ul>
+  <tag-index>
+    {[...letters].map(([letter, entries]) => (
+      <section aria-labelledby={`l-${letter}`}>
+        <h2 id={`l-${letter}`}>{letter}</h2>
+        <ul>
+          {entries.map(([tag, posts]) => (
+            <li>
+              <a href={`/tags/${tag}`}>
+                <span>{tag}</span>
+                <tag-count style={`--n: ${posts.length}`}>
+                  {posts.length}
+                  <span class="sr">{posts.length === 1 ? " post" : " posts"}</span>
+                </tag-count>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </tag-index>
 </Layout>
 
 <style>
-  ul {
+  tag-index {
+    display: block;
+    columns: 3 11rem;
+    column-gap: var(--space-l);
+  }
+
+  section {
+    break-inside: avoid;
+    margin-block-end: var(--space-s);
+  }
+
+  h2 {
+    margin-block-end: var(--space-3xs);
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-display);
+    letter-spacing: 0;
+    color: var(--accent);
+  }
+
+  /* Name, a dotted leader, and the count, which carries one small
+     square per post. */
+  a {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2xs);
+    align-items: baseline;
+    gap: 0.4em;
+    padding-block: 0.1em;
+    color: var(--foreground);
+    text-decoration-line: none;
 
-    a {
-      display: inline-block;
-      padding-inline: var(--space-2xs);
-      font-size: var(--step--1);
-      color: var(--muted-foreground);
-      background-color: color-mix(in oklab, var(--muted) 50%, transparent);
-      border-radius: var(--radius-full);
-      text-decoration-line: none;
+    &::after {
+      content: "";
+      flex: 1;
+      order: 1;
+      min-inline-size: 1rem;
+      border-block-end: 1.5px dotted var(--border);
+    }
 
-      &:hover {
-        color: var(--foreground);
-      }
+    &:hover > span {
+      text-decoration-line: underline;
+      text-decoration-color: var(--accent);
+    }
+  }
 
-      tag-count {
-        margin-inline-start: var(--space-3xs);
-        opacity: 0.6;
-      }
+  tag-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    order: 2;
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    color: var(--faint-foreground);
+    font-variant-numeric: tabular-nums;
+
+    &::before {
+      content: "";
+      inline-size: calc(min(var(--n), 8) * 7px - 2px);
+      block-size: 5px;
+      background:
+        linear-gradient(to right, var(--heat-3) 5px, transparent 0) 0 0 / 7px
+        100% repeat-x;
     }
   }
 </style>

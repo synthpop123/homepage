@@ -12,6 +12,7 @@ import {
 } from "@/lib/client/feed"
 import { mountHeatmap } from "@/lib/client/heatmap"
 import {
+  formatPlays,
   isPlaying,
   type Site,
   type SiteListen,
@@ -49,7 +50,7 @@ export const buildHeatmap = (feed: HTMLElement, activity: Site["activity"]) => {
     return shown.map((day) => ({
       level:
         day.plays === 0 ? 0 : Math.max(1, Math.ceil((day.plays / max) * 4)),
-      title: `${day.plays} ${day.plays === 1 ? "play" : "plays"} on ${monthDay.format(dayInstant(day.date))}`,
+      title: `${formatPlays(day.plays)} on ${monthDay.format(dayInstant(day.date))}`,
     }))
   })
 }

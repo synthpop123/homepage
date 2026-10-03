@@ -1,12 +1,21 @@
 ---
-import BlogCard from "@/components/BlogCard.astro"
+import ClaudeIcon from "@/assets/icons/ai/claude.svg"
 import MetaPage from "@/components/MetaPage.astro"
 import PageTitle from "@/components/PageTitle.astro"
 import Layout from "@/layouts/Layout.astro"
-import { getPosts } from "@/lib/content"
+import { getSeries, postWords, titleLang } from "@/lib/content"
+import { formatCompact, formatMonthDay } from "@/lib/utils"
 
+// The index as a ledger: one line per post, filed under its year, with
+// a bar for how long it is — the series counted whole, against the
+// longest on the site.
+const entries = (await getSeries()).map((chain) => ({
+  post: chain[0],
+  words: postWords(chain),
+}))
+const longest = Math.max(...entries.map(({ words }) => words), 1)
 // Newest first, so each year's group opens where the last one closed.
-const years = Map.groupBy(await getPosts(), (post) =>
+const years = Map.groupBy(entries, ({ post }) =>
   post.data.date.getUTCFullYear(),
 )
 ---
@@ -17,33 +26,156 @@ const years = Map.groupBy(await getPosts(), (post) =>
   {[...years].map(([year, posts]) => (
     <section aria-labelledby={`y${year}`}>
       <h2 id={`y${year}`}>{year}</h2>
-      <ul>
-        {posts.map((post) => <BlogCard post={post} />)}
-      </ul>
+      <ol>
+        {posts.map(({ post, words }) => (
+          <li>
+            <time datetime={post.data.date.toISOString()}>
+              {formatMonthDay(post.data.date)}
+            </time>
+            <post-line>
+              <a href={`/blog/${post.id}`} lang={titleLang(post)}>
+                {post.data.title}
+              </a>
+              {post.data.ai && (
+                <ClaudeIcon role="img" aria-label="AI-assisted" />
+              )}
+              <p>{post.data.description}</p>
+            </post-line>
+            <post-length
+              title={`${words.toLocaleString("en-US")} words`}
+              style={`--share: ${words / longest}`}
+            >
+              <span>{formatCompact(words)}</span>
+              <span class="sr"> words</span>
+            </post-length>
+          </li>
+        ))}
+      </ol>
     </section>
   ))}
 </Layout>
 
 <style>
-  section + section {
-    margin-block-start: var(--space-l);
+  /* The year runs down the left margin beside its posts, and stays in
+     view while they scroll past. */
+  section {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: var(--space-s);
+    align-items: start;
+    padding-block: var(--space-s);
+    border-block-start: 1px solid var(--border);
+
+    @media (width < 40rem) {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2xs);
+    }
   }
 
-  /* A quiet label, like the home page's section heads: the posts are
-     the content, the year only files them. */
   h2 {
-    margin-block-end: var(--space-s);
-    font-size: var(--step--1);
-    font-weight: var(--font-weight-medium);
-    letter-spacing: 0.08em;
-    line-height: 1.4;
-    color: var(--muted-foreground);
+    position: sticky;
+    inset-block-start: var(--page-offset-top);
+    font-size: var(--step-3);
+    font-weight: var(--font-weight-display);
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    color: var(--faint-foreground);
     font-variant-numeric: tabular-nums;
+
+    @media (width < 64rem) {
+      inset-block-start: calc(var(--bar-nav-height) + var(--space-2xs));
+    }
+
+    @media (width < 40rem) {
+      position: static;
+      font-size: var(--step-2);
+    }
   }
 
-  ul {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-m);
+  ol {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) 4rem;
+    gap: var(--space-xs) var(--space-s);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @media (width < 40rem) {
+      grid-template-columns: max-content minmax(0, 1fr);
+    }
+  }
+
+  li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+  }
+
+  time {
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    color: var(--faint-foreground);
+  }
+
+  post-line {
+    display: block;
+    min-inline-size: 0;
+
+    a {
+      color: var(--foreground);
+      font-weight: var(--font-weight-medium);
+      text-decoration-line: none;
+
+      &:hover {
+        text-decoration-line: underline;
+      }
+    }
+
+    /* After the title, the assistant's mark in its own colour. */
+    svg {
+      display: inline-block;
+      inline-size: 0.75em;
+      block-size: 0.75em;
+      margin-inline-start: 0.35em;
+      vertical-align: -0.05em;
+      color: #d97757;
+    }
+
+    p {
+      margin-block-start: 0.1em;
+      overflow: hidden;
+      font-size: var(--step--1);
+      color: var(--faint-foreground);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  /* How long a post is, as a bar in the heatmap's green: its share of
+     the longest post on the site. */
+  post-length {
+    display: grid;
+    justify-items: end;
+    gap: 0.3rem;
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+    color: var(--faint-foreground);
+
+    &::before {
+      content: "";
+      inline-size: max(0.25rem, calc(var(--share) * 100%));
+      block-size: 3px;
+      border-radius: var(--radius-full);
+      background-color: var(--heat-2);
+    }
+
+    @media (width < 40rem) {
+      display: none;
+    }
   }
 </style>

@@ -2,6 +2,7 @@
 import Byline from "@/components/Byline.astro"
 import CopyMarkdown from "@/components/CopyMarkdown.astro"
 import Lightbox from "@/components/Lightbox.astro"
+import LinkPreview from "@/components/LinkPreview.astro"
 import PostDates from "@/components/PostDates.astro"
 import PostTags from "@/components/PostTags.astro"
 import Mermaid from "@/components/Mermaid.astro"
@@ -96,12 +97,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
         <header>
           <h1>{entry.data.title}</h1>
           <post-meta lang={chromeLang}>
-            <Byline
-              authors={authors}
-              ai={entry.data.ai}
-              interactive
-              id={`byline-${i}`}
-            />
+            <Byline authors={authors} ai={entry.data.ai} interactive />
             <PostDates
               date={entry.data.date}
               updated={entry.data.updatedDate}
@@ -129,6 +125,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
   {chain.length > 1 && <SeriesReader />}
   {hasMermaid && <Mermaid />}
   <Lightbox />
+  <LinkPreview entries={chain} />
 </Layout>
 
 <style>
@@ -139,7 +136,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
     scroll-margin-block-start: calc(-2px - 0.2 * var(--step-2));
 
     header h1 {
-      font-size: var(--step-2);
+      font-size: var(--step-3);
     }
   }
 
@@ -155,9 +152,10 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
     }
 
     h1 {
-      font-size: var(--step-3);
-      line-height: calc(var(--leading-offset) + 1em);
-      font-weight: var(--font-weight-medium);
+      font-size: var(--step-5);
+      line-height: var(--leading-display);
+      font-weight: var(--font-weight-display);
+      letter-spacing: var(--tracking-display);
     }
 
     post-meta {
@@ -167,7 +165,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
       flex-wrap: wrap;
       align-items: center;
       gap: var(--space-3xs);
-      margin-block-start: var(--space-3xs);
+      margin-block-start: var(--space-xs);
       font-size: var(--step--1);
       color: var(--muted-foreground);
     }

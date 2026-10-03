@@ -6,18 +6,31 @@
  * prose is mostly Han is `zh-CN`; anything else is the site's own locale.
  */
 
-const HAN = /[㐀-䶿一-鿿豈-﫿]/g
+const HAN = /[㐀-䶿一-鿿豈-﫿]/g
 const WORD = /[A-Za-z][A-Za-z'-]*/g
+const FENCE = /^(`{3,}|~{3,})[^\n]*\n([\s\S]*?)^\1[^\n]*$/gm
 
-export function prose(markdown: string): string {
-  return markdown
-    .replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, "")
-    .replace(/`[^`\n]*`/g, "")
+/** Markdown less what is never read as words: maths, HTML tags, link
+ *  targets and bare URLs. */
+const readable = (markdown: string) =>
+  markdown
     .replace(/\$\$[\s\S]*?\$\$/g, "")
     .replace(/\$[^$\n]*\$/g, "")
-    .replace(/<[^>]*>/g, "")
+    .replace(/<[^>\n]*>/g, "")
     .replace(/\]\([^)]*\)/g, "]")
     .replace(/https?:\/\/\S+/g, "")
+
+export const prose = (markdown: string): string =>
+  readable(markdown.replace(FENCE, "").replace(/`[^`\n]*`/g, ""))
+
+/** How long a post is to read: every Han character a word, as a reader
+ *  of Chinese counts them, plus every Latin word or number, code
+ *  included — a walkthrough that is mostly commands is still long. */
+export function countWords(markdown: string): number {
+  const text = readable(markdown.replace(FENCE, "$2"))
+  const han = text.match(HAN)?.length ?? 0
+  const latin = text.replace(HAN, " ").match(/[A-Za-z0-9][\w'’.-]*/g)
+  return han + (latin?.length ?? 0)
 }
 
 export function detectLang(markdown: string, fallback: string): string {

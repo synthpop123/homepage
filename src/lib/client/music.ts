@@ -87,6 +87,10 @@ export function isSite(data: unknown): data is Site {
   )
 }
 
+/** "1 play", "1,204 plays". */
+export const formatPlays = (plays: number) =>
+  `${plays.toLocaleString("en-US")} ${plays === 1 ? "play" : "plays"}`
+
 /** Within this many minutes the lead listen counts as just played. */
 const RECENT_MINUTES = 10
 

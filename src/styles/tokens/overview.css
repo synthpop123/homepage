@@ -119,11 +119,11 @@ tokens-dashboard {
   }
 
   .tk-mix [data-k="2"] {
-    --c: var(--tk-accent);
+    --c: var(--accent-fill);
   }
 
   .tk-mix [data-k="3"] {
-    --c: color-mix(in oklab, var(--tk-accent) 50%, var(--background));
+    --c: color-mix(in oklab, var(--accent-fill) 50%, var(--background));
   }
 
   .tk-mix [data-k="4"] {
