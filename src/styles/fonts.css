@@ -1,19 +1,19 @@
 @font-face {
-  font-family: "Geist";
-  src: url("../assets/fonts/Geist-Variable.woff2") format("woff2");
+  font-family: "Inter";
+  src: url("../assets/fonts/Inter-Variable.woff2") format("woff2");
   font-weight: 400 600;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Geist Fallback";
+  font-family: "Inter Fallback";
   src: local("Arial");
   font-weight: 100 900;
   font-style: normal;
-  size-adjust:       104.7553%;
-  ascent-override:   95.9379%;
-  descent-override:  28.1609%;
+  size-adjust:       107.1957%;
+  ascent-override:   90.3721%;
+  descent-override:  22.5019%;
   line-gap-override: 0%;
 }
 
@@ -48,7 +48,20 @@
   /* There are no italic faces: emphasis is set upright, never slanted by
      the browser. */
   font-synthesis-style: none;
-  --font-sans: "Geist", "Geist Fallback", sans-serif;
+  --font-sans: "Inter", "Inter Fallback", sans-serif;
+  /* Inter's open 3 4 6 9, serifed I and tailed l, round quotes and
+     commas, single-storey a. Set on body; monospace resets it, since
+     Geist Mono has ss01–ss04 of its own. The subset keeps only these
+     (scripts/subset-fonts.ts). */
+  --font-sans-features: "ss01", "ss03", "ss04", "cv11";
   --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
   --font-math: "STIX Two Math", math;
+}
+
+body {
+  font-feature-settings: var(--font-sans-features);
+}
+
+:where(code, kbd, samp, pre) {
+  font-feature-settings: normal;
 }

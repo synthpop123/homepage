@@ -8,6 +8,7 @@ declare module "subset-font" {
     options?: {
       targetFormat?: "sfnt" | "woff" | "woff2"
       variationAxes?: Record<string, Axis>
+      keepFeatures?: string[]
     },
   ): Promise<Buffer>
 }

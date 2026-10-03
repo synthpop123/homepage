@@ -1,21 +1,30 @@
 /**
- * Subsets the two web fonts every page loads, Geist and Geist Mono
- * (variable), to the scripts this site is written in and the weights it
- * sets, and the maths face to what formulas reach.
+ * Subsets the two web fonts every page loads, Inter and Geist Mono
+ * (variable), to the scripts this site is written in, the weights it sets
+ * and the OpenType features it turns on, and the maths face to what
+ * formulas reach.
  *
- * Geist ships Cyrillic, Greek and Vietnamese too, about a third of each
+ * Both ship Cyrillic, Greek and Vietnamese too, a large part of each
  * file, and none of it is used here. What stays: Latin through Latin
  * Extended-A (so an accented artist or film name from a feed still
- * renders in Geist), the combining accents, general punctuation,
+ * renders in Inter), the combining accents, general punctuation,
  * super/subscripts, currency, letterlike symbols, arrows and maths
  * operators, plus every character the content and source use today.
  * Geist Mono also keeps box drawing, for directory trees in code blocks.
  * Anything else falls through to the fallback face in fonts.css.
  *
  * The `wght` axis stays variable but is cut to the range in use: 400 to
- * 600 for Geist (body, --font-weight-medium's 450, one 600 in Flights),
+ * 600 for Inter (body, --font-weight-medium's 450, one 600 in Flights),
  * 400 to 700 for Geist Mono, whose code theme sets bold tokens. The
- * @font-face `font-weight` ranges in fonts.css have to match.
+ * @font-face `font-weight` ranges in fonts.css have to match. Inter's
+ * `opsz` axis is pinned to its text size (14): headings top out near
+ * 28px, too small for the display cut to earn its extra third of a file.
+ *
+ * Inter keeps only the layout features a browser applies by itself plus
+ * the ones the site sets: `tnum` (tabular-nums) and the stylistic sets in
+ * --font-sans-features (fonts.css). The circled/squared sets, fractions,
+ * superiors and the rest go. Adding a feature to --font-sans-features
+ * means adding it here and re-running.
  *
  * STIX Two Math, the MathML face, is cut by range rather than by use:
  * every glyph ordinary maths can reach (Latin and Greek, operators,
@@ -34,8 +43,14 @@ import path from "node:path"
 import subsetFont from "subset-font"
 
 // Last commits that carry the full woff2s.
-const FULL_FONT_COMMIT = "fc8a5ec"
+const FULL_INTER_COMMIT = "2eb72f8" // Inter 4.1
+const FULL_MONO_COMMIT = "fc8a5ec"
 const FULL_MATH_COMMIT = "3b2daa0"
+
+/** Shaping a browser does unasked (GSUB and GPOS), kept for Inter. */
+const DEFAULT_FEATURES = ["calt", "ccmp", "kern", "locl", "mark", "mkmk"]
+/** What the CSS asks for: tabular-nums and --font-sans-features. */
+const SET_FEATURES = ["tnum", "ss01", "ss03", "ss04", "cv11"]
 
 const RANGES: [number, number][] = [
   [0x20, 0x7e], // ASCII
@@ -78,17 +93,40 @@ const chars = (ranges: [number, number][]) =>
 const dir = "src/assets/fonts"
 const used = usedChars()
 
-for (const [file, ranges, maxWeight] of [
-  ["Geist-Variable.woff2", RANGES, 600],
-  ["GeistMono-Variable.woff2", [...RANGES, BOX], 700],
-] as const) {
-  const full = execSync(`git show ${FULL_FONT_COMMIT}:${dir}/${file}`, {
+type SubsetOptions = NonNullable<Parameters<typeof subsetFont>[2]>
+
+const webFonts: {
+  file: string
+  commit: string
+  ranges: [number, number][]
+  axes: SubsetOptions["variationAxes"]
+  /** Layout features to keep; all of them when absent. */
+  features?: string[]
+}[] = [
+  {
+    file: "Inter-Variable.woff2",
+    commit: FULL_INTER_COMMIT,
+    ranges: RANGES,
+    axes: { wght: { min: 400, max: 600, default: 400 }, opsz: 14 },
+    features: [...DEFAULT_FEATURES, ...SET_FEATURES],
+  },
+  {
+    file: "GeistMono-Variable.woff2",
+    commit: FULL_MONO_COMMIT,
+    ranges: [...RANGES, BOX],
+    axes: { wght: { min: 400, max: 700, default: 400 } },
+  },
+]
+
+for (const { file, commit, ranges, axes, features } of webFonts) {
+  const full = execSync(`git show ${commit}:${dir}/${file}`, {
     maxBuffer: 8 * 1024 * 1024,
   })
-  const text = [...new Set(chars([...ranges]) + used)].join("")
+  const text = [...new Set(chars(ranges) + used)].join("")
   const output = await subsetFont(full, text, {
     targetFormat: "woff2",
-    variationAxes: { wght: { min: 400, max: maxWeight, default: 400 } },
+    variationAxes: axes,
+    keepFeatures: features,
   })
   writeFileSync(path.join(dir, file), output)
   const percent = ((1 - output.length / full.length) * 100).toFixed(1)

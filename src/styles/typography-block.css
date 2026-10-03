@@ -74,6 +74,13 @@ prose-content {
       &::-webkit-scrollbar-corner {
         display: none;
       }
+
+      /* Expressive Code reverts and unsets everything inside a block,
+         so the body's Inter features would be inherited by Geist Mono,
+         which has ss01–ss04 of its own. */
+      > code {
+        font-feature-settings: normal;
+      }
     }
 
     .tm-label .code::before {

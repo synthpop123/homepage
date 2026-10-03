@@ -18,18 +18,24 @@ const HEIGHT = 630
 // build bundles this module, but `astro build` always runs from the root.
 const asset = (relative: string) => path.resolve(process.cwd(), relative)
 
-// Satori falls back across the font list per glyph, so Geist serves Latin
+// Satori falls back across the font list per glyph, so Inter serves Latin
 // while the Noto Sans SC subset (CJK + full-width punctuation) serves Chinese.
+// Satori applies no OpenType features, so the Inter files have the site's
+// --font-sans-features baked into their cmap, and use the Display cut,
+// since every card size is display size. Built from the Inter 4.1 release:
+//   pyftfeatfreeze -f ss01,ss03,ss04,cv11 -S -U "" InterDisplay-<w>.ttf f.ttf
+//   pyftsubset f.ttf --no-hinting --layout-features=calt,ccmp,kern,locl,mark,mkmk \
+//     --unicodes=U+20-7E,U+A0-17F,U+2C6-2DC,U+300-30C,U+2000-206F,U+20A0-20CF,U+2190-22FF
 const fonts = [
   {
-    name: "Geist",
-    data: readFileSync(asset("src/assets/fonts/og/Geist-Regular.ttf")),
+    name: "Inter",
+    data: readFileSync(asset("src/assets/fonts/og/InterDisplay-Regular.ttf")),
     weight: 400 as const,
     style: "normal" as const,
   },
   {
-    name: "Geist",
-    data: readFileSync(asset("src/assets/fonts/og/Geist-Medium.ttf")),
+    name: "Inter",
+    data: readFileSync(asset("src/assets/fonts/og/InterDisplay-Medium.ttf")),
     weight: 500 as const,
     style: "normal" as const,
   },
@@ -81,7 +87,7 @@ const frame = (...children: Node[]) =>
         padding: 72,
         backgroundColor: BG,
         color: FG,
-        fontFamily: '"Geist", "Noto Sans SC"',
+        fontFamily: '"Inter", "Noto Sans SC"',
       },
     },
     ...children,
