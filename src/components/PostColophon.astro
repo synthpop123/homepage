@@ -1,0 +1,68 @@
+---
+/**
+ * What closes a post, between its last paragraph and the site's footer:
+ * where it sits among the rest (the timeline, this post lit, its kin
+ * tinted), then one line of who wrote it, how long it is and what it
+ * may be used under.
+ */
+
+import PostStrip from "@/components/PostStrip.astro"
+import { LICENSE } from "@/consts"
+import { getSeries, postWords, timeline } from "@/lib/content"
+import { formatCompact } from "@/lib/utils"
+import { getEntries, type CollectionEntry } from "astro:content"
+
+type Props = {
+  chain: CollectionEntry<"blog">[]
+  /** The chrome's language, on a page in another one (a Chinese post). */
+  lang?: string
+}
+
+const { chain, lang } = Astro.props
+const [post] = chain
+const cells = timeline(await getSeries(), [post.id])
+const authors = await getEntries(post.data.authors)
+const credit = [
+  authors.map((author) => author.data.name).join(", "),
+  chain.some(({ data }) => data.ai) && "AI-assisted",
+  `${formatCompact(postWords(chain))} words`,
+].filter(Boolean)
+---
+
+<post-colophon lang={lang}>
+  <PostStrip cells={cells} />
+  <p>
+    <span>{credit.join(" · ")}</span>
+    <a href={LICENSE.href} rel="license noopener noreferrer" target="_blank">
+      {LICENSE.label}
+    </a>
+  </p>
+</post-colophon>
+
+<style>
+  post-colophon {
+    display: grid;
+    gap: var(--space-xs);
+    margin-block-start: var(--space-xl);
+
+    > p {
+      --underline: var(--border);
+
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: var(--space-3xs) var(--space-s);
+      padding-block-start: var(--space-2xs);
+      border-block-start: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-feature-settings: normal;
+      font-size: 0.75rem;
+      letter-spacing: 0;
+      color: var(--faint-foreground);
+
+      a {
+        color: var(--muted-foreground);
+      }
+    }
+  }
+</style>

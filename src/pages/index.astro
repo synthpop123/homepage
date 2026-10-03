@@ -2,15 +2,23 @@
 import MetaPage from "@/components/MetaPage.astro"
 import Now from "@/components/Now.astro"
 import PostList from "@/components/PostList.astro"
+import PostStrip from "@/components/PostStrip.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { API, NOW } from "@/consts"
-import { getPosts } from "@/lib/content"
+import { getSeries, timeline } from "@/lib/content"
 import { Image } from "astro:assets"
 // Written by scripts/prebuild.ts: cat-default.jpg, or the CAT_IMAGE override.
 import catImage from "@/assets/cat.jpg"
 
-const posts = (await getPosts()).slice(0, 3)
+const series = await getSeries()
+const posts = series.slice(0, 3).map(([post]) => post)
+// Beside Writing: every post as a cell, the three listed here lit.
+const cells = timeline(
+  series,
+  posts.map((post) => post.id),
+  { related: false },
+)
 
 const toc = [
   {
@@ -37,40 +45,53 @@ const toc = [
         (•‾⌣‾•)
       </etymology-span>
       <cat-figure>
-        <Image
-          src={catImage}
-          alt="A cat"
-          widths={[480, 800, 1280]}
-          sizes="(width >= 64rem) 35rem, 80vw"
-          priority
-        />
-        <button
-          id="cat-refresh"
-          data-icon-button
-          aria-label="Fetch a new cat"
-          title="Fetch a new cat"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
-            <polyline points="21 3 21 9 15 9"></polyline>
-          </svg>
-        </button>
+        <figure>
+          <Image
+            src={catImage}
+            alt="A cat"
+            widths={[480, 800, 1280]}
+            sizes="(width >= 64rem) 35rem, 80vw"
+            priority
+          />
+          <figcaption>
+            <span>cat no. <span id="cat-count">1</span></span>
+            <button
+              id="cat-refresh"
+              data-icon-button
+              aria-label="Fetch a new cat"
+              title="Fetch a new cat"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                <polyline points="21 3 21 9 15 9"></polyline>
+              </svg>
+            </button>
+          </figcaption>
+        </figure>
       </cat-figure>
     </dictionary-entry>
   </section>
   <section aria-labelledby="writing">
     <div class="home-head">
       <h2 id="writing">Writing</h2>
-      <a class="section-link" href="/blog">All posts</a>
+      <a
+        class="section-link"
+        href="/blog"
+        aria-label={`All ${series.length} posts`}
+      >
+        <PostStrip cells={cells} mini />
+        {series.length}
+        posts
+      </a>
     </div>
     <PostList posts={posts} />
   </section>
@@ -81,29 +102,68 @@ const toc = [
 </Layout>
 
 <script>
-  const figure = document.querySelector("cat-figure")
-  const img = figure?.querySelector("img")
+  const stack = document.querySelector("cat-figure")
+  const print = stack?.querySelector("figure")
+  const img = print?.querySelector("img")
+  const count = document.getElementById("cat-count")
   const button = document.getElementById(
     "cat-refresh",
   ) as HTMLButtonElement | null
 
-  if (figure && img && button) {
+  if (stack && print && img && count && button) {
+    let cats = 1
+    const still = matchMedia("(prefers-reduced-motion: reduce)")
+    // Each new print lands at its own slight angle, never square.
+    const tilt = () => {
+      const angle = (0.6 + Math.random() * 1.8).toFixed(1)
+      print.style.setProperty(
+        "--tilt",
+        `${Math.random() < 0.5 ? "-" : ""}${angle}deg`,
+      )
+    }
+
     button.addEventListener("click", () => {
       button.disabled = true
-      figure.setAttribute("data-loading", "")
-      figure.setAttribute("aria-busy", "true")
+      stack.setAttribute("data-loading", "")
+      stack.setAttribute("aria-busy", "true")
 
       const url = `https://cataas.com/cat?width=1280&t=${Date.now()}`
       const next = new Image()
       const done = () => {
         button.disabled = false
-        figure.removeAttribute("data-loading")
-        figure.removeAttribute("aria-busy")
+        stack.removeAttribute("data-loading")
+        stack.removeAttribute("aria-busy")
       }
-      next.onload = () => {
+      const swap = async () => {
         // Drop the build-time srcset so the freshly fetched cat wins.
         img.removeAttribute("srcset")
         img.src = url
+        await img.decode().catch(() => {})
+        count.textContent = String(++cats)
+        tilt()
+      }
+      next.onload = async () => {
+        if (still.matches) {
+          await swap()
+          return done()
+        }
+        // The top print is pulled off the stack; the new one settles
+        // where it lay.
+        const out = print.animate(
+          [{}, { translate: "45% -6%", rotate: "10deg", opacity: 0 }],
+          {
+            duration: 320,
+            easing: "cubic-bezier(0.4, 0, 1, 1)",
+            fill: "forwards",
+          },
+        )
+        await out.finished
+        await swap()
+        out.cancel()
+        print.animate(
+          [{ translate: "0 0.5rem", scale: 0.96, opacity: 0 }, {}],
+          { duration: 360, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+        )
         done()
       }
       next.onerror = done
@@ -130,36 +190,89 @@ const toc = [
       margin-block-end: var(--space-2xs);
     }
 
+    /* The cat as a print on a small stack of them: a photo on paper,
+       never quite square to the page, its number written underneath.
+       The photo keeps the 3:2 frame it always had. */
     cat-figure {
+      --paper: light-dark(#ffffff, #e6e6e3);
+      --ink: #6b6b66;
+
       position: relative;
+      isolation: isolate;
       display: block;
-      margin-block-start: var(--space-s);
-      inline-size: 80%;
+      inline-size: calc(80% + 1.5rem);
+      margin-block: var(--space-m) var(--space-xs);
+      margin-inline-start: 0.25rem;
+
+      /* The prints underneath, each at its own angle. */
+      &::before,
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 2px;
+        background-color: var(--paper);
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+      }
+
+      &::before {
+        rotate: 3.5deg;
+        translate: 0.35rem 0.15rem;
+      }
+
+      &::after {
+        rotate: -3deg;
+        translate: -0.25rem 0.3rem;
+      }
+
+      figure {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        padding: 0.75rem 0.75rem 0;
+        border-radius: 2px;
+        background-color: var(--paper);
+        box-shadow:
+          0 1px 2px rgb(0 0 0 / 0.08),
+          0 12px 32px -14px rgb(0 0 0 / 0.3);
+        rotate: var(--tilt, -1.5deg);
+        transition: rotate 0.5s cubic-bezier(0.2, 0, 0, 1);
+      }
 
       img {
+        display: block;
         inline-size: 100%;
         block-size: auto;
         aspect-ratio: 3 / 2;
         object-fit: cover;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
+        border-radius: 1px;
         transition: opacity 0.3s ease;
       }
 
+      figcaption {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        block-size: 2.5rem;
+        font-family: var(--font-mono);
+        font-feature-settings: normal;
+        font-size: 0.75rem;
+        letter-spacing: 0;
+        color: var(--ink);
+      }
+
       button {
-        position: absolute;
-        inset-block-end: var(--space-2xs);
-        inset-inline-end: var(--space-2xs);
-        color: var(--gray-1);
-        background-color: color-mix(in oklab, var(--gray-12) 55%, transparent);
-        backdrop-filter: blur(var(--blur-sm));
+        margin-inline-end: -0.5rem;
+        color: var(--ink);
 
         &:hover {
-          background-color: color-mix(
-            in oklab,
-            var(--gray-12) 75%,
-            transparent
-          );
+          background-color: rgb(0 0 0 / 0.06);
+        }
+      }
+
+      @media (hover: hover) {
+        figure:hover {
+          rotate: calc(var(--tilt, -1.5deg) * -0.4);
         }
       }
 
@@ -175,6 +288,13 @@ const toc = [
         }
       }
     }
+  }
+
+  /* All posts: the strip of every post, then how many there are. */
+  .home-head .section-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
   }
 
   section + section {

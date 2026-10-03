@@ -3,6 +3,7 @@ import path from "node:path"
 import { Resvg } from "@resvg/resvg-js"
 import satori from "satori"
 import { SITE } from "@/consts"
+import type { TimelineCell } from "@/lib/content"
 import { formatCompact, formatDate } from "@/lib/utils"
 
 // Colors mirror the light theme grays in src/styles/color.css.
@@ -101,10 +102,6 @@ const frame = (...children: Node[]) =>
     },
     ...children,
   )
-
-/** Where a post sits among the rest, oldest first: this one, one
- *  sharing a tag with it, or another. */
-export type TimelineCell = "current" | "related" | "other"
 
 const CELL_COLORS: Record<TimelineCell, string> = {
   current: ACCENT,

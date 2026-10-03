@@ -1,0 +1,161 @@
+---
+/**
+ * Every post on the site as a row of cells, oldest first — a row of the
+ * heatmap for the writing, and the same strip the OG cards end in. Lit
+ * cells are the post (or posts) at hand, tinted ones share a tag with
+ * them. At the end of a post each cell links to its post and names it
+ * under the strip on hover or focus; `mini` is the home page's small,
+ * unlinked version, which sits inside a link of its own.
+ */
+
+import { titleLang, type TimelineCell } from "@/lib/content"
+import { formatDate } from "@/lib/utils"
+import type { CollectionEntry } from "astro:content"
+
+type Props = {
+  cells: { post: CollectionEntry<"blog">; cell: TimelineCell }[]
+  mini?: boolean
+}
+
+const { cells, mini = false } = Astro.props
+const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
+---
+
+{mini ? (
+    <post-strip data-mini aria-hidden="true">
+      {cells.map(({ cell }, i) => (
+        <i data-cell={cell} style={`--i: ${cells.length - i}`} />
+      ))}
+    </post-strip>
+  ) : (
+    <post-strip>
+      <ol>
+        {cells.map(({ post, cell }) => (
+          <li>
+            <a
+              href={`/blog/${post.id}`}
+              data-cell={cell}
+              aria-label={`${post.data.title}, ${formatDate(post.data.date)}`}
+              aria-current={cell === "current" ? "page" : undefined}
+            >
+              <span aria-hidden="true">
+                <span lang={titleLang(post)}>{post.data.title}</span>
+                <time>{formatDate(post.data.date)}</time>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ol>
+      <p aria-hidden="true">
+        <span>{year(0)}</span>
+        <span>{year(-1)}</span>
+      </p>
+    </post-strip>
+  )}
+
+<style>
+  post-strip {
+    position: relative;
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  [data-cell] {
+    --fill: var(--heat-0);
+
+    &[data-cell="related"] {
+      --fill: var(--heat-1);
+    }
+
+    &[data-cell="current"] {
+      --fill: var(--accent-fill);
+    }
+  }
+
+  ol {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      flex: 1;
+    }
+
+    /* The cell is drawn by ::before, so growing it on hover leaves the
+       link itself untransformed: its title is placed against the strip,
+       not against a transformed box. */
+    a {
+      display: block;
+      block-size: 0.75rem;
+
+      &::before {
+        content: "";
+        display: block;
+        block-size: 100%;
+        border-radius: 3px;
+        background-color: var(--fill);
+        transition: scale 0.15s ease;
+      }
+
+      &:is(:hover, :focus-visible)::before {
+        scale: 1 1.5;
+      }
+    }
+  }
+
+  /* The years at the two ends, and between them, while a cell is
+     hovered or focused, the post it stands for. */
+  p {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+    color: var(--faint-foreground);
+  }
+
+  a > span {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: 3rem;
+    overflow: hidden;
+    font-size: var(--step--1);
+    line-height: 1.1;
+    color: var(--foreground);
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    visibility: hidden;
+
+    time {
+      margin-inline-start: 0.5em;
+      color: var(--faint-foreground);
+    }
+  }
+
+  a:is(:hover, :focus-visible) > span {
+    visibility: visible;
+  }
+
+  /* Home: small squares inside the "all posts" link; hovering the link
+     tints the posts it leads to, newest first. */
+  post-strip[data-mini] {
+    display: inline-flex;
+    gap: 2px;
+
+    i {
+      inline-size: 7px;
+      block-size: 7px;
+      border-radius: 1.5px;
+      background-color: var(--fill);
+      transition: background-color 0.25s ease calc(var(--i) * 25ms);
+    }
+  }
+
+  :global(a:hover) > post-strip[data-mini] i[data-cell="other"] {
+    --fill: var(--heat-1);
+  }
+</style>

@@ -60,6 +60,38 @@ export async function getSeries(): Promise<CollectionEntry<"blog">[][]> {
   return posts.map((post) => [post, ...(series.get(post.id) ?? [])])
 }
 
+/** Where a post sits among the rest: lit, sharing a tag with what is
+ *  lit, or another. */
+export type TimelineCell = "current" | "related" | "other"
+
+/**
+ * Every published post as one cell of a timeline, oldest first: the
+ * strip at the end of a post, on its OG card and beside the home page's
+ * Writing. Posts whose ids are in `lit` are "current"; with `related`,
+ * those sharing a tag with them (across their series) are "related".
+ */
+export function timeline(
+  series: CollectionEntry<"blog">[][],
+  lit: string[],
+  { related = true } = {},
+): { post: CollectionEntry<"blog">; cell: TimelineCell }[] {
+  const tagsOf = (chain: CollectionEntry<"blog">[]) =>
+    new Set(chain.flatMap(({ data }) => data.tags ?? []))
+  const litTags = new Set(
+    series
+      .filter(([post]) => lit.includes(post.id))
+      .flatMap((chain) => [...tagsOf(chain)]),
+  )
+  return series.toReversed().map((chain) => ({
+    post: chain[0],
+    cell: lit.includes(chain[0].id)
+      ? "current"
+      : related && !tagsOf(chain).isDisjointFrom(litTags)
+        ? "related"
+        : "other",
+  }))
+}
+
 /**
  * Colocated assets a body links to as `./assets/…`. A `.md` served at
  * `/blog/<id>.md` is one directory shallower than its source, so those

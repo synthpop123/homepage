@@ -1,25 +1,20 @@
-import { getSeries, postWords } from "@/lib/content"
-import { renderPostCard, renderSiteCard, type TimelineCell } from "@/lib/og"
+import {
+  getSeries,
+  postWords,
+  timeline,
+  type TimelineCell,
+} from "@/lib/content"
+import { renderPostCard, renderSiteCard } from "@/lib/og"
 import type { APIRoute } from "astro"
 import type { CollectionEntry } from "astro:content"
 
 // Build-time OG cards: /og/site.png for pages, /og/blog/<id>.png for posts
 // without a hand-made frontmatter image (those keep their own banner).
-// Every card carries the site's posts as a timeline, oldest first.
+// Every card carries the site's posts as a timeline, oldest first: on a
+// post's card the post is lit, on the site's every post faintly.
 export async function getStaticPaths() {
-  const series = (await getSeries()).toReversed()
-  const tagsOf = (chain: CollectionEntry<"blog">[]) =>
-    new Set(chain.flatMap(({ data }) => data.tags ?? []))
-  const timeline = (chain: CollectionEntry<"blog">[]): TimelineCell[] => {
-    const tags = tagsOf(chain)
-    return series.map((other) =>
-      other === chain
-        ? "current"
-        : tagsOf(other).isDisjointFrom(tags)
-          ? "other"
-          : "related",
-    )
-  }
+  const series = await getSeries()
+  const cells = (lit: string[]) => timeline(series, lit).map(({ cell }) => cell)
 
   return [
     {
@@ -34,7 +29,7 @@ export async function getStaticPaths() {
           props: {
             post,
             words: postWords(chain, post),
-            timeline: timeline(chain),
+            timeline: cells([chain[0].id]),
           },
         })),
     ),

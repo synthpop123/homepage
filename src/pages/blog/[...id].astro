@@ -8,6 +8,7 @@ import PostTags from "@/components/PostTags.astro"
 import Mermaid from "@/components/Mermaid.astro"
 import MetaPost from "@/components/MetaPost.astro"
 import PostActions from "@/components/PostActions.astro"
+import PostColophon from "@/components/PostColophon.astro"
 import ScrollToTop from "@/components/ScrollToTop.astro"
 import SeriesReader from "@/components/SeriesReader.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
@@ -122,6 +123,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
         </prose-content>
       </article>
     ))}
+  <PostColophon chain={chain} lang={chromeLang} />
   {chain.length > 1 && <SeriesReader />}
   {hasMermaid && <Mermaid />}
   <Lightbox />

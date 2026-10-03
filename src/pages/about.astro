@@ -2,10 +2,14 @@
 import AuthorCard from "@/components/AuthorCard.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
+import { API, LICENSE } from "@/consts"
 import Layout from "@/layouts/Layout.astro"
 import { countEntryWords, getSeries, getTags } from "@/lib/content"
-import { formatCompact } from "@/lib/utils"
+import { formatCompact, formatDate } from "@/lib/utils"
+import { calendarDay, dayInstant } from "@/lib/client/feed"
 import { getEntry } from "astro:content"
+
+const ext = { target: "_blank", rel: "noopener noreferrer" }
 
 const author = await getEntry("authors", "lkw123")
 if (!author) throw new Error("Missing author: lkw123")
@@ -82,92 +86,81 @@ const toc = [
   </section>
   <section>
     <h2 id="site">About this site</h2>
-    <prose-content>
-      <ul>
-        <li>
-          This site is built with
-          <a
-            href="https://astro.build"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Astro</a
-          >
-          and served as static assets from
-          <a
-            href="https://workers.cloudflare.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Cloudflare Workers</a
-          >.
-        </li>
-        <li>
-          There is no UI or CSS framework, just hand-written CSS on
-          <a href="https://utopia.fyi" target="_blank" rel="noopener noreferrer"
-            >Utopia</a
-          >
+    <dl class="colophon">
+      <div>
+        <dt>Built with</dt>
+        <dd>
+          <a href="https://astro.build" {...ext}>Astro</a>. No UI or CSS
+          framework, just hand-written CSS on
+          <a href="https://utopia.fyi" {...ext}>Utopia</a>
           fluid scales.
-        </li>
-        <li>
-          Type is set in
-          <a
-            href="https://rsms.me/inter/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Inter</a
-          >
-          and
-          <a
-            href="https://vercel.com/font"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Geist Mono</a
-          >.
-        </li>
-        <li>
-          Markdown is compiled by
-          <a
-            href="https://github.com/bruits/satteri"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Sätteri</a
-          >, with math rendered to MathML by
-          <a href="https://temml.org" target="_blank" rel="noopener noreferrer"
-            >Temml</a
-          >
-          and code blocks highlighted by
-          <a
-            href="https://expressive-code.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Expressive Code</a
-          >.
-        </li>
-        <li>
-          Analytics are cookie-less, self-hosted
-          <a href="https://umami.is" target="_blank" rel="noopener noreferrer"
-            >Umami</a
-          >.
-        </li>
-        <li>
-          Credits to
-          <a
-            href="https://github.com/jktrn/astro-erudite"
-            target="_blank"
-            rel="noopener noreferrer"
+        </dd>
+      </div>
+      <div>
+        <dt>Set in</dt>
+        <dd>
+          <type-specimen>
+            <span>Aa Gg 369 “a”</span>
+            <small
+              ><a href="https://rsms.me/inter/" {...ext}>Inter</a>, with open
+              digits and a single-storey a</small
+            >
+          </type-specimen>
+          <type-specimen data-mono>
+            <span>{"{ => }"} 0O 1lI</span>
+            <small
+              ><a href="https://vercel.com/font" {...ext}>Geist Mono</a>, for
+              code and figures</small
+            >
+          </type-specimen>
+        </dd>
+      </div>
+      <div>
+        <dt>Written in</dt>
+        <dd>
+          Markdown, compiled by
+          <a href="https://github.com/bruits/satteri" {...ext}>Sätteri</a>;
+          maths by <a href="https://temml.org" {...ext}>Temml</a>, code by
+          <a href="https://expressive-code.com" {...ext}>Expressive Code</a>.
+        </dd>
+      </div>
+      <div>
+        <dt>Served from</dt>
+        <dd>
+          <a href="https://workers.cloudflare.com" {...ext}
+            >Cloudflare Workers</a
+          >, as static files. The live sections read
+          <code>{new URL(API).host}</code>.
+        </dd>
+      </div>
+      <div>
+        <dt>Counted by</dt>
+        <dd>
+          <a href="https://umami.is" {...ext}>Umami</a>, self-hosted, no
+          cookies.
+        </dd>
+      </div>
+      <div>
+        <dt>Started from</dt>
+        <dd>
+          <a href="https://github.com/jktrn/astro-erudite" {...ext}
             >astro-erudite v2</a
           >. Thanks! &hearts;
-        </li>
-        <li>
-          All contents in this blog are licensed under
+        </dd>
+      </div>
+      <div>
+        <dt>Licensed</dt>
+        <dd>
           <a
-            href="https://creativecommons.org/licenses/by-nc-sa/4.0"
+            href={LICENSE.href}
+            rel="license noopener noreferrer"
             target="_blank"
-            rel="noopener noreferrer"
-            >CC BY-NC-SA 4.0</a
-          >.
-        </li>
-      </ul>
-    </prose-content>
+            >{LICENSE.label}</a
+          >: share and adapt with credit, not for profit, under the same terms.
+        </dd>
+      </div>
+    </dl>
+    <p class="built">Last built {formatDate(dayInstant(calendarDay()))}</p>
   </section>
 </Layout>
 
@@ -236,5 +229,108 @@ const toc = [
   .stat .label {
     font-size: var(--step--1);
     color: var(--muted-foreground);
+  }
+
+  /* About this site as a book's colophon: a small label, then the line
+     it introduces, row under dotted row. The type row sets its own
+     specimens. */
+  .colophon {
+    --underline: var(--muted-foreground);
+
+    display: grid;
+    margin: 0;
+
+    > div {
+      display: grid;
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      gap: var(--space-s);
+      align-items: baseline;
+      padding-block: var(--space-2xs);
+      border-block-start: 1px dotted var(--border);
+
+      &:last-child {
+        border-block-end: 1px dotted var(--border);
+      }
+
+      @media (width < 40rem) {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3xs);
+      }
+    }
+
+    dt {
+      font-family: var(--font-mono);
+      font-feature-settings: normal;
+      font-size: 0.6875rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint-foreground);
+    }
+
+    dd {
+      margin: 0;
+      color: var(--prose-foreground);
+      line-height: calc(var(--leading-offset) + 1em);
+
+      a {
+        color: var(--foreground);
+      }
+
+      code {
+        font-family: var(--font-mono);
+        font-feature-settings: normal;
+        font-size: 0.875em;
+        letter-spacing: 0;
+      }
+    }
+  }
+
+  type-specimen {
+    display: grid;
+
+    & + & {
+      margin-block-start: var(--space-2xs);
+    }
+
+    > span {
+      font-size: var(--step-3);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      color: var(--foreground);
+    }
+
+    &[data-mono] > span {
+      font-family: var(--font-mono);
+      font-feature-settings: "ss01", "ss02", "ss03", "ss04";
+      font-size: var(--step-1);
+      font-weight: var(--font-weight-normal);
+      letter-spacing: 0;
+    }
+
+    small {
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
+  }
+
+  .built {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-block-start: var(--space-xs);
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+    color: var(--faint-foreground);
+
+    &::before {
+      content: "";
+      inline-size: 0.375rem;
+      block-size: 0.375rem;
+      border-radius: 1.5px;
+      background-color: var(--accent-fill);
+    }
   }
 </style>

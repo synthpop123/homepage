@@ -110,5 +110,6 @@ Every live section reads **cf-workers-api** (sibling repo `../cf-workers-api`), 
   - Decoded but deliberately not drawn: `extraUsage`, `mcpServers`.
   - Styles: one file per renderer module, all nested under `tokens-dashboard` (runtime DOM), **import order matters** — `shared.css` last, since its skeleton rules must win ties. Skeletons here are sized to the real payload (the quota card is above the fold).
   - AI brand icons are Lobe Icons mono SVGs in `src/assets/icons/ai/` (`aiIcon()`), `<title>` stripped — a nested `<title>` would shadow the row's own tooltip.
-- **`/about`**: build-time blog stats (`countEntryWords`) in `about.astro`'s frontmatter.
-- **OG cards** (`og.ts`) end in a timeline strip of every post, oldest first: the post lit in the accent, posts sharing a tag tinted.
+- **`/about`**: build-time blog stats (`countEntryWords`) in `about.astro`'s frontmatter; About this site is a colophon (`<dl>`, dotted rows, Inter and Geist Mono specimens, the build day).
+- **Timeline**: `timeline(series, lit, { related })` in `content.ts` marks every post, oldest first, as lit, sharing a tag with the lit ones, or other. OG cards (`og.ts`) end in it; `PostStrip.astro` draws it at a post's end (inside `PostColophon.astro`, with the credit line and `LICENSE` from `consts.ts`; each cell links to its post and names it on hover) and, `mini`, inside the home page's all-posts link (the listed posts lit).
+- **Home cat** is a print on a small stack (`cat-figure`): a 3:2 photo on paper at a slight random tilt, numbered; a refresh pulls the top print off and settles the new one.

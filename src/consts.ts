@@ -29,6 +29,12 @@ export const NAVIGATION: { href: string; label: string; wideOnly?: boolean }[] =
     { href: "/about", label: "About" },
   ]
 
+/** What the writing here may be used under: About and every post's end. */
+export const LICENSE = {
+  label: "CC BY-NC-SA 4.0",
+  href: "https://creativecommons.org/licenses/by-nc-sa/4.0",
+} as const
+
 export const SOCIALS: { href: string; label: string; icon: SvgComponent }[] = [
   { href: "https://github.com/synthpop123", label: "GitHub", icon: GitHub },
   { href: "https://x.com/whoamamamiii", label: "X", icon: X },
