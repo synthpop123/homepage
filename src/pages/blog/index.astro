@@ -2,7 +2,6 @@
 import ClaudeIcon from "@/assets/icons/ai/claude.svg"
 import MetaPage from "@/components/MetaPage.astro"
 import PageTitle from "@/components/PageTitle.astro"
-import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getSeries, postWords, titleLang } from "@/lib/content"
 import { formatCompact, formatMonthDay } from "@/lib/utils"
@@ -19,21 +18,10 @@ const longest = Math.max(...entries.map(({ words }) => words), 1)
 const years = Map.groupBy(entries, ({ post }) =>
   post.data.date.getUTCFullYear(),
 )
-const toc = [
-  {
-    label: "Blog",
-    headings: [...years.keys()].map((year) => ({
-      depth: 2,
-      slug: `y${year}`,
-      text: String(year),
-    })),
-  },
-]
 ---
 
 <Layout>
   <MetaPage slot="head" title="Blog" />
-  <TableOfContents slot="toc" title="Blog" sections={toc} />
   <PageTitle>Blog</PageTitle>
   {[...years].map(([year, posts]) => (
     <section aria-labelledby={`y${year}`}>
@@ -95,11 +83,7 @@ const toc = [
     font-variant-numeric: tabular-nums;
 
     @media (width < 64rem) {
-      inset-block-start: calc(
-        var(--bar-nav-height) +
-        var(--bar-toc-height) +
-        var(--space-2xs)
-      );
+      inset-block-start: calc(var(--bar-nav-height) + var(--space-2xs));
     }
 
     @media (width < 40rem) {

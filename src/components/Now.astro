@@ -325,6 +325,9 @@ const { endpoint = NOW.endpoint } = Astro.props
           inline-size: 100%;
           block-size: 100%;
           object-fit: cover;
+          transition:
+            scale 0.6s cubic-bezier(0.2, 0, 0, 1),
+            filter 0.3s ease;
         }
 
         /* Keep the poster's original colours on a light page. Only the
@@ -342,8 +345,21 @@ const { endpoint = NOW.endpoint } = Astro.props
         }
       }
 
+      /* Hover leans in: the poster pushes in a touch and its colour
+         comes up — no veil on a light page, so nothing washes it out —
+         and the dark scheme's veil lifts. */
       @media (hover: hover) {
         .now-link[href]:hover .now-art {
+          img {
+            filter: saturate(1.12) contrast(1.04);
+          }
+
+          @media (prefers-reduced-motion: no-preference) {
+            img {
+              scale: 1.04;
+            }
+          }
+
           &::after {
             background-color: light-dark(
               transparent,
