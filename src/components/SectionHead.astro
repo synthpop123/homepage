@@ -2,32 +2,23 @@
 /**
  * A section heading with, at the far end of its row, the one link the
  * section has: where its data comes from (external, with an arrow) or
- * where the rest of it lives. A live section with a daily series also
- * has a sparkline of its last month beside the heading (`spark`), drawn
- * empty here and filled by the section's feed (`drawSpark`).
+ * where the rest of it lives.
  */
 
-import { SPARK_DAYS } from "@/lib/client/spark"
 import "@/styles/feed.css"
 
 type Props = {
   id: string
   label: string
   source?: { href: string; label: string }
-  spark?: boolean
 }
 
-const { id, label, source, spark = false } = Astro.props
+const { id, label, source } = Astro.props
 const external = source ? /^https?:/.test(source.href) : false
 ---
 
 <div class="section-head">
   <h2 id={id}>{label}</h2>
-  {spark && (
-      <section-spark data-spark={id} data-skeleton aria-hidden="true">
-        {Array.from({ length: SPARK_DAYS }, () => <i />)}
-      </section-spark>
-    )}
   {source && (
       <a
         class="section-link"
@@ -47,37 +38,6 @@ const external = source ? /^https?:/.test(source.href) : false
     justify-content: space-between;
     gap: var(--space-s);
     margin-block-end: var(--space-s);
-  }
-
-  /* Thin bars in the accent, one per day, the busiest full height; a
-     day without any is a dot on the baseline. They grow in once, when
-     the data lands. */
-  section-spark {
-    display: flex;
-    align-items: flex-end;
-    gap: 1px;
-    block-size: 0.875rem;
-    margin-inline-end: auto;
-    cursor: default;
-
-    i {
-      inline-size: 2px;
-      block-size: max(2px, calc(var(--share, 0) * 100%));
-      border-radius: 1px;
-      background-color: var(--accent-fill);
-
-      &[data-zero] {
-        background-color: var(--heat-0);
-      }
-
-      @media (prefers-reduced-motion: no-preference) {
-        transition: block-size 0.5s cubic-bezier(0.2, 0, 0, 1);
-      }
-    }
-
-    &[data-skeleton] i {
-      background-color: var(--heat-0);
-    }
   }
 
   h2 {

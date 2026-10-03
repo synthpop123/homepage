@@ -228,15 +228,6 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     overflow-wrap: anywhere;
   }
 
-  /* A note that is only words is set a step larger, so the thread
-     alternates between something to read and something to look at. */
-  memos-feed
-  :global(
-    .memo-main:not(:has(.memo-media, .memo-audio, .memo-cw)) > .memo-content
-  ) {
-    font-size: var(--step-1);
-  }
-
   memos-feed :global(.invisible) {
     display: none;
   }

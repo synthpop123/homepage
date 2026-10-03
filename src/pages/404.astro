@@ -10,11 +10,9 @@ const posts = (await getPosts()).slice(0, 5)
 
 <Layout crumbs={[{ label: "404", href: "/404" }]}>
   <MetaPage slot="head" title="404" noindex />
-  <unlit-mark aria-hidden="true"><i></i><i></i><i></i><i></i></unlit-mark>
   <PageTitle>Page not found</PageTitle>
   <p>
-    No square has lit up here yet. Nothing lives at this address: it may have
-    moved, or never existed. Try
+    Nothing lives at this address: it may have moved, or never existed. Try
     <a href="/blog">the blog</a>
     or <a href="/">the home page</a>, or one of the latest posts.
   </p>
@@ -22,29 +20,13 @@ const posts = (await getPosts()).slice(0, 5)
 </Layout>
 
 <style>
-  /* The logo at size with all four cells dark: a day with no activity,
-     drawn in the heatmap's empty step. */
-  unlit-mark {
-    --cell: 2.25rem;
-
-    display: grid;
-    grid-template-columns: repeat(2, var(--cell));
-    gap: calc(var(--cell) * 0.25);
-    margin-block-end: var(--space-m);
-
-    i {
-      aspect-ratio: 1;
-      border-radius: calc(var(--cell) * 0.23);
-      background-color: var(--heat-0);
-    }
-  }
-
   p {
     max-inline-size: var(--measure, 40rem);
     margin-block: 0 var(--space-m);
     color: var(--muted-foreground);
 
     a {
+      --underline: var(--muted-foreground);
       color: var(--foreground);
     }
   }
