@@ -2,15 +2,14 @@
 /**
  * What closes a post, between its last paragraph and the site's footer:
  * where it sits among the rest (the timeline, this post lit, its kin
- * tinted), then one line of who wrote it, how long it is and what it
- * may be used under.
+ * tinted), then its address, which copies on click, and what it may be
+ * used under.
  */
 
 import PostStrip from "@/components/PostStrip.astro"
 import { LICENSE } from "@/consts"
-import { getSeries, postWords, timeline } from "@/lib/content"
-import { formatCompact } from "@/lib/utils"
-import { getEntries, type CollectionEntry } from "astro:content"
+import { getSeries, timeline } from "@/lib/content"
+import type { CollectionEntry } from "astro:content"
 
 type Props = {
   chain: CollectionEntry<"blog">[]
@@ -21,18 +20,16 @@ type Props = {
 const { chain, lang } = Astro.props
 const [post] = chain
 const cells = timeline(await getSeries(), [post.id])
-const authors = await getEntries(post.data.authors)
-const credit = [
-  authors.map((author) => author.data.name).join(", "),
-  chain.some(({ data }) => data.ai) && "AI-assisted",
-  `${formatCompact(postWords(chain))} words`,
-].filter(Boolean)
+const url = new URL(`/blog/${post.id}`, Astro.site)
 ---
 
 <post-colophon lang={lang}>
   <PostStrip cells={cells} />
   <p>
-    <span>{credit.join(" · ")}</span>
+    <button type="button" data-url={url.href} title="Copy link">
+      {url.host}{url.pathname}
+    </button>
+    <span class="sr" aria-live="polite"></span>
     <a href={LICENSE.href} rel="license noopener noreferrer" target="_blank">
       {LICENSE.label}
     </a>
@@ -46,8 +43,6 @@ const credit = [
     margin-block-start: var(--space-xl);
 
     > p {
-      --underline: var(--border);
-
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
@@ -59,10 +54,46 @@ const credit = [
       font-size: 0.75rem;
       letter-spacing: 0;
       color: var(--faint-foreground);
+    }
 
-      a {
-        color: var(--muted-foreground);
+    :is(button, a) {
+      color: var(--faint-foreground);
+      text-decoration-line: none;
+      transition: color 0.15s ease;
+
+      &:hover {
+        color: var(--foreground);
+      }
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+
+      /* The address says it was copied, in the accent, then goes back. */
+      &[data-state]::after {
+        content: " · Copied";
+        color: var(--accent);
+      }
+
+      &[data-state="error"]::after {
+        content: " · Copy failed";
+        color: var(--destructive);
       }
     }
   }
 </style>
+
+<script>
+  import { copyText } from "@/lib/client/copy"
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    "post-colophon button[data-url]",
+  )) {
+    const status = button.nextElementSibling
+    const url = button.dataset.url
+    if (status && url) {
+      button.addEventListener("click", () => copyText(button, status, url))
+    }
+  }
+</script>

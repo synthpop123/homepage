@@ -194,8 +194,11 @@ const toc = [
        never quite square to the page, its number written underneath.
        The photo keeps the 3:2 frame it always had. */
     cat-figure {
-      --paper: light-dark(#ffffff, #e6e6e3);
-      --ink: #6b6b66;
+      /* White paper on a light page; on a dark one a grey print, so it
+         sits in the dark instead of glowing. */
+      --paper: light-dark(#ffffff, var(--gray-4));
+      /* Shadows vanish on a dark page; a hairline keeps each edge. */
+      --paper-edge: light-dark(transparent, var(--gray-6));
 
       position: relative;
       isolation: isolate;
@@ -212,7 +215,9 @@ const toc = [
         inset: 0;
         border-radius: 2px;
         background-color: var(--paper);
-        box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+        box-shadow:
+          0 0 0 1px var(--paper-edge),
+          0 1px 3px rgb(0 0 0 / 0.12);
       }
 
       &::before {
@@ -233,6 +238,7 @@ const toc = [
         border-radius: 2px;
         background-color: var(--paper);
         box-shadow:
+          0 0 0 1px var(--paper-edge),
           0 1px 2px rgb(0 0 0 / 0.08),
           0 12px 32px -14px rgb(0 0 0 / 0.3);
         rotate: var(--tilt, -1.5deg);
@@ -258,15 +264,19 @@ const toc = [
         font-feature-settings: normal;
         font-size: 0.75rem;
         letter-spacing: 0;
-        color: var(--ink);
+        color: var(--muted-foreground);
       }
 
       button {
         margin-inline-end: -0.5rem;
-        color: var(--ink);
+        color: var(--muted-foreground);
 
         &:hover {
-          background-color: rgb(0 0 0 / 0.06);
+          background-color: color-mix(
+            in oklab,
+            var(--foreground) 8%,
+            transparent
+          );
         }
       }
 
