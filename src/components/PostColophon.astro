@@ -2,8 +2,8 @@
 /**
  * What closes a post, between its last paragraph and the site's footer:
  * where it sits among the rest (the timeline, this post lit, its kin
- * tinted), then its address, which copies on click, and what it may be
- * used under.
+ * tinted), its address between the timeline's years (copied on click),
+ * and what it may be used under, centred as a book's last line.
  */
 
 import PostStrip from "@/components/PostStrip.astro"
@@ -24,12 +24,13 @@ const url = new URL(`/blog/${post.id}`, Astro.site)
 ---
 
 <post-colophon lang={lang}>
-  <PostStrip cells={cells} />
-  <p>
+  <PostStrip cells={cells}>
     <button type="button" data-url={url.href} title="Copy link">
-      {url.host}{url.pathname}
+      <span>{url.host}/blog/</span><span>{post.id}</span>
     </button>
     <span class="sr" aria-live="polite"></span>
+  </PostStrip>
+  <p>
     <a href={LICENSE.href} rel="license noopener noreferrer" target="_blank">
       {LICENSE.label}
     </a>
@@ -43,20 +44,15 @@ const url = new URL(`/blog/${post.id}`, Astro.site)
     margin-block-start: var(--space-xl);
 
     > p {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: var(--space-3xs) var(--space-s);
-      padding-block-start: var(--space-2xs);
-      border-block-start: 1px solid var(--border);
+      margin: 0;
       font-family: var(--font-mono);
       font-feature-settings: normal;
-      font-size: 0.75rem;
-      letter-spacing: 0;
-      color: var(--faint-foreground);
+      font-size: 0.625rem;
+      letter-spacing: 0.12em;
+      text-align: center;
     }
 
-    :is(button, a) {
+    a {
       color: var(--faint-foreground);
       text-decoration-line: none;
       transition: color 0.15s ease;
@@ -65,20 +61,68 @@ const url = new URL(`/blog/${post.id}`, Astro.site)
         color: var(--foreground);
       }
     }
+  }
 
-    button {
-      font: inherit;
-      cursor: pointer;
+  /* The address: the host faint, the post's own slug in full, between
+     two short rules that reach out on hover and take the accent once
+     it is copied. */
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    font: inherit;
+    font-size: 0.75rem;
+    color: var(--foreground);
+    cursor: pointer;
 
-      /* The address says it was copied, in the accent, then goes back. */
-      &[data-state]::after {
-        content: " · Copied";
-        color: var(--accent);
+    /* On a narrow strip the host gives way first, never the slug. */
+    > span:first-child {
+      min-inline-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--faint-foreground);
+    }
+
+    > span + span {
+      flex: none;
+    }
+
+    &::before,
+    &::after {
+      content: "";
+      flex: none;
+      inline-size: 1.5rem;
+      block-size: 1px;
+      background-color: var(--border);
+      transition:
+        inline-size 0.2s ease,
+        background-color 0.2s ease;
+    }
+
+    &:hover::before,
+    &:hover::after {
+      inline-size: 2.25rem;
+      background-color: var(--gray-8);
+    }
+
+    &[data-state] {
+      color: var(--accent);
+
+      &::before,
+      &::after {
+        background-color: var(--accent-fill);
       }
+    }
 
-      &[data-state="error"]::after {
-        content: " · Copy failed";
-        color: var(--destructive);
+    &[data-state="error"] {
+      color: var(--destructive);
+
+      &::before,
+      &::after {
+        background-color: var(--destructive);
       }
     }
   }

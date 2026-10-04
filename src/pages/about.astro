@@ -2,10 +2,10 @@
 import AuthorCard from "@/components/AuthorCard.astro"
 import MetaPage from "@/components/MetaPage.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
-import { API, LICENSE } from "@/consts"
+import { API } from "@/consts"
 import Layout from "@/layouts/Layout.astro"
 import { countEntryWords, getSeries, getTags } from "@/lib/content"
-import { formatCompact, formatDate } from "@/lib/utils"
+import { formatCompact } from "@/lib/utils"
 import { calendarDay, dayInstant } from "@/lib/client/feed"
 import { getEntry } from "astro:content"
 
@@ -24,6 +24,14 @@ const words = countEntryWords(entries)
 const sinceYear = new Date(
   Math.min(...posts.map((post) => post.data.date.getTime())),
 ).getUTCFullYear()
+
+// The build day, Asia/Shanghai, inked as a date stamp: "04 Oct 2026",
+// set in capitals by CSS.
+const builtDay = calendarDay()
+const builtStamp = `${builtDay.slice(8)} ${dayInstant(builtDay).toLocaleString(
+  "en-US",
+  { month: "short", timeZone: "UTC" },
+)} ${builtDay.slice(0, 4)}`
 
 const stats = [
   { label: "Posts", value: String(posts.length) },
@@ -98,12 +106,12 @@ const toc = [
       </div>
       <div>
         <dt>Set in</dt>
-        <dd>
+        <dd class="specimens">
           <type-specimen>
             <span>Aa Gg 369 “a”</span>
             <small
-              ><a href="https://rsms.me/inter/" {...ext}>Inter</a>, with open
-              digits and a single-storey a</small
+              ><a href="https://rsms.me/inter/" {...ext}>Inter</a>, open digits,
+              single-storey a</small
             >
           </type-specimen>
           <type-specimen data-mono>
@@ -148,19 +156,13 @@ const toc = [
           >. Thanks! &hearts;
         </dd>
       </div>
-      <div>
-        <dt>Licensed</dt>
-        <dd>
-          <a
-            href={LICENSE.href}
-            rel="license noopener noreferrer"
-            target="_blank"
-            >{LICENSE.label}</a
-          >: share and adapt with credit, not for profit, under the same terms.
-        </dd>
-      </div>
     </dl>
-    <p class="built">Last built {formatDate(dayInstant(calendarDay()))}</p>
+    <p class="built">
+      <span
+        ><small>Built</small>
+        <time datetime={builtDay}>{builtStamp}</time></span
+      >
+    </p>
   </section>
 </Layout>
 
@@ -285,25 +287,45 @@ const toc = [
     }
   }
 
+  /* The two faces as a pair, side by side at one size, split by the
+     colophon's own dotted rule; stacked on a phone. */
+  .colophon .specimens {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    @media (width < 30rem) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   type-specimen {
     display: grid;
+    align-content: start;
+    padding-inline-end: var(--space-s);
 
     & + & {
-      margin-block-start: var(--space-2xs);
+      padding-inline: var(--space-s) 0;
+      border-inline-start: 1px dotted var(--border);
+
+      @media (width < 30rem) {
+        margin-block-start: var(--space-2xs);
+        padding: var(--space-2xs) 0 0;
+        border-inline-start: 0;
+        border-block-start: 1px dotted var(--border);
+      }
     }
 
     > span {
-      font-size: var(--step-3);
+      font-size: var(--step-1);
       font-weight: var(--font-weight-medium);
-      line-height: 1.15;
-      letter-spacing: -0.03em;
+      line-height: 1.35;
+      letter-spacing: -0.012em;
       color: var(--foreground);
     }
 
     &[data-mono] > span {
       font-family: var(--font-mono);
       font-feature-settings: "ss01", "ss02", "ss03", "ss04";
-      font-size: var(--step-1);
       font-weight: var(--font-weight-normal);
       letter-spacing: 0;
     }
@@ -314,23 +336,42 @@ const toc = [
     }
   }
 
+  /* The build day as a library date stamp, inked over the last row: a
+     double rule in the accent, tilted, its ink broken up by a noise
+     mask. */
   .built {
     display: flex;
-    align-items: center;
-    gap: 0.5em;
-    margin-block-start: var(--space-xs);
-    font-family: var(--font-mono);
-    font-feature-settings: normal;
-    font-size: 0.6875rem;
-    letter-spacing: 0;
-    color: var(--faint-foreground);
+    justify-content: flex-end;
+    margin-block-start: -0.9rem;
+    padding-inline-end: var(--space-s);
 
-    &::before {
-      content: "";
-      inline-size: 0.375rem;
-      block-size: 0.375rem;
-      border-radius: 1.5px;
-      background-color: var(--accent-fill);
+    > span {
+      display: inline-grid;
+      justify-items: center;
+      gap: 0.1rem;
+      padding: 0.4rem 0.85rem 0.45rem;
+      border: 3px double var(--accent);
+      border-radius: 7px;
+      font-family: var(--font-mono);
+      font-feature-settings: normal;
+      letter-spacing: 0;
+      line-height: 1.1;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: 0.88;
+      rotate: -4deg;
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3.2 0 0 0 -.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    small {
+      font-size: 0.5625rem;
+      letter-spacing: 0.24em;
+    }
+
+    time {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
     }
   }
 </style>

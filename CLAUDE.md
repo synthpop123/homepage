@@ -75,7 +75,7 @@ Hand-written CSS in `src/styles/*.css`.
 - 12-column grid (sidebar / content / TOC) collapsing to one column below `64rem`, where the sidebar becomes a top bar showing only the logo and nav.
 - `reset.css` blockifies `svg`, so anything mixing an icon and text on one line must be `inline-flex`.
 - Page transitions are CSS-only cross-document view transitions (`layout.css`, under `prefers-reduced-motion: no-preference`); no `ClientRouter`, so every navigation is a full load. The sidebar (`view-transition-name: sidebar`) swaps without animating.
-- Container queries are used only where the column's width diverges from the viewport's (sidebar and TOC eat into it between 64rem and 76rem): Uses, the Movies wall, the home Now bento.
+- Container queries are used only where the column's width diverges from the viewport's (sidebar and TOC eat into it between 64rem and 76rem): Uses, the Movies wall, the home Now bento, the post-end strip.
 
 ## Live data
 
@@ -110,7 +110,7 @@ Every live section reads **cf-workers-api** (sibling repo `../cf-workers-api`), 
   - Decoded but deliberately not drawn: `extraUsage`, `mcpServers`.
   - Styles: one file per renderer module, all nested under `tokens-dashboard` (runtime DOM), **import order matters** — `shared.css` last, since its skeleton rules must win ties. Skeletons here are sized to the real payload (the quota card is above the fold).
   - AI brand icons are Lobe Icons mono SVGs in `src/assets/icons/ai/` (`aiIcon()`), `<title>` stripped — a nested `<title>` would shadow the row's own tooltip.
-- **`/about`**: build-time blog stats (`countEntryWords`) in `about.astro`'s frontmatter; About this site is a colophon (`<dl>`, dotted rows, Inter and Geist Mono specimens, the build day).
-- **Timeline**: `timeline(series, lit, { related })` in `content.ts` marks every post, oldest first, as lit, sharing a tag with the lit ones, or other. OG cards (`og.ts`) end in it; `PostStrip.astro` draws it at a post's end (inside `PostColophon.astro`, with the post's short address, which copies the full URL on click, and `LICENSE` from `consts.ts`; each cell links to its post and names it on hover) and, `mini`, inside the home page's all-posts link (the listed posts lit).
+- **`/about`**: build-time blog stats (`countEntryWords`) in `about.astro`'s frontmatter; About this site is a colophon (`<dl>`, dotted rows, Inter and Geist Mono specimens side by side at one size, the build day inked below as a date stamp).
+- **Timeline**: `timeline(series, lit, { related })` in `content.ts` marks every post, oldest first, as lit, sharing a tag with the lit ones, or other. OG cards (`og.ts`) end in it; `PostStrip.astro` draws it at a post's end (inside `PostColophon.astro`: the post's short address sits in the strip's slot between the two years and copies the full URL on click, a hovered cell's title takes its place, and `LICENSE` from `consts.ts` closes it centred; each cell links to its post) and, `mini`, inside the home page's all-posts link (the listed posts lit).
 - **Copying** goes through `copyText()` (`src/lib/client/copy.ts`): Copy Markdown and the post-end address share its `data-state`, live-region and reset handling.
 - **Home cat** is a print on a small stack (`cat-figure`): a 3:2 photo on paper (white, a grey print in dark) at a slight random tilt, captioned "Cat as a service #" and a random four-digit serial; a refresh pulls the top print off and settles the new one.
