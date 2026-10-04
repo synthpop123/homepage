@@ -42,8 +42,22 @@ tokens-dashboard {
     border-radius: var(--radius-xs) var(--radius-xs) 0 0;
   }
 
-  .tk-chart-bars span:hover {
-    filter: brightness(1.12);
+  .tk-chart-bars span {
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+
+  /* The bar under the pointer, or the one pinned by a tap or the arrow
+     keys, stays; the rest step back. */
+  .tk-chart-bars:has(span:hover, span[data-current])
+    span:not(:hover, [data-current]) {
+    opacity: 0.45;
+  }
+
+  .tk-chart-bars:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+    border-radius: var(--radius-xs);
   }
 
   .tk-chart-bars span[data-zero] {

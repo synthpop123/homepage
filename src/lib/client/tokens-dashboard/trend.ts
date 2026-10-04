@@ -120,11 +120,74 @@ export function createTrendChart(q: Query) {
     placeTip(tip, bar, chart)
   }
 
+  /* A hover previews a bar; a click, a tap or the arrow keys pin one,
+     and the tip stays on it until the chart loses focus. The bars are
+     one tab stop, not one per day. */
+  const status = q(".tk-chart-status")
+  let pinned: number | null = null
+  const bar = (index: number | null) =>
+    index === null
+      ? null
+      : (barsArea?.querySelector<HTMLElement>(`span[data-i="${index}"]`) ??
+        null)
+
+  const pin = (index: number | null) => {
+    bar(pinned)?.removeAttribute("data-current")
+    pinned = index
+    const current = bar(index)
+    if (!current) return hideTip()
+    current.dataset.current = ""
+    showTip(current)
+    const bucket = tipBuckets[index ?? 0]
+    if (status && bucket) {
+      status.textContent = `${bucket.title}: ${
+        bucket[tipMetric] > 0
+          ? `${formatMetric(bucket[tipMetric], tipMetric)}${tipMetric === "tokens" ? " tokens" : ""}`
+          : "no usage"
+      }`
+    }
+  }
+
   barsArea?.addEventListener("pointerover", (event) => {
-    const bar = (event.target as Element).closest<HTMLElement>("span[data-i]")
-    if (bar) showTip(bar)
+    const hovered = (event.target as Element).closest<HTMLElement>(
+      "span[data-i]",
+    )
+    if (hovered) showTip(hovered)
   })
-  barsArea?.addEventListener("pointerleave", hideTip)
+  barsArea?.addEventListener("pointerleave", () => {
+    const current = bar(pinned)
+    if (current) showTip(current)
+    else hideTip()
+  })
+  barsArea?.addEventListener("click", (event) => {
+    const clicked = (event.target as Element).closest<HTMLElement>(
+      "span[data-i]",
+    )
+    if (!clicked) return
+    const index = Number(clicked.dataset.i)
+    pin(index === pinned ? null : index)
+  })
+  barsArea?.addEventListener("keydown", (event) => {
+    const last = tipBuckets.length - 1
+    if (last < 0 || event.altKey || event.ctrlKey || event.metaKey) return
+    const from = pinned ?? last + 1
+    const next =
+      event.key === "ArrowLeft"
+        ? Math.max(0, from - 1)
+        : event.key === "ArrowRight"
+          ? Math.min(last, pinned === null ? last : from + 1)
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? last
+              : event.key === "Escape" && pinned !== null
+                ? null
+                : undefined
+    if (next === undefined) return
+    event.preventDefault()
+    pin(next)
+  })
+  barsArea?.addEventListener("focusout", () => pin(null))
 
   const render = (
     site: Site,
@@ -160,6 +223,7 @@ export function createTrendChart(q: Query) {
 
     tipBuckets = buckets
     tipMetric = metric
+    pinned = null
     hideTip()
 
     if (barsArea) {
@@ -217,11 +281,13 @@ export function createTrendChart(q: Query) {
       )
     }
 
-    chart?.setAttribute(
+    barsArea?.setAttribute(
       "aria-label",
-      total > 0 && peakBucket
-        ? `${scopeText}: ${formatMetric(total, metric)} in total, peaking at ${formatMetric(max, metric)} (${peakBucket.title})`
-        : `${scopeText}: no usage recorded`,
+      `${
+        total > 0 && peakBucket
+          ? `${scopeText}: ${formatMetric(total, metric)} in total, peaking at ${formatMetric(max, metric)} (${peakBucket.title})`
+          : `${scopeText}: no usage recorded`
+      }. Arrow keys step through the bars.`,
     )
   }
 

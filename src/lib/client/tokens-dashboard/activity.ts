@@ -107,7 +107,7 @@ export function createActivity(q: Query, icons: Icons) {
     // metadata (early-2025 Cursor logs) render as hollow cells, level -1
     // in Heatmap.astro — real activity, unknown size.
     const level = levelScale(days)
-    mountHeatmap(grid, days, (shown) => {
+    const cells = (shown: typeof days) => {
       first = shown[0].date
       const chosen = day()
       return shown.map((entry) => ({
@@ -120,6 +120,14 @@ export function createActivity(q: Query, icons: Icons) {
               ? `${formatCount(entry.messages)} ${entry.messages === 1 ? "message" : "messages"} on ${formatDate(entry.date)} · token counts unavailable`
               : `No usage on ${formatDate(entry.date)}`,
       }))
+    }
+    // A narrower grid shows fewer weeks. A pick that falls off its left
+    // edge would leave the panel describing a day no cell marks, so the
+    // pick moves to the oldest day still shown, and says so.
+    mountHeatmap(grid, days, cells, () => {
+      if (picked === null || picked >= first) return
+      select(first)
+      announce()
     })
   }
 
@@ -144,8 +152,9 @@ export function createActivity(q: Query, icons: Icons) {
 
   const render = (loaded: Site) => {
     site = loaded
-    // A payload that moved on can strand a pick outside the window.
-    if (picked !== null && (picked > loaded.today || picked < first)) {
+    // A pick past the payload's today has no cell; one off the window's
+    // old end is the re-fit's to move (renderHeatmap).
+    if (picked !== null && picked > loaded.today) {
       picked = null
     }
     renderSync(loaded)

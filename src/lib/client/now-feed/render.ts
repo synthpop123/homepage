@@ -43,25 +43,35 @@ const setTime = (time: HTMLTimeElement, at: string, text: string) => {
 const setImage = (img: HTMLImageElement | null, src: string | null) => {
   if (!img) return
   img.hidden = !src
-  if (src && img.getAttribute("src") !== src) img.src = src
-}
-
-const empty = (tile: HTMLElement, what: string) => {
-  tile.dataset.empty = ""
-  tile.querySelector("a")?.removeAttribute("href")
-  tile.querySelector("a")?.removeAttribute("title")
-  tile.querySelector(".now-title, .now-figure")?.replaceChildren(what)
-  for (const extra of tile.querySelectorAll(".now-sub, .now-foot"))
-    extra.replaceChildren()
+  if (!src) img.removeAttribute("src")
+  else if (img.getAttribute("src") !== src) img.src = src
 }
 
 const text = (tile: HTMLElement, selector: string, value: string) => {
   tile.querySelector(selector)?.replaceChildren(value)
 }
 
+/**
+ * A tile with nothing to show. It may have shown something a moment
+ * ago, so everything a full render sets goes back: the link, the art,
+ * the playing mark and, where given, the label.
+ */
+const empty = (tile: HTMLElement, what: string, label?: string) => {
+  tile.dataset.empty = ""
+  tile.removeAttribute("data-playing")
+  const link = tile.querySelector("a")
+  link?.removeAttribute("href")
+  link?.removeAttribute("title")
+  for (const img of tile.querySelectorAll("img")) setImage(img, null)
+  if (label) text(tile, ".now-label", label)
+  tile.querySelector(".now-title, .now-figure")?.replaceChildren(what)
+  for (const extra of tile.querySelectorAll(".now-sub, .now-foot"))
+    extra.replaceChildren()
+}
+
 export function renderListen(tile: HTMLElement, site: Site, now: number) {
   const listen = site.listen
-  if (!listen) return empty(tile, "Nothing yet")
+  if (!listen) return empty(tile, "Nothing yet", "Listening")
   delete tile.dataset.empty
   const link = tile.querySelector("a")!
   link.href = listen.url
@@ -86,7 +96,7 @@ export function renderListen(tile: HTMLElement, site: Site, now: number) {
 
 export function renderFilm(tile: HTMLElement, site: Site, today: string) {
   const film = site.film
-  if (!film) return empty(tile, "Nothing yet")
+  if (!film) return empty(tile, "Nothing yet", "Watched")
   delete tile.dataset.empty
   tile.querySelector("a")!.href = film.url
   setImage(tile.querySelector("img"), film.poster)

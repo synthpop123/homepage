@@ -144,13 +144,16 @@ const years = Map.groupBy(entries, ({ post }) =>
       color: #d97757;
     }
 
+    /* Up to two lines: one cut mid-clause told too little. */
     p {
+      display: -webkit-box;
       margin-block-start: 0.1em;
       overflow: hidden;
       font-size: var(--step--1);
       color: var(--faint-foreground);
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      text-wrap: pretty;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
   }
 

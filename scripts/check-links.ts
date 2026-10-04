@@ -3,7 +3,8 @@
  * wires it in). Walks every HTML file in dist/, extracts internal
  * href/src/srcset targets, and verifies each one resolves to a file
  * the build actually produced — including `#fragment` anchors, which
- * must match an id in the target page. External URLs are out of
+ * must match an id in the target page (the page itself for a bare
+ * `#fragment`, which is how every table of contents links). External URLs are out of
  * scope: this guards the site's own routing, not the internet.
  *
  * The Markdown artifacts (`/blog/<id>.md`, `/llms*.txt`) get the same
@@ -90,15 +91,23 @@ for (const page of pages) {
   }
 
   for (const link of links) {
-    if (!link || link.startsWith("#") || EXTERNAL.test(link)) continue
+    if (!link || link === "#" || EXTERNAL.test(link)) continue
     checked++
     const url = new URL(link, `https://site.invalid${route}`)
-    const target = resolveTarget(url.pathname)
+    const target = link.startsWith("#")
+      ? path.join(dist, page)
+      : resolveTarget(url.pathname)
     if (!target) {
       broken.push({ page, link, reason: "no such page or asset" })
       continue
     }
-    const fragment = decodeURIComponent(url.hash.slice(1))
+    let fragment: string
+    try {
+      fragment = decodeURIComponent(url.hash.slice(1))
+    } catch {
+      broken.push({ page, link, reason: "malformed fragment" })
+      continue
+    }
     if (
       fragment &&
       target.endsWith(".html") &&

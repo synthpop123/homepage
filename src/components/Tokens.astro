@@ -316,10 +316,17 @@ const LEGEND_CHIPS = 4
         <p class="tk-chart-scope">Daily tokens</p>
         <p class="tk-chart-peak"></p>
       </div>
-      <div class="tk-chart" role="img" aria-label="Token usage over time">
-        <div class="tk-chart-bars" data-skeleton></div>
+      <div class="tk-chart">
+        <div
+          class="tk-chart-bars"
+          data-skeleton
+          tabindex="0"
+          role="group"
+          aria-label="Token usage over time"
+        ></div>
         <div class="tk-chart-axis" aria-hidden="true"></div>
-        <div class="tk-tip" hidden></div>
+        <div class="tk-tip" hidden aria-hidden="true"></div>
+        <p class="tk-chart-status sr" role="status"></p>
       </div>
       <div class="tk-chart-foot">
         <fieldset class="tk-seg tk-seg-sm" aria-label="Stack trend bars by">

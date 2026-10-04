@@ -114,13 +114,16 @@ function enter(grid: HTMLElement) {
  * fit its width, pad the first column down to the right weekday, and
  * re-fit on viewport changes (rotation, resize, mobile URL bar) so the
  * fixed-size cells never overflow. `days` must be chronological and
- * dense; `cells` maps the visible slice to one { level, title } per day.
+ * dense; `cells` maps the visible slice to one { level, title } per day,
+ * and `fitted`, if given, hears each re-fit once the cells are in — a
+ * picker whose day just fell off the left edge has to know.
  * Remounting on the same grid replaces the previous data.
  */
 export function mountHeatmap<T extends { date: string }>(
   grid: HTMLElement,
   days: T[],
   cells: (shown: T[]) => HeatCell[],
+  fitted?: (shown: T[]) => void,
 ) {
   if (days.length === 0) throw new Error("No activity data")
   observers.get(grid)?.disconnect()
@@ -152,6 +155,7 @@ export function mountHeatmap<T extends { date: string }>(
       fragment.append(node)
     })
     grid.replaceChildren(fragment)
+    fitted?.(shown)
   }
 
   render()

@@ -128,52 +128,65 @@ const toc = [
       )
     }
 
-    button.addEventListener("click", () => {
+    /** A cat fetched and decoded off screen, or a rejection once cataas
+     *  has had long enough: a hung request must not hold the button. */
+    const fetchCat = (url: string) => {
+      const next = new Image()
+      next.src = url
+      let timer = 0
+      const late = new Promise<never>((_, reject) => {
+        timer = window.setTimeout(() => {
+          next.src = ""
+          reject(new Error("cataas timed out"))
+        }, 12_000)
+      })
+      return Promise.race([next.decode(), late]).finally(() =>
+        clearTimeout(timer),
+      )
+    }
+
+    button.addEventListener("click", async () => {
       button.disabled = true
       stack.setAttribute("data-loading", "")
       stack.setAttribute("aria-busy", "true")
-
-      const url = `https://cataas.com/cat?width=1280&t=${Date.now()}`
-      const next = new Image()
-      const done = () => {
-        button.disabled = false
-        stack.removeAttribute("data-loading")
-        stack.removeAttribute("aria-busy")
-      }
-      const swap = async () => {
+      let out: Animation | undefined
+      try {
+        const url = `https://cataas.com/cat?width=1280&t=${Date.now()}`
+        await fetchCat(url)
+        // The top print is pulled off the stack; the new one settles
+        // where it lay.
+        if (!still.matches) {
+          out = print.animate(
+            [{}, { translate: "45% -6%", rotate: "10deg", opacity: 0 }],
+            {
+              duration: 320,
+              easing: "cubic-bezier(0.4, 0, 1, 1)",
+              fill: "forwards",
+            },
+          )
+          await out.finished
+        }
         // Drop the build-time srcset so the freshly fetched cat wins.
         img.removeAttribute("srcset")
         img.src = url
         await img.decode().catch(() => {})
         serial.textContent = catSerial()
         tilt()
-      }
-      next.onload = async () => {
-        if (still.matches) {
-          await swap()
-          return done()
+        if (out) {
+          out.cancel()
+          print.animate(
+            [{ translate: "0 0.5rem", scale: 0.96, opacity: 0 }, {}],
+            { duration: 360, easing: "cubic-bezier(0.2, 0, 0, 1)" },
+          )
         }
-        // The top print is pulled off the stack; the new one settles
-        // where it lay.
-        const out = print.animate(
-          [{}, { translate: "45% -6%", rotate: "10deg", opacity: 0 }],
-          {
-            duration: 320,
-            easing: "cubic-bezier(0.4, 0, 1, 1)",
-            fill: "forwards",
-          },
-        )
-        await out.finished
-        await swap()
-        out.cancel()
-        print.animate(
-          [{ translate: "0 0.5rem", scale: 0.96, opacity: 0 }, {}],
-          { duration: 360, easing: "cubic-bezier(0.2, 0, 0, 1)" },
-        )
-        done()
+      } catch {
+        // No new cat: the old print stays where it was, ready to retry.
+      } finally {
+        out?.cancel()
+        button.disabled = false
+        stack.removeAttribute("data-loading")
+        stack.removeAttribute("aria-busy")
       }
-      next.onerror = done
-      next.src = url
     })
   }
 </script>

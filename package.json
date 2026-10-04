@@ -55,5 +55,9 @@
     "typescript": "^6.0.3",
     "world-atlas": "^2.0.2",
     "wrangler": "^4.142.0"
+  },
+  "overrides": {
+    "fflate": "^0.7.5",
+    "lodash-es": "^4.18.1"
   }
 }
