@@ -6,7 +6,7 @@
  * them. At the end of a post each cell links to its post and names it
  * under the strip on hover or focus; `mini` is the home page's small,
  * unlinked version, which sits inside a link of its own. Whatever is
- * slotted sits between the two years, and gives way to a named post.
+ * slotted sits under the two years, and gives way to a named post.
  */
 
 import { titleLang, type TimelineCell } from "@/lib/content"
@@ -60,7 +60,6 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
     position: relative;
     display: grid;
     gap: var(--space-2xs);
-    container-type: inline-size;
   }
 
   [data-cell] {
@@ -108,14 +107,14 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
     }
   }
 
-  /* The years at the two ends, the slot between them, and in the slot's
-     place, while a cell is hovered or focused, the post it stands for.
-     A narrow strip moves the slot to a line of its own. */
+  /* The years at the two ends, the slot centred on the line below them,
+     and in the slot's place, while a cell is hovered or focused, the post
+     it stands for. */
   p {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: baseline;
-    gap: var(--space-3xs) var(--space-2xs);
+    gap: var(--space-2xs);
     margin: 0;
     font-family: var(--font-mono);
     font-feature-settings: normal;
@@ -124,16 +123,17 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
     color: var(--faint-foreground);
   }
 
+  p > :last-child {
+    grid-column: 3;
+  }
+
   .mid {
     display: flex;
     justify-content: center;
     min-inline-size: 0;
+    grid-row: 2;
+    grid-column: 1 / -1;
     transition: opacity 0.12s ease;
-
-    @container (width < 34rem) {
-      grid-row: 2;
-      grid-column: 1 / -1;
-    }
   }
 
   post-strip:has(a:is(:hover, :focus-visible)) .mid {

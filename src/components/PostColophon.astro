@@ -2,7 +2,7 @@
 /**
  * What closes a post, between its last paragraph and the site's footer:
  * where it sits among the rest (the timeline, this post lit, its kin
- * tinted), its address between the timeline's years (copied on click),
+ * tinted), its address under the timeline's years (copied on click),
  * and what it may be used under, centred as a book's last line.
  */
 
@@ -69,7 +69,6 @@ const url = new URL(`/blog/${post.id}`, Astro.site)
   button {
     display: inline-flex;
     align-items: center;
-    gap: 0.45em;
     min-inline-size: 0;
     max-inline-size: 100%;
     font: inherit;
@@ -96,6 +95,7 @@ const url = new URL(`/blog/${post.id}`, Astro.site)
       flex: none;
       inline-size: 1.5rem;
       block-size: 1px;
+      margin-inline: 0.45em;
       background-color: var(--border);
       transition:
         inline-size 0.2s ease,
