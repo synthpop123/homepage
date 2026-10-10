@@ -1,9 +1,9 @@
 ---
 /**
- * When a post was written, and when it last changed: one date, or a span
- * from the first to the latest — `Jun 16 ⇢ Aug 20, 2026` — read as the
- * post's life so far rather than as two unrelated stamps. The first date
- * drops a year the second already states.
+ * When a post was written, and when it last changed. A revised post
+ * leads with the newer date, the one that says how current it is, and
+ * keeps the first as an aside — `Updated Oct 10, 2026 · first Jul 4`.
+ * The first date drops a year the newer one already states.
  */
 
 import { formatDate, formatMonthDay } from "@/lib/utils"
@@ -13,35 +13,23 @@ type Props = { date: Date; updated?: Date }
 const { date, updated } = Astro.props
 const revised =
   updated && formatDate(updated) !== formatDate(date) ? updated : undefined
-const since =
+const first =
   revised && revised.getUTCFullYear() === date.getUTCFullYear()
     ? formatMonthDay(date)
     : formatDate(date)
-const title = revised
-  ? `Published ${formatDate(date)} · Updated ${formatDate(revised)}`
-  : undefined
 ---
 
-<post-dates title={title}>
+<post-dates>
   {revised ? (
       <>
-        <span class="sr">Published</span>
-        <time datetime={date.toISOString()}>{since}</time>
-        <svg
-          viewBox="0 0 24 8"
-          fill="none"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path class="shaft" d="M1.5 4h17" />
-          <path d="M18.5 1.5 21.5 4l-3 2.5" />
-        </svg>
-        <span class="sr">, updated</span>
+        <span>Updated</span>
         <time datetime={revised.toISOString()} data-revised>
           {formatDate(revised)}
         </time>
+        <span data-first>
+          <span>first<span class="sr"> published</span></span>
+          <time datetime={date.toISOString()}>{first}</time>
+        </span>
       </>
     ) : (
       <time datetime={date.toISOString()}>{formatDate(date)}</time>
@@ -51,43 +39,41 @@ const title = revised
 <style>
   post-dates {
     display: inline-flex;
-    align-items: center;
+    flex-wrap: wrap;
+    align-items: baseline;
     gap: var(--space-3xs);
 
     &:not(:first-child)::before {
       content: "·";
     }
+
+    /* On a phone the two dates outgrow the byline's row: they take a
+       line of their own rather than open one with a stray separator. */
+    @media (width < 40rem) {
+      &:has([data-revised]) {
+        flex-basis: 100%;
+
+        &::before {
+          display: none;
+        }
+      }
+    }
   }
 
-  /* A dashed stretch between the two dates, arrowed toward the latest:
-     time passing, not a separator. */
-  svg {
-    flex: none;
-    inline-size: 1.75em;
-    block-size: 0.6em;
-    color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
-    stroke-width: 1.25;
-  }
-
-  .shaft {
-    stroke-dasharray: 1.5 2.5;
-  }
-
-  /* The latest date is the one that says how current the post is. */
   [data-revised] {
     color: var(--foreground);
   }
 
-  /* On hover the dashes march toward the newer date. */
-  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    post-dates:hover .shaft {
-      animation: march 0.6s linear infinite;
-    }
-  }
+  /* The first date is history: kept, but set back, and never split
+     from its label when the row wraps. */
+  [data-first] {
+    display: inline-flex;
+    gap: var(--space-3xs);
+    color: var(--faint-foreground);
+    white-space: nowrap;
 
-  @keyframes march {
-    to {
-      stroke-dashoffset: -4;
+    &::before {
+      content: "·";
     }
   }
 </style>
