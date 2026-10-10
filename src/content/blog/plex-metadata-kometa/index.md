@@ -16,7 +16,7 @@ ai: true
 
 ## Plex 元数据的工作原理
 
-一个视频文件从进入媒体目录，到以完整的海报、简介、演员表出现在首页，中间要经过三个阶段：
+一个视频文件从放进媒体库目录，到最终在客户端展示出完整的海报、演员表和简介，Plex 内部主要经历三个步骤：
 
 ```mermaid
 flowchart LR
@@ -28,42 +28,53 @@ flowchart LR
   C --> F["Metadata 目录<br/>海报 / 背景图等图片"]
 ```
 
-1. **扫描（Scan）**：扫描器（Scanner）只解析路径和文件名，从中提取标题、年份这些线索；它不联网，也不读取文件内容，产出只是一条候选信息，比如这个路径下可能是 1927 年的电影 Metropolis。因此文件名是 `Metropolis (1927).mkv` 还是 `mtrpls.1080p.x264.mkv`，对后续每一步的成功率影响都很大。
-2. **匹配（Match）**：代理（Agent）拿扫描得到的线索去在线数据库中搜索、打分，选定最可能的条目。目前新建电影库默认使用内建的 Plex Movie agent，数据聚合自 TMDB、IMDb、TVDB 等，海报和 logo 还会来自 fanart.tv 这类社区图库；老一代的插件式 agent（Plex Movie Legacy、The Movie Database 等）仍然可用，但官方已不再推荐。
-3. **刮削（Scrape）**：把选定条目的完整元数据拉取到本地，包括标题、简介、评分等文字信息，以及海报、背景图等图片资产。
+1. **扫描（Scan）**：扫描器（Scanner）只读取本地的文件路径和文件名，从中提取片名、年份等文字线索。这个阶段不会联网，也不会读取视频内容。因此规范的命名（如 `Metropolis (1927).mkv`）对后续匹配非常关键。
+2. **匹配（Match）**：代理（Agent）拿提取到的关键词去在线数据库检索。目前新版 Plex 默认使用内置的 **Plex Movie** 代理，数据整合了 TMDB、IMDb、TVDB 以及社区图库（如 fanart.tv）。早期的插件式代理（如 The Movie Database、Plex Movie Legacy）官方已逐步废弃。
+3. **刮削（Scrape）**：匹配命中后，Plex 将远端的详细文本和图片资产同步回本地。
 
-匹配结果记录为一个 `guid`，这是条目与外部数据库之间的锚点。两代 agent 的 guid 格式不同，写脚本时两种都要兼容：
+### 核心概念：guid 与 ratingKey
 
-```text
-# Legacy agents expose the data source and external id directly
-com.plexapp.agents.imdb://tt0017136?lang=en
-com.plexapp.agents.themoviedb://19?lang=en
+匹配成功后，Plex 会给条目分配两个关键标识：
 
-# The new agent uses Plex's own id; external ids live in child fields
-plex://movie/5d7768254de0ee001fcc8f52
-  ├── imdb://tt0017136
-  ├── tmdb://19
-  └── tvdb://…
-```
+- **`guid`**：指向外部数据源的全局标识。新版代理使用 Plex 自建的 ID，并在子字段中关联 TMDB/IMDb 编号；旧版代理则直接记录源站地址。
+  ```text
+  # 旧版代理
+  com.plexapp.agents.imdb://tt0017136?lang=en
+  com.plexapp.agents.themoviedb://19?lang=en
 
-与 `guid` 相对的是 `ratingKey`，即条目在这台服务器数据库中的自增主键。两者的区别在于可移植性：`ratingKey` 换一台服务器就变了，`guid` 指向的外部条目则不会变。用 API 操作单台服务器时，用 `ratingKey` 定位最快；要做跨服务器的配置或备份，就得存 `guid`。
+  # 新版代理（Plex Movie）
+  plex://movie/5d7768254de0ee001fcc8f52
+    ├── imdb://tt0017136
+    ├── tmdb://19
+    └── tvdb://…
+  ```
+- **`ratingKey`**：当前 Plex 服务器数据库中的自增主键（纯数字）。
 
-刮削回来的数据存放在两个地方，都在 Plex 的数据目录下（Docker 部署通常挂载为 `/config`）：
+两者的区别在于范围：`ratingKey` 只在当前这台 Plex 服务器内有效，服务器重建后就会改变；`guid` 指向外部固定影片，换服务器也能对应同一部作品。在做跨机器迁移或外部联动时，应始终以 `guid` 为准。
 
-- 文字类元数据（标题、简介、评分、演员表）存入 SQLite 数据库 `Plug-in Support/Databases/com.plexapp.plugins.library.db` 的 `metadata_items` 等表中；
-- 图片类资产（海报、背景图、logo）存入 `Metadata/` 目录下按 hash 组织的 bundle。
+### 数据存放在哪里
 
-知道存储位置有助于理解机制和排查问题，但不要绕过 Plex 直接修改数据库：表结构没有公开文档，一次不兼容的写入就可能损坏整个库。
+刮削下来的数据保存在 Plex 的数据目录下（Docker 部署通常挂载到 `/config`）：
+
+- **文本数据**：存放在 SQLite 数据库 `Plug-in Support/Databases/com.plexapp.plugins.library.db`，主要分布在 `metadata_items` 等表。
+- **图片数据**：存放在 `Metadata/` 目录中，按哈希打散成多个子目录。
+
+了解这些目录结构有助于排查路径问题，但**不要直接用 SQL 修改数据库**。Plex 内部表结构较复杂，直接写入绕过了 API 的约束，极易导致索引损坏或元数据错乱。
 
 ## 手工修补与字段锁定
 
-匹配和刮削难免出错，需要手工修正。在网页端打开条目的「编辑」界面，改标题、改简介、换海报，保存后字段旁会出现一个橙色的锁形图标，表示**这个字段在下次刷新元数据时不会被 agent 覆盖**。手动编辑会自动锁定字段；也可以只点锁不改值，把 agent 当前刮削到的值固定下来。反过来，如果发现某个字段一直不随刷新更新，可以先检查它是否曾经被锁定。
+当匹配有误或信息缺失时，通常可以在 Web 端手动调整：
 
-如果错的是匹配本身，就用「修正匹配」（Fix Match）重新搜索，或者直接填入 TMDB/IMDb 链接。更换匹配后 guid 随之改变，所有未锁定的字段都会重新刮削。
+- **更换匹配**：在条目菜单中点击「修正匹配」（Fix Match），手动搜索片名或直接输入 TMDB/IMDb 编号。更换匹配后 `guid` 会变更，所有未锁定的字段都会重新拉取。
+- **编辑与锁定（Locking）**：在编辑界面修改标题、海报或简介并保存后，字段后会出现一个**橙色锁图标**。这表示该字段已被锁定，**后续刷新元数据时不会被在线数据覆盖**。
+  
+如果你发现某部电影刷新元数据后依然显示错误的旧标题，可以先点进编辑页检查对应字段是否处于锁定状态。
 
 ## 用 plexapi 批量修补
 
-界面操作适合零星几部，数量多了就该写脚本。[python-plexapi](https://python-plexapi.readthedocs.io/) 是 Plex API 最成熟的 Python 封装，网页端能做的操作基本都支持。连接只需要地址和 token，获取 token 最快的方式是在网页端任意条目上点「获取信息」再点「查看 XML」，地址栏里的 `X-Plex-Token` 参数就是 token：
+对于成百上千部影片的批量修正，手动点选并不现实。官方推荐使用社区维护的 [python-plexapi](https://python-plexapi.readthedocs.io/) 库进行自动化处理。
+
+获取 Token 的简单方式：在 Web 端任意影片上点击「获取信息」->「查看 XML」，浏览器地址栏中的 `X-Plex-Token` 参数即是。
 
 ```python
 from plexapi.server import PlexServer
@@ -72,9 +83,9 @@ plex = PlexServer("http://127.0.0.1:32400", "YOUR_PLEX_TOKEN")
 movies = plex.library.section("电影")
 ```
 
-### 找出缺图的条目
+### 1. 查找缺失海报或背景图的条目
 
-条目的 `thumb` 属性对应海报，`art` 对应背景图，为空就是灰色占位图的来源。遍历大库时把 `container_size` 调大，能明显减少 API 往返：
+影片的 `thumb` 对应海报路径，`art` 对应背景图。遍历大媒体库时，把 `container_size` 适当调大，可以明显减少网络请求次数：
 
 ```python
 for movie in movies.all(container_size=500):
@@ -84,21 +95,21 @@ for movie in movies.all(container_size=500):
     if not movie.art:
         missing.append("art")
     if missing:
-        print(movie.ratingKey, movie.title, movie.year, missing)
+        print(f"[{movie.ratingKey}] {movie.title} ({movie.year}) 缺失: {missing}")
 ```
 
-老电影和版权状态存疑的影片最容易出现这种情况：agent 匹配到了正确的条目，但数据源本身就没有收录像样的图片。这种情况下反复刷新没有意义，只能自己找图补上。
+老片或小众冷门片最容易遇到这种情况——匹配没有问题，但在线源本身缺少图片，反复刷新元数据毫无作用，需要外挂补全。
 
-### 从 TMDB 补齐海报
+### 2. 从 TMDB 批量补齐海报
 
-TMDB 的 `/movie/{id}/images` 接口在不带 `language` 参数时，会返回该条目在所有语言下的全部图片。先从 guid 里解析出 TMDB id，两代 agent 的格式都要兼容：
+TMDB 的 `/movie/{id}/images` 接口可以获取所有语言版本的海报列表。先从影片的 `guid` 中提取 TMDB ID：
 
 ```python
 import re
 
 _TMDB = re.compile(r"(?:themoviedb|tmdb)://(\d+)")
 
-def tmdb_id(movie) -> int | None:
+def get_tmdb_id(movie) -> int | None:
     guids = [movie.guid, *(g.id for g in movie.guids)]
     for g in guids:
         if m := _TMDB.search(g or ""):
@@ -106,116 +117,104 @@ def tmdb_id(movie) -> int | None:
     return None
 ```
 
-TMDB 给每张图都标注了语言（`iso_639_1`，为空表示无文字版本）和票数。我用的排序规则是：
+拿到图片链接后，通过 `uploadPoster` 写入 Plex。
 
-- 海报优先英文版本，其次无文字版本，因为无字海报常常只是剧照；
-- 背景图相反，优先无文字版本，因为它是详情页的底图；
-- 同语言组内再按票数和分辨率排序。
-
-拿到图片 URL 后上传。`uploadPoster` 支持 `url=` 和 `filepath=` 两种参数：传 URL 意味着让 Plex 服务器自己去下载图片，如果服务器所在的网络访问不了 `image.tmdb.org`，上传就会失败；先在运行脚本的机器上把图片下载下来，再以文件形式推送给 Plex，就能绕开服务器侧的网络限制：
+注意：`uploadPoster` 支持 `url` 和 `filepath` 两种参数。如果给 `url`，是由 Plex 服务端去拉取；如果你的 Plex 服务器无法直接访问 TMDB 图片服务器，上传就会超时失败。更稳妥的方法是由执行脚本的机器下载图片，再通过本地路径推送到 Plex：
 
 ```python
 import os
 import tempfile
-
 import requests
 
-def set_poster(movie, url: str) -> None:
-    resp = requests.get(url, timeout=30)
+def upload_poster_from_url(movie, image_url: str):
+    resp = requests.get(image_url, timeout=30)
     resp.raise_for_status()
-    fd, path = tempfile.mkstemp(suffix=".jpg")
-    with os.fdopen(fd, "wb") as fh:
-        fh.write(resp.content)
+    
+    fd, tmp_path = tempfile.mkstemp(suffix=".jpg")
     try:
-        movie.uploadPoster(filepath=path)
+        with os.fdopen(fd, "wb") as f:
+            f.write(resp.content)
+        movie.uploadPoster(filepath=tmp_path)
     finally:
-        os.remove(path)
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 ```
 
-上传的图片会成为当前选中的海报，存入服务器的 Metadata bundle，不会在媒体目录里生成 `poster.jpg` 文件。
+### 3. 解决中文库不显示 Clear Logo 的问题
 
-### 中文库不显示 logo
+Clear Logo 是很多第三方主题或详情页中用来代替文字标题的透明底艺术字。中文媒体库常遇到一个情况：大部分电影都不显示 Logo，少数能显示的中文 Logo 质量也参差不齐。
 
-logo（clear logo）是详情页和部分客户端界面上代替标题文字的透明底图形。中文库的常见现象是：绝大多数条目不显示 logo，少数显示的又是 agent 自动选择的中文 logo，质量参差不齐。原因在于 Plex 对 logo 的语言策略与海报不同：logo 被当作图形化的标题处理，只采用与库的元数据语言一致的版本，不会像海报那样回退到英文。这一点官方文档没有明确说明，但中文库的实际表现和社区讨论都指向这个行为。于是 TMDB 上没有中文 logo 的电影就干脆不显示 logo，尽管编辑界面的候选列表里就有现成的英文版本。
+原因在于 **Plex 对 Logo 的语言匹配非常严格**。与海报会自动回退到英文不同，Logo 被视为图形化的标题，Plex 默认只展示与资料库语言完全一致的版本。如果 TMDB 上没有中文 Logo，Plex 就直接留空，哪怕编辑项里已经有一大堆高质量的英文 Logo 候选。
 
-既然候选列表里有图，那就用脚本批量把它选上。较新版本的 plexapi 提供了 `logos()` 和 `setLogo()`：
+可以通过脚本将候选列表中的 Logo 批量激活：
 
 ```python
 for movie in movies.all(container_size=500):
     if movie.isLocked("clearLogo"):
-        continue  # skip manually locked logos
+        continue  # 跳过已被手动锁定的项
+    
     logos = movie.logos()
+    # 过滤掉当前选中项（metadata:// 开头）以及无效项
     candidates = [
         lg for lg in logos
         if not lg.selected and not str(lg.ratingKey).startswith("metadata://")
     ]
     if not candidates:
         continue
-    # Prefer fanart.tv logos, usually higher quality than TMDB ones
-    pick = next(
-        (lg for lg in candidates if lg.provider == "fanarttv"), candidates[0]
-    )
+
+    # 优先选择 fanarttv 来源，通常质量高于 TMDB 上的业余裁剪图
+    pick = next((lg for lg in candidates if lg.provider == "fanarttv"), candidates[0])
     movie.setLogo(pick)
 ```
 
-`setLogo` 调用的是和网页端手动点选相同的接口，选中后 PMS 会自动锁定 `clearLogo` 字段，之后刷新元数据不会被清掉。候选列表中以 `metadata://` 开头的条目是当前选中项的去重表示，跳过它才能保证换到另一张图。
+调用 `setLogo` 后，Plex 会自动锁定 `clearLogo` 字段，后续的日常元数据刷新不会把它覆盖回空白状态。
 
-### 批量统一中文标题
+### 4. 批量校准中文标题
 
-库里混着英文标题，想统一改成中文，几种直接的思路都不太可行：
-
-- 刮削豆瓣：反爬严格，不适合批量稳定运行；
-- 用 TMDB 的 `zh-CN` 翻译：覆盖不全，还常混着港台译名；
-- 机器翻译：片名多为意译，机翻结果往往对不上通行译名。
-
-比较可控的做法是维护一份本地对照表，人工或半自动填好中文名，再批量写回并锁定：
+自动刮削的中文片名常常存在简繁混杂或地区译名不合习惯的问题，直接依赖第三方接口也很难做到完全准确。更可控的方式是本地维护一份映射表，按 `ratingKey` 写入并加锁：
 
 ```python
-overrides = {
-    "12345": "大都会",  # ratingKey -> Chinese title
-    "23456": "卡里加里博士的小屋",
+title_overrides = {
+    "1024": "大都会",
+    "1025": "卡里加里博士的小屋",
 }
 
-for rating_key, zh_title in overrides.items():
+for rating_key, zh_title in title_overrides.items():
     item = plex.fetchItem(int(rating_key))
-    item.edit(**{"title.value": zh_title, "title.locked": 1})
+    item.edit(**{
+        "title.value": zh_title,
+        "title.locked": 1  # 显式加锁，防止刷新后还原
+    })
 ```
 
-`title.locked: 1` 等同于在界面上锁住标题字段；少了它，下次刷新元数据时标题又会变回去。
+> **批量写操作提示**：
+> 1. 上传图片与字段更新属于不可逆操作，建议先加上 `--dry-run` 参数打印出变更计划。
+> 2. 正式运行前先在单部电影上测试。
+> 3. 确保 Plex 设置里的「计划任务 -> 备份数据库」保持开启。
 
-### 批量写操作的安全习惯
+---
 
-这类脚本直接修改服务器状态，上传和编辑都无法撤销，所以：
+## 使用 Kometa 自动化维护
 
-1. 给脚本留一个 `--dry-run` 模式，先打印执行计划，确认后再实际运行；
-2. 正式运行前，先拿一两个 `ratingKey` 小批量验证效果，确认无误再处理整个库；
-3. 确认 PMS 的数据库定期备份处于开启状态（默认开启，见设置里的计划任务），元数据出了问题，它是最后的恢复手段。
+脚本适合解决存量问题，但如果要实现持续的自动化管理（如定期同步 IMDb Top 250、新入库 4K 电影自动在海报加标、评分统一改用 IMDb），使用 [Kometa](https://kometa.wiki)（原 Plex Meta Manager）更为方便。
 
-## Kometa：把元数据管理写成配置文件
-
-上面的脚本解决的是一次性修补，还有一类需求是持续性的：IMDb Top 250 榜单变了，合集要跟着变；新入库的 4K 电影，海报上要自动加标；评分想统一换成 IMDb 的分数。这类需要定期对齐的工作，适合交给 [Kometa](https://kometa.wiki)。
-
-Kometa 的前身是 Plex Meta Manager（PMM），2024 年 4 月随 v2.0 改名。它是一个 Python 批处理工具，读取 YAML 配置，连接 Plex 以及 TMDB、IMDb、Trakt、Letterboxd、MDBList 等外部数据源，主要做三类事情：
-
-- 按各种来源建立合集（collection）；
-- 给海报叠加覆盖层（overlay）；
-- 批量执行元数据操作（operation）。
-
-它不是常驻服务，每轮运行结束后即退出，等待下一个调度时刻。
+Kometa 通过 YAML 配置文件工作，连接 Plex 与各类外部榜单（IMDb、TMDB、Letterboxd、Trakt），按预定时间自动比对并更新。
 
 ```mermaid
 flowchart TD
-  A["config.yml<br/>库定义 / 数据源凭据"] --> B["Kometa 每日运行"]
-  B --> C["拉取外部榜单<br/>IMDb / Letterboxd / Trakt…"]
-  B --> D["查询 Plex 库内容"]
-  C --> E["对比期望状态与现状"]
+  A["config.yml<br/>基础配置与凭据"] --> B["Kometa 周期运行"]
+  B --> C["读取外部数据源<br/>IMDb / Trakt 等"]
+  B --> D["读取 Plex 库数据"]
+  C --> E["比对差异"]
   D --> E
-  E --> F["建立 / 更新合集"]
-  E --> G["叠加 overlay 并上传海报"]
-  E --> H["执行 mass 元数据操作"]
+  E --> F["更新合集 (Collections)"]
+  E --> G["海报图层打标 (Overlays)"]
+  E --> H["字段批量替换 (Operations)"]
 ```
 
-Docker 部署时用 `KOMETA_TIMES` 指定每天的运行时刻，`KOMETA_RUN=False` 避免容器重启时额外触发一轮运行：
+### Docker 部署
+
+Kometa 不是常驻的后台服务，它是定时唤醒的批处理脚本。推荐在 Compose 中直接设定计划时间，并关闭容器启动时立即运行：
 
 ```yaml title="docker-compose.yml"
 services:
@@ -224,35 +223,32 @@ services:
     container_name: kometa
     environment:
       - TZ=Asia/Shanghai
-      - KOMETA_TIMES=08:30
-      - KOMETA_RUN=False
+      - KOMETA_TIMES=05:00     # 每天早上 5 点运行
+      - KOMETA_RUN=False       # 避免容器重启时无预警跑一遍
     volumes:
       - /srv/kometa/config:/config
     restart: unless-stopped
 ```
 
-配置的入口是 `config/config.yml`，`libraries` 下的键必须和 Plex 里的库名完全一致，底部放 Plex 和各数据源的凭据：
+主配置文件 `config/config.yml` 示例：
 
 ```yaml title="config.yml"
 libraries:
   电影:
     collection_files:
       - default: imdb
-    remove_overlays: false
     overlay_files:
       - default: resolution
 plex:
   url: http://172.17.0.1:32400
   token: YOUR_PLEX_TOKEN
 tmdb:
-  apikey: YOUR_TMDB_V3_KEY
+  apikey: YOUR_TMDB_API_KEY
 ```
 
-这份文件里带着 Plex token 和各家 API key，如果基础设施配置进了 Git，记得把它排除在外，仓库里只留脱敏的样板。
+### 1. 合集维护：智能合集 vs 榜单合集
 
-### 合集：从官方 defaults 到自定义 builder
-
-`- default: imdb` 引用的是 Kometa 内置的 [Defaults 文件](https://kometa.wiki/en/latest/defaults/guide/)，官方维护了几十个可以直接引用的合集方案，覆盖各大榜单、奖项、流派、国家、电影宇宙等。每个 defaults 文件都暴露一组 `template_variables` 供定制，比如只要 IMDb Top 250、不要热门榜和低分榜：
+Kometa 内置了许多开箱即用的预设（Defaults），例如精简后的 IMDb Top 250：
 
 ```yaml
 libraries:
@@ -261,117 +257,98 @@ libraries:
       - default: imdb
         template_variables:
           use_all: false
-          use_top: true  # keep only the IMDb Top 250 collection
-          use_separator: false  # do not create separator collections
-      - default: country
-        template_variables:
-          style: color  # color flag poster style
-          sort_by: random
-          minimum_items: 10  # skip countries with fewer than 10 movies
+          use_top: true          # 只保留 IMDb Top 250
+          use_separator: false    # 不创建分类占位隔板
 ```
 
-defaults 覆盖不到的需求就自己写合集文件。合集的核心概念是 builder，即用什么规则筛选电影。builder 分两类，行为差别很大：
+自定义合集时，需要注意两类 builder 的机制差异：
 
-- `plex_search`、`smart_filter` 这类基于库内条件的 builder，建的是 Plex 原生的智能合集，新入库的影片自动加入或移出，即使 Kometa 不运行也能保持最新；
-- `imdb_chart`、`letterboxd_list`、`trakt_list` 这类基于外部榜单的 builder，建的是普通合集，成员由每次运行时的榜单快照决定，Kometa 不运行就不会更新。
+- **基于库内规则的智能合集（Smart Collection）**：例如使用 `plex_search`。这类合集由 Plex 内部维护，一旦新入库影片符合条件，Plex 就会立刻把它放进合集，**无需 Kometa 再次运行**。
+- **基于外部数据的普通合集（Regular Collection）**：例如使用 `imdb_chart` 或 `letterboxd_list`。这类合集每次都由 Kometa 抓取最新榜单重新同步，Kometa 不运行合集就不会变动。
 
 ```yaml title="config/my-collections.yml"
 collections:
-  九十年代华语佳片:
-    plex_search:  # smart collection: auto-maintained by Plex
+  # 智能合集：Plex 自动动态维护
+  90年代高分电影:
+    plex_search:
       all:
-        country: China
         year.gte: 1990
         year.lte: 1999
         critic_rating.gte: 8
-  戛纳金棕榈:
-    imdb_award:  # regular collection: synced on each Kometa run
-      event_id: ev0000147  # Cannes Film Festival
+
+  # 普通合集：每次由 Kometa 定时抓取后覆盖同步
+  戛纳金棕榈得奖影片:
+    imdb_award:
+      event_id: ev0000147
       event_year: all
       award_filter: Palme d'Or
       winning: true
-    sync_mode: sync  # remove items no longer on the list
-    collection_order: custom
+    sync_mode: sync
 ```
 
-在 `config.yml` 里用 `- file: config/my-collections.yml` 引用即可。
+### 2. Overlays（海报角标）的原理与注意事项
 
-### Overlay：给海报叠加信息层
+Overlay 功能用于在海报角落自动盖印分辨率（4K/1080P）、音轨规格或评分徽章。
 
-overlay 是 Kometa 最常用的功能：在海报角落自动加上分辨率、音频编码、评分、获奖标识这类小徽章。它会直接改写 Plex 里的海报，每次运行时：
-
-1. 计算哪些条目应该有哪些 overlay；
-2. 取干净的原图，叠加图层，把成品上传给 Plex；
-3. 备份原图，并给条目打上 `Overlay` 标签用于追踪。
-
-下次运行时，如果某个条目不再命中任何 overlay 规则，就用备份把原图还原回去。
+它的运作机制是：
+1. 下载未加标的原始海报；
+2. 本地合成打标图层，把打标后的海报推回 Plex；
+3. 本地留存原图备份，并给 Plex 条目打上 `Overlay` 标签以便追踪。
 
 ```yaml
 libraries:
   电影:
-    remove_overlays: false  # set true to remove all overlays and restore originals
+    remove_overlays: false
     overlay_files:
-      - default: resolution  # 4K / 1080P badges
-      - default: ratings
-        template_variables:
-          rating1: critic
-          rating1_image: imdb
+      - default: resolution
 ```
 
-所以**叠加过 overlay 的条目，不要再在 Plex 界面里手动换海报**。Kometa 依靠标签和备份来追踪状态，手动一换，它可能把带徽章的图当成原图，下一轮就会在徽章上再叠一层徽章。想换图，应该通过 Kometa 的 assets 目录，或者先移除该条目的 `Overlay` 标签再换。
+> **注意**：
+> 一旦某部电影被打上了 Overlay，**绝对不要在 Plex Web 端手动更换它的海报**。
+> 手动换图后，Kometa 会认为新海报是「干净的原图」，下一次运行时会在这张已经带角标的图上重复叠图，导致角标叠压模糊。如果需要更换海报，应先在 Plex 中移除条目的 `Overlay` 标签，让 Kometa 恢复原始图片，换完图后再等待下一次打标。
 
-### Operations：批量元数据操作
+### 3. Operations：批量统一评分与字段
 
-operations 作用于整个库，适合统一各字段的数据来源。比如 Plex 自带的评分来源比较杂，想让详情页的评分一律显示 IMDb 分、流派标签一律跟随 TMDB：
+如果不想使用 Plex 默认的聚合评分，可以通过 operations 把整个库的评分来源重置为指定渠道：
 
 ```yaml
 libraries:
   电影:
     operations:
-      mass_critic_rating_update: imdb
-      mass_genre_update: tmdb
+      mass_critic_rating_update: imdb   # 影评人评分强制改为 IMDb
+      mass_genre_update: tmdb           # 流派分类统一遵照 TMDB
 ```
 
-`mass_*_update` 系列覆盖了评分、流派、分级、上映日期、工作室等几乎所有字段，取值就是数据源名称。这类操作会直接修改库里每一个条目，第一次运行前想清楚，或者先在小库上试验。
+这个操作会逐一刷新整库数据，首次使用建议先在测试小库确认效果。
 
-### 调度与运行经验
+### 调度与运行避坑建议
 
-用了一段时间后总结出几条经验，都和 Kometa 的批处理特性有关。
+1. **避开 Plex 自身的维护时段**：Plex 每天有固定的后台计划任务窗口（通常在凌晨 2:00 到 5:00，执行数据库优化和音视频深度分析）。不要把 `KOMETA_TIMES` 设置在这个区间，否则两者争夺数据库连接会导致运行极其缓慢甚至超时。
+2. **大型静态榜单降低运行频率**：IMDb Top 250 或获奖名单几个月都不会有大变动，不需要每天重新对比。可以通过 `schedule` 限制运行周期：
+   ```yaml
+   collection_files:
+     - default: imdb
+       template_variables:
+         schedule: monthly(1)  # 仅在每月 1 号执行
+   ```
+   没有排期的日子里，Kometa 会直接跳过该配置，原有的合集不会被删除。
 
-运行时刻要避开 Plex 自己的维护窗口。PMS 每天有一段计划任务时间（设置里的「计划任务」，默认在凌晨），数据库优化、深度媒体分析等任务都集中在这个时段执行，如果 Kometa 同时运行，两者竞争数据库资源，运行时间会成倍增长。把 `KOMETA_TIMES` 错开到维护窗口之后，差别很明显。
+---
 
-大型榜单也没有必要每天重建。IMDb Top 250、Letterboxd Top 500 这类榜单一个月也变动不了几部，但每次全量重建都要对 TMDB 和 Plex 发起持续几十分钟的请求。可以给这类合集文件单独设置低频调度，比如每月 1 号和 15 号各运行一次，其余日子跳过。`delete_not_scheduled` 默认为 false，不在调度中的文件只会被跳过，已建好的合集不会被删除：
+## 工具选型总结
 
-```yaml
-libraries:
-  电影:
-    collection_files:
-      - default: country  # library-based, runs daily
-      - default: imdb
-        template_variables:
-          schedule: monthly(1), monthly(15)
-          use_all: false
-          use_top: true
-```
-
-另外，Kometa 每次运行会把未显式配置的默认值写回 `config.yml`，线上那份配置会越来越长，自己维护的源文件保持最小化即可。我的完整配置（脱敏样板）放在 [homelab-infra](https://github.com/synthpop123/homelab-infra) 仓库的 plex stack 里，配合 Komodo 做 GitOps 部署，相关背景见[上一篇文章](/blog/komodo-gitops)。
-
-## 小结
-
-按问题类型选工具：
-
-- 零星几部的错配、改名、换图：网页端的编辑和修正匹配就够了，留意字段锁定的语义；
-- 入库质量：文件命名决定匹配成功率，交给 Radarr、Sonarr 这类自动化改名工具最省心；
-- 一次性的批量修补，比如缺图、logo、标题统一：写 plexapi 脚本，dry-run 先行；
-- 持续性的合集维护、海报徽章、字段来源统一：交给 Kometa 按天调度；
-- 直接修改 SQLite 数据库：不要这样做，原因见第一节。
+| 场景 | 推荐方式 | 核心要点 |
+| :--- | :--- | :--- |
+| **单部电影匹配错误 / 微调片名** | Web 界面「修正匹配」与「编辑」 | 留意橙色锁定图标状态 |
+| **新片入库标准化** | Radarr / Sonarr 改名整理 | 规范的本地文件名能避免 90% 的刮削失败 |
+| **大库存量修补（缺图、缺失 Logo）** | `python-plexapi` 脚本 | 配合 `--dry-run`，先下载后推图 |
+| **周期性榜单维护 / 批量自动海报打标** | Kometa | 错开服务器维护时段，打标后不要手动换图 |
+| **直接改写 SQLite 数据库** | 避免使用 | 易引发数据库死锁与元数据校验失败 |
 
 ## 参考链接
 
-- [Metadata Agents（Plex 官方）](https://support.plex.tv/articles/200241558-agents/)，agent 与数据源优先级
-- [Where is the Plex Metadata Stored?（Plexopedia）](https://www.plexopedia.com/plex-media-server/general/metadata-stored/)，SQLite 数据库与 Metadata 目录
-- [python-plexapi 文档](https://python-plexapi.readthedocs.io/)，Plex API 的 Python 封装
-- [TMDB API 文档](https://developer.themoviedb.org/docs/getting-started)，图片接口与语言字段
-- [Kometa Wiki](https://kometa.wiki/)，安装、配置与 defaults 总览
-- [Kometa Defaults Usage Guide](https://kometa.wiki/en/latest/defaults/guide/)，内置合集与 template_variables
-- [Kometa Overlays Guide](https://kometa.wiki/en/latest/kometa/guides/overlays/)，overlay 的工作机制与注意事项
+- [Plex 官方文档：Metadata Agents](https://support.plex.tv/articles/200241558-agents/)
+- [python-plexapi 文档](https://python-plexapi.readthedocs.io/)
+- [TMDB 开发者 API 指南](https://developer.themoviedb.org/docs/getting-started)
+- [Kometa 官方 Wiki](https://kometa.wiki/)
+- [Kometa Overlays 使用指南](https://kometa.wiki/en/latest/kometa/guides/overlays/)
