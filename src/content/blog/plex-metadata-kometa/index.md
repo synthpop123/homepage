@@ -2,6 +2,7 @@
 title: "Plex 元数据：刮削、修补与 Kometa 自动化"
 description: "How Plex scrapes and stores metadata, how to fix it with plexapi, and how to automate collections and overlays with Kometa"
 date: 2026-07-04
+updatedDate: 2026-10-10
 authors:
   - lkw123
 tags:
