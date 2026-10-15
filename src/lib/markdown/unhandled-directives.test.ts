@@ -5,13 +5,11 @@ import { tableScroll } from "./table-scroll"
 import { unhandledDirectives } from "./unhandled-directives"
 
 const render = async (markdown: string) =>
-  (
-    await markdownToHtml(markdown, {
-      features: { directive: true },
-      mdastPlugins: [calloutDirective, unhandledDirectives],
-      hastPlugins: [tableScroll],
-    })
-  ).html
+  markdownToHtml(markdown, {
+    features: { directive: true },
+    mdastPlugins: [calloutDirective, unhandledDirectives],
+    hastPlugins: [tableScroll],
+  }).html
 
 describe("unhandledDirectives", () => {
   it("gives prose the directive syntax misread back its colon", async () => {

@@ -13,7 +13,14 @@ export default defineConfig({
   trailingSlash: "never",
   compressHTML: true,
   prefetch: { prefetchAll: true },
-  vite: { plugins: [expressiveCodeAssets()] },
+  vite: {
+    plugins: [expressiveCodeAssets()],
+    // Only Mermaid's lazy chunks pass 500 kB: its langium parsers (~630 kB)
+    // and ELK (~1.4 MB, never fetched — Mermaid.astro pins dagre). The
+    // site's own chunks stay far below either, so the default only cried
+    // wolf on every build.
+    build: { chunkSizeWarningLimit: 1500 },
+  },
   // Every image, Markdown ones included, ships a width srcset, so a phone
   // is not handed a 1600px screenshot. The layout CSS stays ours
   // (reset.css already caps images at their container).

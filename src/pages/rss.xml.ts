@@ -28,12 +28,10 @@ const escapeHtml = (text: string) =>
 export async function GET(context: APIContext) {
   const site = context.site!
   const render = async (entry: CollectionEntry<"blog">) =>
-    (
-      await markdownToHtml(await postBody(entry, site), {
-        features: { directive: true, math: true },
-        mdastPlugins: [feedCallouts, temmlMath, unhandledDirectives],
-      })
-    ).html
+    markdownToHtml(await postBody(entry, site), {
+      features: { directive: true, math: true },
+      mdastPlugins: [feedCallouts, temmlMath, unhandledDirectives],
+    }).html
   const items = await Promise.all(
     (await getSeries()).map(async ([post, ...subposts]) => {
       const html = [
