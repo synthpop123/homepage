@@ -1,0 +1,819 @@
+---
+/**
+ * The owner's portfolio from cf-workers-api's stocks service (kept in
+ * Ghostfolio), delivered in the /misc bundle.
+ *
+ * Returns, never amounts: the hero figure is the account's time-weighted
+ * return over the range, the line its growth with the S&P 500 as a
+ * dashed ghost, the strip under it the same line cut into days, weeks or
+ * months and graded like the heatmaps (gains in their greens, losses in
+ * ink — the site keeps one colour). The list is the holdings by weight;
+ * a row opens into its own price line in place.
+ */
+
+import "@/styles/feed.css"
+import { MISC } from "@/consts"
+import { SKELETON_ROWS } from "@/lib/utils"
+
+type Props = {
+  endpoint?: string
+}
+
+const { endpoint = MISC.endpoint } = Astro.props
+const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
+---
+
+<stocks-feed data-endpoint={endpoint} aria-busy="true">
+  <div class="stocks-body">
+    <div
+      class="stocks-accounts"
+      role="group"
+      aria-label="Account"
+      aria-busy="true"
+    >
+      {Array.from({ length: 3 }).map(() => (
+        <span class="chip-skeleton" aria-hidden="true"><span class="sk-line" /></span>
+      ))}
+    </div>
+
+    <div class="stocks-hero">
+      <p class="stocks-kicker">
+        <span class="sk-line sk-kicker" aria-hidden="true" />
+      </p>
+      <p class="stocks-figure">
+        <span class="sk-line sk-figure" aria-hidden="true" />
+      </p>
+      <p class="stocks-note">
+        <span class="sk-line sk-note" aria-hidden="true" />
+      </p>
+    </div>
+
+    <svg class="stocks-chart" aria-label="Portfolio growth"></svg>
+
+    <div class="stocks-strip">
+      <div class="strip-cells" aria-hidden="true"></div>
+      <div class="strip-caption">
+        <span class="strip-legend" aria-hidden="true">
+          down
+          {[4, 3, 2, 1].map((level) => (
+            <i data-dir="down" data-level={level} />
+          ))}
+          {[1, 2, 3, 4].map((level) => (
+            <i data-dir="up" data-level={level} />
+          ))}
+          up
+        </span>
+      </div>
+    </div>
+
+    <div
+      class="stocks-ranges range-tabs"
+      role="group"
+      aria-label="Range"
+      aria-busy="true"
+    >
+      {Array.from({ length: 5 }).map(() => (
+        <span class="tab-skeleton" aria-hidden="true"><span class="sk-line" /></span>
+      ))}
+    </div>
+
+    <dl class="readout stocks-readout">
+      {stats.map((label) => (
+        <div class="stat">
+          <dt class="label">{label}</dt>
+          <dd class="value"><span class="sk-line sk-stat" aria-hidden="true" /></dd>
+          <dd class="note"><span class="sk-line sk-sub" aria-hidden="true" /></dd>
+        </div>
+      ))}
+    </dl>
+
+    <div class="stocks-alloc">
+      <p class="alloc-caption">
+        <span class="alloc-what">Allocation</span>
+        <span class="alloc-share"></span>
+      </p>
+      <div class="alloc-bar" aria-hidden="true"></div>
+    </div>
+
+    <h3 class="stocks-label">Holdings</h3>
+    <ol class="stocks-list">
+      {Array.from({ length: SKELETON_ROWS }).map(() => (
+        <li class="stock" data-skeleton aria-hidden="true">
+          <div class="stock-row">
+            <span class="stock-logo" />
+            <span class="stock-name">
+              <span class="stock-ticker"><span class="sk-line sk-ticker" /></span>
+              <span class="stock-sub"><span class="sk-line sk-sub" /></span>
+            </span>
+            <span class="stock-spark" />
+            <span class="stock-weight"><span class="sk-line sk-num" /></span>
+            <span class="stock-change"><span class="sk-line sk-num" /></span>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+  <p class="stocks-fallback" hidden>Couldn't load the portfolio right now.</p>
+</stocks-feed>
+
+<script>
+  import { mountStocks } from "@/lib/client/stocks-feed"
+
+  document.querySelectorAll<HTMLElement>("stocks-feed").forEach(mountStocks)
+</script>
+
+<style>
+  stocks-feed {
+    /* Losses are ink, gains the heatmap's greens: the strip's scale. */
+    --down-1: color-mix(in oklab, var(--foreground) 14%, transparent);
+    --down-2: color-mix(in oklab, var(--foreground) 28%, transparent);
+    --down-3: color-mix(in oklab, var(--foreground) 48%, transparent);
+    --down-4: color-mix(in oklab, var(--foreground) 72%, transparent);
+
+    display: block;
+  }
+
+  .stocks-body {
+    display: grid;
+  }
+
+  /* Account picker: quiet pills, the pressed one inked. */
+  .stocks-accounts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs);
+    min-block-size: 1.75rem;
+    margin-block-end: var(--space-s);
+  }
+
+  stocks-feed :global(.stocks-accounts button),
+  .chip-skeleton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    block-size: 1.75rem;
+    padding-inline: 0.7rem;
+    border-radius: var(--radius-full);
+    box-shadow: inset 0 0 0 1px var(--border);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    transition:
+      color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .chip-skeleton {
+    inline-size: 6.5rem;
+  }
+
+  .chip-skeleton .sk-line {
+    inline-size: 100%;
+  }
+
+  stocks-feed :global(.stocks-accounts button small) {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-feature-settings: normal;
+    color: var(--faint-foreground);
+  }
+
+  @media (hover: hover) {
+    stocks-feed :global(.stocks-accounts button:hover) {
+      color: var(--foreground);
+    }
+  }
+
+  stocks-feed :global(.stocks-accounts button[aria-pressed="true"]) {
+    color: var(--foreground);
+    box-shadow: inset 0 0 0 1px var(--foreground);
+  }
+
+  /* Hero: what the account did over the range, set large. */
+  .stocks-hero p {
+    margin: 0;
+  }
+
+  .stocks-kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    min-block-size: 1lh;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  /* The brokers' marks: small rounded tiles, overlapped like a fanned
+     deck, each cut out of the page by a ring of the background. */
+  stocks-feed :global(.broker-deck) {
+    display: inline-flex;
+    padding-inline-start: 0.3rem;
+  }
+
+  stocks-feed :global(.broker) {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.5rem;
+    aspect-ratio: 1;
+    margin-inline-start: -0.3rem;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background-color: #fff;
+    box-shadow: 0 0 0 2px var(--background);
+    transition:
+      inline-size 0.35s cubic-bezier(0.3, 0.7, 0.2, 1),
+      margin 0.35s cubic-bezier(0.3, 0.7, 0.2, 1),
+      opacity 0.25s ease,
+      transform 0.35s cubic-bezier(0.3, 0.7, 0.2, 1);
+  }
+
+  stocks-feed :global(.broker:not(:has(img))::before) {
+    content: attr(data-monogram);
+    font-size: 0.625rem;
+    font-weight: var(--font-weight-medium);
+    color: #555;
+  }
+
+  stocks-feed :global(.broker img) {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  /* Hovering the deck spreads it, so each mark can be seen whole. */
+  @media (hover: hover) {
+    stocks-feed :global(.broker-deck:hover .broker:not([data-folded])) {
+      margin-inline-start: 0.125rem;
+    }
+  }
+
+  stocks-feed :global(.broker[data-folded]) {
+    inline-size: 0;
+    margin-inline-start: 0;
+    opacity: 0;
+    transform: scale(0.6);
+    box-shadow: none;
+  }
+
+  .stocks-figure {
+    min-block-size: 1lh;
+    font-size: clamp(2rem, 1.6rem + 2vw, 2.75rem);
+    font-weight: var(--font-weight-display);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-display);
+    line-height: 1.15;
+  }
+
+  .stocks-note {
+    min-block-size: 1lh;
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  .stocks-hero .sk-line {
+    display: block;
+    block-size: 0.75em;
+  }
+
+  .sk-kicker {
+    inline-size: 9rem;
+  }
+
+  .sk-figure {
+    inline-size: 9rem;
+    margin-block-start: 0.2em;
+  }
+
+  .sk-note {
+    inline-size: 14rem;
+  }
+
+  /* The chart. Its slider role makes it a tab stop; the ring shows on
+     keyboard focus only. */
+  .stocks-chart {
+    inline-size: 100%;
+    block-size: 13rem;
+    margin-block-start: var(--space-2xs);
+    overflow: visible;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+
+  stocks-feed :global(:is(.stocks-chart, .panel-chart):focus-visible) {
+    outline-offset: 0.25rem;
+  }
+
+  stocks-feed :global(.chart-line) {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-width: 1.75;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  stocks-feed :global(.chart-area) {
+    fill: color-mix(in oklab, var(--foreground) 5%, transparent);
+  }
+
+  stocks-feed :global(.chart-ghost) {
+    fill: none;
+    stroke: var(--faint-foreground);
+    stroke-width: 1.25;
+    stroke-dasharray: 4 3;
+  }
+
+  stocks-feed :global(:is(.chart-ghost-label, .chart-scrub text)) {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-feature-settings: normal;
+    fill: var(--faint-foreground);
+  }
+
+  /* The ghost's label sits on lines; a halo of the page keeps it read. */
+  stocks-feed :global(.chart-ghost-label) {
+    paint-order: stroke;
+    stroke: var(--background);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  stocks-feed :global(.chart-scrub) {
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+  }
+
+  stocks-feed :global(.chart-scrub[data-on]) {
+    opacity: 1;
+  }
+
+  stocks-feed :global(.chart-scrub line) {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  stocks-feed :global(.chart-scrub circle) {
+    fill: var(--accent-fill);
+    stroke: var(--background);
+    stroke-width: 2;
+  }
+
+  /* The strip: the line again, as a row of graded cells. */
+  .stocks-strip {
+    margin-block-start: var(--space-2xs);
+  }
+
+  .strip-cells {
+    display: flex;
+    gap: 2px;
+    block-size: 0.625rem;
+  }
+
+  stocks-feed :global(.strip-cell),
+  .strip-legend i {
+    flex: 1;
+    border-radius: 2px;
+    background-color: var(--heat-0);
+  }
+
+  stocks-feed
+    :global(:is(.strip-cell, .strip-legend i)[data-dir="up"][data-level="1"]) {
+    background-color: var(--heat-1);
+  }
+  stocks-feed
+    :global(:is(.strip-cell, .strip-legend i)[data-dir="up"][data-level="2"]) {
+    background-color: var(--heat-2);
+  }
+  stocks-feed
+    :global(:is(.strip-cell, .strip-legend i)[data-dir="up"][data-level="3"]) {
+    background-color: var(--heat-3);
+  }
+  stocks-feed
+    :global(:is(.strip-cell, .strip-legend i)[data-dir="up"][data-level="4"]) {
+    background-color: var(--heat-4);
+  }
+  stocks-feed
+    :global(
+      :is(.strip-cell, .strip-legend i)[data-dir="down"][data-level="1"]
+    ) {
+    background-color: var(--down-1);
+  }
+  stocks-feed
+    :global(
+      :is(.strip-cell, .strip-legend i)[data-dir="down"][data-level="2"]
+    ) {
+    background-color: var(--down-2);
+  }
+  stocks-feed
+    :global(
+      :is(.strip-cell, .strip-legend i)[data-dir="down"][data-level="3"]
+    ) {
+    background-color: var(--down-3);
+  }
+  stocks-feed
+    :global(
+      :is(.strip-cell, .strip-legend i)[data-dir="down"][data-level="4"]
+    ) {
+    background-color: var(--down-4);
+  }
+
+  stocks-feed :global(.strip-cell[data-on]) {
+    outline: 1.5px solid var(--foreground);
+    outline-offset: 1px;
+  }
+
+  .strip-caption {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-block-start: var(--space-3xs);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-feature-settings: normal;
+    color: var(--faint-foreground);
+  }
+
+  .strip-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .strip-legend i {
+    flex: none;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+  }
+
+  .strip-legend i[data-dir="down"][data-level="1"] {
+    margin-inline-end: 3px;
+  }
+
+  .strip-legend i:first-of-type {
+    margin-inline-start: 4px;
+  }
+
+  .strip-legend i:last-of-type {
+    margin-inline-end: 4px;
+  }
+
+  /* Range tabs: mono labels, the picked one set on a quiet pill — no rule
+     of their own, since the readout under them is drawn on rules. */
+  stocks-feed :global(.range-tabs) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    min-block-size: 1.75rem;
+  }
+
+  stocks-feed :global(.range-tabs button),
+  .tab-skeleton {
+    block-size: 1.625rem;
+    padding-inline: 0.6rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-medium);
+    font-feature-settings: normal;
+    letter-spacing: 0.04em;
+    color: var(--muted-foreground);
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .stocks-ranges {
+    margin-block-start: var(--space-xs);
+  }
+
+  .tab-skeleton {
+    display: grid;
+    align-content: center;
+    inline-size: 2.5rem;
+  }
+
+  @media (hover: hover) {
+    stocks-feed :global(.range-tabs button:hover) {
+      color: var(--foreground);
+    }
+  }
+
+  stocks-feed :global(.range-tabs button[aria-pressed="true"]) {
+    color: var(--foreground);
+    background-color: var(--muted);
+  }
+
+  /* Readout: a sign is part of the figure, not a unit beside it. */
+  .stocks-readout {
+    margin-block: var(--space-m);
+  }
+
+  stocks-feed :global(.stocks-readout .value .unit:first-child) {
+    margin-inline-end: 0.04em;
+    font-size: 0.8em;
+    color: inherit;
+  }
+
+  stocks-feed :global(.stocks-readout .value[data-dir="down"]) {
+    color: var(--muted-foreground);
+  }
+
+  .sk-sub {
+    inline-size: 6em;
+  }
+
+  /* Allocation: one bar of the holdings by weight, cash hatched last. */
+  .alloc-caption {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+    margin: 0;
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  .alloc-caption span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .alloc-bar {
+    display: flex;
+    gap: 2px;
+    block-size: 0.375rem;
+    margin-block-start: var(--space-3xs);
+    border-radius: 1px;
+    background-color: var(--heat-0);
+  }
+
+  stocks-feed :global(.alloc-seg) {
+    min-inline-size: 2px;
+    border-radius: 1px;
+    background-color: color-mix(
+      in oklab,
+      var(--foreground) var(--shade, 60%),
+      transparent
+    );
+    transition: background-color 0.15s ease;
+  }
+
+  stocks-feed :global(.alloc-cash) {
+    background: repeating-linear-gradient(
+      -45deg,
+      color-mix(in oklab, var(--foreground) 30%, transparent) 0 1.5px,
+      transparent 1.5px 4px
+    );
+  }
+
+  stocks-feed :global(.alloc-seg:is([data-on], [data-hover])) {
+    background: var(--accent-fill);
+  }
+
+  /* Holdings. */
+  .stocks-label {
+    margin-block-start: var(--space-l);
+  }
+
+  .stocks-list {
+    display: grid;
+    border-block-start: 1px solid var(--border);
+  }
+
+  stocks-feed :global(.stock) {
+    border-block-end: 1px solid var(--border);
+  }
+
+  stocks-feed :global(.stock-row) {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr) 4.5rem 3.5rem 4rem;
+    align-items: center;
+    gap: var(--space-xs);
+    inline-size: 100%;
+    padding: var(--space-2xs) var(--space-2xs);
+    text-align: start;
+    transition: background-color 0.15s ease;
+  }
+
+  stocks-feed :global(button.stock-row) {
+    cursor: pointer;
+  }
+
+  @media (hover: hover) {
+    stocks-feed :global(button.stock-row:hover) {
+      background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+    }
+  }
+
+  stocks-feed :global(.stock[data-open] .stock-row) {
+    background-color: var(--muted);
+  }
+
+  stocks-feed :global(.stock-row:focus-visible) {
+    outline-offset: -2px;
+  }
+
+  /* A logo is a tile: the brand's own mark in a rounded square, with a
+     monogram for the ones that don't load. */
+  stocks-feed :global(.stock-logo) {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background-color: var(--muted);
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+
+  /* The monogram only where there is no logo; a logo sits on white, the
+     ground brand marks are drawn for, in either scheme. */
+  stocks-feed :global(.stock-logo:has(img)) {
+    background-color: #fff;
+  }
+
+  stocks-feed :global(.stock-logo:not(:has(img, svg))::before) {
+    content: attr(data-monogram);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: var(--font-weight-medium);
+    font-feature-settings: normal;
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.stock-logo-cash svg) {
+    inline-size: 1rem;
+    block-size: 1rem;
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  stocks-feed :global(.stock-logo img) {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  stocks-feed :global(.stock-name) {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  stocks-feed :global(.stock-ticker) {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    font-feature-settings: normal;
+    line-height: 1.35;
+  }
+
+  stocks-feed :global(:is(.stock-sub, .stock-ticker)) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  stocks-feed :global(.stock-sub) {
+    min-block-size: 1lh;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.stock-spark) {
+    display: block;
+    inline-size: 100%;
+    block-size: 1.5rem;
+  }
+
+  stocks-feed :global(.stock-spark polyline) {
+    stroke: var(--muted-foreground);
+    stroke-width: 1.25;
+    stroke-linejoin: round;
+  }
+
+  stocks-feed :global(.stock-spark[data-dir="up"] polyline) {
+    stroke: var(--accent-fill);
+  }
+
+  stocks-feed :global(:is(.stock-weight, .stock-change)) {
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  stocks-feed :global(.stock-weight) {
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.stock-change) {
+    font-weight: var(--font-weight-medium);
+  }
+
+  stocks-feed :global(:is(.stock-change, .panel-delta)[data-dir="up"]) {
+    color: var(--accent);
+  }
+
+  stocks-feed :global(:is(.stock-change, .panel-delta)[data-dir="down"]) {
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.stock-cash .stock-row) {
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed
+    :global(
+      [data-skeleton]
+        :is(.stock-ticker, .stock-sub, .stock-weight, .stock-change)
+    ) {
+    display: grid;
+    align-content: center;
+    justify-items: end;
+    min-block-size: 1lh;
+  }
+
+  stocks-feed :global([data-skeleton] :is(.stock-ticker, .stock-sub)) {
+    justify-items: start;
+  }
+
+  .sk-ticker {
+    inline-size: 3em;
+  }
+
+  .sk-num {
+    inline-size: 2.5em;
+  }
+
+  /* An opened row: its price line, drawn in place under it. */
+  stocks-feed :global(.stock-panel) {
+    padding: var(--space-xs) var(--space-2xs) var(--space-2xs);
+    background-color: color-mix(in oklab, var(--muted) 45%, transparent);
+  }
+
+  stocks-feed :global(.panel-head) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-xs);
+  }
+
+  stocks-feed :global(.panel-price) {
+    font-size: var(--step-2);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  stocks-feed :global(.panel-move) {
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.panel-chart) {
+    display: block;
+    inline-size: 100%;
+    block-size: 8.5rem;
+    margin-block-start: var(--space-3xs);
+    overflow: visible;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+
+  stocks-feed :global(.panel-ranges) {
+    margin-block-start: var(--space-3xs);
+  }
+
+  /* On the panel's tint the pill is the page itself. */
+  stocks-feed :global(.panel-ranges button[aria-pressed="true"]) {
+    background-color: var(--background);
+  }
+
+  /* Narrow: the sparkline gives way first. */
+  @media (width < 32rem) {
+    stocks-feed :global(.stock-row) {
+      grid-template-columns: 1.75rem minmax(0, 1fr) 3.25rem 3.75rem;
+    }
+
+    stocks-feed :global(.stock-spark) {
+      display: none;
+    }
+
+    stocks-feed :global(.range-tabs button) {
+      padding-inline: 0.45rem;
+    }
+  }
+</style>

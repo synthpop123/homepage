@@ -6,6 +6,7 @@ import PageTitle from "@/components/PageTitle.astro"
 import Movies from "@/components/Movies.astro"
 import Music from "@/components/Music.astro"
 import SectionHead from "@/components/SectionHead.astro"
+import Stocks from "@/components/Stocks.astro"
 import Switch from "@/components/Switch.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Uses from "@/components/Uses.astro"
@@ -17,7 +18,7 @@ const friends = (await getCollection("friends")).sort((a, b) =>
   a.data.name.localeCompare(b.data.name),
 )
 
-// The four live sections share one request (lib/client/misc.ts), which
+// The five live sections share one request (lib/client/misc.ts), which
 // would otherwise leave only once the first module script ran. The preload
 // below starts it with the CSS and JS, and the scripts pick up the
 // in-flight response (default fetch mode/credentials, which is what a bare
@@ -56,6 +57,14 @@ const sections: {
     id: "switch",
     label: "Switch",
     source: { href: API, label: "Parental Controls" },
+  },
+  {
+    id: "stocks",
+    label: "Stocks",
+    source: {
+      href: "https://github.com/ghostfolio/ghostfolio",
+      label: "Ghostfolio",
+    },
   },
   {
     id: "uses",
@@ -107,6 +116,10 @@ const toc = [
   <section>
     <SectionHead {...head.switch} />
     <Switch limit={10} />
+  </section>
+  <section>
+    <SectionHead {...head.stocks} />
+    <Stocks />
   </section>
   <section>
     <SectionHead {...head.uses} />

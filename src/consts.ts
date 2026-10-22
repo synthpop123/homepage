@@ -50,7 +50,7 @@ export const MASTODON = {
 
 /**
  * Every backend the site reads is one Worker, synthpop123/cf-workers-api.
- * `/tokens` has a page to itself; the four live sections of /misc arrive
+ * `/tokens` has a page to itself; the five live sections of /misc arrive
  * together from `/misc`, one request that misc.astro preloads.
  */
 export const API = "https://api.lkwplus.com"
