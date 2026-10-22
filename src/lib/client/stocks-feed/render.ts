@@ -491,19 +491,23 @@ export function fillPanel(
 
   const figure = el("div", "panel-figure")
   const price = el("span", "panel-price")
-  const move = el("span", "panel-move")
-  figure.append(price, move)
-  const about = el("p", "panel-about")
-  about.textContent = facts.about.join(" · ")
+  const delta = el("span", "panel-delta")
+  const when = el("span", "panel-when")
+  figure.append(price, delta, when)
+  // What it is: quiet tags, then the company's site.
+  const about = el("ul", "panel-about")
+  about.setAttribute("aria-label", "About")
+  for (const fact of facts.about) about.append(el("li", "panel-tag", fact))
   if (facts.site) {
-    if (facts.about.length) about.append(document.createTextNode(" · "))
-    const link = el("a", "", facts.site.host) as HTMLAnchorElement
+    const link = el("a", "panel-site", facts.site.host) as HTMLAnchorElement
     link.href = facts.site.href
     link.rel = "noopener"
     link.target = "_blank"
-    about.append(link)
+    const item = el("li")
+    item.append(link)
+    about.append(item)
   }
-  head.replaceChildren(figure, about)
+  head.replaceChildren(figure, ...(about.childElementCount ? [about] : []))
 
   const show = (index: number | null) => {
     const end = index ?? values.length - 1
@@ -511,18 +515,13 @@ export function fillPanel(
     const from = values.find((value) => value !== null) ?? null
     if (at === null || at === undefined || from === null) return
     price.textContent = formatPrice(at, entry.currency)
-    const delta = change(values, values.indexOf(from), end) ?? 0
-    move.replaceChildren(
-      el(
-        "span",
-        "panel-delta",
-        `${formatPriceChange(at - from, entry.currency)} (${formatReturn(delta)})`,
-      ),
-      document.createTextNode(
-        ` ${index === null ? label : `${formatDay(site.days[start])} → ${formatDay(site.days[start + end])}`}`,
-      ),
-    )
-    move.firstElementChild?.setAttribute("data-dir", direction(delta))
+    const moved = change(values, values.indexOf(from), end) ?? 0
+    delta.textContent = `${formatPriceChange(at - from, entry.currency)} · ${formatReturn(moved)}`
+    delta.dataset.dir = direction(moved)
+    when.textContent =
+      index === null
+        ? label
+        : `${formatDay(site.days[start])} → ${formatDay(site.days[start + end])}`
   }
   show(null)
 

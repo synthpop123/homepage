@@ -141,21 +141,22 @@ const section = NAVIGATION.find(
       }
     }
 
-    /* Where you are: one cell of the logo, lit in the accent, in the
-       gutter before the current entry (under it, on the phone's row). */
-    a::before {
+    /* Where you are: a short stroke of the accent under the current
+       entry's first letters, the green a hovered link's underline takes
+       — in the sidebar's column and on the phone's row alike. */
+    a::after {
       content: "";
       position: absolute;
-      inset-block-start: calc(50% - 0.15625rem);
-      inset-inline-start: -0.75rem;
-      inline-size: 0.3125rem;
-      block-size: 0.3125rem;
-      border-radius: 1.5px;
+      inset-inline-start: 0;
+      inset-block-end: -0.125rem;
+      inline-size: 0.875rem;
+      block-size: 2px;
+      border-radius: 1px;
       background-color: var(--accent-fill);
       visibility: hidden;
     }
 
-    a[aria-current="page"]::before {
+    a[aria-current="page"]::after {
       visibility: visible;
     }
 
@@ -212,12 +213,7 @@ const section = NAVIGATION.find(
   }
 
   @media (width < 64rem) {
-    nav ul a::before {
-      inset-block-start: calc(100% + 0.125rem);
-      inset-inline-start: calc(50% - 0.15625rem);
-    }
-
-    nav li:has(> ul) > a::before {
+    nav li:has(> ul) > a::after {
       visibility: visible;
     }
   }

@@ -842,45 +842,90 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background-color: color-mix(in oklab, var(--muted) 45%, transparent);
   }
 
+  /* The head: the price set large with its move as a tinted figure and
+     when it ran from, then what the company is as quiet tags. */
   stocks-feed :global(.panel-head) {
     display: grid;
-    gap: var(--space-3xs);
+    gap: var(--space-2xs);
   }
 
   stocks-feed :global(.panel-figure) {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    column-gap: var(--space-xs);
+    align-items: center;
+    gap: var(--space-3xs) var(--space-2xs);
   }
 
   stocks-feed :global(.panel-price) {
+    margin-inline-end: var(--space-3xs);
     font-size: var(--step-2);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-display);
     font-variant-numeric: tabular-nums;
     letter-spacing: var(--tracking-tight);
+    line-height: 1.1;
   }
 
-  stocks-feed :global(:is(.panel-move, .panel-about)) {
+  stocks-feed :global(.panel-delta) {
+    padding: 0.125rem 0.45rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background-color: var(--muted);
+  }
+
+  stocks-feed :global(.panel-delta[data-dir="up"]) {
+    background-color: color-mix(in oklab, var(--accent-fill) 14%, transparent);
+  }
+
+  stocks-feed :global(.panel-when) {
     font-size: var(--step--1);
     font-variant-numeric: tabular-nums;
     color: var(--muted-foreground);
   }
 
   stocks-feed :global(.panel-about) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3xs);
     margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.panel-about a) {
+  stocks-feed :global(.panel-tag) {
+    padding: 0.0625rem 0.45rem;
+    border-radius: var(--radius-full);
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+
+  /* The site: a plain name with the external arrow, no rule under it. */
+  stocks-feed :global(.panel-site) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    padding-inline: 0.3rem;
     color: inherit;
-    text-decoration-color: var(--border);
-    text-underline-offset: 0.2em;
+    text-decoration-line: none;
+    transition: color 0.15s ease;
+  }
+
+  stocks-feed :global(.panel-site::after) {
+    content: "";
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    background-color: currentColor;
+    opacity: 0.6;
+    mask: url("../assets/icons/sites/external.svg") center / contain no-repeat;
   }
 
   @media (hover: hover) {
-    stocks-feed :global(.panel-about a:hover) {
+    stocks-feed :global(.panel-site:hover) {
       color: var(--foreground);
-      text-decoration-color: var(--accent);
     }
   }
 
