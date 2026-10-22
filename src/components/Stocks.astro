@@ -389,17 +389,6 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     stroke-dasharray: 3 3;
   }
 
-  stocks-feed :global(.chart-cost-label) {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    font-feature-settings: normal;
-    fill: var(--muted-foreground);
-    paint-order: stroke;
-    stroke: var(--background);
-    stroke-width: 3px;
-    stroke-linejoin: round;
-  }
-
   stocks-feed :global(.chart-mark) {
     fill: var(--accent-fill);
     stroke: var(--background);
@@ -844,8 +833,8 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     inline-size: 2.5em;
   }
 
-  /* An opened row: the price and its move beside what the company is,
-     the line against the cost, the facts, and the year's band. */
+  /* An opened row: the price and its move, what the company is under
+     them, the line against the cost, the facts, and the year's band. */
   stocks-feed :global(.stock-panel) {
     display: grid;
     gap: var(--space-xs);
@@ -854,11 +843,8 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   stocks-feed :global(.panel-head) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3xs) var(--space-s);
+    display: grid;
+    gap: var(--space-3xs);
   }
 
   stocks-feed :global(.panel-figure) {
@@ -905,6 +891,47 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     overflow: visible;
     cursor: crosshair;
     touch-action: pan-y;
+  }
+
+  /* The tabs, and the key to the cost level and the first buy: kept
+     off the line, where a label would cross it. */
+  stocks-feed :global(.panel-bar) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3xs) var(--space-s);
+  }
+
+  stocks-feed :global(.panel-key) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-s);
+    margin: 0;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.panel-key span) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+
+  stocks-feed :global(.key-cost::before) {
+    content: "";
+    inline-size: 1rem;
+    border-block-start: 1.5px dashed
+      color-mix(in oklab, var(--foreground) 55%, transparent);
+  }
+
+  stocks-feed :global(.key-buy::before) {
+    content: "";
+    inline-size: 0.5rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background-color: var(--accent-fill);
   }
 
   /* On the panel's tint the pill is the page itself. */

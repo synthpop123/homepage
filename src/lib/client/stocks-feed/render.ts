@@ -472,16 +472,21 @@ export function fillPanel(
   let head = panel.querySelector<HTMLElement>(".panel-head")
   let svg = panel.querySelector<SVGSVGElement>(".panel-chart")
   let tabs = panel.querySelector<HTMLElement>(".panel-ranges")
+  let key = panel.querySelector<HTMLElement>(".panel-key")
   let readout = panel.querySelector<HTMLElement>(".panel-readout")
-  if (!head || !svg || !tabs || !readout) {
+  if (!head || !svg || !tabs || !key || !readout) {
     head = el("div", "panel-head")
     svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
     svg.setAttribute("class", "panel-chart")
+    // Under the line: its range tabs, and the key to the marks on it.
+    const bar = el("div", "panel-bar")
     tabs = el("div", "panel-ranges range-tabs")
     tabs.setAttribute("role", "group")
     tabs.setAttribute("aria-label", `${row.symbol} range`)
+    key = el("p", "panel-key")
+    bar.append(tabs, key)
     readout = el("dl", "readout panel-readout")
-    panel.replaceChildren(head, svg, tabs, readout)
+    panel.replaceChildren(head, svg, bar, readout)
   }
 
   const figure = el("div", "panel-figure")
@@ -528,6 +533,23 @@ export function fillPanel(
     (key) => onRange(key as Range),
   )
 
+  const mark =
+    facts.bought !== null && facts.bought >= start ? facts.bought - start : null
+  key.replaceChildren(
+    ...(row.cost === null
+      ? []
+      : [
+          el(
+            "span",
+            "key-cost",
+            `Cost ${formatPrice(row.cost, entry.currency)}`,
+          ),
+        ]),
+    ...(mark === null || !row.since
+      ? []
+      : [el("span", "key-buy", `First buy ${formatDay(row.since)}`)]),
+  )
+
   readout.replaceChildren(
     ...facts.cards.map((card) => {
       const stat = el("div", "stat")
@@ -547,17 +569,8 @@ export function fillPanel(
   svg.setAttribute("aria-label", `${entry.symbol} price, ${label}`)
   return drawChart(svg, {
     values,
-    cost:
-      row.cost === null
-        ? undefined
-        : {
-            value: row.cost,
-            label: `Cost ${formatPrice(row.cost, entry.currency)}`,
-          },
-    mark:
-      facts.bought !== null && facts.bought >= start
-        ? facts.bought - start
-        : null,
+    cost: row.cost,
+    mark,
     describe: (i) => {
       const value = values[i]
       return `${monthDay.format(dayInstant(site.days[start + i]))}: ${value === null ? "no price" : formatPrice(value, entry.currency)}`
