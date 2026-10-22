@@ -1,7 +1,8 @@
 /**
  * The Stocks section's pieces: the account and range pickers, the strip
  * of returns under the chart, the readout, the allocation bar, and the
- * holdings list with the price panel a row opens. Every figure and
+ * holdings table with the panel a row opens: its price line against its
+ * cost, what it is, and how it has done. Every figure and
  * decision comes from `stocks.ts`; this file only builds DOM.
  */
 
@@ -17,6 +18,8 @@ import {
   formatReturn,
   formatWeight,
   grainFor,
+  holdingFacts,
+  type PriceBand,
   priceView,
   type Range,
   type ReadoutCard,
@@ -39,7 +42,13 @@ const CASH_FLAGS: Record<string, string> = { USD: usdFlag }
  */
 export function syncButtons(
   group: HTMLElement,
-  items: { key: string; label: string; count?: string }[],
+  items: {
+    key: string
+    label: string
+    count?: string
+    /** A mark before the label (a broker's logo), decorative. */
+    icon?: string | null
+  }[],
   pressed: string,
   onPick: (key: string) => void,
 ) {
@@ -49,15 +58,32 @@ export function syncButtons(
       button,
     ]),
   )
-  const buttons = items.map(({ key, label, count }) => {
+  const buttons = items.map(({ key, label, count, icon }) => {
     let button = existing.get(key)
     if (!button) {
       button = el("button") as HTMLButtonElement
       button.type = "button"
       button.dataset.key = key
+      const src = safeHttpUrl(icon)
+      if (src) {
+        const img = document.createElement("img")
+        img.src = src
+        img.alt = ""
+        img.width = 32
+        img.height = 32
+        img.decoding = "async"
+        img.onerror = () => img.remove()
+        button.append(img)
+      }
     }
-    const name = el("span", "", label)
-    button.replaceChildren(name, ...(count ? [el("small", "", count)] : []))
+    const name = button.querySelector(":scope > span") ?? el("span")
+    name.textContent = label
+    const mark = button.querySelector(":scope > img")
+    button.replaceChildren(
+      ...(mark ? [mark] : []),
+      name,
+      ...(count ? [el("small", "", count)] : []),
+    )
     button.setAttribute("aria-pressed", String(key === pressed))
     button.onclick = () => {
       if (key !== pressed) onPick(key)
@@ -270,10 +296,9 @@ export function buildRow(
   button.setAttribute("aria-controls", panelId)
 
   const name = el("span", "stock-name")
-  const ticker = el("span", "stock-ticker", row.symbol)
   const sub = el("span", "stock-sub", row.name)
-  sub.title = sub.textContent ?? ""
-  name.append(ticker, sub)
+  sub.title = row.name
+  name.append(el("span", "stock-ticker", row.symbol), sub)
 
   const entry = site.symbols.find((symbol) => symbol.symbol === row.symbol)
   const closes = (
@@ -286,6 +311,15 @@ export function buildRow(
     closes.length > 1 ? closes[closes.length - 1] / closes[0] - 1 : null,
   )
 
+  const price = el(
+    "span",
+    "stock-price",
+    row.price === null ? "—" : formatPrice(row.price, row.currency),
+  )
+  const costText = row.cost === null ? "—" : formatPrice(row.cost, row.currency)
+  // Narrow screens fold the cost column under the price.
+  price.append(el("span", "stock-cost-under", `cost ${costText}`))
+  const cost = el("span", "stock-cost", costText)
   const weight = el("span", "stock-weight", formatWeight(row.weight))
   const result = el(
     "span",
@@ -295,10 +329,10 @@ export function buildRow(
   result.dataset.dir = direction(row.performance)
   result.title = "Return on the position since it was bought"
 
-  button.append(logo(row), name, spark, weight, result)
+  button.append(logo(row), name, spark, price, cost, weight, result)
   button.setAttribute(
     "aria-label",
-    `${row.symbol}, ${row.name}: ${formatWeight(row.weight)} of the account, ${row.performance === null ? "return unknown" : `${formatReturn(row.performance, 1)} on the position`}`,
+    `${row.symbol}, ${row.name}: ${row.price === null ? "" : `${formatPrice(row.price, row.currency)}, `}${row.cost === null ? "" : `cost ${costText}, `}${formatWeight(row.weight)} of the account, ${row.performance === null ? "return unknown" : `${formatReturn(row.performance, 1)} on the position`}`,
   )
 
   const panel = el("div", "stock-panel")
@@ -368,47 +402,103 @@ export function buildCashRow(entry: SiteCash): HTMLLIElement {
     mark,
     name,
     el("span", "stock-spark"),
+    el("span", "stock-price"),
+    el("span", "stock-cost"),
     el("span", "stock-weight", formatWeight(entry.weight)),
-    el("span", "stock-change", ""),
+    el("span", "stock-change"),
   )
   item.dataset.symbol = cashKey(entry.currency)
   item.append(row)
   return item
 }
 
+/** The year's low to high, with the price on it and the cost marked. */
+function bandNode(band: PriceBand, currency: string): HTMLElement {
+  const node = el("div", "panel-band")
+  const head = el("div", "band-head")
+  const legend = el("span", "band-legend")
+  legend.setAttribute("aria-hidden", "true")
+  legend.append(el("span", "band-key band-key-price", "Price"))
+  if (band.cost !== null)
+    legend.append(el("span", "band-key band-key-cost", "Cost"))
+  head.append(el("span", "", band.label), legend)
+
+  const track = el("div", "band-track")
+  track.setAttribute("aria-hidden", "true")
+  const pct = (at: number) => `${(at * 100).toFixed(2)}%`
+  if (band.cost !== null) {
+    const from = Math.min(band.price, band.cost)
+    const fill = el("span", "band-fill")
+    fill.dataset.dir = band.price >= band.cost ? "up" : "down"
+    fill.style.insetInlineStart = pct(from)
+    fill.style.inlineSize = pct(Math.abs(band.price - band.cost))
+    const cost = el("span", "band-cost")
+    cost.style.insetInlineStart = pct(band.cost)
+    track.append(fill, cost)
+  }
+  const pin = el("span", "band-pin")
+  pin.style.insetInlineStart = pct(band.price)
+  track.append(pin)
+
+  const ends = el("div", "band-ends")
+  ends.append(
+    el("span", "", `Low ${formatPrice(band.low, currency)}`),
+    el("span", "", `High ${formatPrice(band.high, currency)}`),
+  )
+  node.append(head, track, ends)
+  return node
+}
+
 /**
  * Fill an opened row's panel: the price at the end of the range (or at
- * the scrubbed day), its move, the price line, and its own range tabs.
- * Returns the chart so a resize can redraw it.
+ * the scrubbed day) and its move, what the holding is, the price line
+ * against the cost with its own range tabs, the facts and the year's
+ * band. Returns the chart so a resize can redraw it.
  */
 export function fillPanel(
   panel: HTMLElement,
   site: Site,
-  symbol: string,
+  row: Row,
   range: Range,
   animate: boolean,
   onRange: (range: Range) => void,
 ): Chart | null {
-  const resolved = priceView(site, symbol, range)
-  if (!resolved) return null
+  const resolved = priceView(site, row.symbol, range)
+  const facts = holdingFacts(site, row)
+  if (!resolved || !facts) return null
   const { entry, start, label } = resolved
   const values = entry.closes.slice(start)
 
   let head = panel.querySelector<HTMLElement>(".panel-head")
   let svg = panel.querySelector<SVGSVGElement>(".panel-chart")
   let tabs = panel.querySelector<HTMLElement>(".panel-ranges")
-  if (!head || !svg || !tabs) {
+  let readout = panel.querySelector<HTMLElement>(".panel-readout")
+  if (!head || !svg || !tabs || !readout) {
     head = el("div", "panel-head")
     svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
     svg.setAttribute("class", "panel-chart")
     tabs = el("div", "panel-ranges range-tabs")
     tabs.setAttribute("role", "group")
-    tabs.setAttribute("aria-label", `${symbol} range`)
-    panel.replaceChildren(head, svg, tabs)
+    tabs.setAttribute("aria-label", `${row.symbol} range`)
+    readout = el("dl", "readout panel-readout")
+    panel.replaceChildren(head, svg, tabs, readout)
   }
+
+  const figure = el("div", "panel-figure")
   const price = el("span", "panel-price")
   const move = el("span", "panel-move")
-  head.replaceChildren(price, move)
+  figure.append(price, move)
+  const about = el("p", "panel-about")
+  about.textContent = facts.about.join(" · ")
+  if (facts.site) {
+    if (facts.about.length) about.append(document.createTextNode(" · "))
+    const link = el("a", "", facts.site.host) as HTMLAnchorElement
+    link.href = facts.site.href
+    link.rel = "noopener"
+    link.target = "_blank"
+    about.append(link)
+  }
+  head.replaceChildren(figure, about)
 
   const show = (index: number | null) => {
     const end = index ?? values.length - 1
@@ -420,7 +510,7 @@ export function fillPanel(
     move.replaceChildren(
       el(
         "span",
-        `panel-delta`,
+        "panel-delta",
         `${formatPriceChange(at - from, entry.currency)} (${formatReturn(delta)})`,
       ),
       document.createTextNode(
@@ -438,9 +528,36 @@ export function fillPanel(
     (key) => onRange(key as Range),
   )
 
+  readout.replaceChildren(
+    ...facts.cards.map((card) => {
+      const stat = el("div", "stat")
+      const value = el("dd", "value", card.value)
+      value.dataset.dir = card.value.startsWith("−") ? "down" : "up"
+      stat.append(
+        el("dt", "label", card.label),
+        value,
+        el("dd", "note", card.note),
+      )
+      return stat
+    }),
+  )
+  panel.querySelector(".panel-band")?.remove()
+  if (facts.band) panel.append(bandNode(facts.band, entry.currency))
+
   svg.setAttribute("aria-label", `${entry.symbol} price, ${label}`)
   return drawChart(svg, {
     values,
+    cost:
+      row.cost === null
+        ? undefined
+        : {
+            value: row.cost,
+            label: `Cost ${formatPrice(row.cost, entry.currency)}`,
+          },
+    mark:
+      facts.bought !== null && facts.bought >= start
+        ? facts.bought - start
+        : null,
     describe: (i) => {
       const value = values[i]
       return `${monthDay.format(dayInstant(site.days[start + i]))}: ${value === null ? "no price" : formatPrice(value, entry.currency)}`

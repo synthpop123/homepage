@@ -7,6 +7,8 @@ import {
   formatPriceChange,
   formatReturn,
   grainFor,
+  heldFor,
+  holdingFacts,
   isSite,
   maxDrawdown,
   rangeCutoff,
@@ -72,6 +74,79 @@ describe("isSite", () => {
         ],
       }),
     ).toBe(false)
+  })
+})
+
+describe("isSite, per position", () => {
+  it("rejects a cost that is not a price, or a buy that is not a day", () => {
+    const [first, ...rest] = site.accounts
+    const [holding, ...others] = first.holdings
+    const with_ = (patch: object) => ({
+      ...fixture,
+      accounts: [
+        { ...first, holdings: [{ ...holding, ...patch }, ...others] },
+        ...rest,
+      ],
+    })
+    expect(isSite(with_({ cost: null, since: null }))).toBe(true)
+    expect(isSite(with_({ cost: -3 }))).toBe(false)
+    expect(isSite(with_({ since: "2026-02-30" }))).toBe(false)
+  })
+
+  it("rejects a country that is not a code", () => {
+    const symbols = site.symbols.map((entry, i) =>
+      i === 0 ? { ...entry, country: "United States" } : entry,
+    )
+    expect(isSite({ ...fixture, symbols })).toBe(false)
+  })
+})
+
+describe("holdingFacts", () => {
+  const msft = view(site, "all", "3M").rows.find((row) => row.symbol === "MSFT")
+
+  it("say what the company is and how the position stands against its cost", () => {
+    if (!msft) throw new Error("MSFT is in the fixture")
+    const facts = holdingFacts(site, msft)
+    expect(facts?.about).toEqual(["Technology", "United States"])
+    expect(facts?.site?.host).toBe("microsoft.com")
+    expect(facts?.cards.map((card) => card.label)).toEqual([
+      "Avg cost",
+      "vs cost",
+      "Last session",
+      "Held",
+    ])
+    const band = facts?.band
+    expect(band && band.price >= 0 && band.price <= 1).toBe(true)
+    expect(
+      band?.cost === null || (band && band.cost >= 0 && band.cost <= 1),
+    ).toBe(true)
+  })
+
+  it("stretch the band to reach a cost outside the year's prices", () => {
+    if (!msft) throw new Error("MSFT is in the fixture")
+    const band = holdingFacts(site, { ...msft, cost: 1 })?.band
+    expect(band?.cost).toBe(0)
+    expect(band?.low).toBeGreaterThan(1)
+  })
+
+  it("name a fund a fund, and say nothing of a cost it lacks", () => {
+    const boxx = view(site, "all", "3M").rows.find(
+      (row) => row.symbol === "BOXX",
+    )
+    if (!boxx) throw new Error("BOXX is in the fixture")
+    const facts = holdingFacts(site, { ...boxx, cost: null })
+    expect(facts?.about[0]).toBe("ETF")
+    expect(facts?.cards[0].value).toBe("—")
+    expect(facts?.band?.cost).toBeNull()
+  })
+})
+
+describe("heldFor", () => {
+  it("counts days, then months, then years", () => {
+    expect(heldFor("2026-10-20", "2026-10-21")).toBe("1 day")
+    expect(heldFor("2026-10-01", "2026-10-21")).toBe("20 days")
+    expect(heldFor("2026-01-28", "2026-10-21")).toBe("9 mo")
+    expect(heldFor("2025-01-01", "2026-10-21")).toBe("1.8 yr")
   })
 })
 

@@ -25,6 +25,7 @@ import {
   heroNote,
   loadSite,
   type Range,
+  type Row,
   type Site,
   view,
 } from "@/lib/client/stocks"
@@ -77,6 +78,7 @@ export function mountStocks(feed: HTMLElement) {
     openRange: DEFAULT_RANGE,
   }
   let site: Site | null = null
+  let rows: Row[] = []
   let pinSegment: (symbol: string | null) => void = () => {}
 
   /** The open row's panel, filled for the state's range. */
@@ -87,7 +89,8 @@ export function mountStocks(feed: HTMLElement) {
     )
     const button = item?.querySelector<HTMLButtonElement>(".stock-row")
     const panel = item?.querySelector<HTMLElement>(".stock-panel")
-    if (!item || !button || !panel) {
+    const row = rows.find((entry) => entry.symbol === state.open)
+    if (!item || !button || !panel || !row) {
       state.open = null
       pinSegment(null)
       return
@@ -95,7 +98,7 @@ export function mountStocks(feed: HTMLElement) {
     button.setAttribute("aria-expanded", "true")
     item.dataset.open = ""
     panel.hidden = false
-    fillPanel(panel, site, state.open, state.openRange, animate, (range) => {
+    fillPanel(panel, site, row, state.openRange, animate, (range) => {
       state.openRange = range
       openPanel(true)
     })
@@ -128,8 +131,8 @@ export function mountStocks(feed: HTMLElement) {
       accounts,
       current.accounts.map((account) => ({
         key: account.id,
-        label: account.name,
-        count: String(account.holdings.length),
+        label: account.id === "all" ? "All" : account.name,
+        icon: account.logo,
       })),
       state.account,
       (key) => {
@@ -205,6 +208,9 @@ export function mountStocks(feed: HTMLElement) {
     fillReadout(feed, resolved.cards)
     pinSegment = buildAllocation(feed, resolved.rows, resolved.cash)
 
+    rows = resolved.rows
+    const rangeHead = feed.querySelector(".stocks-head .stock-spark")
+    if (rangeHead) rangeHead.textContent = resolved.range
     list.replaceChildren(
       ...resolved.rows.map((row) => buildRow(current, row, start)),
       ...resolved.cash.map(buildCashRow),

@@ -7,7 +7,8 @@
  *
  * The payload carries returns, never amounts: per account a growth index
  * (time-weighted, so money moving in or out never moves it), holdings by
- * weight, and daily closes of each holding and of the benchmark. Any
+ * weight with the average price paid per share, and daily closes of each
+ * holding and of the benchmark. Any
  * range's return is two values of a series divided, which is why the
  * ranges are the page's to choose.
  */
@@ -19,6 +20,7 @@ import {
   isCount,
   isRecord,
   monthDay,
+  safeHttpUrl,
   swr,
 } from "./feed"
 import { miscSection } from "./misc"
@@ -29,6 +31,11 @@ export type SiteHolding = {
   /** The position's own return over its life in the account, as the
    *  owner's Ghostfolio computes it (ROI); null when it can't say. */
   performance: number | null
+  /** Average price paid per share in this account, in the symbol's
+   *  currency; null when Ghostfolio can't say. */
+  cost: number | null
+  /** The first buy in this account. */
+  since: string | null
 }
 
 /** Cash in one currency, and its share of the account. */
@@ -51,6 +58,12 @@ export type SiteSymbol = {
   currency: string
   kind: "stock" | "etf" | "other"
   logo: string | null
+  /** A stock's sector; null for a fund. */
+  sector: string | null
+  /** ISO 3166 alpha-2. */
+  country: string | null
+  /** The company's site (check with `safeHttpUrl` before linking). */
+  url: string | null
   closes: (number | null)[]
 }
 
@@ -66,7 +79,7 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/stocks/compose.ts. */
-export const SITE_SCHEMA_VERSION = 2
+export const SITE_SCHEMA_VERSION = 3
 
 /* Decoder ---------------------------------------------------------------- */
 
@@ -96,7 +109,9 @@ const isHolding = (value: unknown): value is SiteHolding =>
   (value.performance === null ||
     (typeof value.performance === "number" &&
       Number.isFinite(value.performance) &&
-      value.performance >= -1))
+      value.performance >= -1)) &&
+  (value.cost === null || isPositive(value.cost)) &&
+  (value.since === null || isCalendarDay(value.since))
 
 const isCurrency = (value: unknown): value is string =>
   typeof value === "string" && /^[A-Z]{3}$/.test(value)
@@ -118,6 +133,8 @@ const isAccount = (value: unknown, length: number): value is SiteAccount =>
 
 const KINDS = new Set(["stock", "etf", "other"])
 
+const isText = (value: unknown) => value === null || typeof value === "string"
+
 const isSymbol = (value: unknown, length: number): value is SiteSymbol =>
   isRecord(value) &&
   typeof value.symbol === "string" &&
@@ -126,6 +143,10 @@ const isSymbol = (value: unknown, length: number): value is SiteSymbol =>
   typeof value.kind === "string" &&
   KINDS.has(value.kind) &&
   (value.logo === null || typeof value.logo === "string") &&
+  isText(value.sector) &&
+  (value.country === null ||
+    (typeof value.country === "string" && /^[A-Z]{2}$/.test(value.country))) &&
+  isText(value.url) &&
   isSeries(value.closes, length)
 
 export function isSite(data: unknown): data is Site {
@@ -454,6 +475,10 @@ export type Row = {
   currency: string
   logo: string | null
   weight: number
+  /** The latest close, and the average price paid for a share. */
+  price: number | null
+  cost: number | null
+  since: string | null
   /** The position's own return since it was bought, not the range's. */
   performance: number | null
   /** Where in the range its price line starts (a listing inside it). */
@@ -527,6 +552,9 @@ export function view(site: Site, accountId: string, wanted: Range): View {
         currency: entry.currency,
         logo: entry.logo,
         weight: holding.weight,
+        price: entry.closes[entry.closes.length - 1],
+        cost: holding.cost,
+        since: holding.since,
         performance: holding.performance,
         start: from,
       },
@@ -588,5 +616,135 @@ export function priceView(
     ranges,
     start,
     label: rangeLabel(range, site.days, start),
+  }
+}
+
+/* An opened row's facts ------------------------------------------------ */
+
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" })
+
+/** How long since a day, from the last session: `12 days`, `9 mo`, `1.4 yr`. */
+export function heldFor(since: string, last: string): string {
+  const days = Math.max(1, daysApart(since, last))
+  if (days < 31) return `${days} day${days === 1 ? "" : "s"}`
+  const months = Math.round(days / 30.44)
+  return months < 12 ? `${months} mo` : `${(months / 12).toFixed(1)} yr`
+}
+
+const daysApart = (from: string, to: string) =>
+  Math.round((dayInstant(to).getTime() - dayInstant(from).getTime()) / 864e5)
+
+export type PriceBand = {
+  label: string
+  low: number
+  high: number
+  /** 0–1 along the band: the band reaches the cost when it lies outside
+   *  the year's prices, so both marks always fit. */
+  price: number
+  cost: number | null
+}
+
+export type Facts = {
+  /** Sector and country, in that order, whichever are known. */
+  about: string[]
+  /** The company's site host, without `www.`, and its URL. */
+  site: { host: string; href: string } | null
+  cards: ReadoutCard[]
+  band: PriceBand | null
+  /** Where the first buy falls on the axis, if it does. */
+  bought: number | null
+}
+
+/** Everything an opened row says beside its price line. */
+export function holdingFacts(
+  site: Site,
+  row: Pick<Row, "symbol" | "price" | "cost" | "since">,
+): Facts | null {
+  const entry = site.symbols.find((item) => item.symbol === row.symbol)
+  if (!entry) return null
+  const end = site.days.length - 1
+  const last = site.days[end]
+
+  const about: string[] = []
+  if (entry.kind === "etf") about.push("ETF")
+  else if (entry.sector) about.push(entry.sector)
+  if (entry.country) {
+    try {
+      about.push(regionNames.of(entry.country) ?? entry.country)
+    } catch {
+      about.push(entry.country)
+    }
+  }
+
+  const { price, cost } = row
+  const session = change(entry.closes, Math.max(0, end - 1))
+  const cards: ReadoutCard[] = [
+    {
+      label: "Avg cost",
+      value: cost === null ? "—" : formatPrice(cost, entry.currency),
+      note: "per share",
+    },
+    {
+      label: "vs cost",
+      value:
+        cost === null || price === null
+          ? "—"
+          : formatReturn(price / cost - 1, 1),
+      note:
+        cost === null || price === null
+          ? "No cost recorded"
+          : `${formatPriceChange(price - cost, entry.currency)} a share`,
+    },
+    {
+      label: "Last session",
+      value: formatReturn(session ?? 0),
+      note: monthDay.format(dayInstant(last)),
+    },
+    row.since
+      ? {
+          label: "Held",
+          value: heldFor(row.since, last),
+          note: `since ${monthYear.format(dayInstant(row.since))}`,
+        }
+      : { label: "Held", value: "—", note: "" },
+  ]
+
+  const yearStart = rangeStart(site.days, "1Y", entry.closes)
+  const year = entry.closes
+    .slice(yearStart)
+    .filter((value): value is number => value !== null)
+  let band: PriceBand | null = null
+  if (year.length > 1 && price !== null) {
+    const low = Math.min(...year)
+    const high = Math.max(...year)
+    const from = Math.min(low, cost ?? low)
+    const to = Math.max(high, cost ?? high)
+    const at = (value: number) =>
+      to > from ? (value - from) / (to - from) : 0.5
+    const cutoff = rangeCutoff("1Y", last) as string
+    band = {
+      label:
+        site.days[yearStart] > cutoff
+          ? `Range since ${monthYear.format(dayInstant(site.days[yearStart]))}`
+          : "52-week range",
+      low,
+      high,
+      price: at(price),
+      cost: cost === null ? null : at(cost),
+    }
+  }
+
+  const bought = row.since
+    ? site.days.findIndex((day) => day >= (row.since as string))
+    : -1
+  const href = safeHttpUrl(entry.url)
+  return {
+    about,
+    site: href
+      ? { host: new URL(href).hostname.replace(/^www\./, ""), href }
+      : null,
+    cards,
+    band,
+    bought: bought >= 0 ? bought : null,
   }
 }

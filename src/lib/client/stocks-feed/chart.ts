@@ -4,7 +4,9 @@
  * benchmark rebased onto the line's start), and a scrubber — a hairline
  * and an accent dot that follow the pointer, or the arrow keys when the
  * chart has focus (it is a slider over the range's days, so the keyboard
- * and screen readers reach every point the pointer does).
+ * and screen readers reach every point the pointer does). A holding's
+ * line can carry its cost: a dashed level with the gap to it washed green
+ * above and grey below, and a dot on the day of the first buy.
  *
  * Drawn to the container's width in pixels each time, so strokes stay
  * one width at any size; the caller redraws on resize.
@@ -29,6 +31,10 @@ export type ChartSpec = {
   /** Same length as `values`, already on the line's scale. */
   ghost?: (number | null)[]
   ghostLabel?: string
+  /** A level drawn dashed across, the line's gap to it washed by side. */
+  cost?: { value: number; label: string }
+  /** A point marked on the line (the first buy). */
+  mark?: number | null
   /** What the slider says for a point: `Oct 21: +12.73%`. */
   describe: (index: number) => string
   /** The date over the scrubber. */
@@ -48,15 +54,20 @@ const PAD_TOP = 24
 const PAD_BOTTOM = 4
 const PAD_X = 2
 
+/** Clip-path ids, unique on the page. */
+let clipSerial = 0
+
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches
 
 export function drawChart(svg: SVGSVGElement, spec: ChartSpec): Chart {
   const width = Math.max(svg.clientWidth, 1)
   const height = Math.max(svg.clientHeight, 1)
   const n = spec.values.length
-  const shown = [...spec.values, ...(spec.ghost ?? [])].filter(
-    (value): value is number => value !== null,
-  )
+  const shown = [
+    ...spec.values,
+    ...(spec.ghost ?? []),
+    ...(spec.cost ? [spec.cost.value] : []),
+  ].filter((value): value is number => value !== null)
   let lo = Math.min(...shown)
   let hi = Math.max(...shown)
   const pad = (hi - lo) * 0.08 || Math.abs(hi) * 0.01 || 1
@@ -81,7 +92,61 @@ export function drawChart(svg: SVGSVGElement, spec: ChartSpec): Chart {
   const line = path(spec.values)
   const nodes: SVGElement[] = []
 
-  if (line && first >= 0) {
+  if (line && first >= 0 && spec.cost) {
+    // The band between the line and the cost, cut at the cost's level:
+    // above it a gain, below it a loss.
+    const level = y(spec.cost.value)
+    const id = `cost-${(clipSerial++).toString(36)}`
+    const above = svgEl("clipPath", { id: `${id}-up` })
+    above.append(svgEl("rect", { x: 0, y: 0, width, height: level }))
+    const below = svgEl("clipPath", { id: `${id}-down` })
+    below.append(
+      svgEl("rect", {
+        x: 0,
+        y: level,
+        width,
+        height: Math.max(0, height - level),
+      }),
+    )
+    const defs = svgEl("defs")
+    defs.append(above, below)
+    const band = `${line}L${x(n - 1).toFixed(1)},${level.toFixed(1)}L${x(first).toFixed(1)},${level.toFixed(1)}Z`
+    nodes.push(
+      defs,
+      svgEl("path", {
+        class: "chart-gain",
+        d: band,
+        "clip-path": `url(#${id}-up)`,
+      }),
+      svgEl("path", {
+        class: "chart-loss",
+        d: band,
+        "clip-path": `url(#${id}-down)`,
+      }),
+      svgEl("line", {
+        class: "chart-cost",
+        x1: 0,
+        x2: width,
+        y1: level,
+        y2: level,
+      }),
+    )
+    // At the right end, on the side of the level away from where the
+    // line ends, unless that side runs out of the chart.
+    const end = spec.values[n - 1]
+    const endsAbove = end === null || end >= spec.cost.value
+    const label = svgEl("text", {
+      class: "chart-cost-label",
+      x: width - PAD_X,
+      "text-anchor": "end",
+      y:
+        (endsAbove && level < height - 16) || level < PAD_TOP
+          ? level + 13
+          : level - 5,
+    })
+    label.textContent = spec.cost.label
+    nodes.push(label)
+  } else if (line && first >= 0) {
     nodes.push(
       svgEl("path", {
         class: "chart-area",
@@ -111,6 +176,17 @@ export function drawChart(svg: SVGSVGElement, spec: ChartSpec): Chart {
   }
   const stroke = svgEl("path", { class: "chart-line", d: line })
   nodes.push(stroke)
+  const marked = spec.mark == null ? null : spec.values[spec.mark]
+  if (spec.mark != null && marked != null) {
+    nodes.push(
+      svgEl("circle", {
+        class: "chart-mark",
+        cx: x(spec.mark).toFixed(1),
+        cy: y(marked).toFixed(1),
+        r: 3.5,
+      }),
+    )
+  }
 
   const scrubber = svgEl("g", { class: "chart-scrub" })
   const rule = svgEl("line", { y1: PAD_TOP - 8, y2: height })

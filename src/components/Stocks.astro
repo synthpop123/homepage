@@ -7,8 +7,9 @@
  * return over the range, the line its growth with the S&P 500 as a
  * dashed ghost, the strip under it the same line cut into days, weeks or
  * months and graded like the heatmaps (gains in their greens, losses in
- * ink — the site keeps one colour). The list is the holdings by weight;
- * a row opens into its own price line in place.
+ * ink — the site keeps one colour). The table is the holdings by weight
+ * with price and average cost; a row opens in place into its price line
+ * against that cost, what the company is, and how the position has done.
  */
 
 import "@/styles/feed.css"
@@ -25,15 +26,27 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
 <stocks-feed data-endpoint={endpoint} aria-busy="true">
   <div class="stocks-body">
-    <div
-      class="stocks-accounts"
-      role="group"
-      aria-label="Account"
-      aria-busy="true"
-    >
-      {Array.from({ length: 3 }).map(() => (
-        <span class="chip-skeleton" aria-hidden="true"><span class="sk-line" /></span>
-      ))}
+    <div class="stocks-toolbar">
+      <div
+        class="stocks-accounts"
+        role="group"
+        aria-label="Account"
+        aria-busy="true"
+      >
+        {Array.from({ length: 4 }).map(() => (
+          <span class="chip-skeleton" aria-hidden="true"><span class="sk-line" /></span>
+        ))}
+      </div>
+      <div
+        class="stocks-ranges range-tabs"
+        role="group"
+        aria-label="Range"
+        aria-busy="true"
+      >
+        {Array.from({ length: 5 }).map(() => (
+          <span class="tab-skeleton" aria-hidden="true"><span class="sk-line" /></span>
+        ))}
+      </div>
     </div>
 
     <div class="stocks-hero">
@@ -66,17 +79,6 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       </div>
     </div>
 
-    <div
-      class="stocks-ranges range-tabs"
-      role="group"
-      aria-label="Range"
-      aria-busy="true"
-    >
-      {Array.from({ length: 5 }).map(() => (
-        <span class="tab-skeleton" aria-hidden="true"><span class="sk-line" /></span>
-      ))}
-    </div>
-
     <dl class="readout stocks-readout">
       {stats.map((label) => (
         <div class="stat">
@@ -96,6 +98,15 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     </div>
 
     <h3 class="stocks-label">Holdings</h3>
+    <div class="stocks-head stock-row" aria-hidden="true">
+      <span></span>
+      <span>Holding</span>
+      <span class="stock-spark">Range</span>
+      <span class="stock-price">Price</span>
+      <span class="stock-cost">Avg cost</span>
+      <span class="stock-weight">Weight</span>
+      <span class="stock-change">Return</span>
+    </div>
     <ol class="stocks-list">
       {Array.from({ length: SKELETON_ROWS }).map(() => (
         <li class="stock" data-skeleton aria-hidden="true">
@@ -106,6 +117,8 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
               <span class="stock-sub"><span class="sk-line sk-sub" /></span>
             </span>
             <span class="stock-spark" />
+            <span class="stock-price"><span class="sk-line sk-num" /></span>
+            <span class="stock-cost"><span class="sk-line sk-num" /></span>
             <span class="stock-weight"><span class="sk-line sk-num" /></span>
             <span class="stock-change"><span class="sk-line sk-num" /></span>
           </div>
@@ -131,19 +144,34 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     --down-4: color-mix(in oklab, var(--foreground) 72%, transparent);
 
     display: block;
+    /* Between 64rem and 76rem the sidebar and TOC squeeze the column
+       below what the viewport says: the table reads its own width. */
+    container-type: inline-size;
   }
 
   .stocks-body {
     display: grid;
   }
 
-  /* Account picker: quiet pills, the pressed one inked. */
-  .stocks-accounts {
+  /* One toolbar: whose portfolio on the left, over what range on the
+     right. Accounts are a segmented control, each broker with its mark. */
+  .stocks-toolbar {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3xs);
-    min-block-size: 1.75rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2xs) var(--space-s);
     margin-block-end: var(--space-s);
+  }
+
+  .stocks-accounts {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    min-block-size: 1.875rem;
+    padding: 2px;
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
   }
 
   stocks-feed :global(.stocks-accounts button),
@@ -151,30 +179,32 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     display: inline-flex;
     align-items: center;
     gap: 0.4em;
-    block-size: 1.75rem;
-    padding-inline: 0.7rem;
-    border-radius: var(--radius-full);
-    box-shadow: inset 0 0 0 1px var(--border);
+    block-size: 1.625rem;
+    padding-inline: 0.65rem;
+    border-radius: var(--radius-md);
     font-size: var(--step--1);
     color: var(--muted-foreground);
     transition:
       color 0.15s ease,
+      background-color 0.15s ease,
       box-shadow 0.15s ease;
   }
 
   .chip-skeleton {
-    inline-size: 6.5rem;
+    display: grid;
+    align-content: center;
+    inline-size: 4rem;
   }
 
   .chip-skeleton .sk-line {
     inline-size: 100%;
   }
 
-  stocks-feed :global(.stocks-accounts button small) {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    font-feature-settings: normal;
-    color: var(--faint-foreground);
+  stocks-feed :global(.stocks-accounts button img) {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+    border-radius: 3px;
+    background-color: #fff;
   }
 
   @media (hover: hover) {
@@ -185,7 +215,9 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   stocks-feed :global(.stocks-accounts button[aria-pressed="true"]) {
     color: var(--foreground);
-    box-shadow: inset 0 0 0 1px var(--foreground);
+    background-color: var(--background);
+    box-shadow: 0 1px 2px
+      color-mix(in oklab, var(--foreground) 12%, transparent);
   }
 
   /* Hero: what the account did over the range, set large. */
@@ -341,6 +373,39 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     stroke-linejoin: round;
   }
 
+  /* A holding's line against its cost: the dashed level, the gap washed
+     green above it and grey below, the first buy a dot. */
+  stocks-feed :global(.chart-gain) {
+    fill: color-mix(in oklab, var(--accent-fill) 16%, transparent);
+  }
+
+  stocks-feed :global(.chart-loss) {
+    fill: color-mix(in oklab, var(--foreground) 7%, transparent);
+  }
+
+  stocks-feed :global(.chart-cost) {
+    stroke: color-mix(in oklab, var(--foreground) 55%, transparent);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+  }
+
+  stocks-feed :global(.chart-cost-label) {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-feature-settings: normal;
+    fill: var(--muted-foreground);
+    paint-order: stroke;
+    stroke: var(--background);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  stocks-feed :global(.chart-mark) {
+    fill: var(--accent-fill);
+    stroke: var(--background);
+    stroke-width: 2;
+  }
+
   stocks-feed :global(.chart-scrub) {
     opacity: 0;
     transition: opacity 0.12s ease;
@@ -487,10 +552,6 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       background-color 0.15s ease;
   }
 
-  .stocks-ranges {
-    margin-block-start: var(--space-xs);
-  }
-
   .tab-skeleton {
     display: grid;
     align-content: center;
@@ -576,14 +637,27 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background: var(--accent-fill);
   }
 
-  /* Holdings. */
+  /* Holdings: a table of ticker and name, the range's line, price,
+     average cost, weight and the position's return. */
   .stocks-label {
     margin-block-start: var(--space-l);
   }
 
   .stocks-list {
     display: grid;
-    border-block-start: 1px solid var(--border);
+  }
+
+  .stocks-head {
+    padding-block: var(--space-3xs);
+    border-block-end: 1px solid var(--border);
+    font-size: 0.6875rem;
+    letter-spacing: 0.02em;
+    color: var(--faint-foreground);
+  }
+
+  .stocks-head .stock-spark {
+    block-size: auto;
+    text-align: center;
   }
 
   stocks-feed :global(.stock) {
@@ -592,7 +666,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   stocks-feed :global(.stock-row) {
     display: grid;
-    grid-template-columns: 1.75rem minmax(0, 1fr) 4.5rem 3.5rem 4rem;
+    grid-template-columns: 1.75rem minmax(0, 1fr) 4.5rem 4.75rem 4.75rem 3.5rem 4rem;
     align-items: center;
     gap: var(--space-xs);
     inline-size: 100%;
@@ -672,10 +746,9 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   stocks-feed :global(.stock-ticker) {
-    font-family: var(--font-mono);
     font-size: var(--step--1);
-    font-weight: var(--font-weight-medium);
-    font-feature-settings: normal;
+    font-weight: var(--font-weight-display);
+    letter-spacing: -0.005em;
     line-height: 1.35;
   }
 
@@ -707,15 +780,22 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     stroke: var(--accent-fill);
   }
 
-  stocks-feed :global(:is(.stock-weight, .stock-change)) {
+  stocks-feed
+    :global(:is(.stock-price, .stock-cost, .stock-weight, .stock-change)) {
     font-size: var(--step--1);
     font-variant-numeric: tabular-nums;
     text-align: end;
     white-space: nowrap;
   }
 
-  stocks-feed :global(.stock-weight) {
+  stocks-feed :global(:is(.stock-cost, .stock-weight)) {
     color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.stock-cost-under) {
+    display: none;
+    font-size: 0.6875rem;
+    color: var(--faint-foreground);
   }
 
   stocks-feed :global(.stock-change) {
@@ -737,7 +817,14 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   stocks-feed
     :global(
       [data-skeleton]
-        :is(.stock-ticker, .stock-sub, .stock-weight, .stock-change)
+        :is(
+          .stock-ticker,
+          .stock-sub,
+          .stock-price,
+          .stock-cost,
+          .stock-weight,
+          .stock-change
+        )
     ) {
     display: grid;
     align-content: center;
@@ -757,13 +844,24 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     inline-size: 2.5em;
   }
 
-  /* An opened row: its price line, drawn in place under it. */
+  /* An opened row: the price and its move beside what the company is,
+     the line against the cost, the facts, and the year's band. */
   stocks-feed :global(.stock-panel) {
-    padding: var(--space-xs) var(--space-2xs) var(--space-2xs);
+    display: grid;
+    gap: var(--space-xs);
+    padding: var(--space-s) var(--space-xs) var(--space-xs);
     background-color: color-mix(in oklab, var(--muted) 45%, transparent);
   }
 
   stocks-feed :global(.panel-head) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3xs) var(--space-s);
+  }
+
+  stocks-feed :global(.panel-figure) {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -777,24 +875,36 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     letter-spacing: var(--tracking-tight);
   }
 
-  stocks-feed :global(.panel-move) {
+  stocks-feed :global(:is(.panel-move, .panel-about)) {
     font-size: var(--step--1);
     font-variant-numeric: tabular-nums;
     color: var(--muted-foreground);
   }
 
+  stocks-feed :global(.panel-about) {
+    margin: 0;
+  }
+
+  stocks-feed :global(.panel-about a) {
+    color: inherit;
+    text-decoration-color: var(--border);
+    text-underline-offset: 0.2em;
+  }
+
+  @media (hover: hover) {
+    stocks-feed :global(.panel-about a:hover) {
+      color: var(--foreground);
+      text-decoration-color: var(--accent);
+    }
+  }
+
   stocks-feed :global(.panel-chart) {
     display: block;
     inline-size: 100%;
-    block-size: 8.5rem;
-    margin-block-start: var(--space-3xs);
+    block-size: 9rem;
     overflow: visible;
     cursor: crosshair;
     touch-action: pan-y;
-  }
-
-  stocks-feed :global(.panel-ranges) {
-    margin-block-start: var(--space-3xs);
   }
 
   /* On the panel's tint the pill is the page itself. */
@@ -802,16 +912,126 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background-color: var(--background);
   }
 
-  /* Narrow: the sparkline gives way first. */
-  @media (width < 32rem) {
+  stocks-feed :global(.panel-readout .value) {
+    font-size: var(--step-0);
+  }
+
+  stocks-feed :global(.panel-readout .value[data-dir="down"]) {
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.panel-band) {
+    display: grid;
+    gap: var(--space-3xs);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  stocks-feed :global(:is(.band-head, .band-ends)) {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  stocks-feed :global(.band-head) {
+    color: var(--faint-foreground);
+  }
+
+  stocks-feed :global(.band-ends) {
+    color: var(--muted-foreground);
+  }
+
+  stocks-feed :global(.band-legend) {
+    display: inline-flex;
+    gap: var(--space-xs);
+  }
+
+  stocks-feed :global(.band-key) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  stocks-feed :global(.band-key::before) {
+    content: "";
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--foreground);
+  }
+
+  stocks-feed :global(.band-key-cost::before) {
+    inline-size: 0;
+    block-size: 0.625rem;
+    border-radius: 0;
+    border-inline-start: 1.5px dashed var(--muted-foreground);
+    background: none;
+  }
+
+  stocks-feed :global(.band-track) {
+    position: relative;
+    block-size: 0.375rem;
+    margin-block: 0.25rem;
+    border-radius: 3px;
+    background-color: var(--heat-0);
+  }
+
+  stocks-feed :global(.band-fill) {
+    position: absolute;
+    inset-block: 0;
+    border-radius: 3px;
+    background-color: var(--heat-2);
+  }
+
+  stocks-feed :global(.band-fill[data-dir="down"]) {
+    background-color: var(--down-2);
+  }
+
+  stocks-feed :global(.band-cost) {
+    position: absolute;
+    inset-block: -0.25rem;
+    border-inline-start: 1.5px dashed var(--muted-foreground);
+  }
+
+  stocks-feed :global(.band-pin) {
+    position: absolute;
+    inset-block-start: 50%;
+    inline-size: 0.75rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background-color: var(--foreground);
+    box-shadow: 0 0 0 2px var(--background);
+    translate: -50% -50%;
+  }
+
+  /* Narrow columns: the sparkline gives way first, then the cost folds
+     under the price. */
+  @container (width < 38rem) {
     stocks-feed :global(.stock-row) {
-      grid-template-columns: 1.75rem minmax(0, 1fr) 3.25rem 3.75rem;
+      grid-template-columns: 1.75rem minmax(0, 1fr) 4.75rem 4.75rem 3.25rem 3.75rem;
     }
 
     stocks-feed :global(.stock-spark) {
       display: none;
     }
+  }
 
+  @container (width < 28rem) {
+    stocks-feed :global(.stock-row) {
+      grid-template-columns: 1.75rem minmax(0, 1fr) 4.5rem 3rem 3.5rem;
+      gap: var(--space-2xs);
+    }
+
+    stocks-feed :global(.stock-cost) {
+      display: none;
+    }
+
+    stocks-feed :global(.stock-cost-under) {
+      display: block;
+    }
+  }
+
+  @media (width < 32rem) {
     stocks-feed :global(.range-tabs button) {
       padding-inline: 0.45rem;
     }
