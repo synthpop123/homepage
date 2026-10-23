@@ -33,11 +33,11 @@ const sections: {
 }[] = [
   { id: "friends", label: "Friends" },
   {
-    id: "flights",
-    label: "Flights",
+    id: "stocks",
+    label: "Stocks",
     source: {
-      href: "https://github.com/johanohly/AirTrail",
-      label: "AirTrail",
+      href: "https://github.com/ghostfolio/ghostfolio",
+      label: "Ghostfolio",
     },
   },
   {
@@ -59,11 +59,11 @@ const sections: {
     source: { href: API, label: "Parental Controls" },
   },
   {
-    id: "stocks",
-    label: "Stocks",
+    id: "flights",
+    label: "Flights",
     source: {
-      href: "https://github.com/ghostfolio/ghostfolio",
-      label: "Ghostfolio",
+      href: "https://github.com/johanohly/AirTrail",
+      label: "AirTrail",
     },
   },
   {
@@ -102,8 +102,8 @@ const toc = [
     </ul>
   </section>
   <section>
-    <SectionHead {...head.flights} />
-    <Flights />
+    <SectionHead {...head.stocks} />
+    <Stocks />
   </section>
   <section>
     <SectionHead {...head.movies} />
@@ -118,8 +118,8 @@ const toc = [
     <Switch limit={10} />
   </section>
   <section>
-    <SectionHead {...head.stocks} />
-    <Stocks />
+    <SectionHead {...head.flights} />
+    <Flights />
   </section>
   <section>
     <SectionHead {...head.uses} />
