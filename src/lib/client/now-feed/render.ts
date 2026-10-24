@@ -14,16 +14,18 @@ import {
 } from "@/lib/client/feed"
 import { isPlaying } from "@/lib/client/music"
 import {
-  flightFoot,
-  flightTitle,
-  flownLabel,
+  PORTFOLIO_RANGE,
+  portfolioView,
   type Site,
+  tokenBars,
   tokensFoot,
   tokensLabel,
   watchedLabel,
 } from "@/lib/client/now"
 import { setReadout } from "@/lib/client/readout"
 import { formatTokens } from "@/lib/client/tokens/format"
+
+const SVG = "http://www.w3.org/2000/svg"
 
 const exact = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -65,7 +67,10 @@ const empty = (tile: HTMLElement, what: string, label?: string) => {
   for (const img of tile.querySelectorAll("img")) setImage(img, null)
   if (label) text(tile, ".now-label", label)
   tile.querySelector(".now-title, .now-figure")?.replaceChildren(what)
-  for (const extra of tile.querySelectorAll(".now-sub, .now-foot"))
+  tile.querySelector(".now-figure")?.removeAttribute("data-dir")
+  for (const extra of tile.querySelectorAll(
+    ".now-sub, .now-foot, .now-bars, .now-spark, .now-strip, .now-axis",
+  ))
     extra.replaceChildren()
 }
 
@@ -140,34 +145,75 @@ export function renderTokens(tile: HTMLElement, site: Site, today: string) {
   const figure = tile.querySelector<HTMLElement>(".now-figure")
   if (figure) setReadout(figure, formatTokens(tokens.tokens))
   runs(tile, tokensFoot(tokens))
+  tile.querySelector(".now-bars")?.replaceChildren(
+    ...tokenBars(tokens.recent, site.today).map(({ height, title }) => {
+      const bar = el("i")
+      bar.style.setProperty("--bar", String(height))
+      bar.title = title
+      return bar
+    }),
+  )
 }
 
-export function renderFlight(
-  tile: HTMLElement,
-  site: Site,
-  today: string,
-  track: Element,
-) {
-  const flight = site.flight
-  const when = tile.querySelector<HTMLTimeElement>(".now-when")
-  if (!flight) {
-    when?.replaceChildren()
-    return empty(tile, "—")
-  }
+const svg = (name: string, attrs: Record<string, string>) => {
+  const node = document.createElementNS(SVG, name)
+  for (const [key, value] of Object.entries(attrs))
+    node.setAttribute(key, value)
+  return node
+}
+
+export function renderPortfolio(tile: HTMLElement, site: Site) {
+  const portfolio = site.portfolio
+  if (!portfolio) return empty(tile, "—")
   delete tile.dataset.empty
+  const view = portfolioView(portfolio)
   const link = tile.querySelector("a")!
-  link.setAttribute("href", "/misc#flights")
-  link.title = flightTitle(flight)
-  if (when) {
-    when.dateTime = flight.date
-    when.textContent = flownLabel(flight.date, today)
+  link.setAttribute("href", "/misc#portfolio")
+  link.title = view.title
+  text(tile, ".now-label", `Portfolio · ${PORTFOLIO_RANGE}`)
+  const figure = tile.querySelector<HTMLElement>(".now-figure")
+  if (figure) {
+    figure.dataset.dir = view.dir
+    setReadout(figure, view.figure)
   }
+  runs(tile, view.foot)
+
+  tile.querySelector(".now-spark")?.replaceChildren(
+    svg("polygon", { class: "now-area", points: view.area }),
+    svg("line", {
+      class: "now-base",
+      x1: "0",
+      x2: "100",
+      y1: String(view.base),
+      y2: String(view.base),
+    }),
+    svg("polyline", { class: "now-ghost", points: view.ghost }),
+    svg("polyline", { class: "now-line", points: view.line }),
+  )
+  const dot = tile.querySelector<HTMLElement>(".now-dot")
+  if (dot) {
+    dot.style.setProperty("--end", `${view.end}%`)
+    dot.dataset.dir = view.dir
+  }
+  tile.querySelector(".now-strip")?.replaceChildren(
+    ...view.cells.map(({ dir, level, title }) => {
+      const cell = el("i")
+      cell.dataset.dir = dir
+      cell.dataset.level = String(level)
+      cell.title = title
+      return cell
+    }),
+  )
+  const keys = el("span", "now-keys")
+  keys.append(
+    el("span", "now-key", "Portfolio"),
+    el("span", "now-key now-key-ghost", "S&P 500"),
+  )
   tile
-    .querySelector(".now-figure")
+    .querySelector(".now-axis")
     ?.replaceChildren(
-      el("b", undefined, flight.from.code),
-      track,
-      el("b", undefined, flight.to.code),
+      el("span", undefined, view.from),
+      keys,
+      el("span", undefined, view.to),
     )
-  runs(tile, flightFoot(flight))
 }

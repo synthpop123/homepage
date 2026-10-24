@@ -43,7 +43,7 @@
 
 .music-fallback,
 .movies-fallback,
-.stocks-fallback,
+.portfolio-fallback,
 .switch-fallback,
 .flights-fallback {
   margin-block-end: 0;
@@ -62,7 +62,7 @@
 }
 
 .music-label,
-.stocks-label,
+.portfolio-label,
 .switch-label,
 .flights-label,
 .tk-label,
@@ -267,7 +267,7 @@ movies-feed [data-skeleton] .poster,
 movies-feed .sk-line,
 switch-feed [data-skeleton] .cover,
 switch-feed .sk-line,
-stocks-feed .sk-line,
+portfolio-feed .sk-line,
 flights-feed .sk-line {
   background-color: var(--gray-5);
   animation: var(--sk-pulse);
@@ -278,7 +278,7 @@ memos-feed .sk-line,
 tokens-dashboard .sk-line,
 movies-feed .sk-line,
 switch-feed .sk-line,
-stocks-feed .sk-line,
+portfolio-feed .sk-line,
 flights-feed .sk-line {
   display: block;
   block-size: 0.85em;

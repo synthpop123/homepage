@@ -13,11 +13,13 @@ const { endpoint = NOW.endpoint } = Astro.props
 
 {/* A bento of four tiles from one small payload (/now/site): the listen
     across the top as a record half out of its sleeve, the poster standing
-    two rows tall beside or under it, and the two tiles that are a figure,
-    today's tokens and the last flight, filling the corner they leave.
-    Every tile's size comes from the grid, the sleeve and the poster's
-    aspect ratio, never from what loads into it, so the skeleton and the
-    loaded section are the same height. */}
+    two rows tall beside it, today's tokens under the listen with the last
+    two weeks as bars, and the portfolio across the foot, its three months
+    as a line over day cells. On a phone it folds to two columns, the
+    poster beside the two figures and the charts reduced to a sparkline.
+    Every tile's size comes from the grid, the sleeve, the poster's aspect
+    ratio and fixed chart heights, never from what loads into it, so the
+    skeleton and the loaded section are the same height. */}
 <now-feed data-endpoint={endpoint} aria-busy="true">
   <ul class="now-grid">
     <li class="now-tile" data-tile="listen">
@@ -56,26 +58,39 @@ const { endpoint = NOW.endpoint } = Astro.props
     <li class="now-tile" data-tile="tokens">
       <a class="now-link" href="/tokens">
         <span class="now-mark" aria-hidden="true"><Claude /></span>
-        <span class="now-label">Tokens today</span>
-        <span class="now-figure"><span class="sk-line sk-figure"></span></span>
-        <span class="now-foot"><span class="sk-line sk-foot"></span></span>
+        <span class="now-info">
+          <span class="now-label">Tokens today</span>
+          <span class="now-figure"
+            ><span class="sk-line sk-figure"></span></span
+          >
+          <span class="now-foot"><span class="sk-line sk-foot"></span></span>
+        </span>
+        <span class="now-bars" aria-hidden="true">
+          {Array.from({ length: 14 }, () => <i />)}
+        </span>
       </a>
     </li>
-    <li class="now-tile" data-tile="flight">
-      <a class="now-link" href="/misc#flights">
-        <span class="now-label">Last flight<time class="now-when"></time></span>
-        <span class="now-figure now-route">
-          <b data-end="from"><span class="sk-line sk-code"></span></b>
-          <span class="now-track" aria-hidden="true">
-            <svg viewBox="-13 -11 26 22">
-              <path
-                d="M13 0 11 -1.6 3 -2 -3 -10 -6 -10 -2.5 -2 -8 -2 -10.5 -5.5 -12.5 -5.5 -11 0 -12.5 5.5 -10.5 5.5 -8 2 -2.5 2 -6 10 -3 10 3 2 11 1.6Z"
-              ></path>
-            </svg>
-          </span>
-          <b data-end="to"><span class="sk-line sk-code"></span></b>
+    <li class="now-tile" data-tile="portfolio">
+      <a class="now-link" href="/misc#portfolio">
+        <span class="now-info">
+          <span class="now-label">Portfolio · 3M</span>
+          <span class="now-figure"
+            ><span class="sk-line sk-figure"></span></span
+          >
+          <span class="now-foot"><span class="sk-line sk-foot"></span></span>
         </span>
-        <span class="now-foot"><span class="sk-line sk-foot"></span></span>
+        <span class="now-chart" aria-hidden="true">
+          <span class="now-plot">
+            <svg
+              class="now-spark"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            ></svg>
+            <span class="now-dot"></span>
+          </span>
+          <span class="now-strip"></span>
+          <span class="now-axis"></span>
+        </span>
       </a>
     </li>
   </ul>
@@ -91,14 +106,14 @@ const { endpoint = NOW.endpoint } = Astro.props
   /* Global and nested under the element: the tiles' insides are built at
      runtime, where Astro's scoped styles cannot see them. */
   now-feed {
-    --now-flight: light-dark(#e2700b, #ffb547);
     display: block;
     container-type: inline-size;
 
     /* Phone: two columns. The listen across the top, then the poster in
-       the first column standing the height of the tokens and the flight
-       stacked in the second. From 34rem of column: three, the listen
-       over the two small tiles and the poster beside all three. */
+       the first column standing the height of the tokens and the
+       portfolio stacked in the second. From 34rem of column: three, the
+       listen over the tokens with the poster beside both, and the
+       portfolio across all three under them. */
     .now-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -120,7 +135,7 @@ const { endpoint = NOW.endpoint } = Astro.props
         /* The poster's column a little narrower: at a full third it
            stands so tall that the small tiles beside it are mostly air. */
         grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 0.8fr);
-        grid-template-rows: auto 1fr;
+        grid-template-rows: auto 1fr auto;
 
         [data-tile="listen"] {
           grid-column: 1 / 3;
@@ -133,13 +148,13 @@ const { endpoint = NOW.endpoint } = Astro.props
         }
 
         [data-tile="tokens"] {
-          grid-column: 1;
+          grid-column: 1 / 3;
           grid-row: 2;
         }
 
-        [data-tile="flight"] {
-          grid-column: 2;
-          grid-row: 2;
+        [data-tile="portfolio"] {
+          grid-column: 1 / -1;
+          grid-row: 3;
         }
       }
     }
@@ -193,8 +208,13 @@ const { endpoint = NOW.endpoint } = Astro.props
       --mark: light-dark(#1db954, #1ed760);
     }
 
+    /* Tokens keeps its mark in the middle, cropped by the top edge, clear
+       of the figure at the foot and of the bars at the far end. */
     [data-tile="tokens"] .now-mark {
       --mark: #d97757;
+      inset-block: -2rem auto;
+      inset-inline: 50% auto;
+      translate: -50% 0;
       font-size: 6rem;
     }
 
@@ -447,13 +467,13 @@ const { endpoint = NOW.endpoint } = Astro.props
       }
     }
 
-    /* The two small tiles: a label at the top, a figure and one line at
-       the foot. Their runs (cost and messages, cities and distance) sit
-       on one line where the tile has room and two where it does not,
-       never one cut short. Every run carries its separator in front, in a
-       strip the clip cuts away at the start of each line, so a wrapped
-       run never begins with a stray dot. */
-    :is([data-tile="tokens"], [data-tile="flight"]) .now-foot {
+    /* The two figure tiles: a label at the top, a figure and one line at
+       the foot. Their runs (cost and messages) sit on one line where the
+       tile has room and two where it does not, never one cut short. Every
+       run carries its separator in front, in a strip the clip cuts away
+       at the start of each line, so a wrapped run never begins with a
+       stray dot. */
+    :is([data-tile="tokens"], [data-tile="portfolio"]) .now-foot {
       flex-wrap: wrap;
       gap: 0;
       margin-inline-start: -0.9em;
@@ -496,47 +516,252 @@ const { endpoint = NOW.endpoint } = Astro.props
       }
     }
 
-    /* The flight: its two codes at either end of a dashed track, the
-       plane half way, in the amber /misc draws the flights in. */
-    .now-route {
-      display: flex;
-      align-items: center;
-      gap: 0.3em;
+    /* A return's sign is its colour, as on /misc: the text-grade green
+       up, muted ink and a true minus down. The sign itself is set at the
+       figure's size, not as a unit. */
+    .now-figure[data-dir="up"] {
+      color: var(--accent);
+    }
 
-      b {
-        font-weight: inherit;
+    .now-figure[data-dir="down"] {
+      color: var(--muted-foreground);
+    }
+
+    .now-figure[data-dir] .unit {
+      color: inherit;
+    }
+
+    .now-figure[data-dir] .unit:first-child {
+      margin-inline: 0 0.02em;
+      font-size: inherit;
+      font-weight: inherit;
+    }
+
+    /* The words of a figure tile, and beside them (from 34rem) a chart. */
+    .now-info {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: var(--space-3xs);
+      min-inline-size: 0;
+    }
+
+    /* Tokens: the last two weeks as bars, today's in the accent. Only
+       where the tile runs across two columns. */
+    .now-bars {
+      display: none;
+      grid-auto-columns: 0.55rem;
+      grid-auto-flow: column;
+      align-items: end;
+      gap: 3px;
+      padding-block-start: var(--space-s);
+
+      i {
+        display: block;
+        block-size: max(2px, calc(var(--bar, 0.08) * 100%));
+        border-radius: 2px 2px 1px 1px;
+        background-color: var(--gray-6);
+        transition: block-size 0.5s cubic-bezier(0.2, 0, 0, 1);
+      }
+
+      i:last-child {
+        background-color: var(--accent-fill);
       }
     }
 
-    .now-track {
+    [aria-busy="true"] .now-bars i {
+      animation: var(--sk-pulse);
+    }
+
+    /* Portfolio: one ink line with the S&P 500 as a dashed ghost rebased
+       onto it, a dot on the latest session; from 34rem the same days as
+       cells under it and the axis' two ends. On a phone, the line alone
+       under the figure. */
+    .now-chart {
+      display: grid;
+      grid-template-rows: auto;
+      gap: var(--space-2xs);
+      min-inline-size: 0;
+      margin-block-start: var(--space-2xs);
+    }
+
+    .now-plot {
       position: relative;
-      flex: 1;
-      min-inline-size: 1rem;
-      block-size: 1rem;
+      display: block;
+      block-size: 1.75rem;
+    }
+
+    .now-spark {
+      inline-size: 100%;
+      block-size: 100%;
+      overflow: visible;
+    }
+
+    .now-line,
+    .now-ghost,
+    .now-base {
+      fill: none;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .now-line {
+      stroke: var(--foreground);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .now-ghost {
+      stroke: var(--muted-foreground);
+      stroke-dasharray: 2.5 2.5;
+      stroke-width: 1;
+      opacity: 0.7;
+    }
+
+    .now-area {
+      fill: color-mix(in oklab, var(--foreground) 7%, transparent);
+    }
+
+    .now-base {
+      stroke: color-mix(in oklab, var(--foreground) 14%, transparent);
+      stroke-width: 1;
+    }
+
+    .now-dot {
+      position: absolute;
+      inset-block-start: var(--end, 50%);
+      inset-inline-start: 100%;
+      inline-size: 7px;
+      block-size: 7px;
+      border-radius: var(--radius-full);
+      background-color: var(--foreground);
+      box-shadow: 0 0 0 2px var(--background);
+      translate: -50% -50%;
+
+      &[data-dir="up"] {
+        background-color: var(--accent-fill);
+      }
+    }
+
+    [aria-busy="true"] .now-dot,
+    [data-empty] .now-dot {
+      display: none;
+    }
+
+    .now-strip,
+    .now-axis {
+      display: none;
+    }
+
+    .now-strip {
+      grid-auto-columns: minmax(0, 1fr);
+      grid-auto-flow: column;
+      gap: 2px;
+      block-size: 0.6rem;
+
+      i {
+        border-radius: 2px;
+        background-color: var(--heat-0);
+      }
+
+      i[data-dir="up"][data-level="1"] {
+        background-color: var(--heat-1);
+      }
+
+      i[data-dir="up"][data-level="2"] {
+        background-color: var(--heat-2);
+      }
+
+      i[data-dir="up"][data-level="3"] {
+        background-color: var(--heat-3);
+      }
+
+      i[data-dir="up"][data-level="4"] {
+        background-color: var(--heat-4);
+      }
+
+      i[data-dir="down"][data-level="1"] {
+        background-color: var(--down-1);
+      }
+
+      i[data-dir="down"][data-level="2"] {
+        background-color: var(--down-2);
+      }
+
+      i[data-dir="down"][data-level="3"] {
+        background-color: var(--down-3);
+      }
+
+      i[data-dir="down"][data-level="4"] {
+        background-color: var(--down-4);
+      }
+    }
+
+    .now-axis {
+      justify-content: space-between;
+      gap: var(--space-s);
+      min-block-size: 1lh;
+      font-size: 0.6875rem;
+      line-height: 1.4;
+      color: var(--faint-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* The key sits between the two dates: a solid stroke for the
+       portfolio, a dashed one for the benchmark. */
+    .now-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
 
       &::before {
         content: "";
-        position: absolute;
-        inset-inline: 0;
-        inset-block-start: 50%;
-        border-block-start: 1.5px dashed
-          color-mix(in oklab, var(--muted-foreground) 60%, transparent);
-      }
-
-      svg {
-        position: absolute;
-        inset: 50% auto auto 50%;
-        inline-size: 0.95rem;
-        block-size: 0.95rem;
-        translate: -50% -50%;
-        fill: var(--now-flight);
-        transition: translate 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        inline-size: 0.9rem;
+        border-block-start: 1.5px solid var(--foreground);
       }
     }
 
-    @media (hover: hover) {
-      [data-tile="flight"] .now-link[href]:hover .now-track svg {
-        translate: 20% -50%;
+    .now-keys {
+      display: flex;
+      gap: var(--space-s);
+    }
+
+    .now-key-ghost::before {
+      border-block-start: 1px dashed var(--muted-foreground);
+    }
+
+    @container (width >= 34rem) {
+      [data-tile="tokens"] .now-link,
+      [data-tile="portfolio"] .now-link {
+        flex-direction: row;
+        align-items: stretch;
+        gap: var(--space-m);
+      }
+
+      .now-bars {
+        display: grid;
+      }
+
+      [data-tile="portfolio"] .now-info {
+        flex: 0 0 10rem;
+      }
+
+      .now-chart {
+        flex: 1;
+        align-content: end;
+        margin-block-start: 0;
+      }
+
+      .now-plot {
+        block-size: 5.5rem;
+      }
+
+      .now-strip {
+        display: grid;
+      }
+
+      .now-axis {
+        display: flex;
       }
     }
 
@@ -568,11 +793,6 @@ const { endpoint = NOW.endpoint } = Astro.props
 
     .sk-figure {
       inline-size: 3.5em;
-      block-size: 0.8em;
-    }
-
-    .sk-code {
-      inline-size: 1.8em;
       block-size: 0.8em;
     }
   }

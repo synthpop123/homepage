@@ -1,9 +1,9 @@
 /**
- * The Stocks section's pieces: the account and range pickers, the strip
+ * The Portfolio section's pieces: the account and range pickers, the strip
  * of returns under the chart, the readout, the allocation bar, and the
  * holdings table with the panel a row opens: its price line against its
  * cost, what it is, and how it has done. Every figure and
- * decision comes from `stocks.ts`; this file only builds DOM.
+ * decision comes from `portfolio.ts`; this file only builds DOM.
  */
 
 import { el } from "@/lib/client/dom"
@@ -28,7 +28,7 @@ import {
   type SiteCash,
   type StripCell,
   stripCells,
-} from "@/lib/client/stocks"
+} from "@/lib/client/portfolio"
 import usdFlag from "@/assets/flags/USD.png?url"
 import { type Chart, drawChart, sparkline } from "./chart"
 
@@ -187,7 +187,7 @@ export function buildStrip(
 
 export function fillReadout(feed: HTMLElement, cards: ReadoutCard[]) {
   feed
-    .querySelectorAll<HTMLElement>(".stocks-readout .stat")
+    .querySelectorAll<HTMLElement>(".portfolio-readout .stat")
     .forEach((stat, i) => {
       const card = cards[i]
       const label = stat.querySelector<HTMLElement>(".label")
@@ -263,7 +263,7 @@ export function buildAllocation(
 }
 
 const logo = (row: { symbol: string; logo: string | null }) => {
-  const mark = el("span", "stock-logo")
+  const mark = el("span", "holding-logo")
   const src = safeHttpUrl(row.logo)
   if (src) {
     const img = document.createElement("img")
@@ -286,19 +286,19 @@ export function buildRow(
   row: Row,
   rangeStart: number,
 ): HTMLLIElement {
-  const item = el("li", "stock") as HTMLLIElement
+  const item = el("li", "holding") as HTMLLIElement
   item.dataset.symbol = row.symbol
 
-  const button = el("button", "stock-row") as HTMLButtonElement
+  const button = el("button", "holding-row") as HTMLButtonElement
   button.type = "button"
   button.setAttribute("aria-expanded", "false")
-  const panelId = `stock-${row.symbol.replace(/[^\w-]/g, "_")}`
+  const panelId = `holding-${row.symbol.replace(/[^\w-]/g, "_")}`
   button.setAttribute("aria-controls", panelId)
 
-  const name = el("span", "stock-name")
-  const sub = el("span", "stock-sub", row.name)
+  const name = el("span", "holding-name")
+  const sub = el("span", "holding-sub", row.name)
   sub.title = row.name
-  name.append(el("span", "stock-ticker", row.symbol), sub)
+  name.append(el("span", "holding-ticker", row.symbol), sub)
 
   const entry = site.symbols.find((symbol) => symbol.symbol === row.symbol)
   const closes = (
@@ -306,24 +306,24 @@ export function buildRow(
   ).filter((value): value is number => value !== null)
   // The line is the ticker over the range; the figure is the position's
   // own return since it was bought, so each is coloured by its own sign.
-  const spark = sparkline(closes, "stock-spark")
+  const spark = sparkline(closes, "holding-spark")
   spark.dataset.dir = direction(
     closes.length > 1 ? closes[closes.length - 1] / closes[0] - 1 : null,
   )
 
   const price = el(
     "span",
-    "stock-price",
+    "holding-price",
     row.price === null ? "—" : formatPrice(row.price, row.currency),
   )
   const costText = row.cost === null ? "—" : formatPrice(row.cost, row.currency)
   // Narrow screens fold the cost column under the price.
-  price.append(el("span", "stock-cost-under", `cost ${costText}`))
-  const cost = el("span", "stock-cost", costText)
-  const weight = el("span", "stock-weight", formatWeight(row.weight))
+  price.append(el("span", "holding-cost-under", `cost ${costText}`))
+  const cost = el("span", "holding-cost", costText)
+  const weight = el("span", "holding-weight", formatWeight(row.weight))
   const result = el(
     "span",
-    "stock-change",
+    "holding-change",
     row.performance === null ? "—" : formatReturn(row.performance, 1),
   )
   result.dataset.dir = direction(row.performance)
@@ -335,7 +335,7 @@ export function buildRow(
     `${row.symbol}, ${row.name}: ${row.price === null ? "" : `${formatPrice(row.price, row.currency)}, `}${row.cost === null ? "" : `cost ${costText}, `}${formatWeight(row.weight)} of the account, ${row.performance === null ? "return unknown" : `${formatReturn(row.performance, 1)} on the position`}`,
   )
 
-  const panel = el("div", "stock-panel")
+  const panel = el("div", "holding-panel")
   panel.id = panelId
   panel.hidden = true
   item.append(button, panel)
@@ -376,9 +376,9 @@ const currencyNames = new Intl.DisplayNames(["en"], { type: "currency" })
 
 /** One row per currency of cash, marked with its flag. */
 export function buildCashRow(entry: SiteCash): HTMLLIElement {
-  const item = el("li", "stock stock-cash") as HTMLLIElement
-  const row = el("div", "stock-row")
-  const mark = el("span", "stock-logo stock-logo-cash")
+  const item = el("li", "holding holding-cash") as HTMLLIElement
+  const row = el("div", "holding-row")
+  const mark = el("span", "holding-logo holding-logo-cash")
   const flag = CASH_FLAGS[entry.currency]
   if (flag) {
     const img = document.createElement("img")
@@ -389,23 +389,23 @@ export function buildCashRow(entry: SiteCash): HTMLLIElement {
     img.decoding = "async"
     mark.append(img)
   } else mark.append(cashIcon())
-  const name = el("span", "stock-name")
+  const name = el("span", "holding-name")
   let label = entry.currency
   try {
     label = currencyNames.of(entry.currency) ?? entry.currency
   } catch {}
   name.append(
-    el("span", "stock-ticker", "Cash"),
-    el("span", "stock-sub", label),
+    el("span", "holding-ticker", "Cash"),
+    el("span", "holding-sub", label),
   )
   row.append(
     mark,
     name,
-    el("span", "stock-spark"),
-    el("span", "stock-price"),
-    el("span", "stock-cost"),
-    el("span", "stock-weight", formatWeight(entry.weight)),
-    el("span", "stock-change"),
+    el("span", "holding-spark"),
+    el("span", "holding-price"),
+    el("span", "holding-cost"),
+    el("span", "holding-weight", formatWeight(entry.weight)),
+    el("span", "holding-change"),
   )
   item.dataset.symbol = cashKey(entry.currency)
   item.append(row)

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "bun:test"
 import {
-  flightFoot,
-  flightTitle,
-  flownLabel,
   isSite,
+  portfolioView,
   SITE_SCHEMA_VERSION,
+  tokenBars,
   tokensFoot,
   tokensLabel,
   watchedLabel,
@@ -24,22 +23,30 @@ describe("isSite", () => {
         listen: null,
         film: null,
         tokens: null,
-        flight: null,
+        portfolio: null,
       }),
     ).toBe(true)
   })
 
-  it("rejects another schema version, a non-http link and a bad flight", () => {
+  it("rejects another schema version, a non-http link and a bad series", () => {
     expect(isSite({ ...fixture, schemaVersion: SITE_SCHEMA_VERSION + 1 })).toBe(
       false,
     )
     const listen = { ...fixture.listen, url: "javascript:alert(1)" }
     expect(isSite({ ...fixture, listen })).toBe(false)
-    const flight = { ...fixture.flight, date: "Aug 16" }
-    expect(isSite({ ...fixture, flight })).toBe(false)
-    expect(
-      isSite({ ...fixture, flight: { ...fixture.flight, from: "JNH" } }),
-    ).toBe(false)
+    const { portfolio, tokens } = fixture
+    const short = { ...portfolio, index: portfolio.index.slice(1) }
+    expect(isSite({ ...fixture, portfolio: short })).toBe(false)
+    const gap = {
+      ...portfolio,
+      benchmark: [null, ...portfolio.benchmark.slice(1)],
+    }
+    expect(isSite({ ...fixture, portfolio: gap })).toBe(false)
+    const one = { days: ["2026-10-23"], index: [1], benchmark: [600] }
+    expect(isSite({ ...fixture, portfolio: one })).toBe(false)
+    expect(isSite({ ...fixture, tokens: { ...tokens, recent: [] } })).toBe(
+      false,
+    )
   })
 })
 
@@ -72,31 +79,66 @@ describe("tile text", () => {
     ])
   })
 
-  const flight = {
-    date: "2026-08-16",
-    from: { code: "JNH", city: "Jiaxing" },
-    to: { code: "PEK", city: "Beijing" },
-    km: 1106,
-    minutes: 135,
-    airline: "Air China",
-    aircraft: "Airbus A321",
+  it("draws two weeks of bars, the busiest full height, on a root scale", () => {
+    const bars = tokenBars([0, 25, 100], "2026-09-27")
+    expect(bars.map(({ height }) => height)).toEqual([0, 0.5, 1])
+    expect(bars.map(({ title }) => title)).toEqual([
+      "Sep 25 · 0",
+      "Sep 26 · 25",
+      "Sep 27 · 100",
+    ])
+    expect(tokenBars([0, 0], "2026-09-27").map(({ height }) => height)).toEqual(
+      [0, 0],
+    )
+  })
+})
+
+describe("portfolioView", () => {
+  const portfolio = {
+    days: ["2026-07-23", "2026-07-24", "2026-10-23"],
+    index: [1, 0.9, 1.1],
+    benchmark: [600, 630, 600],
   }
 
-  it("names the last flight's day, the year only when it is another", () => {
-    expect(flownLabel("2026-08-16", "2026-09-27")).toBe("Aug 16")
-    expect(flownLabel("2025-12-30", "2026-01-02")).toBe("Dec 30, 2025")
+  it("measures the range as last over first, against the S&P 500", () => {
+    const view = portfolioView(portfolio)
+    expect(view.change).toBeCloseTo(0.1)
+    expect(view.dir).toBe("up")
+    expect(view.figure).toBe("+10.00%")
+    expect(view.foot).toEqual(["S&P 500 0.00%"])
+    expect(view.title).toBe(
+      "Portfolio, Jul 23 – Oct 23: +10.00%\nS&P 500 0.00%",
+    )
+    expect([view.from, view.to]).toEqual(["Jul 23", "Oct 23"])
   })
 
-  it("puts the cities and the distance under the codes, the rest in the tooltip", () => {
-    expect(flightFoot(flight)).toEqual(["Jiaxing → Beijing", "1,106 km"])
-    expect(
-      flightFoot({ ...flight, from: { code: "JNH", city: null } })[0],
-    ).toBe("JNH → Beijing")
-    expect(flightTitle(flight)).toBe(
-      "Jiaxing → Beijing\nAug 16, 2026 · 1,106 km · 2h 15m · Air China, Airbus A321",
-    )
-    expect(
-      flightTitle({ ...flight, minutes: null, airline: null, aircraft: null }),
-    ).toBe("Jiaxing → Beijing\nAug 16, 2026 · 1,106 km")
+  it("puts both lines on one scale, the benchmark from the first value", () => {
+    const view = portfolioView(portfolio)
+    const ys = (points: string) =>
+      points.split(" ").map((point) => Number(point.split(",")[1]))
+    const line = ys(view.line)
+    const ghost = ys(view.ghost)
+    expect(view.line.split(" ")[0].startsWith("0,")).toBe(true)
+    expect(view.line.split(" ")[2].startsWith("100,")).toBe(true)
+    expect(ghost[0]).toBe(line[0])
+    expect(view.base).toBe(line[0])
+    expect(view.end).toBe(line[2])
+    // The highest value is nearest the top; padding keeps it off the edge.
+    expect(Math.min(...line, ...ghost)).toBeGreaterThan(0)
+    expect(Math.max(...line, ...ghost)).toBeLessThan(100)
+    expect(view.area).toBe(`0,100 ${view.line} 100,100`)
+  })
+
+  it("cuts the line into day cells with their direction", () => {
+    const { cells } = portfolioView(portfolio)
+    expect(cells).toHaveLength(2)
+    expect(cells.map(({ dir }) => dir)).toEqual(["down", "up"])
+    expect(cells[1].title).toBe("Oct 23 +22.22%")
+  })
+
+  it("reads the pinned fixture", () => {
+    const view = portfolioView(fixture.portfolio)
+    expect(view.cells).toHaveLength(fixture.portfolio.days.length - 1)
+    expect(view.figure).toMatch(/^[+−]?\d+\.\d{2}%$/)
   })
 })

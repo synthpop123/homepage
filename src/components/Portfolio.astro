@@ -1,6 +1,6 @@
 ---
 /**
- * The owner's portfolio from cf-workers-api's stocks service (kept in
+ * The owner's portfolio from cf-workers-api's portfolio service (kept in
  * Ghostfolio), delivered in the /misc bundle.
  *
  * Returns, never amounts: the hero figure is the account's time-weighted
@@ -24,11 +24,11 @@ const { endpoint = MISC.endpoint } = Astro.props
 const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 ---
 
-<stocks-feed data-endpoint={endpoint} aria-busy="true">
-  <div class="stocks-body">
-    <div class="stocks-toolbar">
+<portfolio-feed data-endpoint={endpoint} aria-busy="true">
+  <div class="portfolio-body">
+    <div class="portfolio-toolbar">
       <div
-        class="stocks-accounts"
+        class="portfolio-accounts"
         role="group"
         aria-label="Account"
         aria-busy="true"
@@ -38,7 +38,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
         ))}
       </div>
       <div
-        class="stocks-ranges range-tabs"
+        class="portfolio-ranges range-tabs"
         role="group"
         aria-label="Range"
         aria-busy="true"
@@ -49,21 +49,21 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       </div>
     </div>
 
-    <div class="stocks-hero">
-      <p class="stocks-kicker">
+    <div class="portfolio-hero">
+      <p class="portfolio-kicker">
         <span class="sk-line sk-kicker" aria-hidden="true" />
       </p>
-      <p class="stocks-figure">
+      <p class="portfolio-figure">
         <span class="sk-line sk-figure" aria-hidden="true" />
       </p>
-      <p class="stocks-note">
+      <p class="portfolio-note">
         <span class="sk-line sk-note" aria-hidden="true" />
       </p>
     </div>
 
-    <svg class="stocks-chart" aria-label="Portfolio growth"></svg>
+    <svg class="portfolio-chart" aria-label="Portfolio growth"></svg>
 
-    <div class="stocks-strip">
+    <div class="portfolio-strip">
       <div class="strip-cells" aria-hidden="true"></div>
       <div class="strip-caption">
         <span class="strip-legend" aria-hidden="true">
@@ -79,7 +79,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       </div>
     </div>
 
-    <dl class="readout stocks-readout">
+    <dl class="readout portfolio-readout">
       {stats.map((label) => (
         <div class="stat">
           <dt class="label">{label}</dt>
@@ -89,7 +89,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       ))}
     </dl>
 
-    <div class="stocks-alloc">
+    <div class="portfolio-alloc">
       <p class="alloc-caption">
         <span class="alloc-what">Allocation</span>
         <span class="alloc-share"></span>
@@ -97,65 +97,63 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       <div class="alloc-bar" aria-hidden="true"></div>
     </div>
 
-    <h3 class="stocks-label">Holdings</h3>
-    <div class="stocks-head stock-row" aria-hidden="true">
+    <h3 class="portfolio-label">Holdings</h3>
+    <div class="portfolio-head holding-row" aria-hidden="true">
       <span></span>
       <span>Holding</span>
-      <span class="stock-spark">Range</span>
-      <span class="stock-price">Price</span>
-      <span class="stock-cost">Avg cost</span>
-      <span class="stock-weight">Weight</span>
-      <span class="stock-change">Return</span>
+      <span class="holding-spark">Range</span>
+      <span class="holding-price">Price</span>
+      <span class="holding-cost">Avg cost</span>
+      <span class="holding-weight">Weight</span>
+      <span class="holding-change">Return</span>
     </div>
-    <ol class="stocks-list">
+    <ol class="portfolio-list">
       {Array.from({ length: SKELETON_ROWS }).map(() => (
-        <li class="stock" data-skeleton aria-hidden="true">
-          <div class="stock-row">
-            <span class="stock-logo" />
-            <span class="stock-name">
-              <span class="stock-ticker"><span class="sk-line sk-ticker" /></span>
-              <span class="stock-sub"><span class="sk-line sk-sub" /></span>
+        <li class="holding" data-skeleton aria-hidden="true">
+          <div class="holding-row">
+            <span class="holding-logo" />
+            <span class="holding-name">
+              <span class="holding-ticker"><span class="sk-line sk-ticker" /></span>
+              <span class="holding-sub"><span class="sk-line sk-sub" /></span>
             </span>
-            <span class="stock-spark" />
-            <span class="stock-price"><span class="sk-line sk-num" /></span>
-            <span class="stock-cost"><span class="sk-line sk-num" /></span>
-            <span class="stock-weight"><span class="sk-line sk-num" /></span>
-            <span class="stock-change"><span class="sk-line sk-num" /></span>
+            <span class="holding-spark" />
+            <span class="holding-price"><span class="sk-line sk-num" /></span>
+            <span class="holding-cost"><span class="sk-line sk-num" /></span>
+            <span class="holding-weight"><span class="sk-line sk-num" /></span>
+            <span class="holding-change"><span class="sk-line sk-num" /></span>
           </div>
         </li>
       ))}
     </ol>
   </div>
-  <p class="stocks-fallback" hidden>Couldn't load the portfolio right now.</p>
-</stocks-feed>
+  <p class="portfolio-fallback" hidden>
+    Couldn't load the portfolio right now.
+  </p>
+</portfolio-feed>
 
 <script>
-  import { mountStocks } from "@/lib/client/stocks-feed"
+  import { mountPortfolio } from "@/lib/client/portfolio-feed"
 
-  document.querySelectorAll<HTMLElement>("stocks-feed").forEach(mountStocks)
+  document
+    .querySelectorAll<HTMLElement>("portfolio-feed")
+    .forEach(mountPortfolio)
 </script>
 
 <style>
-  stocks-feed {
-    /* Losses are ink, gains the heatmap's greens: the strip's scale. */
-    --down-1: color-mix(in oklab, var(--foreground) 14%, transparent);
-    --down-2: color-mix(in oklab, var(--foreground) 28%, transparent);
-    --down-3: color-mix(in oklab, var(--foreground) 48%, transparent);
-    --down-4: color-mix(in oklab, var(--foreground) 72%, transparent);
-
+  portfolio-feed {
     display: block;
     /* Between 64rem and 76rem the sidebar and TOC squeeze the column
        below what the viewport says: the table reads its own width. */
     container-type: inline-size;
   }
 
-  .stocks-body {
+  .portfolio-body {
     display: grid;
   }
 
   /* One toolbar: whose portfolio on the left, over what range on the
      right. Accounts are a segmented control, each broker with its mark. */
-  .stocks-toolbar {
+  .portfolio-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -164,7 +162,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     margin-block-end: var(--space-s);
   }
 
-  .stocks-accounts {
+  .portfolio-accounts {
     display: inline-flex;
     flex-wrap: wrap;
     gap: 2px;
@@ -174,7 +172,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background-color: var(--muted);
   }
 
-  stocks-feed :global(.stocks-accounts button),
+  portfolio-feed :global(.portfolio-accounts button),
   .chip-skeleton {
     display: inline-flex;
     align-items: center;
@@ -200,7 +198,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     inline-size: 100%;
   }
 
-  stocks-feed :global(.stocks-accounts button img) {
+  portfolio-feed :global(.portfolio-accounts button img) {
     inline-size: 0.875rem;
     block-size: 0.875rem;
     border-radius: 3px;
@@ -208,12 +206,12 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   @media (hover: hover) {
-    stocks-feed :global(.stocks-accounts button:hover) {
+    portfolio-feed :global(.portfolio-accounts button:hover) {
       color: var(--foreground);
     }
   }
 
-  stocks-feed :global(.stocks-accounts button[aria-pressed="true"]) {
+  portfolio-feed :global(.portfolio-accounts button[aria-pressed="true"]) {
     color: var(--foreground);
     background-color: var(--background);
     box-shadow: 0 1px 2px
@@ -221,11 +219,11 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   /* Hero: what the account did over the range, set large. */
-  .stocks-hero p {
+  .portfolio-hero p {
     margin: 0;
   }
 
-  .stocks-kicker {
+  .portfolio-kicker {
     display: flex;
     align-items: center;
     gap: 0.5em;
@@ -236,12 +234,12 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* The brokers' marks: small rounded tiles, overlapped like a fanned
      deck, each cut out of the page by a ring of the background. */
-  stocks-feed :global(.broker-deck) {
+  portfolio-feed :global(.broker-deck) {
     display: inline-flex;
     padding-inline-start: 0.3rem;
   }
 
-  stocks-feed :global(.broker) {
+  portfolio-feed :global(.broker) {
     position: relative;
     display: grid;
     place-items: center;
@@ -260,14 +258,14 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       transform 0.35s cubic-bezier(0.3, 0.7, 0.2, 1);
   }
 
-  stocks-feed :global(.broker:not(:has(img))::before) {
+  portfolio-feed :global(.broker:not(:has(img))::before) {
     content: attr(data-monogram);
     font-size: 0.625rem;
     font-weight: var(--font-weight-medium);
     color: #555;
   }
 
-  stocks-feed :global(.broker img) {
+  portfolio-feed :global(.broker img) {
     position: absolute;
     inset: 0;
     inline-size: 100%;
@@ -277,12 +275,12 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* Hovering the deck spreads it, so each mark can be seen whole. */
   @media (hover: hover) {
-    stocks-feed :global(.broker-deck:hover .broker:not([data-folded])) {
+    portfolio-feed :global(.broker-deck:hover .broker:not([data-folded])) {
       margin-inline-start: 0.125rem;
     }
   }
 
-  stocks-feed :global(.broker[data-folded]) {
+  portfolio-feed :global(.broker[data-folded]) {
     inline-size: 0;
     margin-inline-start: 0;
     opacity: 0;
@@ -290,7 +288,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     box-shadow: none;
   }
 
-  .stocks-figure {
+  .portfolio-figure {
     min-block-size: 1lh;
     font-size: clamp(2rem, 1.6rem + 2vw, 2.75rem);
     font-weight: var(--font-weight-display);
@@ -299,14 +297,14 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     line-height: 1.15;
   }
 
-  .stocks-note {
+  .portfolio-note {
     min-block-size: 1lh;
     font-size: var(--step--1);
     font-variant-numeric: tabular-nums;
     color: var(--muted-foreground);
   }
 
-  .stocks-hero .sk-line {
+  .portfolio-hero .sk-line {
     display: block;
     block-size: 0.75em;
   }
@@ -326,7 +324,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* The chart. Its slider role makes it a tab stop; the ring shows on
      keyboard focus only. */
-  .stocks-chart {
+  .portfolio-chart {
     inline-size: 100%;
     block-size: 13rem;
     margin-block-start: var(--space-2xs);
@@ -335,11 +333,11 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     touch-action: pan-y;
   }
 
-  stocks-feed :global(:is(.stocks-chart, .panel-chart):focus-visible) {
+  portfolio-feed :global(:is(.portfolio-chart, .panel-chart):focus-visible) {
     outline-offset: 0.25rem;
   }
 
-  stocks-feed :global(.chart-line) {
+  portfolio-feed :global(.chart-line) {
     fill: none;
     stroke: var(--foreground);
     stroke-width: 1.75;
@@ -347,18 +345,18 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     stroke-linecap: round;
   }
 
-  stocks-feed :global(.chart-area) {
+  portfolio-feed :global(.chart-area) {
     fill: color-mix(in oklab, var(--foreground) 5%, transparent);
   }
 
-  stocks-feed :global(.chart-ghost) {
+  portfolio-feed :global(.chart-ghost) {
     fill: none;
     stroke: var(--faint-foreground);
     stroke-width: 1.25;
     stroke-dasharray: 4 3;
   }
 
-  stocks-feed :global(:is(.chart-ghost-label, .chart-scrub text)) {
+  portfolio-feed :global(:is(.chart-ghost-label, .chart-scrub text)) {
     font-family: var(--font-mono);
     font-size: 0.6875rem;
     font-feature-settings: normal;
@@ -366,7 +364,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   /* The ghost's label sits on lines; a halo of the page keeps it read. */
-  stocks-feed :global(.chart-ghost-label) {
+  portfolio-feed :global(.chart-ghost-label) {
     paint-order: stroke;
     stroke: var(--background);
     stroke-width: 3px;
@@ -375,49 +373,49 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* A holding's line against its cost: the dashed level, the gap washed
      green above it and grey below, the first buy a dot. */
-  stocks-feed :global(.chart-gain) {
+  portfolio-feed :global(.chart-gain) {
     fill: color-mix(in oklab, var(--accent-fill) 16%, transparent);
   }
 
-  stocks-feed :global(.chart-loss) {
+  portfolio-feed :global(.chart-loss) {
     fill: color-mix(in oklab, var(--foreground) 7%, transparent);
   }
 
-  stocks-feed :global(.chart-cost) {
+  portfolio-feed :global(.chart-cost) {
     stroke: color-mix(in oklab, var(--foreground) 55%, transparent);
     stroke-width: 1;
     stroke-dasharray: 3 3;
   }
 
-  stocks-feed :global(.chart-mark) {
+  portfolio-feed :global(.chart-mark) {
     fill: var(--accent-fill);
     stroke: var(--background);
     stroke-width: 2;
   }
 
-  stocks-feed :global(.chart-scrub) {
+  portfolio-feed :global(.chart-scrub) {
     opacity: 0;
     transition: opacity 0.12s ease;
     pointer-events: none;
   }
 
-  stocks-feed :global(.chart-scrub[data-on]) {
+  portfolio-feed :global(.chart-scrub[data-on]) {
     opacity: 1;
   }
 
-  stocks-feed :global(.chart-scrub line) {
+  portfolio-feed :global(.chart-scrub line) {
     stroke: var(--border);
     stroke-width: 1;
   }
 
-  stocks-feed :global(.chart-scrub circle) {
+  portfolio-feed :global(.chart-scrub circle) {
     fill: var(--accent-fill);
     stroke: var(--background);
     stroke-width: 2;
   }
 
   /* The strip: the line again, as a row of graded cells. */
-  .stocks-strip {
+  .portfolio-strip {
     margin-block-start: var(--space-2xs);
   }
 
@@ -427,55 +425,55 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     block-size: 0.625rem;
   }
 
-  stocks-feed :global(.strip-cell),
+  portfolio-feed :global(.strip-cell),
   .strip-legend i {
     flex: 1;
     border-radius: 2px;
     background-color: var(--heat-0);
   }
 
-  stocks-feed
+  portfolio-feed
     :global(:is(.strip-cell, .strip-legend i)[data-dir="up"][data-level="1"]) {
     background-color: var(--heat-1);
   }
-  stocks-feed
+  portfolio-feed
     :global(:is(.strip-cell, .strip-legend i)[data-dir="up"][data-level="2"]) {
     background-color: var(--heat-2);
   }
-  stocks-feed
+  portfolio-feed
     :global(:is(.strip-cell, .strip-legend i)[data-dir="up"][data-level="3"]) {
     background-color: var(--heat-3);
   }
-  stocks-feed
+  portfolio-feed
     :global(:is(.strip-cell, .strip-legend i)[data-dir="up"][data-level="4"]) {
     background-color: var(--heat-4);
   }
-  stocks-feed
+  portfolio-feed
     :global(
       :is(.strip-cell, .strip-legend i)[data-dir="down"][data-level="1"]
     ) {
     background-color: var(--down-1);
   }
-  stocks-feed
+  portfolio-feed
     :global(
       :is(.strip-cell, .strip-legend i)[data-dir="down"][data-level="2"]
     ) {
     background-color: var(--down-2);
   }
-  stocks-feed
+  portfolio-feed
     :global(
       :is(.strip-cell, .strip-legend i)[data-dir="down"][data-level="3"]
     ) {
     background-color: var(--down-3);
   }
-  stocks-feed
+  portfolio-feed
     :global(
       :is(.strip-cell, .strip-legend i)[data-dir="down"][data-level="4"]
     ) {
     background-color: var(--down-4);
   }
 
-  stocks-feed :global(.strip-cell[data-on]) {
+  portfolio-feed :global(.strip-cell[data-on]) {
     outline: 1.5px solid var(--foreground);
     outline-offset: 1px;
   }
@@ -517,7 +515,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* Range tabs: mono labels, the picked one set on a quiet pill — no rule
      of their own, since the readout under them is drawn on rules. */
-  stocks-feed :global(.range-tabs) {
+  portfolio-feed :global(.range-tabs) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -525,7 +523,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     min-block-size: 1.75rem;
   }
 
-  stocks-feed :global(.range-tabs button),
+  portfolio-feed :global(.range-tabs button),
   .tab-skeleton {
     block-size: 1.625rem;
     padding-inline: 0.6rem;
@@ -548,28 +546,28 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   @media (hover: hover) {
-    stocks-feed :global(.range-tabs button:hover) {
+    portfolio-feed :global(.range-tabs button:hover) {
       color: var(--foreground);
     }
   }
 
-  stocks-feed :global(.range-tabs button[aria-pressed="true"]) {
+  portfolio-feed :global(.range-tabs button[aria-pressed="true"]) {
     color: var(--foreground);
     background-color: var(--muted);
   }
 
   /* Readout: a sign is part of the figure, not a unit beside it. */
-  .stocks-readout {
+  .portfolio-readout {
     margin-block: var(--space-m);
   }
 
-  stocks-feed :global(.stocks-readout .value .unit:first-child) {
+  portfolio-feed :global(.portfolio-readout .value .unit:first-child) {
     margin-inline-end: 0.04em;
     font-size: 0.8em;
     color: inherit;
   }
 
-  stocks-feed :global(.stocks-readout .value[data-dir="down"]) {
+  portfolio-feed :global(.portfolio-readout .value[data-dir="down"]) {
     color: var(--muted-foreground);
   }
 
@@ -603,7 +601,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background-color: var(--heat-0);
   }
 
-  stocks-feed :global(.alloc-seg) {
+  portfolio-feed :global(.alloc-seg) {
     min-inline-size: 2px;
     border-radius: 1px;
     background-color: color-mix(
@@ -614,7 +612,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     transition: background-color 0.15s ease;
   }
 
-  stocks-feed :global(.alloc-cash) {
+  portfolio-feed :global(.alloc-cash) {
     background: repeating-linear-gradient(
       -45deg,
       color-mix(in oklab, var(--foreground) 30%, transparent) 0 1.5px,
@@ -622,21 +620,21 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     );
   }
 
-  stocks-feed :global(.alloc-seg:is([data-on], [data-hover])) {
+  portfolio-feed :global(.alloc-seg:is([data-on], [data-hover])) {
     background: var(--accent-fill);
   }
 
   /* Holdings: a table of ticker and name, the range's line, price,
      average cost, weight and the position's return. */
-  .stocks-label {
+  .portfolio-label {
     margin-block-start: var(--space-l);
   }
 
-  .stocks-list {
+  .portfolio-list {
     display: grid;
   }
 
-  .stocks-head {
+  .portfolio-head {
     padding-block: var(--space-3xs);
     border-block-end: 1px solid var(--border);
     font-size: 0.6875rem;
@@ -644,16 +642,16 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     color: var(--faint-foreground);
   }
 
-  .stocks-head .stock-spark {
+  .portfolio-head .holding-spark {
     block-size: auto;
     text-align: center;
   }
 
-  stocks-feed :global(.stock) {
+  portfolio-feed :global(.holding) {
     border-block-end: 1px solid var(--border);
   }
 
-  stocks-feed :global(.stock-row) {
+  portfolio-feed :global(.holding-row) {
     display: grid;
     grid-template-columns: 1.75rem minmax(0, 1fr) 4.5rem 4.75rem 4.75rem 3.5rem 4rem;
     align-items: center;
@@ -664,27 +662,27 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     transition: background-color 0.15s ease;
   }
 
-  stocks-feed :global(button.stock-row) {
+  portfolio-feed :global(button.holding-row) {
     cursor: pointer;
   }
 
   @media (hover: hover) {
-    stocks-feed :global(button.stock-row:hover) {
+    portfolio-feed :global(button.holding-row:hover) {
       background-color: color-mix(in oklab, var(--muted) 70%, transparent);
     }
   }
 
-  stocks-feed :global(.stock[data-open] .stock-row) {
+  portfolio-feed :global(.holding[data-open] .holding-row) {
     background-color: var(--muted);
   }
 
-  stocks-feed :global(.stock-row:focus-visible) {
+  portfolio-feed :global(.holding-row:focus-visible) {
     outline-offset: -2px;
   }
 
   /* A logo is a tile: the brand's own mark in a rounded square, with a
      monogram for the ones that don't load. */
-  stocks-feed :global(.stock-logo) {
+  portfolio-feed :global(.holding-logo) {
     position: relative;
     display: grid;
     place-items: center;
@@ -698,11 +696,11 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* The monogram only where there is no logo; a logo sits on white, the
      ground brand marks are drawn for, in either scheme. */
-  stocks-feed :global(.stock-logo:has(img)) {
+  portfolio-feed :global(.holding-logo:has(img)) {
     background-color: #fff;
   }
 
-  stocks-feed :global(.stock-logo:not(:has(img, svg))::before) {
+  portfolio-feed :global(.holding-logo:not(:has(img, svg))::before) {
     content: attr(data-monogram);
     font-family: var(--font-mono);
     font-size: 0.625rem;
@@ -711,7 +709,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.stock-logo-cash svg) {
+  portfolio-feed :global(.holding-logo-cash svg) {
     inline-size: 1rem;
     block-size: 1rem;
     fill: none;
@@ -721,7 +719,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     stroke-linejoin: round;
   }
 
-  stocks-feed :global(.stock-logo img) {
+  portfolio-feed :global(.holding-logo img) {
     position: absolute;
     inset: 0;
     inline-size: 100%;
@@ -729,90 +727,92 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     object-fit: cover;
   }
 
-  stocks-feed :global(.stock-name) {
+  portfolio-feed :global(.holding-name) {
     display: grid;
     min-inline-size: 0;
   }
 
-  stocks-feed :global(.stock-ticker) {
+  portfolio-feed :global(.holding-ticker) {
     font-size: var(--step--1);
     font-weight: var(--font-weight-display);
     letter-spacing: -0.005em;
     line-height: 1.35;
   }
 
-  stocks-feed :global(:is(.stock-sub, .stock-ticker)) {
+  portfolio-feed :global(:is(.holding-sub, .holding-ticker)) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  stocks-feed :global(.stock-sub) {
+  portfolio-feed :global(.holding-sub) {
     min-block-size: 1lh;
     font-size: 0.75rem;
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.stock-spark) {
+  portfolio-feed :global(.holding-spark) {
     display: block;
     inline-size: 100%;
     block-size: 1.5rem;
   }
 
-  stocks-feed :global(.stock-spark polyline) {
+  portfolio-feed :global(.holding-spark polyline) {
     stroke: var(--muted-foreground);
     stroke-width: 1.25;
     stroke-linejoin: round;
   }
 
-  stocks-feed :global(.stock-spark[data-dir="up"] polyline) {
+  portfolio-feed :global(.holding-spark[data-dir="up"] polyline) {
     stroke: var(--accent-fill);
   }
 
-  stocks-feed
-    :global(:is(.stock-price, .stock-cost, .stock-weight, .stock-change)) {
+  portfolio-feed
+    :global(
+      :is(.holding-price, .holding-cost, .holding-weight, .holding-change)
+    ) {
     font-size: var(--step--1);
     font-variant-numeric: tabular-nums;
     text-align: end;
     white-space: nowrap;
   }
 
-  stocks-feed :global(:is(.stock-cost, .stock-weight)) {
+  portfolio-feed :global(:is(.holding-cost, .holding-weight)) {
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.stock-cost-under) {
+  portfolio-feed :global(.holding-cost-under) {
     display: none;
     font-size: 0.6875rem;
     color: var(--faint-foreground);
   }
 
-  stocks-feed :global(.stock-change) {
+  portfolio-feed :global(.holding-change) {
     font-weight: var(--font-weight-medium);
   }
 
-  stocks-feed :global(:is(.stock-change, .panel-delta)[data-dir="up"]) {
+  portfolio-feed :global(:is(.holding-change, .panel-delta)[data-dir="up"]) {
     color: var(--accent);
   }
 
-  stocks-feed :global(:is(.stock-change, .panel-delta)[data-dir="down"]) {
+  portfolio-feed :global(:is(.holding-change, .panel-delta)[data-dir="down"]) {
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.stock-cash .stock-row) {
+  portfolio-feed :global(.holding-cash .holding-row) {
     color: var(--muted-foreground);
   }
 
-  stocks-feed
+  portfolio-feed
     :global(
       [data-skeleton]
         :is(
-          .stock-ticker,
-          .stock-sub,
-          .stock-price,
-          .stock-cost,
-          .stock-weight,
-          .stock-change
+          .holding-ticker,
+          .holding-sub,
+          .holding-price,
+          .holding-cost,
+          .holding-weight,
+          .holding-change
         )
     ) {
     display: grid;
@@ -821,7 +821,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     min-block-size: 1lh;
   }
 
-  stocks-feed :global([data-skeleton] :is(.stock-ticker, .stock-sub)) {
+  portfolio-feed :global([data-skeleton] :is(.holding-ticker, .holding-sub)) {
     justify-items: start;
   }
 
@@ -835,7 +835,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* An opened row: the price and its move, what the company is under
      them, the line against the cost, the facts, and the year's band. */
-  stocks-feed :global(.stock-panel) {
+  portfolio-feed :global(.holding-panel) {
     display: grid;
     gap: var(--space-xs);
     padding: var(--space-s) var(--space-xs) var(--space-xs);
@@ -844,19 +844,19 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* The head: the price set large with its move as a tinted figure and
      when it ran from, then what the company is as quiet tags. */
-  stocks-feed :global(.panel-head) {
+  portfolio-feed :global(.panel-head) {
     display: grid;
     gap: var(--space-2xs);
   }
 
-  stocks-feed :global(.panel-figure) {
+  portfolio-feed :global(.panel-figure) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3xs) var(--space-2xs);
   }
 
-  stocks-feed :global(.panel-price) {
+  portfolio-feed :global(.panel-price) {
     margin-inline-end: var(--space-3xs);
     font-size: var(--step-2);
     font-weight: var(--font-weight-display);
@@ -865,7 +865,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     line-height: 1.1;
   }
 
-  stocks-feed :global(.panel-delta) {
+  portfolio-feed :global(.panel-delta) {
     padding: 0.125rem 0.45rem;
     border-radius: var(--radius-sm);
     font-size: var(--step--1);
@@ -875,17 +875,17 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background-color: var(--muted);
   }
 
-  stocks-feed :global(.panel-delta[data-dir="up"]) {
+  portfolio-feed :global(.panel-delta[data-dir="up"]) {
     background-color: color-mix(in oklab, var(--accent-fill) 14%, transparent);
   }
 
-  stocks-feed :global(.panel-when) {
+  portfolio-feed :global(.panel-when) {
     font-size: var(--step--1);
     font-variant-numeric: tabular-nums;
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.panel-about) {
+  portfolio-feed :global(.panel-about) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -897,14 +897,14 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.panel-tag) {
+  portfolio-feed :global(.panel-tag) {
     padding: 0.0625rem 0.45rem;
     border-radius: var(--radius-full);
     box-shadow: inset 0 0 0 1px var(--border);
   }
 
   /* The site: a plain name with the external arrow, no rule under it. */
-  stocks-feed :global(.panel-site) {
+  portfolio-feed :global(.panel-site) {
     display: inline-flex;
     align-items: center;
     gap: 0.25em;
@@ -914,7 +914,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     transition: color 0.15s ease;
   }
 
-  stocks-feed :global(.panel-site::after) {
+  portfolio-feed :global(.panel-site::after) {
     content: "";
     inline-size: 0.7em;
     block-size: 0.7em;
@@ -924,12 +924,12 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   @media (hover: hover) {
-    stocks-feed :global(.panel-site:hover) {
+    portfolio-feed :global(.panel-site:hover) {
       color: var(--foreground);
     }
   }
 
-  stocks-feed :global(.panel-chart) {
+  portfolio-feed :global(.panel-chart) {
     display: block;
     inline-size: 100%;
     block-size: 9rem;
@@ -940,7 +940,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* The tabs, and the key to the cost level and the first buy: kept
      off the line, where a label would cross it. */
-  stocks-feed :global(.panel-bar) {
+  portfolio-feed :global(.panel-bar) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -948,7 +948,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     gap: var(--space-3xs) var(--space-s);
   }
 
-  stocks-feed :global(.panel-key) {
+  portfolio-feed :global(.panel-key) {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3xs) var(--space-s);
@@ -958,20 +958,20 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.panel-key span) {
+  portfolio-feed :global(.panel-key span) {
     display: inline-flex;
     align-items: center;
     gap: 0.45em;
   }
 
-  stocks-feed :global(.key-cost::before) {
+  portfolio-feed :global(.key-cost::before) {
     content: "";
     inline-size: 1rem;
     border-block-start: 1.5px dashed
       color-mix(in oklab, var(--foreground) 55%, transparent);
   }
 
-  stocks-feed :global(.key-buy::before) {
+  portfolio-feed :global(.key-buy::before) {
     content: "";
     inline-size: 0.5rem;
     aspect-ratio: 1;
@@ -980,51 +980,51 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   /* On the panel's tint the pill is the page itself. */
-  stocks-feed :global(.panel-ranges button[aria-pressed="true"]) {
+  portfolio-feed :global(.panel-ranges button[aria-pressed="true"]) {
     background-color: var(--background);
   }
 
-  stocks-feed :global(.panel-readout .value) {
+  portfolio-feed :global(.panel-readout .value) {
     font-size: var(--step-0);
   }
 
-  stocks-feed :global(.panel-readout .value[data-dir="down"]) {
+  portfolio-feed :global(.panel-readout .value[data-dir="down"]) {
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.panel-band) {
+  portfolio-feed :global(.panel-band) {
     display: grid;
     gap: var(--space-3xs);
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
   }
 
-  stocks-feed :global(:is(.band-head, .band-ends)) {
+  portfolio-feed :global(:is(.band-head, .band-ends)) {
     display: flex;
     justify-content: space-between;
     gap: var(--space-s);
   }
 
-  stocks-feed :global(.band-head) {
+  portfolio-feed :global(.band-head) {
     color: var(--faint-foreground);
   }
 
-  stocks-feed :global(.band-ends) {
+  portfolio-feed :global(.band-ends) {
     color: var(--muted-foreground);
   }
 
-  stocks-feed :global(.band-legend) {
+  portfolio-feed :global(.band-legend) {
     display: inline-flex;
     gap: var(--space-xs);
   }
 
-  stocks-feed :global(.band-key) {
+  portfolio-feed :global(.band-key) {
     display: inline-flex;
     align-items: center;
     gap: 0.4em;
   }
 
-  stocks-feed :global(.band-key::before) {
+  portfolio-feed :global(.band-key::before) {
     content: "";
     inline-size: 0.5rem;
     block-size: 0.5rem;
@@ -1032,7 +1032,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background-color: var(--foreground);
   }
 
-  stocks-feed :global(.band-key-cost::before) {
+  portfolio-feed :global(.band-key-cost::before) {
     inline-size: 0;
     block-size: 0.625rem;
     border-radius: 0;
@@ -1040,7 +1040,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background: none;
   }
 
-  stocks-feed :global(.band-track) {
+  portfolio-feed :global(.band-track) {
     position: relative;
     block-size: 0.375rem;
     margin-block: 0.25rem;
@@ -1048,24 +1048,24 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     background-color: var(--heat-0);
   }
 
-  stocks-feed :global(.band-fill) {
+  portfolio-feed :global(.band-fill) {
     position: absolute;
     inset-block: 0;
     border-radius: 3px;
     background-color: var(--heat-2);
   }
 
-  stocks-feed :global(.band-fill[data-dir="down"]) {
+  portfolio-feed :global(.band-fill[data-dir="down"]) {
     background-color: var(--down-2);
   }
 
-  stocks-feed :global(.band-cost) {
+  portfolio-feed :global(.band-cost) {
     position: absolute;
     inset-block: -0.25rem;
     border-inline-start: 1.5px dashed var(--muted-foreground);
   }
 
-  stocks-feed :global(.band-pin) {
+  portfolio-feed :global(.band-pin) {
     position: absolute;
     inset-block-start: 50%;
     inline-size: 0.75rem;
@@ -1079,32 +1079,32 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   /* Narrow columns: the sparkline gives way first, then the cost folds
      under the price. */
   @container (width < 38rem) {
-    stocks-feed :global(.stock-row) {
+    portfolio-feed :global(.holding-row) {
       grid-template-columns: 1.75rem minmax(0, 1fr) 4.75rem 4.75rem 3.25rem 3.75rem;
     }
 
-    stocks-feed :global(.stock-spark) {
+    portfolio-feed :global(.holding-spark) {
       display: none;
     }
   }
 
   @container (width < 28rem) {
-    stocks-feed :global(.stock-row) {
+    portfolio-feed :global(.holding-row) {
       grid-template-columns: 1.75rem minmax(0, 1fr) 4.5rem 3rem 3.5rem;
       gap: var(--space-2xs);
     }
 
-    stocks-feed :global(.stock-cost) {
+    portfolio-feed :global(.holding-cost) {
       display: none;
     }
 
-    stocks-feed :global(.stock-cost-under) {
+    portfolio-feed :global(.holding-cost-under) {
       display: block;
     }
   }
 
   @media (width < 32rem) {
-    stocks-feed :global(.range-tabs button) {
+    portfolio-feed :global(.range-tabs button) {
       padding-inline: 0.45rem;
     }
   }

@@ -5,8 +5,8 @@ import MetaPage from "@/components/MetaPage.astro"
 import PageTitle from "@/components/PageTitle.astro"
 import Movies from "@/components/Movies.astro"
 import Music from "@/components/Music.astro"
+import Portfolio from "@/components/Portfolio.astro"
 import SectionHead from "@/components/SectionHead.astro"
-import Stocks from "@/components/Stocks.astro"
 import Switch from "@/components/Switch.astro"
 import TableOfContents from "@/components/TableOfContents.astro"
 import Uses from "@/components/Uses.astro"
@@ -33,8 +33,8 @@ const sections: {
 }[] = [
   { id: "friends", label: "Friends" },
   {
-    id: "stocks",
-    label: "Stocks",
+    id: "portfolio",
+    label: "Portfolio",
     source: {
       href: "https://github.com/ghostfolio/ghostfolio",
       label: "Ghostfolio",
@@ -102,8 +102,8 @@ const toc = [
     </ul>
   </section>
   <section>
-    <SectionHead {...head.stocks} />
-    <Stocks />
+    <SectionHead {...head.portfolio} />
+    <Portfolio />
   </section>
   <section>
     <SectionHead {...head.movies} />

@@ -1,18 +1,9 @@
 {
-  "schemaVersion": 2,
-  "today": "2026-09-27",
-  "last": {
-    "date": "2026-08-16",
-    "from": "JNH",
-    "to": "PEK",
-    "km": 1106,
-    "minutes": 135,
-    "airline": "Air China",
-    "aircraft": "Airbus A321"
-  },
+  "schemaVersion": 3,
+  "today": "2026-10-24",
   "stats": {
     "flights": 25,
-    "upcoming": 0,
+    "upcoming": 1,
     "km": 34511,
     "minutes": 3937,
     "airports": 15,
@@ -245,7 +236,7 @@
       "from": "JNH",
       "to": "PEK",
       "flights": 1,
-      "upcoming": 0,
+      "upcoming": 1,
       "km": 1106,
       "minutes": 135
     },
@@ -275,31 +266,127 @@
     }
   ],
   "airlines": [
-    { "code": "CA", "name": "Air China", "flights": 9 },
-    { "code": "CZ", "name": "China Southern Airlines", "flights": 5 },
-    { "code": "MU", "name": "China Eastern Airlines", "flights": 2 },
-    { "code": "UO", "name": "HK express", "flights": 2 },
-    { "code": "TR", "name": "Scoot", "flights": 2 },
-    { "code": "OZ", "name": "Asiana Airlines", "flights": 1 },
-    { "code": "HU", "name": "Hainan Airlines", "flights": 1 },
-    { "code": "KE", "name": "Korean Air", "flights": 1 },
-    { "code": "SC", "name": "Shandong Airlines", "flights": 1 },
-    { "code": "TW", "name": "T'way Air", "flights": 1 }
+    {
+      "code": "CA",
+      "name": "Air China",
+      "flights": 9
+    },
+    {
+      "code": "CZ",
+      "name": "China Southern Airlines",
+      "flights": 5
+    },
+    {
+      "code": "MU",
+      "name": "China Eastern Airlines",
+      "flights": 2
+    },
+    {
+      "code": "UO",
+      "name": "HK express",
+      "flights": 2
+    },
+    {
+      "code": "TR",
+      "name": "Scoot",
+      "flights": 2
+    },
+    {
+      "code": "OZ",
+      "name": "Asiana Airlines",
+      "flights": 1
+    },
+    {
+      "code": "HU",
+      "name": "Hainan Airlines",
+      "flights": 1
+    },
+    {
+      "code": "KE",
+      "name": "Korean Air",
+      "flights": 1
+    },
+    {
+      "code": "SC",
+      "name": "Shandong Airlines",
+      "flights": 1
+    },
+    {
+      "code": "TW",
+      "name": "T'way Air",
+      "flights": 1
+    }
   ],
   "aircraft": [
-    { "code": "A21N", "name": "Airbus A321neo", "flights": 4 },
-    { "code": "A20N", "name": "Airbus A320neo", "flights": 3 },
-    { "code": "A321", "name": "Airbus A321", "flights": 3 },
-    { "code": "B738", "name": "Boeing 737-800", "flights": 3 },
-    { "code": "A359", "name": "Airbus A350-900", "flights": 2 },
-    { "code": "B789", "name": "Boeing 787-9", "flights": 2 },
-    { "code": "A320", "name": "Airbus A320", "flights": 1 },
-    { "code": "A332", "name": "Airbus A330-200", "flights": 1 },
-    { "code": "A333", "name": "Airbus A330-300", "flights": 1 },
-    { "code": "B38M", "name": "Boeing 737 MAX 8", "flights": 1 },
-    { "code": "B739", "name": "Boeing 737-900", "flights": 1 },
-    { "code": "B77W", "name": "Boeing 777-300ER", "flights": 1 },
-    { "code": "B788", "name": "Boeing 787-8", "flights": 1 },
-    { "code": "C919", "name": "Comac C919", "flights": 1 }
+    {
+      "code": "A21N",
+      "name": "Airbus A321neo",
+      "flights": 4
+    },
+    {
+      "code": "A20N",
+      "name": "Airbus A320neo",
+      "flights": 3
+    },
+    {
+      "code": "A321",
+      "name": "Airbus A321",
+      "flights": 3
+    },
+    {
+      "code": "B738",
+      "name": "Boeing 737-800",
+      "flights": 3
+    },
+    {
+      "code": "A359",
+      "name": "Airbus A350-900",
+      "flights": 2
+    },
+    {
+      "code": "B789",
+      "name": "Boeing 787-9",
+      "flights": 2
+    },
+    {
+      "code": "A320",
+      "name": "Airbus A320",
+      "flights": 1
+    },
+    {
+      "code": "A332",
+      "name": "Airbus A330-200",
+      "flights": 1
+    },
+    {
+      "code": "A333",
+      "name": "Airbus A330-300",
+      "flights": 1
+    },
+    {
+      "code": "B38M",
+      "name": "Boeing 737 MAX 8",
+      "flights": 1
+    },
+    {
+      "code": "B739",
+      "name": "Boeing 737-900",
+      "flights": 1
+    },
+    {
+      "code": "B77W",
+      "name": "Boeing 777-300ER",
+      "flights": 1
+    },
+    {
+      "code": "B788",
+      "name": "Boeing 787-8",
+      "flights": 1
+    },
+    {
+      "code": "C919",
+      "name": "Comac C919",
+      "flights": 1
+    }
   ]
 }

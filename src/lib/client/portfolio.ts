@@ -1,6 +1,6 @@
 /**
- * Data layer for the Stocks section: types for cf-workers-api's
- * /stocks/site view (src/services/stocks/compose.ts there), delivered in
+ * Data layer for the Portfolio section: types for cf-workers-api's
+ * /portfolio/site view (src/services/portfolio/compose.ts there), delivered in
  * the /misc bundle, its decoder, and every decision the renderer makes —
  * which ranges exist, where each starts, the returns, the strip's cells,
  * the readout, the rows and every printed figure. Pure and browser-safe.
@@ -78,7 +78,7 @@ export type Site = {
   symbols: SiteSymbol[]
 }
 
-/** Lockstep with cf-workers-api's SITE_VERSION in src/services/stocks/compose.ts. */
+/** Lockstep with cf-workers-api's SITE_VERSION in src/services/portfolio/compose.ts. */
 export const SITE_SCHEMA_VERSION = 3
 
 /* Decoder ---------------------------------------------------------------- */
@@ -182,8 +182,8 @@ export const loadSite = (
   onData: (site: Site) => void,
 ): Promise<void> =>
   swr(
-    `stocks:site:v${SITE_SCHEMA_VERSION}:${endpoint}`,
-    () => miscSection(endpoint, "stocks") as Promise<Site>,
+    `portfolio:site:v${SITE_SCHEMA_VERSION}:${endpoint}`,
+    () => miscSection(endpoint, "portfolio") as Promise<Site>,
     isSite,
     onData,
   )

@@ -9,7 +9,12 @@
 import { calendarDay, keepFresh } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/now"
 import { pauseOffscreen } from "@/lib/client/vinyl"
-import { renderFilm, renderFlight, renderListen, renderTokens } from "./render"
+import {
+  renderFilm,
+  renderListen,
+  renderPortfolio,
+  renderTokens,
+} from "./render"
 
 export function mountNow(feed: HTMLElement) {
   const endpoint = feed.dataset.endpoint
@@ -17,9 +22,6 @@ export function mountNow(feed: HTMLElement) {
   const tile = (name: string) =>
     feed.querySelector<HTMLElement>(`[data-tile="${name}"]`)!
 
-  // The track between the codes is markup, kept to put back between
-  // whichever codes the payload names.
-  const track = feed.querySelector(".now-track")!
   const spin = pauseOffscreen()
   const disc = feed.querySelector(".disc")
   if (disc) spin.observe(disc)
@@ -33,7 +35,7 @@ export function mountNow(feed: HTMLElement) {
     renderListen(tile("listen"), site, now)
     renderFilm(tile("film"), site, today)
     renderTokens(tile("tokens"), site, today)
-    renderFlight(tile("flight"), site, today, track)
+    renderPortfolio(tile("portfolio"), site)
     feed.setAttribute("aria-busy", "false")
     // A section that stepped aside on a failed first load comes back.
     feed.closest("section")?.removeAttribute("hidden")

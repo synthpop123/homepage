@@ -1,9 +1,10 @@
 /**
  * Data layer for the home page's Now section: types for cf-workers-api's
  * /now/site view (see src/services/now/ there), the latest listen, the
- * latest film, today's token totals and the last flight, plus the decoder
- * Now.astro validates against and every line of text the tiles print.
- * Pure and browser-safe.
+ * latest film, today's token totals with the last two weeks, and the
+ * portfolio's last three months, plus the decoder Now.astro validates
+ * against and every line of text and every shape the tiles draw. Pure and
+ * browser-safe.
  */
 
 import {
@@ -14,28 +15,38 @@ import {
   isCount,
   isRecord,
   monthDay,
+  shiftDays,
   swr,
-  TIME_ZONE,
 } from "./feed"
-import { formatDuration, formatKm } from "./flights"
 import { isFilm, type SiteFilm } from "./movies"
 import { isListen, type SiteListen } from "./music"
-import { formatCost, formatCount } from "./tokens/format"
+import {
+  direction,
+  formatReturn,
+  grainFor,
+  type StripCell,
+  stripCells,
+} from "./portfolio"
+import { formatCost, formatCount, formatTokens } from "./tokens/format"
 
-type TokensToday = { tokens: number; cost: number; messages: number }
+type TokensToday = {
+  tokens: number
+  cost: number
+  messages: number
+  /** Token totals of the last two weeks, oldest first, the payload's day
+   *  last (`tokens`); a day with nothing reported is 0. */
+  recent: number[]
+}
 
-type Place = { code: string; city: string | null }
-
-type Flight = {
-  /** The calendar day flown. */
-  date: string
-  /** In the direction flown. */
-  from: Place
-  to: Place
-  km: number
-  minutes: number | null
-  airline: string | null
-  aircraft: string | null
+/** The whole portfolio over /misc's 3M range: the session the range is
+ *  measured from through the latest, so its return is last over first. */
+type Portfolio = {
+  /** Market sessions, oldest first. */
+  days: string[]
+  /** The growth index on `days`. */
+  index: number[]
+  /** The S&P 500 fund's closes on `days`. */
+  benchmark: number[]
 }
 
 export type Site = {
@@ -44,35 +55,34 @@ export type Site = {
   listen: SiteListen | null
   film: SiteFilm | null
   tokens: TokensToday | null
-  flight: Flight | null
+  portfolio: Portfolio | null
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/now/index.ts. */
-export const SITE_SCHEMA_VERSION = 2
+export const SITE_SCHEMA_VERSION = 3
 
 const isTokens = (value: unknown): value is TokensToday =>
   isRecord(value) &&
   isCount(value.tokens) &&
   isCount(value.cost) &&
-  isCount(value.messages)
+  isCount(value.messages) &&
+  Array.isArray(value.recent) &&
+  value.recent.length > 0 &&
+  value.recent.every(isCount)
 
-const isNullableString = (value: unknown): value is string | null =>
-  value === null || typeof value === "string"
+const isLevel = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value) && value > 0
 
-const isPlace = (value: unknown): value is Place =>
+const isSeries = (value: unknown, length: number): value is number[] =>
+  Array.isArray(value) && value.length === length && value.every(isLevel)
+
+const isPortfolio = (value: unknown): value is Portfolio =>
   isRecord(value) &&
-  typeof value.code === "string" &&
-  isNullableString(value.city)
-
-const isFlight = (value: unknown): value is Flight =>
-  isRecord(value) &&
-  isCalendarDay(value.date) &&
-  isPlace(value.from) &&
-  isPlace(value.to) &&
-  isCount(value.km) &&
-  (value.minutes === null || isCount(value.minutes)) &&
-  isNullableString(value.airline) &&
-  isNullableString(value.aircraft)
+  Array.isArray(value.days) &&
+  value.days.length >= 2 &&
+  value.days.every(isCalendarDay) &&
+  isSeries(value.index, value.days.length) &&
+  isSeries(value.benchmark, value.days.length)
 
 const nullOr =
   <T>(is: (value: unknown) => value is T) =>
@@ -87,7 +97,7 @@ export function isSite(data: unknown): data is Site {
     nullOr(isListen)(data.listen) &&
     nullOr(isFilm)(data.film) &&
     nullOr(isTokens)(data.tokens) &&
-    nullOr(isFlight)(data.flight)
+    nullOr(isPortfolio)(data.portfolio)
   )
 }
 
@@ -127,46 +137,91 @@ export function tokensLabel(day: string, today: string): string {
 
 /** ["$14.48", "155 messages"]: two runs, so a narrow tile can put the
  *  second on a line of its own instead of cutting it off. */
-export const tokensFoot = ({ cost, messages }: TokensToday) => [
+export const tokensFoot = ({ cost, messages }: Omit<TokensToday, "recent">) => [
   formatCost(cost),
   `${formatCount(messages)} ${messages === 1 ? "message" : "messages"}`,
 ]
 
-const longDate = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  timeZone: TIME_ZONE,
-})
+export type TokenBar = { height: number; title: string }
 
-/** The day a flight was flown: "Aug 16", with the year only when it is
- *  not this one. A flight is rare enough that a count of days would be
- *  arithmetic, not news. */
-export function flownLabel(date: string, today: string): string {
-  const format = date.slice(0, 4) === today.slice(0, 4) ? monthDay : longDate
-  return format.format(dayInstant(date))
+/**
+ * The tokens tile's bars, one a day ending on the payload's `day`. Heights
+ * are the square root of each day's share of the busiest: a heavy day runs
+ * to several times an ordinary one, and on a straight scale it would leave
+ * the rest as slivers.
+ */
+export function tokenBars(recent: number[], day: string): TokenBar[] {
+  const most = Math.max(0, ...recent)
+  return recent.map((tokens, i) => ({
+    height: most > 0 ? Math.sqrt(tokens / most) : 0,
+    title: `${monthDay.format(
+      dayInstant(shiftDays(day, i + 1 - recent.length)),
+    )} · ${formatTokens(tokens)}`,
+  }))
 }
 
-/** A place by its city, or its code when the city is unknown. */
-const placeName = ({ code, city }: Place) => city ?? code
+/** The range the portfolio tile covers, as /misc names it. */
+export const PORTFOLIO_RANGE = "3M"
 
-/** ["Jiaxing → Beijing", "1,106 km"]: two runs, like `tokensFoot`. */
-export const flightFoot = (flight: Flight) => [
-  `${placeName(flight.from)} → ${placeName(flight.to)}`,
-  formatKm(flight.km),
-]
+export type PortfolioView = {
+  change: number
+  dir: "up" | "down" | "flat"
+  /** `+12.89%`. */
+  figure: string
+  /** ["S&P 500 +2.59%"]. */
+  foot: string[]
+  /** The link's tooltip: the range's days and both returns. */
+  title: string
+  /** Polyline points in a 100 × 100 box, y down: the portfolio, and the
+   *  benchmark rebased onto its first day; `area` closes the first. */
+  line: string
+  ghost: string
+  area: string
+  /** Where the first day sits, and the last (0–100, from the top). */
+  base: number
+  end: number
+  /** The line again as day cells, graded as /misc grades its strip. */
+  cells: (StripCell & { dir: "up" | "down" | "flat" })[]
+  /** The axis' two ends. */
+  from: string
+  to: string
+}
 
-/** Everything the tile leaves out, for its tooltip: the date in full,
- *  the time aloft, the airline and the aircraft. */
-export function flightTitle(flight: Flight): string {
-  const parts = [
-    longDate.format(dayInstant(flight.date)),
-    formatKm(flight.km),
-    flight.minutes === null ? null : formatDuration(flight.minutes),
-    [flight.airline, flight.aircraft].filter(Boolean).join(", ") || null,
-  ]
-  return [
-    `${placeName(flight.from)} → ${placeName(flight.to)}`,
-    parts.filter(Boolean).join(" · "),
-  ].join("\n")
+const round = (value: number) => Math.round(value * 100) / 100
+
+export function portfolioView(portfolio: Portfolio): PortfolioView {
+  const { days, index, benchmark } = portfolio
+  const change = index[index.length - 1] / index[0] - 1
+  const versus = benchmark[benchmark.length - 1] / benchmark[0] - 1
+  // One scale for both, the benchmark starting where the portfolio does.
+  const ghost = benchmark.map((close) => (close / benchmark[0]) * index[0])
+  const low = Math.min(...index, ...ghost)
+  const high = Math.max(...index, ...ghost)
+  const pad = (high - low) * 0.08 || 0.01
+  const y = (value: number) =>
+    round(100 - ((value - low + pad) / (high - low + 2 * pad)) * 100)
+  const x = (i: number) => round((i / (days.length - 1)) * 100)
+  const points = (series: number[]) =>
+    series.map((value, i) => `${x(i)},${y(value)}`).join(" ")
+  const line = points(index)
+  const from = monthDay.format(dayInstant(days[0]))
+  const to = monthDay.format(dayInstant(days[days.length - 1]))
+  const benchmarkText = `S&P 500 ${formatReturn(versus)}`
+  return {
+    change,
+    dir: direction(change),
+    figure: formatReturn(change),
+    foot: [benchmarkText],
+    title: `Portfolio, ${from} – ${to}: ${formatReturn(change)}\n${benchmarkText}`,
+    line,
+    ghost: points(ghost),
+    area: `0,100 ${line} 100,100`,
+    base: y(index[0]),
+    end: y(index[index.length - 1]),
+    cells: stripCells(days, index, 0, grainFor(days.length - 1)).map(
+      (cell) => ({ ...cell, dir: direction(cell.change) }),
+    ),
+    from,
+    to,
+  }
 }

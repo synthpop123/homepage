@@ -1,5 +1,5 @@
 /**
- * The Stocks line chart: one ink line (the portfolio's growth index or a
+ * The Portfolio line chart: one ink line (the portfolio's growth index or a
  * holding's closes) over a faint wash, an optional dashed ghost (the
  * benchmark rebased onto the line's start), and a scrubber — a hairline
  * and an accent dot that follow the pointer, or the arrow keys when the

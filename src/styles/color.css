@@ -23,6 +23,12 @@
   --heat-2: light-dark(#40c463, #006d32);
   --heat-3: light-dark(#30a14e, #26a641);
   --heat-4: light-dark(#216e39, #39d353);
+  /* A return's losses, beside those greens: ink, never red (Portfolio's
+     strip, the home page's portfolio tile). */
+  --down-1: color-mix(in oklab, var(--foreground) 14%, transparent);
+  --down-2: color-mix(in oklab, var(--foreground) 28%, transparent);
+  --down-3: color-mix(in oklab, var(--foreground) 48%, transparent);
+  --down-4: color-mix(in oklab, var(--foreground) 72%, transparent);
 
   --background:         var(--gray-1);
   --foreground:         var(--gray-12);

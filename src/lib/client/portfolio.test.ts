@@ -17,8 +17,8 @@ import {
   SITE_SCHEMA_VERSION,
   stripCells,
   view,
-} from "./stocks"
-import fixture from "./stocks.site-fixture.json"
+} from "./portfolio"
+import fixture from "./portfolio.site-fixture.json"
 
 const site = fixture as Site
 

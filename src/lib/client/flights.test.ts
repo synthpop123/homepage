@@ -31,13 +31,6 @@ describe("isSite", () => {
     )
   })
 
-  it("takes no last flight, and rejects one without a calendar day", () => {
-    expect(isSite({ ...fixture, last: null })).toBe(true)
-    expect(
-      isSite({ ...fixture, last: { ...fixture.last, date: "Aug 16" } }),
-    ).toBe(false)
-  })
-
   it("rejects a route whose airport the payload doesn't list", () => {
     const [first, ...rest] = site.routes
     expect(

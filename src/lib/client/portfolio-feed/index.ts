@@ -1,7 +1,7 @@
 /**
- * Runtime controller for the Stocks section — Stocks.astro owns the
+ * Runtime controller for the Portfolio section — Portfolio.astro owns the
  * markup, styles and skeletons, this module owns everything that runs in
- * the browser. One mount per <stocks-feed> root: load the Stocks section
+ * the browser. One mount per <portfolio-feed> root: load the Portfolio section
  * of /misc stale-while-revalidate, and draw the chosen account over the
  * chosen range — the hero figure, the ink line with the benchmark's
  * ghost, the strip of returns, the readout, the allocation bar and the
@@ -28,7 +28,7 @@ import {
   type Row,
   type Site,
   view,
-} from "@/lib/client/stocks"
+} from "@/lib/client/portfolio"
 import { type Chart, drawChart } from "./chart"
 import {
   buildAllocation,
@@ -41,17 +41,17 @@ import {
   syncButtons,
 } from "./render"
 
-export function mountStocks(feed: HTMLElement) {
+export function mountPortfolio(feed: HTMLElement) {
   const endpoint = feed.dataset.endpoint
-  const body = feed.querySelector<HTMLElement>(".stocks-body")
-  const fallback = feed.querySelector<HTMLElement>(".stocks-fallback")
-  const accounts = feed.querySelector<HTMLElement>(".stocks-accounts")
-  const ranges = feed.querySelector<HTMLElement>(".stocks-ranges")
-  const kicker = feed.querySelector<HTMLElement>(".stocks-kicker")
-  const figure = feed.querySelector<HTMLElement>(".stocks-figure")
-  const note = feed.querySelector<HTMLElement>(".stocks-note")
-  const svg = feed.querySelector<SVGSVGElement>(".stocks-chart")
-  const list = feed.querySelector<HTMLOListElement>(".stocks-list")
+  const body = feed.querySelector<HTMLElement>(".portfolio-body")
+  const fallback = feed.querySelector<HTMLElement>(".portfolio-fallback")
+  const accounts = feed.querySelector<HTMLElement>(".portfolio-accounts")
+  const ranges = feed.querySelector<HTMLElement>(".portfolio-ranges")
+  const kicker = feed.querySelector<HTMLElement>(".portfolio-kicker")
+  const figure = feed.querySelector<HTMLElement>(".portfolio-figure")
+  const note = feed.querySelector<HTMLElement>(".portfolio-note")
+  const svg = feed.querySelector<SVGSVGElement>(".portfolio-chart")
+  const list = feed.querySelector<HTMLOListElement>(".portfolio-list")
   if (
     !endpoint ||
     !body ||
@@ -85,10 +85,10 @@ export function mountStocks(feed: HTMLElement) {
   const openPanel = (animate: boolean) => {
     if (!site || !state.open) return
     const item = list.querySelector<HTMLElement>(
-      `.stock[data-symbol="${CSS.escape(state.open)}"]`,
+      `.holding[data-symbol="${CSS.escape(state.open)}"]`,
     )
-    const button = item?.querySelector<HTMLButtonElement>(".stock-row")
-    const panel = item?.querySelector<HTMLElement>(".stock-panel")
+    const button = item?.querySelector<HTMLButtonElement>(".holding-row")
+    const panel = item?.querySelector<HTMLElement>(".holding-panel")
     const row = rows.find((entry) => entry.symbol === state.open)
     if (!item || !button || !panel || !row) {
       state.open = null
@@ -108,12 +108,12 @@ export function mountStocks(feed: HTMLElement) {
   const closePanel = () => {
     const item = state.open
       ? list.querySelector<HTMLElement>(
-          `.stock[data-symbol="${CSS.escape(state.open)}"]`,
+          `.holding[data-symbol="${CSS.escape(state.open)}"]`,
         )
       : null
-    item?.querySelector(".stock-row")?.setAttribute("aria-expanded", "false")
+    item?.querySelector(".holding-row")?.setAttribute("aria-expanded", "false")
     item?.removeAttribute("data-open")
-    const panel = item?.querySelector<HTMLElement>(".stock-panel")
+    const panel = item?.querySelector<HTMLElement>(".holding-panel")
     if (panel) panel.hidden = true
     state.open = null
     pinSegment(null)
@@ -209,7 +209,7 @@ export function mountStocks(feed: HTMLElement) {
     pinSegment = buildAllocation(feed, resolved.rows, resolved.cash)
 
     rows = resolved.rows
-    const rangeHead = feed.querySelector(".stocks-head .stock-spark")
+    const rangeHead = feed.querySelector(".portfolio-head .holding-spark")
     if (rangeHead) rangeHead.textContent = resolved.range
     list.replaceChildren(
       ...resolved.rows.map((row) => buildRow(current, row, start)),
@@ -220,9 +220,9 @@ export function mountStocks(feed: HTMLElement) {
 
   list.onclick = (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
-      "button.stock-row",
+      "button.holding-row",
     )
-    const symbol = button?.closest<HTMLElement>(".stock")?.dataset.symbol
+    const symbol = button?.closest<HTMLElement>(".holding")?.dataset.symbol
     if (!button || !symbol) return
     const wasOpen = state.open === symbol
     closePanel()
@@ -232,8 +232,9 @@ export function mountStocks(feed: HTMLElement) {
     openPanel(true)
   }
   list.onpointerover = (event) => {
-    const symbol = (event.target as HTMLElement).closest<HTMLElement>(".stock")
-      ?.dataset.symbol
+    const symbol = (event.target as HTMLElement).closest<HTMLElement>(
+      ".holding",
+    )?.dataset.symbol
     feed.querySelectorAll<HTMLElement>(".alloc-seg").forEach((segment) => {
       segment.toggleAttribute(
         "data-hover",

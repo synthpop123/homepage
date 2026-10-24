@@ -1,5 +1,5 @@
 /**
- * The /misc bundle: the Flights, Movies, Music, Stocks and Switch
+ * The /misc bundle: the Flights, Movies, Music, Portfolio and Switch
  * snapshots in one response from cf-workers-api (`GET /misc`), so the
  * page makes one request instead of five racing for the first paint — the
  * one misc.astro preloads.
@@ -15,7 +15,7 @@
 
 import { fetchJson, isRecord } from "./feed"
 
-type MiscSection = "flights" | "movies" | "music" | "stocks" | "switch"
+type MiscSection = "flights" | "movies" | "music" | "portfolio" | "switch"
 
 const SHARE_MS = 30_000
 
