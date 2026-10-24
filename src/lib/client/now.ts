@@ -1,8 +1,8 @@
 /**
  * Data layer for the home page's Now section: types for cf-workers-api's
  * /now/site view (see src/services/now/ there), the latest listen, the
- * latest film, today's token totals with the last two weeks, and the
- * portfolio's last three months, plus the decoder Now.astro validates
+ * latest film, today's token totals with the last two weeks and the
+ * week's busiest model, and the portfolio's last three months, plus the decoder Now.astro validates
  * against and every line of text and every shape the tiles draw. Pure and
  * browser-safe.
  */
@@ -28,6 +28,7 @@ import {
   stripCells,
 } from "./portfolio"
 import { formatCost, formatCount, formatTokens } from "./tokens/format"
+import { modelLabel } from "./tokens/labels"
 
 type TokensToday = {
   tokens: number
@@ -36,6 +37,9 @@ type TokensToday = {
   /** Token totals of the last two weeks, oldest first, the payload's day
    *  last (`tokens`); a day with nothing reported is 0. */
   recent: number[]
+  /** The model with the most tokens over the last seven days and its
+   *  share of them, 0–1; null when the week has none. */
+  top: { model: string; share: number } | null
 }
 
 /** The whole portfolio over /misc's 3M range: the session the range is
@@ -59,7 +63,16 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/now/index.ts. */
-export const SITE_SCHEMA_VERSION = 3
+export const SITE_SCHEMA_VERSION = 4
+
+const isTop = (value: unknown): value is TokensToday["top"] =>
+  value === null ||
+  (isRecord(value) &&
+    typeof value.model === "string" &&
+    value.model.length > 0 &&
+    typeof value.share === "number" &&
+    value.share > 0 &&
+    value.share <= 1)
 
 const isTokens = (value: unknown): value is TokensToday =>
   isRecord(value) &&
@@ -68,7 +81,8 @@ const isTokens = (value: unknown): value is TokensToday =>
   isCount(value.messages) &&
   Array.isArray(value.recent) &&
   value.recent.length > 0 &&
-  value.recent.every(isCount)
+  value.recent.every(isCount) &&
+  isTop(value.top)
 
 const isLevel = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value) && value > 0
@@ -137,10 +151,22 @@ export function tokensLabel(day: string, today: string): string {
 
 /** ["$14.48", "155 messages"]: two runs, so a narrow tile can put the
  *  second on a line of its own instead of cutting it off. */
-export const tokensFoot = ({ cost, messages }: Omit<TokensToday, "recent">) => [
+export const tokensFoot = ({
+  cost,
+  messages,
+}: Pick<TokensToday, "tokens" | "cost" | "messages">) => [
   formatCost(cost),
   `${formatCount(messages)} ${messages === 1 ? "message" : "messages"}`,
 ]
+
+/** "98% Claude Opus 5.5": the week's busiest model, its share first. */
+export const topModelText = ({
+  model,
+  share,
+}: {
+  model: string
+  share: number
+}) => `${Math.round(share * 100)}% ${modelLabel(model)}`
 
 export type TokenBar = { height: number; title: string }
 

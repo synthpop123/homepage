@@ -6,6 +6,7 @@ import {
   tokenBars,
   tokensFoot,
   tokensLabel,
+  topModelText,
   watchedLabel,
 } from "./now"
 import fixture from "./now.site-fixture.json"
@@ -47,6 +48,9 @@ describe("isSite", () => {
     expect(isSite({ ...fixture, tokens: { ...tokens, recent: [] } })).toBe(
       false,
     )
+    const top = { model: "claude-opus-5-5", share: 1.2 }
+    expect(isSite({ ...fixture, tokens: { ...tokens, top } })).toBe(false)
+    expect(isSite({ ...fixture, tokens: { ...tokens, top: null } })).toBe(true)
   })
 })
 
@@ -77,6 +81,15 @@ describe("tile text", () => {
       "$0.00",
       "1 message",
     ])
+  })
+
+  it("puts the week's busiest model after its share", () => {
+    expect(topModelText({ model: "claude-opus-5-5", share: 0.981 })).toBe(
+      "98% Claude Opus 5.5",
+    )
+    expect(topModelText({ model: "deepseek-v4-flash", share: 0.5 })).toBe(
+      "50% DeepSeek V4 Flash",
+    )
   })
 
   it("draws two weeks of bars, the busiest full height, on a root scale", () => {

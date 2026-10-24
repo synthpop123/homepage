@@ -14,7 +14,9 @@ const { endpoint = NOW.endpoint } = Astro.props
 {/* A bento of four tiles from one small payload (/now/site): the listen
     across the top as a record half out of its sleeve, the poster standing
     two rows tall beside it, today's tokens under the listen with the last
-    two weeks as bars, and the portfolio across the foot, its three months
+    two weeks as bars where the listen has its record (so the words of the
+    two line up) and the week's busiest model under the figure, and the
+    portfolio across the foot, its three months
     as a line over day cells. On a phone it folds to two columns, the
     poster beside the two figures and the charts reduced to a sparkline.
     Every tile's size comes from the grid, the sleeve, the poster's aspect
@@ -58,15 +60,18 @@ const { endpoint = NOW.endpoint } = Astro.props
     <li class="now-tile" data-tile="tokens">
       <a class="now-link" href="/tokens">
         <span class="now-mark" aria-hidden="true"><Claude /></span>
-        <span class="now-info">
+        <span class="now-side">
           <span class="now-label">Tokens today</span>
+          <span class="now-bars" aria-hidden="true">
+            {Array.from({ length: 14 }, () => <i />)}
+          </span>
+        </span>
+        <span class="now-info">
           <span class="now-figure"
             ><span class="sk-line sk-figure"></span></span
           >
           <span class="now-foot"><span class="sk-line sk-foot"></span></span>
-        </span>
-        <span class="now-bars" aria-hidden="true">
-          {Array.from({ length: 14 }, () => <i />)}
+          <span class="now-model"><span class="sk-line sk-model"></span></span>
         </span>
       </a>
     </li>
@@ -208,13 +213,8 @@ const { endpoint = NOW.endpoint } = Astro.props
       --mark: light-dark(#1db954, #1ed760);
     }
 
-    /* Tokens keeps its mark in the middle, cropped by the top edge, clear
-       of the figure at the foot and of the bars at the far end. */
     [data-tile="tokens"] .now-mark {
       --mark: #d97757;
-      inset-block: -2rem auto;
-      inset-inline: 50% auto;
-      translate: -50% 0;
       font-size: 6rem;
     }
 
@@ -546,15 +546,46 @@ const { endpoint = NOW.endpoint } = Astro.props
       min-inline-size: 0;
     }
 
-    /* Tokens: the last two weeks as bars, today's in the accent. Only
-       where the tile runs across two columns. */
+    /* Tokens: the label over the last two weeks as bars, today's in the
+       accent, in a column as wide as the listen's sleeve (feed.css'
+       --sleeve at this width, times its 1.45), so the words of the two
+       tiles start on one line; the figure, its runs and the week's
+       busiest model on the right. The bars only where the tile runs
+       across two columns. */
+    .now-side {
+      display: flex;
+      flex-direction: column;
+      min-inline-size: 0;
+    }
+
+    /* Two lines on a phone's narrow tile rather than a cut name; one,
+       cut if it must be, beside the bars. */
+    .now-model {
+      display: block;
+      min-block-size: 1lh;
+      overflow: hidden;
+      font-size: var(--step--1);
+      color: var(--foreground);
+      text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+
+      @container (width >= 34rem) {
+        white-space: nowrap;
+      }
+    }
+
+    .sk-model {
+      inline-size: 60%;
+    }
+
     .now-bars {
       display: none;
-      grid-auto-columns: 0.55rem;
+      flex: 1;
+      grid-auto-columns: minmax(0, 1fr);
       grid-auto-flow: column;
       align-items: end;
       gap: 3px;
-      padding-block-start: var(--space-s);
+      padding-block-start: var(--space-xs);
 
       i {
         display: block;
@@ -736,6 +767,14 @@ const { endpoint = NOW.endpoint } = Astro.props
         flex-direction: row;
         align-items: stretch;
         gap: var(--space-m);
+      }
+
+      [data-tile="tokens"] .now-link {
+        gap: var(--space-s);
+      }
+
+      .now-side {
+        flex: 0 0 calc(6.5rem * 1.45);
       }
 
       .now-bars {

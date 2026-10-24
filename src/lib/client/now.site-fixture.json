@@ -1,14 +1,14 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "today": "2026-10-24",
   "listen": {
-    "at": "2026-10-23T08:35:58.000Z",
-    "title": "This Rhythm (feat. RAHH)",
-    "artists": ["Prospa", "RAHH"],
-    "url": "https://music.lkwplus.com/track/39",
+    "at": "2026-10-24T15:49:42.000Z",
+    "title": "Repeaty",
+    "artists": ["Sammy Virji"],
+    "url": "https://music.lkwplus.com/track/6743",
     "cover": {
-      "small": "https://music.lkwplus.com/image/1395bbba-770d-49b9-bc17-145449b45299/128x128.webp",
-      "medium": "https://music.lkwplus.com/image/1395bbba-770d-49b9-bc17-145449b45299/300x300.webp"
+      "small": "https://music.lkwplus.com/image/3d2c31b6-add7-48e1-988b-7e2529c4e933/128x128.webp",
+      "medium": "https://music.lkwplus.com/image/3d2c31b6-add7-48e1-988b-7e2529c4e933/300x300.webp"
     }
   },
   "film": {
@@ -21,13 +21,17 @@
     "poster": "https://img.lkwplus.com/movies/posters/1302717-untitled-resident-evil-reboot-a688bf1bc7-320.webp"
   },
   "tokens": {
-    "tokens": 47895144,
-    "cost": 23.204506,
-    "messages": 309,
+    "tokens": 84171432,
+    "cost": 33.291688,
+    "messages": 419,
     "recent": [
       8897345, 14286385, 8938412, 4593336, 24026943, 34374440, 6323423,
-      162596765, 67943161, 7894796, 18798339, 219486623, 29792326, 47895144
-    ]
+      162596765, 67943161, 7894796, 18798339, 219486623, 29792326, 84171432
+    ],
+    "top": {
+      "model": "claude-opus-5-5",
+      "share": 0.982
+    }
   },
   "portfolio": {
     "days": [

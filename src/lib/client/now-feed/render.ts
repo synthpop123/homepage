@@ -19,6 +19,7 @@ import {
   type Site,
   tokenBars,
   tokensFoot,
+  topModelText,
   tokensLabel,
   watchedLabel,
 } from "@/lib/client/now"
@@ -69,7 +70,7 @@ const empty = (tile: HTMLElement, what: string, label?: string) => {
   tile.querySelector(".now-title, .now-figure")?.replaceChildren(what)
   tile.querySelector(".now-figure")?.removeAttribute("data-dir")
   for (const extra of tile.querySelectorAll(
-    ".now-sub, .now-foot, .now-bars, .now-spark, .now-strip, .now-axis",
+    ".now-sub, .now-foot, .now-model, .now-bars, .now-spark, .now-strip, .now-axis",
   ))
     extra.replaceChildren()
 }
@@ -145,6 +146,11 @@ export function renderTokens(tile: HTMLElement, site: Site, today: string) {
   const figure = tile.querySelector<HTMLElement>(".now-figure")
   if (figure) setReadout(figure, formatTokens(tokens.tokens))
   runs(tile, tokensFoot(tokens))
+  const model = tile.querySelector<HTMLElement>(".now-model")
+  if (model) {
+    model.replaceChildren(tokens.top ? topModelText(tokens.top) : "")
+    model.title = tokens.top ? "The past 7 days' busiest model" : ""
+  }
   tile.querySelector(".now-bars")?.replaceChildren(
     ...tokenBars(tokens.recent, site.today).map(({ height, title }) => {
       const bar = el("i")
