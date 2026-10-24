@@ -28,12 +28,39 @@ describe("windowDurationMs", () => {
     expect(windowDurationMs("2d")).toBe(2 * 24 * 60 * 60 * 1000)
   })
 
+  it("measures Monthly back one calendar month from its reset", () => {
+    // OpenCode Go's live anchor: Oct 23 → Nov 23 is 31 days.
+    expect(windowDurationMs("Monthly", "2026-11-23T10:05:46.000Z")).toBe(
+      31 * 24 * 60 * 60 * 1000,
+    )
+    // A day the previous month lacks is held to its last: Feb 28 → Mar 31.
+    expect(windowDurationMs("Monthly", "2026-03-31T00:00:00Z")).toBe(
+      31 * 24 * 60 * 60 * 1000,
+    )
+  })
+
   it("returns null when the length cannot be known", () => {
     expect(windowDurationMs("Mystery")).toBeNull()
+    expect(windowDurationMs("Monthly")).toBeNull()
   })
 })
 
 describe("windowIsOpen", () => {
+  it("opens an untouched Monthly window anchored to its subscription day", () => {
+    // OpenCode Go names a real reset even at 0%: the billing anchor,
+    // not a placeholder drifting with the clock.
+    expect(
+      windowIsOpen(
+        {
+          label: "Monthly",
+          usedPercent: 0,
+          resetsAt: "2026-09-20T10:05:46.000Z",
+        },
+        capturedAt,
+      ),
+    ).toBe(true)
+  })
+
   it("treats OpenAI's unused placeholder as closed", () => {
     // resetsAt ≈ capturedAt + 5h, the shape that drifts on every poll.
     expect(
@@ -210,6 +237,15 @@ describe("windowView", () => {
 })
 
 describe("windowElapsed", () => {
+  it("places a Monthly window on its own month", () => {
+    // Nov 23 reset, 30 days of a 31-day month still to go.
+    const resetsAt = "2026-11-23T10:05:46.000Z"
+    const at = Date.parse(resetsAt) - 30 * 24 * 60 * 60 * 1000
+    expect(
+      windowElapsed({ label: "Monthly", usedPercent: 0, resetsAt }, at),
+    ).toBeCloseTo(1 / 31)
+  })
+
   it("measures the window back from its reset", () => {
     // A weekly window resetting in 5.6 days is a fifth gone.
     const resetsAt = new Date(now + 5.6 * 24 * 60 * 60 * 1000).toISOString()

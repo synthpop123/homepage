@@ -131,7 +131,8 @@ const skeletonRows = (count: number) =>
  * holds three tiles, the count the account banks: two left the card a
  * row short wherever the third wraps. The second plan (Claude) reserves
  * what its card carries instead: the weekly window's split line and the
- * cloud session credits row.
+ * cloud session credits row. The third (OpenCode Go) takes a whole row
+ * with its session, weekly and monthly windows side by side.
  */
 const DEVICE_ICONS: Record<DeviceKind, SvgComponent> = {
   laptop: LaptopIcon,
@@ -139,8 +140,9 @@ const DEVICE_ICONS: Record<DeviceKind, SvgComponent> = {
   server: ServerIcon,
 }
 
-const QUOTA_PLANS = 2
-const QUOTA_WINDOWS = 2
+/** Rows per plan, in payload order: Codex, Claude (its credits row
+ *  counted as one), OpenCode. The plan count is this list's length. */
+const QUOTA_WINDOWS = [2, 3, 3]
 const QUOTA_CREDITS = 3
 const SPLIT_ROWS = 6
 const LEGEND_CHIPS = 4
@@ -169,7 +171,7 @@ const LEGEND_CHIPS = 4
     <section class="tk-quota-section">
       <h2 id="quota">Quota</h2>
       <ol class="tk-plans">
-        {skeletonRows(QUOTA_PLANS).map((plan) => (
+        {QUOTA_WINDOWS.map((windows, plan) => (
           <li class="tk-plan" data-skeleton aria-hidden="true">
             <div class="plan-head">
               <span class="ico sk-ico" />
@@ -177,7 +179,7 @@ const LEGEND_CHIPS = 4
               <span class="plan-age"><span class="sk-line sk-sub" style="inline-size: 3em" /></span>
             </div>
             <ol class="tk-windows">
-              {skeletonRows(QUOTA_WINDOWS + plan).map((row) => (
+              {skeletonRows(windows).map((row) => (
                 <li class="tk-window">
                   <div class="win-head">
                     <span class="win-label"><span class="sk-line" style="inline-size: 4em" /></span>

@@ -25,6 +25,20 @@ tokens-dashboard {
     }
   }
 
+  /* An odd card out (the third subscription) takes the whole row rather
+     than leaving half of it empty, and lays its windows side by side so
+     the width buys a shorter card instead of longer meters. */
+  @media (width >= 40rem) {
+    .tk-plans .tk-plan:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+
+      .tk-windows {
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        column-gap: var(--space-m);
+      }
+    }
+  }
+
   /* Name, windows and credits are three levels of the same statement,
      so they sit further apart than the lines inside a window do. */
   .tk-plans .tk-plan {

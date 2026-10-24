@@ -79,17 +79,43 @@ const PACE_MIN_ELAPSED = 0.1
 type WindowTiming = Pick<QuotaWindow, "label" | "usedPercent" | "resetsAt">
 
 /**
- * Length of the rate-limit window named by `label`. Session/Weekly are
- * the names `/tokens/site` publishes (a scoped ceiling extends the name:
- * "Weekly · Opus"); a trailing `5h` / `7d` covers Codex
- * additional limits the Worker leaves unmapped. Unknown labels return
- * null — without a length we cannot tell a placeholder from an open
- * window at 0% spend.
+ * The instant one calendar month before `at`, in UTC, with the day held
+ * to the shorter month's last ("Mar 31" → "Feb 28"), the way a monthly
+ * billing anchor rolls back.
  */
-export function windowDurationMs(label: string): number | null {
+function monthBefore(at: Date): number {
+  const year = at.getUTCFullYear()
+  const month = at.getUTCMonth() - 1
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+  const start = new Date(at)
+  start.setUTCFullYear(year, month, Math.min(at.getUTCDate(), lastDay))
+  return start.getTime()
+}
+
+/**
+ * Length of the rate-limit window named by `label`. Session/Weekly/
+ * Monthly are the names `/tokens/site` publishes (a scoped ceiling
+ * extends the name: "Weekly · Opus"); a trailing `5h` / `7d` covers
+ * Codex additional limits the Worker leaves unmapped. Unknown labels
+ * return null — without a length we cannot tell a placeholder from an
+ * open window at 0% spend.
+ *
+ * A month is not a fixed length, so Monthly is measured back from the
+ * window's own reset — OpenCode Go anchors it to the subscription day —
+ * and has no length until the vendor names one.
+ */
+export function windowDurationMs(
+  label: string,
+  resetsAt: string | null = null,
+): number | null {
   // "Weekly · Opus" is a weekly window scoped to one model.
   if (/^Session\b/.test(label)) return 5 * MS.h
   if (/^Weekly\b/.test(label)) return 7 * MS.d
+  if (/^Monthly\b/.test(label)) {
+    const at = resetsAt === null ? Number.NaN : Date.parse(resetsAt)
+    if (!Number.isFinite(at)) return null
+    return at - monthBefore(new Date(at))
+  }
   const match = /(?:^|\s)(\d+)([dhms])$/i.exec(label)
   if (!match) return null
   const n = Number(match[1])
@@ -111,7 +137,7 @@ export function windowIsOpen(
 ): boolean {
   if (window.resetsAt === null) return false
   if (window.usedPercent > 0) return true
-  const duration = windowDurationMs(window.label)
+  const duration = windowDurationMs(window.label, window.resetsAt)
   if (duration === null) return false
   const remaining = Date.parse(window.resetsAt) - capturedAtMs
   // Past the vendor's reset with no recorded spend: still say so, so a
@@ -184,7 +210,7 @@ export function windowElapsed(
   window: WindowTiming,
   now: number,
 ): number | null {
-  const duration = windowDurationMs(window.label)
+  const duration = windowDurationMs(window.label, window.resetsAt)
   if (duration === null || window.resetsAt === null) return null
   const left = Date.parse(window.resetsAt) - now
   if (!Number.isFinite(left)) return null
