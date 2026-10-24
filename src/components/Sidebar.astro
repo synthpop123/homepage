@@ -125,6 +125,23 @@ const section = NAVIGATION.find(
     }
   }
 
+  /* Where you are: a hairline rail hung in the gutter beside the list,
+     the current entry's stretch of it in ink and a hovered entry's in
+     grey; the words stay on the logo's left edge. No underline, and no
+     accent: the rail is the nav's only mark. */
+  nav > ul {
+    --rail: 0.75rem;
+    margin-inline-start: calc(-1 * var(--rail));
+    padding-inline-start: calc(var(--rail) - 1px);
+    border-inline-start: 1px solid var(--border);
+
+    @media (width < 64rem) {
+      margin-inline-start: 0;
+      padding-inline-start: 0;
+      border-inline-start: 0;
+    }
+  }
+
   nav ul {
     display: flex;
     flex-direction: column;
@@ -133,7 +150,10 @@ const section = NAVIGATION.find(
     a {
       position: relative;
       display: block;
+      margin-inline-start: var(--indent, 0px);
       color: var(--muted-foreground);
+      text-decoration: none;
+      transition: color 0.15s ease;
 
       &:hover,
       &[aria-current="page"] {
@@ -141,38 +161,39 @@ const section = NAVIGATION.find(
       }
     }
 
-    /* Where you are: a short stroke of the accent under the current
-       entry's first letters, the green a hovered link's underline takes
-       — in the sidebar's column and on the phone's row alike. */
-    a::after {
+    /* The entry's stretch of the rail, reached back across its indent. */
+    a::before {
       content: "";
       position: absolute;
-      inset-inline-start: 0;
-      inset-block-end: -0.125rem;
-      inline-size: 0.875rem;
-      block-size: 2px;
+      inset-block: 0.15em;
+      inset-inline-start: calc(-1 * var(--rail) - var(--indent, 0px));
+      inline-size: 2px;
       border-radius: 1px;
-      background-color: var(--accent-fill);
-      visibility: hidden;
+      background-color: transparent;
+      transition: background-color 0.15s ease;
     }
 
-    a[aria-current="page"]::after {
-      visibility: visible;
+    a:hover::before {
+      background-color: var(--gray-8);
+    }
+
+    a[aria-current="page"]::before {
+      background-color: var(--foreground);
     }
 
     li[data-depth="1"] a {
-      margin-inline-start: var(--space-xs);
+      --indent: var(--space-xs);
     }
 
     ul {
       margin-block-start: var(--space-3xs);
 
       a {
-        margin-inline-start: var(--space-xs);
+        --indent: var(--space-xs);
       }
 
       li[data-depth="1"] a {
-        margin-inline-start: calc(2 * var(--space-xs));
+        --indent: calc(2 * var(--space-xs));
       }
     }
 
@@ -201,6 +222,13 @@ const section = NAVIGATION.find(
       li[data-wide-only] {
         display: none;
       }
+
+      /* On the row the rail lies under the word instead. */
+      a::before {
+        inset: auto 0 -0.3rem;
+        inline-size: auto;
+        block-size: 2px;
+      }
     }
   }
 
@@ -213,8 +241,8 @@ const section = NAVIGATION.find(
   }
 
   @media (width < 64rem) {
-    nav li:has(> ul) > a::after {
-      visibility: visible;
+    nav li:has(> ul) > a::before {
+      background-color: var(--foreground);
     }
   }
 

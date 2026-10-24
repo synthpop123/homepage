@@ -42,8 +42,8 @@
   --faint-foreground:   light-dark(#707070, #858585);
   --destructive:        var(--red-11);
   --border:             var(--gray-6);
-  /* The accent, used sparingly: the current page's mark in the nav, a
-     hovered link's underline, reading progress, selection and focus.
+  /* The accent, used sparingly: a hovered link's underline, reading
+     progress, selection and focus.
      --accent-fill is for shapes (dots, bars, rings); --accent is the
      text-grade step, 4.5:1 on the page in both schemes — the heatmap's
      darkest green in light, and a softer one than its neon top step in
