@@ -302,7 +302,8 @@ flights-feed .sk-line {
    `--sleeve` sets the cover's size and everything scales with it. The
    grooves are radial, so turning them would show nothing; the label is
    printed with the cover art, and it is the label that shows the record
-   turning. */
+   turning — only while its card is hovered or focused; otherwise it sits
+   still where it stopped. */
 
 .sleeve {
   --sleeve: 6.5rem;
@@ -380,7 +381,7 @@ flights-feed .sk-line {
   overflow: hidden;
   border-radius: 50%;
   background-color: var(--gray-8);
-  animation: vinyl-spin 3.2s linear infinite;
+  animation: vinyl-spin 3.2s linear infinite paused;
 
   img {
     inline-size: 100%;
@@ -390,10 +391,8 @@ flights-feed .sk-line {
   }
 }
 
-/* Off screen the record stops where it is (vinyl.ts sets the attribute),
-   and picks up from there when it scrolls back. */
-.disc[data-offscreen] .disc-label {
-  animation-play-state: paused;
+a:focus-visible .disc-label {
+  animation-play-state: running;
 }
 
 @keyframes vinyl-spin {
@@ -405,5 +404,9 @@ flights-feed .sk-line {
 @media (hover: hover) {
   a:hover .sleeve .disc {
     transform: translateX(12%);
+  }
+
+  a:hover .disc-label {
+    animation-play-state: running;
   }
 }

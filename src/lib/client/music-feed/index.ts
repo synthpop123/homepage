@@ -9,7 +9,6 @@
 
 import { keepFresh, settle, whenChanged } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/music"
-import { pauseOffscreen } from "@/lib/client/vinyl"
 import { buildHeatmap, buildRow, fillStats, refreshTimes } from "./render"
 
 export function mountMusic(feed: HTMLElement) {
@@ -20,8 +19,6 @@ export function mountMusic(feed: HTMLElement) {
   if (!endpoint || !body || !list) return
 
   const limit = Number(feed.dataset.limit) || 10
-
-  const spin = pauseOffscreen()
 
   // Cached and refreshed payloads land in the same renderer, which
   // replaces rather than appends, and skips one already on screen.
@@ -34,9 +31,6 @@ export function mountMusic(feed: HTMLElement) {
       .slice(0, limit)
       .forEach((listen, i) => fragment.append(buildRow(listen, i === 0)))
     list.replaceChildren(fragment)
-    spin.disconnect()
-    const disc = list.querySelector(".disc")
-    if (disc) spin.observe(disc)
     settle(feed, body, fallback, true)
   })
 

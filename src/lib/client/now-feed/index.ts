@@ -8,7 +8,6 @@
 
 import { calendarDay, keepFresh } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/now"
-import { pauseOffscreen } from "@/lib/client/vinyl"
 import {
   renderFilm,
   renderListen,
@@ -21,10 +20,6 @@ export function mountNow(feed: HTMLElement) {
   if (!endpoint) return
   const tile = (name: string) =>
     feed.querySelector<HTMLElement>(`[data-tile="${name}"]`)!
-
-  const spin = pauseOffscreen()
-  const disc = feed.querySelector(".disc")
-  if (disc) spin.observe(disc)
 
   let last: Site | null = null
   const render = (site: Site) => {

@@ -94,7 +94,7 @@ export const formatPlays = (plays: number) =>
 /** Within this many minutes the lead listen counts as just played. */
 const RECENT_MINUTES = 10
 
-/** Whether a listen at `at` is recent enough to spin the lead record. */
+/** Whether a listen at `at` is recent enough to count as playing. */
 export const isPlaying = (at: string, now = Date.now()) =>
   (now - Date.parse(at)) / 60_000 < RECENT_MINUTES
 

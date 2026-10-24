@@ -58,7 +58,7 @@ export const buildHeatmap = (feed: HTMLElement, activity: Site["activity"]) => {
 /**
  * One listen. The first row of the list is the lead: the same markup
  * plus a record sliding out of the sleeve, its label printed with the
- * cover art, still turning if the play was only minutes ago.
+ * cover art, which turns while the row is hovered.
  */
 export const buildRow = (listen: SiteListen, lead: boolean) => {
   const row = el("li", "music-item")
