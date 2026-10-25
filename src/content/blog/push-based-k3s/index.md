@@ -13,133 +13,137 @@ tags:
 ai: true
 ---
 
-在之前的文章[通过 Komodo + Renovate 构建 Docker Compose GitOps 流水线](https://lkwplus.com/blog/komodo-gitops)中，我记录了基于 Docker Compose 的自动部署方案：服务器运行 Komodo 监听 Webhook 并拉取仓库，配合 Renovate发起镜像更新 PR。
+在上一篇[通过 Komodo + Renovate 构建 Docker Compose GitOps 流水线](/blog/komodo-gitops)中，我记录了单机 Docker Compose 的自动部署方案：宿主机上运行 Komodo 监听 Webhook 拉取仓库，配合 Renovate 自动发起镜像更新 PR。
 
-后续我将部分自建服务迁移到了一个四节点的 k3s 集群。节点分布在两家云服务商（Oracle Cloud 的 1 台 arm64 作为控制面、2 台 amd64 作为工作节点，外加 1 台腾讯云新加坡节点），节点之间通过 Tailscale 组网。
+后来我把一部分自建服务迁到了一个四节点的 k3s 集群：Oracle Cloud 上的 1 台 `arm64` 实例作为控制面（server）、2 台 `amd64` 实例作为工作节点（agent），外加 1 台腾讯云新加坡节点，四台机器通过 Tailscale 跨云组网。
 
-在 Kubernetes 生态中，通常采用 Ago CD 或 Flux 等 Pull 模式的 GitOps 工具。但对于节点数较少、以个人维护为主的小集群，我选择采用 Push 模式：Git 仓库依然作为声明式配置的单一来源，但集群内部不运行常驻同步组件，所有配置都由本地运维机通过脚本或命令直接应用到集群。
+在 Kubernetes 生态中，主流的 GitOps 实践通常使用 Argo CD 或 Flux 这类 Pull 模式工具，由集群内的控制器主动拉取 Git 仓库并持续同步。但对于只有四个节点、单人维护的小集群，我选择了更轻量的 **Push 模式**：Git 仓库依然是声明式配置的唯一来源，但集群内部不运行任何常驻同步控制器，所有变更都由本地控制机通过命令直接推送到集群。
 
-## 为什么选择 Push 模式
+## 为什么在小集群上选择 Push 模式
 
-Pull 模式（如 Argo CD / Flux）和 Push 模式（本地或 CI 直接执行 apply）的核心区别在于同步动作的发起方和凭据的管理位置：
+Pull 模式和 Push 模式的核心差异，在于由谁发起同步，以及凭据存放在哪里：
 
-| 对比项 | Pull 模式（Argo CD / Flux） | 本文采用的 Push 模式 |
-| --- | --- | --- |
-| **同步执行方** | 集群内常驻 Controller，持续轮询或监听 Webhook | 本地控制机，按需手动执行命令 |
-| **集群访问仓库权限** | 集群需要访问 Git 仓库的 Deploy Key 或 Token | 集群无需访问 Git 仓库 |
-| **凭据存储位置** | 集群内部通常需要解密组件（如 Sealed Secrets、SOPS 插件） | 凭据与解密密钥均留在本地控制机 |
-| **配置漂移（Drift）处理** | Controller 自动对比并强制覆盖漂移 | 通过 `make diff` 查看差异，手动决定是否处理 |
-| **配置校验拦截** | 集群端 Admission Webhook 或 Controller 校验 | 推送前在本地/CI 阶段通过 Lint 工具拦截 |
+| 对比维度 | Pull 模式（Argo CD / Flux） | 本文的 Push 模式 |
+| :--- | :--- | :--- |
+| **同步发起方** | 集群内常驻 Controller，持续轮询或接收 Webhook | 本地控制机，按需执行 `make` 命令 |
+| **集群是否访问 Git** | 是，集群需持有 Git 仓库的读取凭据 | 否，集群无需感知 Git 仓库的存在 |
+| **密钥与解密位置** | 集群内运行解密组件（如 Sealed Secrets、SOPS 插件） | `kubeconfig`、SSH 密钥与 `age` 私钥均留在本地控制机 |
+| **配置漂移（Drift）处理** | Controller 自动比对并覆盖线上手工改动 | 本地运行 `make diff` 检查差异，人工决定如何处理 |
+| **配置合法性拦截** | 集群侧 Controller 或 Admission Webhook | 推送前在本地与 CI 阶段执行 `make lint` |
 
-对于几十人协作或运行大量微服务的团队，Pull 模式能保证状态实时收敛，避免线上手工修改导致的不一致。但在个人维护的四节点集群中，Pull 模式带来了一些不必要的维护负担：
+在多人协作或微服务众多的大型集群里，Pull 模式的自动收敛能防止线上配置被随意篡改。但在个人维护的四节点小集群上，Push 模式有几个很实在的好处：
 
-1. **降低集群资源消耗与维护成本**：无需在小配置云服务器上常驻 Argo CD 等重型组件，减少了需要升级与排障的控制面依赖。
-2. **凭据隔离**：集群节点无需任何 Git 读权限，也不需要持有解密敏感配置的私钥。就算集群节点受损，敏感凭据与 Git 仓库权限也不会泄露。
-3. **流程可控**：配置的渲染、解密与应用全部在本地终端完成，没有黑盒调度逻辑。
+1. **节省集群资源与维护成本**：k3s 本身非常轻量，不额外部署 Argo CD 等常驻组件，就能省下一截内存开销，也少了一套需要定期升级和排障的控制面依赖。
+2. **收敛凭据暴露面**：集群内部不保存任何连向 GitHub 的 Token，也不存放解密私钥。即便某个集群节点出现安全问题，攻击者也拿不到代码仓库权限和未挂载的敏感配置，配置仓库本身也可以放心设为公开。
+3. **排错链路直接**：模板渲染、密钥解密和配置下发全部在本地终端完成，执行报错时直接看命令行输出即可，不需要去排查控制器的异步对账状态。
 
-相应地，Push 模式需要我们通过工具链自行补齐两点：**配置漂移的主动检查**与**下发前的合规校验**。
+相应地，去掉集群内的控制器之后，原本由控制器承担的**配置漂移检查**和**下发前语法校验**，就需要靠仓库目录约定、`Makefile` 和 CI 工具链自己补齐。
 
-## 目录结构与应用方式
+## 目录结构与下发方式
 
-在 Pull 模式下，通常由 Controller 统一识别并应用各类资源。而在 Push 模式下，不同层级的配置有不同的下发方式：
+在 Pull 模式下，各类资源统一由集群内的控制器识别并应用；而在 Push 模式下，需要明确规定每种配置用什么命令下发。仓库通过顶层目录来区分管理机制：
 
-| 路径 | 管理机制 | 应用方式 |
-| --- | --- | --- |
+| 仓库路径 | 管理机制 | 下发命令 |
+| :--- | :--- | :--- |
 | `apps/<name>/` | Kustomize | `kubectl apply -k apps/<name>/` |
 | `apps/multica/values.yaml` 等 | Helm | `helm upgrade --install <release> <chart> -f values.yaml` |
-| `platform/cert-manager/` 等 | Helm + 原生资源 | 组合执行 `helm upgrade` 与 `kubectl apply -f` |
-| `platform/traefik/` | k3s 内置 Auto-deploy | 通过 `scp` 写入控制面节点的 `/var/lib/rancher/k3s/server/manifests/` |
-| `node-config/<node>.config.yaml` | k3s 守护进程配置 | 渲染后通过 SSH 写入 `/etc/rancher/k3s/config.yaml` 并重启 k3s 进程 |
+| `platform/cert-manager/` 等 | Helm + 原生清单 | 先执行 `helm upgrade`，再执行 `kubectl apply -f` |
+| `platform/traefik/traefik-helmchartconfig.yaml` | k3s Auto-deploy | 通过 `scp` 写入主节点的 `/var/lib/rancher/k3s/server/manifests/` |
+| `node-config/<node>.config.yaml` | k3s 节点进程配置 | 渲染后通过 SSH 写入 `/etc/rancher/k3s/config.yaml` 并重启服务 |
 
-对于常规的工作负载，采用标准的 `kubectl` 与 `helm` 下发；但针对部分底层组件，需要走特定机制：
+目前集群的 `platform/` 层跑着三样基础组件：k3s 自带的 Traefik 作为公网入口网关、cert-manager 通过 Cloudflare DNS-01 自动签发 Let's Encrypt 证书、Headlamp 提供 Web 仪表盘；`apps/` 层运行着 `wallos`、`multica`、`supabase` 等业务应用（新增服务时直接从 `templates/service-with-tls` 模板目录复制修改，里面备好了全套 Namespace、Deployment、Service 与 Ingress）。
 
-- **Traefik 配置**：k3s 默认通过内置的 `HelmChartConfig` 管理自带的 Traefik。针对 Traefik 的自定义参数，k3s 会监控 server 节点的 `/var/lib/rancher/k3s/server/manifests/` 目录。因此，Traefik 的配置是通过 `scp` 直接同步到主节点指定目录，由 k3s 自行热加载。
-- **节点级配置**：涉及节点 IP 绑定、跨云组网声明等配置，属于宿主机上 k3s 进程本身的运行参数。这部分通过 SSH 写入配置文件后重启 `k3s` 或 `k3s-agent` 服务生效。
+表格中前三种路径走的都是标准的 `kubectl` 和 `helm`，而后两种底层配置虽然也是 YAML 文件，却不能通过 `kubectl apply` 下发：
 
-为了避免手动输入复杂的下发参数，仓库使用 `Makefile` 将这些步骤进行了标准化封装：
+- **Traefik 自定义配置**：k3s 默认通过内置的 `HelmChartConfig` 管理自带的 Traefik，并持续监听 server 节点的 `/var/lib/rancher/k3s/server/manifests/` 目录。因此修改 Traefik 配置的方式是把文件 `scp` 到控制面节点的该目录下，由 k3s 自动检测并热加载。
+- **节点级参数（`node-config/`）**：跨云通过 Tailscale 组网时，每个节点都需要在启动参数里显式声明自己的公网 IP（`node-external-ip`）与 Flannel 网卡。这类配置属于宿主机上 `k3s` 或 `k3s-agent` 守护进程的启动配置文件，处在 Kubernetes API 之下，只能通过 SSH 写入节点文件并重启系统服务生效。
 
-```bash
-make app APP=wallos       # 应用 apps/wallos 下的 Kustomize 配置
-make multica              # 更新 multica 的 Helm 发布及备份 CronJob
-make traefik              # 同步 Traefik HelmChartConfig 至控制节点
-make node-config NODE=sg  # 渲染并更新新加坡节点的 k3s 配置并重启服务
-make platform             # 按依赖顺序初始化平台层组件（Secret、cert-manager、Traefik 等）
-```
-
-## 校验与漂移检测
-
-Push 模式最常见的问题是本地代码与线上实际状态脱节。为了保持状态可控，主要依靠两个机制：
-
-### 1. 本地 Diff 检查
-
-在执行实际改动前，可通过 `make diff` 进行全量或单项对账：
+为了不用每次手敲长串参数，仓库用 `Makefile` 把这些下发动作和初始化顺序封装成了固定指令：
 
 ```bash
-# Makefile 内部执行逻辑
-helm diff -C 3 ...              # 对比 Helm release 的当前状态与本地 values.yaml
-kubectl diff -k apps/...        # 对比 Kustomize 生成的清单与线上资源
-ssh arm cat ... | diff -u - ... # 对比主节点上的 Traefik 配置与仓库文件
+make app APP=wallos       # 应用 apps/wallos/ 下的 Kustomize 清单
+make multica              # 更新 multica 的 Helm Release、证书与备份 CronJob
+make traefik              # 将 Traefik HelmChartConfig 同步至主节点
+make node-config NODE=sg  # 渲染新加坡节点的 k3s 配置，经 SSH 写入并重启 k3s-agent
+make platform             # 按依赖顺序初始化平台层组件
 ```
 
-只有当 `diff` 输出为空时，才说明仓库与集群线上配置完全一致。若存在临时排查产生的手动修改，可以清晰地识别出来并决定是写回仓库还是覆盖重置。
+组件之间的先后依赖也固化在 `make platform` 中：先创建 Cloudflare API Token 的 Secret，再安装 cert-manager 并等待 CRD 就绪后下发 `ClusterIssuer`，最后部署 Headlamp 和 Traefik。这样隔了半年重装集群时，也不需要凭记忆去试先后顺序。
 
-### 2. CI 静态校验
+## 状态对账与前置校验
 
-集群不暴露给 GitHub Actions，但 CI 依然作为提交前的质量关卡。每次 push 触发的 CI 只执行 `make lint`，包含四个步骤：
+没有常驻控制器自动纠偏，Push 模式最容易出现的问题就是本地仓库代码和集群实际状态慢慢脱节。为了保证仓库始终反映线上真实状态，主要靠两条机制配合。
 
-1. **Manifest 校验**：使用 `kustomize build` 编译所有清单，通过 `kubeconform -strict` 对齐集群目标版本（如 v1.36.1）进行 Schema 校验。
-2. **Helm 模板校验**：利用固定的 Chart 版本与 `values.yaml` 执行 `helm template`，渲染后的输出同样通过 `kubeconform` 检查语法错误与未知字段。
-3. **脚本检查**：使用 `shellcheck` 检查运维脚本的规范性。
-4. **敏感信息扫描**：确保无未加密的明文密钥提交。
+### 本地对账：make diff
 
-通过在 CI 阶段拦截掉格式错误与拼写问题，避免了在下发到集群时才出现语法报错。
+首先在目录管理上遵守一条简单规则：`apps/` 目录下只放线上真正运行着的应用，不留废弃服务或半成品草稿；服务下线就在删掉集群资源的同时删掉对应目录。
 
-## 密钥管理方案：SOPS + age
+其次是在每次下发前后运行 `make diff`，预览本地配置与线上集群的差异而不实际写入：
 
-在 Push 模式下，集群内部无需配置类似 Sealed Secrets 或 External Secrets Operator 的组件。密钥加解密均在控制机本地完成：
+```bash
+# Makefile 内部执行的比对逻辑
+helm diff -C 3 ...              # 对比本地 Chart 版本 + values.yaml 与线上 Helm Release
+kubectl diff -k apps/...        # 对比 Kustomize 渲染结果与线上资源对象
+ssh arm cat ... | diff -u - ... # 对比主节点上的 Traefik 配置文件与本地仓库版本
+```
 
-1. **密文入库**：非敏感配置和密钥结构存放在 `secrets.enc.env` 中。键名保持明文，取值均通过 SOPS 使用 age 公钥加密为 `ENC[...]` 格式。这个文件可以安全地提交到公开仓库。
-2. **内存解密与应用**：`scripts/apply-secrets.sh` 脚本在控制机上调用 `sops -d` 解密环境变量文件，直接通过内存管道传递给 `kubectl create secret ... --dry-run=client -o yaml | kubectl apply -f -`。解密后的明文不会落盘。
-3. **容器引用**：工作负载通过标准 Kubernetes `Secret` 对象的 `secretKeyRef` 或 `envFrom` 挂载使用。
+因为 Traefik 配置不走 `kubectl`，脚本会通过 SSH 读取主节点上的文件回来做 `diff`。当三段命令输出均为空时，就说明仓库与集群完全对齐；如果平时排障用 `kubectl edit` 临时改过线上参数，也能在这里一眼看出来，再决定是补写回 Git 还是重新 apply 覆盖掉。
 
-本地的 age 私钥保存在密码管理器中，只要本地保有私钥与 Git 仓库，即可在新环境完整重建集群状态。
+### 静态校验：make lint 与 CI
 
-## 存储拓扑与单节点绑定
+Pull 模式通常靠集群侧的控制器报错或 Admission Webhook 拦住写坏的 YAML，Push 模式则把拦截点前移到了 Git 提交阶段。仓库的 GitHub Actions 每次触发只跑一条 `make lint`，包含四个步骤：
 
-在小型多云集群中，跨地域的分布式存储（如 Longhorn 或 Rook-Ceph）往往需要较高的网络带宽和硬件开销。因此，该集群采用了更务实的存储策略：
+1. **Manifest 校验（`lint-manifests`）**：将 `apps/` 和 `templates/` 下的 Kustomize 目录全部构建展开，连同普通 YAML 清单一起交给 `kubeconform -strict`，按集群当前真实的 Kubernetes 版本（`v1.36.1`）校验 Schema。
+2. **Helm 模板校验（`lint-helm`）**：用锁定的 Chart 版本和本地 `values.yaml` 执行 `helm template` 离线渲染，输出结果同样过一遍 `kubeconform -strict`。开启 `-strict` 后，缩进错位或拼错的未知字段都会直接报错。
+3. **脚本检查（`lint-scripts`）**：用 `shellcheck` 检查 `scripts/` 下的运维脚本。
+4. **明文扫描（`lint-secrets`）**：逐行检查加密环境变量文件，防止误提交未加密的明文密钥。
 
-- 默认存储类采用 k3s 自带的 `local-path`，数据直接存储在节点的宿主机磁盘上。
-- 由于 `local-path` 的 PV 不具备跨节点漂移能力，所有挂载了 PVC 的有状态应用（如 Wallos 的 SQLite、Multica 与 Supabase 的 PostgreSQL）均统一配置了 `nodeSelector`，明确固定在 Oracle Cloud 的 arm64 控制面节点上运行。
-- 入口网关（Traefik）同样固定在主节点，保持公网入口与数据就近交互。
+值得一提的是，**GitHub Actions 没有任何访问集群的权限**。CI 环境里不配 `kubeconfig`、SSH 私钥或解密密钥，即使公开仓库的 CI 流程出现异常，最坏结果也只是静态检查失败，绝对碰不到线上集群。
 
-对于新加坡等海外单节点，通过打上 `location=singapore:NoSchedule` 污点，防止无状态或有状态服务被默认调度过去，仅供明确配置容忍度（toleration）的特定任务使用。
+## 密钥管理：SOPS + age 本地解密
 
-## 有状态应用的离线备份
+在 Pull 模式下，既然集群要自己拉取仓库部署，就必须把解密能力也放进集群（比如部署 Sealed Secrets 控制器，或者给 Argo CD 挂载解密私钥）。而在 Push 模式下，解密动作完全可以在本地控制机完成，集群只需要接收标准的 Kubernetes `Secret` 对象。
 
-由于本地单节点存储存在单点故障风险，集群中所有有状态应用均配套配置了夜间异地备份任务。以 `multica` 为例，应用目录中包含独立的 CronJob 清单：
+这套仓库使用 **SOPS + age** 管理敏感信息：
 
-1. **数据导出（Init 容器）**：使用匹配版本的 `postgres:17-alpine` 镜像，通过 `pg_dump` 经由集群内部网络导出数据库并使用 gzip 压缩。脚本设置 `set -o pipefail`，防止中间环节报错被静默吞掉。
-2. **文件归档与上传（主容器）**：以只读方式挂载本地附件目录（local-path 允许在同一节点上以 ReadWriteOnce 多次挂载只读卷），打包后通过 `rclone` 将备份同步至 Cloudflare R2 对象存储，并自动清理 30 天前的旧备份。
-3. **凭据解耦**：备份任务所需的 R2 Access Key 等参数，复用前述的 SOPS 流程分发为各个 Namespace 下的 Secret，在 CronJob 中通过环境变量直接组合成 rclone 的配置，避免在镜像内硬编码。
+1. **密文提交入库**：所有业务密钥以及不便公开的节点公网 IP（`NODE_IP_*`）统一存放在 `secrets.enc.env` 中。文件里的键名和注释保持明文，等号后面的值则通过 SOPS 配合 `.sops.yaml` 中声明的 `age` 公钥加密为 `ENC[...]` 密文，可以直接提交到公开仓库。
+2. **内存管道下发**：执行 `scripts/apply-secrets.sh` 时，脚本在控制机本地调用 `sops -d` 解密，通过内存管道直接传给 `kubectl create secret ... --dry-run=client -o yaml | kubectl apply -f -`。整个过程明文不落盘；如果某个应用还未配置密钥，脚本会自动跳过，不会阻塞基础平台组件的初始化。
+3. **节点配置流式渲染**：节点公网 IP 也走同一套加密文件。运行 `make node-config` 时，本地在内存中解密出 IP 并填入节点配置模板，直接通过 SSH 管道写入远端节点的 `/etc/rancher/k3s/config.yaml`，本地不留存渲染后的临时文件。
+
+本地的 `age` 私钥保存在密码管理器中。只要手里有这份公开的 Git 仓库和这一把 `age` 私钥，就能在任何一台新控制机上完整恢复集群配置。
+
+## 存储与节点调度：固定到主节点
+
+在跨云、跨地域的小集群里，如果为了实现 Pod 跨节点漂移而部署 Longhorn 或 Rook-Ceph 等分布式存储，不仅吃内存，跨云同步块数据还会占满节点间的 Tailscale 隧道带宽。因此集群直接采用了 k3s 内置的 **`local-path`** 存储类，把持久化数据落在宿主机本地磁盘上。
+
+由于 `local-path` 创建的 PV 绑定在具体某一台机器的硬盘上，一旦有状态 Pod 重启后被调度到其他节点，就会因为找不到原有磁盘路径而启动失败。为此，集群里所有带 PVC 的有状态工作负载（如 `wallos` 的 SQLite、`multica` 的 pgvector、`supabase` 的 PostgreSQL）都统一加上了 `nodeSelector: kubernetes.io/arch: arm64`，固定在配置最高的 Oracle Cloud `arm64` 控制面节点上运行；公网入口网关 Traefik 也同样固定在该节点，让入口流量与后端数据库留在同一台机器内部交互。
+
+至于腾讯云新加坡那台跨国节点，则被打上了 `location=singapore:NoSchedule` 污点（Taint），默认不参与常规应用调度，只运行明确声明了对应容忍度（Toleration）的特定网络任务。
+
+## 有状态应用的夜间备份
+
+把所有有状态服务集中在一台单节点的本地磁盘上，代价就是这台机器的硬盘成了单点。为了兜住磁盘损坏的风险，每个有状态应用都在各自目录下配了一个夜间备份 `CronJob`（`apps/<name>/backup.yaml`），每天凌晨错峰在 `03:10`、`03:30`、`03:50`（`Asia/Shanghai`）运行，把数据打包上传到 Cloudflare R2 对象存储，并保留最近 30 天的历史版本。
+
+以同时包含 PostgreSQL 数据库和本地上传附件的 `multica` 为例，备份 Job 的 Init 容器与主容器共用一个临时 `emptyDir` 卷，分两步完成备份：
+
+1. **数据库导出（Init 容器）**：使用与线上大版本一致的 `postgres:17-alpine` 镜像，通过集群内部 DNS 连接 `multica-postgres:5432` 执行 `pg_dump` 并经 `gzip` 压缩写入临时卷。脚本开头显式加上 `set -o pipefail`，防止 `pg_dump` 连接报错但后面的 `gzip` 正常返回 `0`，导致失败的任务被误判为成功。
+2. **附件打包与上传（主容器）**：以只读方式挂载应用的 `uploads` PVC（在同一节点上，`local-path` 的 `ReadWriteOnce` 卷允许被多个 Pod 同时挂载使用），将附件目录打包成 `tar`，随后调用 `rclone` 把数据库备份和附件包一并上传到 `r2:<bucket>/backups/multica/`，并清理 30 天前的旧文件。
+
+备份所用的 R2 凭据（`BACKUP_R2_*`）同样存放在 `secrets.enc.env` 中，由 `apply-secrets.sh` 分发为各应用命名空间下的 `backup-r2` Secret。CronJob 通过 `envFrom` 注入环境变量，直接拼成免配置文件的 `rclone` 远端参数。平时修改备份逻辑后，执行 `make backup-now APP=multica` 就能基于线上 CronJob 立即创建一个临时 Job 并跟随打印日志，方便随时验证备份是否正常。
 
 ## 版本锁定与升级流程
 
-为了避免重复执行命令时引入未预期的上游变更，仓库对所有外部组件进行了版本锁定：
+没有常驻控制器替集群维持状态，就更需要保证任何时候重跑 `make` 命令都不会在后台静默升级组件。因此仓库把所有外部依赖的版本都固定了下来：
 
-- Helm Release 依赖的 Chart 版本均显式定义在 `Makefile` 变量中（例如 `cert-manager v1.20.2`、`headlamp 0.42.0` 等）。
-- 自建服务的镜像 Tag 在各自的 `deployment.yaml` 中固定为具体语义化版本号，不使用 `:latest`。
+- 四个 Helm Release 的 Chart 版本统一定义在 `Makefile` 顶部的变量中（如 `cert-manager v1.20.2`、`headlamp 0.42.0`、`multica 0.3.19`、`supabase 0.5.6`）。
+- Kustomize 应用的容器镜像 Tag 全部在各自的 `deployment.yaml` 中固定为具体的语义化版本号，不使用 `:latest`。
 
-需要升级时，手动修改对应配置文件的版本号或使用 `make bump APP=<name>` 脚本进行替换。变更经过 Git Commit 和 CI 校验后，再由人工执行 apply 操作下发。
+这样无论 `make platform` 或 `make app` 执行多少次，哪怕上游发布了新版本，集群里部署出来的东西也完全一致。需要升级时，运行 `make bump APP=<name>` 查看并替换为新版本号，提交一道只改版本号的 Commit，等 CI 的 `kubeconform` 校验通过后，再在本地执行 apply 下发到集群。
 
----
+## 方案边界
 
-## 总结
+回顾整套设置，常规 GitOps 控制器负责的几项工作并没有消失，只是被拆解到了几个基础工具里：用目录结构与 `Makefile` 管下发顺序，用 `make diff` 做状态对账，用 `kubeconform` 和 CI 做前置拦截，用 SOPS + age 做客户端解密，再用固定的版本号防止配置漂移。
 
-在小规模集群中，Push 模式将通常由 GitOps Controller 负责的状态同步与校验工作，拆解为了相对简单的标准工具链：
+这套做法的适用边界很清楚：它适合节点数在个位数、单人维护、希望集群自身保持极简的个人环境。如果后续节点和应用规模继续扩大，或者需要多人协作、审计每一次线上变更，引入常驻控制器的收益就会超过它的资源开销，到那时再平滑迁移到 Argo CD 或 Flux 即可。
 
-- **目录结构与 Makefile**：明确定义每个组件的应用机制与执行顺序。
-- **SOPS + age**：解决密钥入库与零集群依赖解密。
-- **kubeconform + CI**：在提交阶段保障资源语法的有效性。
-- **`make diff`**：提供可视化的配置漂移检测。
-
-这种方案降低了集群本身的资源占用与系统复杂度，适合单人维护、节点数量有限的个人运维场景。当集群规模扩大或协作人数增加时，再逐步过渡到 Pull 模式也是平滑的演进路径。
+文中的目录结构、`Makefile` 与备份脚本均整理在公开仓库 [synthpop123/k3s-manifests](https://github.com/synthpop123/k3s-manifests) 中，各个子目录下附有详细的初始化与操作说明。
