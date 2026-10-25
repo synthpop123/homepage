@@ -96,6 +96,8 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
     }
   }
 
+  /* A tile like the home page's: a Gray 3 fill and an 8px corner, no
+     border. */
   dl > div {
     position: relative;
     display: flex;
@@ -103,9 +105,8 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
     gap: var(--space-3xs);
     padding: var(--space-s);
     overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    background-color: color-mix(in oklab, var(--muted) 45%, transparent);
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
     line-height: 1.4;
     isolation: isolate;
 
@@ -136,10 +137,11 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
 
   /* The mark has to live in the dt (a dl's div admits only dt and dd), but
      it is positioned against the card, so where it sits in the markup
-     costs the layout nothing. It is the card's backdrop rather than a chip beside its name:
-     drawn large, faint and cropped by the corner, it says what the thing
-     is before the words do, and costs the text no width. The stroke is
-     thinned so it scales up as a line drawing instead of a slab. */
+     costs the layout nothing. It is the card's backdrop rather than a
+     chip beside its name: drawn large in Gray A3 and cropped by the
+     corner, it says what the thing is before the words do, and costs the
+     text no width. The stroke is thinned so it scales up as a line
+     drawing instead of a slab. */
   .mark {
     position: absolute;
     z-index: -1;
@@ -147,32 +149,16 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
     inset-inline-end: -0.15em;
     font-size: 4.5rem;
     line-height: 0;
-    color: color-mix(in oklab, var(--foreground) 9%, transparent);
-    transition:
-      color 0.3s ease,
-      transform 0.3s ease;
+    color: var(--gray-a4);
 
     & :global(g) {
       stroke-width: 1.25;
     }
   }
 
-  /* The anchor card reads a size up: a bigger name, and a mark with room
-     to be the largest thing in the group. */
-  dl > div:first-child {
-    & dt {
-      font-size: var(--step-1);
-    }
-
-    & .mark {
-      font-size: 7.5rem;
-    }
-  }
-
-  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    dl > div:hover .mark {
-      color: color-mix(in oklab, var(--foreground) 16%, transparent);
-      transform: translate(-0.04em, -0.04em) rotate(-4deg);
-    }
+  /* The anchor card's mark has room to be the largest thing in the
+     group. */
+  dl > div:first-child .mark {
+    font-size: 7.5rem;
   }
 </style>

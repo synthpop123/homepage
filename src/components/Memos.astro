@@ -1,6 +1,5 @@
 ---
 import "@/styles/feed.css"
-import MastodonIcon from "@/assets/icons/mastodon.svg"
 import { MASTODON, MEMOS } from "@/consts"
 import { SKELETON_ROWS } from "@/lib/utils"
 
@@ -8,12 +7,6 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
 ---
 
 <memos-feed data-endpoint={MEMOS.endpoint} aria-busy="true">
-  <p class="memos-intro">
-    Short notes, pulled live from my
-    <MastodonIcon class="memos-mark" aria-hidden="true" />
-    <a href={profileUrl} target="_blank" rel="noopener noreferrer">Mastodon</a>
-    instance.
-  </p>
   <ol class="memos-list">
     <li class="memo-year" data-skeleton aria-hidden="true">
       <span class="sk-line sk-year" />
@@ -62,13 +55,6 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     display: block;
   }
 
-  .memos-mark {
-    display: inline-block;
-    inline-size: 1.1em;
-    block-size: 1.1em;
-    vertical-align: -0.18em;
-  }
-
   /* A thread rather than a stack of ruled rows: one line runs down the
      left edge, every memo is a node on it and every year a larger, filled
      one. Each entry draws the stretch of line from its own top down to
@@ -83,7 +69,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   memos-feed :global(.memos-list > li) {
     --gap-after: var(--space-l);
     --node-y: calc(var(--memo-line) / 2);
-    --node: 0.625rem;
+    --node: 0.5rem;
 
     position: relative;
     padding-inline-start: var(--thread);
@@ -97,9 +83,9 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     content: "";
     position: absolute;
     inset-block: 0 calc(-1 * var(--gap-after));
-    inset-inline-start: calc(var(--axis) - 0.5px);
-    inline-size: 1px;
-    background-color: var(--border);
+    inset-inline-start: calc(var(--axis) - var(--hairline) / 2);
+    inline-size: var(--hairline);
+    background-color: var(--border-strong);
   }
 
   memos-feed :global(.memos-list > li:first-child::before) {
@@ -123,20 +109,14 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     position: absolute;
     inset-block-start: calc(var(--node-y) - var(--node) / 2);
     inset-inline-start: calc(var(--axis) - var(--node) / 2);
-    box-sizing: border-box;
     inline-size: var(--node);
     aspect-ratio: 1;
-    border: 1.5px solid var(--gray-8);
     border-radius: 50%;
-    background-color: var(--background);
-    transition:
-      background-color 0.15s ease,
-      border-color 0.15s ease;
+    background-color: var(--gray-8);
   }
 
   @media (hover: hover) {
     memos-feed :global(.memo:not([data-skeleton]):hover::after) {
-      border-color: var(--foreground);
       background-color: var(--foreground);
     }
   }
@@ -152,18 +132,16 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
 
   memos-feed :global(.memos-list > .memo-year::after) {
     border-radius: var(--radius-xs);
-    border-color: var(--foreground);
     background-color: var(--foreground);
-    box-shadow: 0 0 0 4px var(--background);
+    outline: 4px solid var(--background);
   }
 
   memos-feed :global(.memo-year h2) {
     margin: 0;
-    font-size: var(--step-1);
-    font-weight: var(--font-weight-medium);
+    font-size: var(--step-0);
+    font-weight: var(--font-weight-strong);
     font-variant-numeric: tabular-nums;
     line-height: 2rem;
-    letter-spacing: -0.01em;
   }
 
   memos-feed :global(.memo article),
@@ -186,9 +164,9 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     flex-wrap: wrap;
     align-items: baseline;
     column-gap: 0.5em;
-    font-size: var(--step--1);
+    font-size: var(--step--2);
     font-weight: var(--font-weight-medium);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     line-height: calc(var(--leading-offset) + 1rem);
     text-transform: uppercase;
     color: var(--muted-foreground);
@@ -213,7 +191,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   }
 
   memos-feed :global(.memo-edited) {
-    color: var(--faint-foreground);
+    color: var(--muted-foreground);
   }
 
   memos-feed :global(.memo-main) {
@@ -251,9 +229,8 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
 
   memos-feed :global(.memo-cw) {
     padding: var(--space-2xs) var(--space-xs);
-    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    background-color: var(--muted);
   }
 
   memos-feed :global(.memo-cw summary) {
@@ -263,12 +240,13 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   }
 
   memos-feed :global(.memo-cw summary::after) {
-    content: " · Show";
-    color: var(--faint-foreground);
+    content: "Show";
+    margin-inline-start: 0.75em;
+    color: var(--foreground);
   }
 
   memos-feed :global(.memo-cw[open] summary::after) {
-    content: " · Hide";
+    content: "Hide";
   }
 
   memos-feed :global(.memo-cw-body) {
@@ -277,15 +255,13 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     margin-block-start: var(--space-xs);
   }
 
-  /* Media grid: one rounded card, hairline seams between cells. */
+  /* Media grid: one rounded card, 2px seams between cells. */
 
   memos-feed :global(.memo-media) {
     display: grid;
-    gap: 1px;
+    gap: 2px;
     overflow: hidden;
-    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    background-color: var(--border);
   }
 
   memos-feed :global(.memo-media:not([data-count="1"])) {
@@ -300,6 +276,8 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     margin: 0;
     overflow: hidden;
     background-color: var(--muted);
+    outline: var(--hairline) solid var(--gray-a6);
+    outline-offset: calc(-1 * var(--hairline));
   }
 
   memos-feed :global(.memo-media:not([data-count="1"]) .memo-shot) {
@@ -321,17 +299,6 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     inline-size: 100%;
     block-size: 100%;
     object-fit: cover;
-  }
-
-  /* Only images fade in: a video paints its poster frame immediately,
-     and a gifv starts playing on its own. */
-  memos-feed :global(.memo-shot img) {
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-
-  memos-feed :global(.memo-shot img.is-loaded) {
-    opacity: 1;
   }
 
   /* A single attachment keeps a fixed height and takes its width from
@@ -366,8 +333,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   }
 
   memos-feed :global(.memos-list > .memo-year[data-skeleton]::after) {
-    border-color: var(--gray-5);
-    background-color: var(--gray-5);
+    background-color: var(--gray-4);
   }
 
   .sk-year {
@@ -388,7 +354,6 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   }
 
   .sk-media {
-    background-color: var(--gray-5);
-    animation: var(--sk-pulse);
+    background-color: var(--gray-4);
   }
 </style>

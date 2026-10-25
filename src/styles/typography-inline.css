@@ -25,10 +25,10 @@ prose-content {
 
   :where(code) {
     font-family: var(--font-mono);
-    font-size: 0.9em;
+    font-size: 0.875em;
     padding: 0.1em 0.3em;
     border-radius: var(--radius-sm);
-    background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+    background-color: var(--muted);
 
     &[data-ec] :where(span[style^="--"]:not([class])) {
       color: light-dark(var(--0, inherit), var(--1, inherit));
@@ -51,8 +51,7 @@ prose-content {
     padding: 0.25em 0.4em;
     margin-block-end: 0.2em;
     color: var(--foreground);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: inset 0 -1px 0 var(--border);
+    border: var(--hairline) solid var(--border-strong);
+    border-radius: var(--radius-sm);
   }
 }

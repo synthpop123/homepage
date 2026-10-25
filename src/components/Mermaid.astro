@@ -31,6 +31,46 @@
       return theme === "dark" || (!theme && prefersDark.matches)
     }
 
+    // Mermaid can't read CSS variables, so the Radix Gray steps the page
+    // uses are spelled out: fills at 2 and 3, edges at 7, lines at 9,
+    // text at 12.
+    const palette = (dark: boolean) =>
+      dark
+        ? {
+            darkMode: true,
+            background: "#111111",
+            mainBkg: "#222222",
+            primaryColor: "#222222",
+            secondaryColor: "#2a2a2a",
+            tertiaryColor: "#191919",
+            primaryBorderColor: "#484848",
+            clusterBkg: "#191919",
+            clusterBorder: "#3a3a3a",
+            lineColor: "#6e6e6e",
+            primaryTextColor: "#eeeeee",
+            textColor: "#eeeeee",
+            noteBkgColor: "#222222",
+            noteBorderColor: "#484848",
+            edgeLabelBackground: "#111111",
+          }
+        : {
+            darkMode: false,
+            background: "#fcfcfc",
+            mainBkg: "#f0f0f0",
+            primaryColor: "#f0f0f0",
+            secondaryColor: "#e8e8e8",
+            tertiaryColor: "#f9f9f9",
+            primaryBorderColor: "#cecece",
+            clusterBkg: "#f9f9f9",
+            clusterBorder: "#d9d9d9",
+            lineColor: "#8d8d8d",
+            primaryTextColor: "#202020",
+            textColor: "#202020",
+            noteBkgColor: "#f0f0f0",
+            noteBorderColor: "#cecece",
+            edgeLabelBackground: "#fcfcfc",
+          }
+
     const render = async () => {
       for (const [el, source] of sources) {
         el.removeAttribute("data-processed")
@@ -39,7 +79,8 @@
       }
       mermaid.initialize({
         startOnLoad: false,
-        theme: isDark() ? "dark" : "neutral",
+        theme: "base",
+        themeVariables: palette(isDark()),
         // Mermaid 12 lays flowcharts out with ELK by default, a much larger
         // chunk that also moves every node; dagre keeps them as drawn.
         layout: "dagre",

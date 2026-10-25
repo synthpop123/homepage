@@ -590,7 +590,7 @@ export function heroNote(
       : `${formatDay(site.days[start])} → ${formatDay(site.days[end])}`
   return bench === null
     ? when
-    : `${when} · ${site.benchmark.label} ${formatReturn(bench)}`
+    : `${when}, ${site.benchmark.label} ${formatReturn(bench)}`
 }
 
 /** A holding's price line over a range, for the expanded row. */

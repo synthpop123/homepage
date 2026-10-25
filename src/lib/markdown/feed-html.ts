@@ -18,7 +18,7 @@ export const feedCallouts = defineMdastPlugin({
     if (label) {
       ctx.prependChild(first, {
         type: "strong",
-        children: [{ type: "text", value: `${kind} · ` }],
+        children: [{ type: "text", value: `${kind}: ` }],
       })
     } else {
       ctx.prependChild(node, {

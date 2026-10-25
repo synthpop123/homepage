@@ -11,7 +11,6 @@
 import { relativeTime } from "../feed"
 import {
   formatCost,
-  formatDate,
   formatDuration,
   formatExact,
   formatShare,
@@ -22,17 +21,6 @@ import {
 } from "../tokens"
 import { splitFigure } from "../readout"
 import { el, type Icons, type Query } from "./dom"
-
-/** "since Jul 16, 2026 · v27.1.1", or whichever half the device sent. */
-const sinceLine = (device: SiteDevice) =>
-  [
-    device.firstSeen
-      ? `since ${formatDate(new Date(device.firstSeen).toISOString())}`
-      : "",
-    device.cliVersion ? `v${device.cliVersion}` : "",
-  ]
-    .filter((part) => part !== "")
-    .join(" · ")
 
 /** The active-time cell's tooltip: what the figure alone leaves out. */
 const stretchNote = (device: SiteDevice) =>
@@ -86,15 +74,15 @@ export function renderDevices(q: Query, site: Site, icons: Icons) {
         el("span", "dot"),
         device.lastSeen === null
           ? "Never reported"
-          : `${online ? "Online" : "Offline"} · ${relativeTime(device.lastSeen)}`,
+          : online
+            ? "Online"
+            : `Seen ${relativeTime(device.lastSeen)}`,
       )
       const head = el("div", "dev-head")
       head.append(status)
 
       const id = el("div", "dev-id")
       id.append(el("h3", "dev-name", device.name))
-      const since = sinceLine(device)
-      if (since) id.append(el("p", "dev-since", since))
 
       const ratio = total > 0 ? device.tokens / total : 0
       const tokens = figure(formatTokens(device.tokens))

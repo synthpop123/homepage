@@ -180,7 +180,7 @@ export function renderPostCard({
       .join(" "),
   ]
     .filter(Boolean)
-    .join("  ·  ")
+    .join("     ")
 
   return render(
     frame(

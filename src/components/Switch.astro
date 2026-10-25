@@ -79,8 +79,8 @@ const stats = ["Playtime", "Games", "", "Per active day"]
   switch-feed :global(.switch-item) {
     --total: 0%;
     --recent: 0%;
-    --fill: color-mix(in oklab, var(--foreground) 7%, transparent);
-    --fill-recent: color-mix(in oklab, var(--accent-fill) 34%, transparent);
+    --fill: var(--gray-a3);
+    --fill-recent: var(--grass-a5);
 
     /* Positioned so the eShop link can stretch across the whole row. */
     position: relative;
@@ -89,24 +89,24 @@ const stats = ["Playtime", "Games", "", "Per active day"]
     align-items: center;
     gap: var(--space-xs);
     padding: var(--space-3xs) var(--space-xs) var(--space-3xs) var(--space-2xs);
-    border-radius: var(--radius-lg);
+    /* Concentric with the cover inside it. */
+    border-radius: calc(var(--radius-md) + var(--space-3xs));
     background-image: linear-gradient(
       to right,
       var(--fill-recent) var(--recent),
       var(--fill) var(--recent) var(--total),
       transparent var(--total)
     );
-    transition: background-color 0.15s ease;
   }
 
   @media (hover: hover) {
     switch-feed :global(.switch-item:hover) {
-      background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+      background-color: var(--muted);
     }
   }
 
   switch-feed :global(.rank) {
-    font-size: 0.75rem;
+    font-size: var(--step--2);
     font-variant-numeric: tabular-nums;
     color: var(--muted-foreground);
     text-align: end;
@@ -119,7 +119,8 @@ const stats = ["Playtime", "Games", "", "Per active day"]
     overflow: hidden;
     border-radius: var(--radius-md);
     background-color: var(--muted);
-    box-shadow: inset 0 0 0 1px var(--border);
+    outline: var(--hairline) solid var(--gray-a6);
+    outline-offset: calc(-1 * var(--hairline));
   }
 
   switch-feed :global(.cover img) {
@@ -151,7 +152,7 @@ const stats = ["Playtime", "Games", "", "Per active day"]
 
   switch-feed :global(.sub) {
     min-block-size: 1lh;
-    font-size: 0.75rem;
+    font-size: var(--step--2);
     color: var(--muted-foreground);
   }
 

@@ -71,9 +71,10 @@ export function markRoute(list: HTMLOListElement, index: number | null) {
     )
 }
 
-/** Shades of the section's accent for the named rows, then the rest. */
-const SHADES = [100, 72, 52, 36]
-const REST_SHADE = 16
+/** Steps of the activity scale (heat-4 down to heat-1) for the named
+ *  rows, then 0 for the rest. */
+const SHADES = [4, 3, 2, 1]
+const REST_SHADE = 0
 
 const chevron = () => {
   const ns = "http://www.w3.org/2000/svg"
@@ -154,7 +155,7 @@ export function renderComposition(
     ...parts.map((p) => {
       const segment = el("span")
       segment.style.flexGrow = String(p.flights)
-      segment.style.setProperty("--shade", `${p.shade}%`)
+      segment.dataset.shade = String(p.shade)
       segment.title = p.title
       return segment
     }),
@@ -169,7 +170,7 @@ export function renderComposition(
     .map((p) => {
       const row = el("li", "comp-row")
       const swatch = el("i")
-      swatch.style.setProperty("--shade", `${p.shade}%`)
+      swatch.dataset.shade = String(p.shade)
       row.title = p.title
       row.append(
         swatch,

@@ -115,9 +115,9 @@ export function createActivity(q: Query, icons: Icons) {
         level: isMessagesOnly(entry) ? -1 : level(entry.tokens),
         title:
           entry.tokens > 0
-            ? `${formatTokens(entry.tokens)} tokens on ${formatDate(entry.date)} · ${formatCostExact(entry.cost)} · ${formatCount(entry.messages)} ${entry.messages === 1 ? "message" : "messages"}${entry.active ? ` · ${formatDuration(entry.active)} active` : ""}`
+            ? `${formatTokens(entry.tokens)} tokens on ${formatDate(entry.date)}, ${formatCostExact(entry.cost)}, ${formatCount(entry.messages)} ${entry.messages === 1 ? "message" : "messages"}${entry.active ? `, ${formatDuration(entry.active)} active` : ""}`
             : isMessagesOnly(entry)
-              ? `${formatCount(entry.messages)} ${entry.messages === 1 ? "message" : "messages"} on ${formatDate(entry.date)} · token counts unavailable`
+              ? `${formatCount(entry.messages)} ${entry.messages === 1 ? "message" : "messages"} on ${formatDate(entry.date)}, token counts unavailable`
               : `No usage on ${formatDate(entry.date)}`,
       }))
     }
@@ -145,7 +145,7 @@ export function createActivity(q: Query, icons: Icons) {
     const seen = lastReport(loaded)
     const stamp = seen ?? Date.parse(loaded.generatedAt)
     meta.textContent = `${seen === null ? "collected" : "synced"} ${relativeTime(stamp)}`
-    meta.title = `${formatDate(loaded.today)} · ${
+    meta.title = `${formatDate(loaded.today)}, ${
       seen === null ? "collector last ran" : "last device report"
     } ${new Date(stamp).toLocaleString()}`
   }

@@ -14,12 +14,14 @@ tokens-dashboard {
     margin-block-end: var(--space-s);
   }
 
+  /* A segmented control, as Portfolio's accounts: an 8px Gray 3 track
+     with 2px of padding, so each segment's corner is 6px. */
   .tk-seg {
     display: inline-flex;
     gap: 2px;
     padding: 2px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
   }
 
   .tk-seg label {
@@ -42,7 +44,7 @@ tokens-dashboard {
 
   .tk-seg span {
     padding: 0.125rem 0.625rem;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     font-size: var(--step--1);
     color: var(--muted-foreground);
     cursor: pointer;
@@ -50,8 +52,10 @@ tokens-dashboard {
   }
 
   .tk-seg input:checked + span {
-    background-color: var(--foreground);
-    color: var(--background);
+    background-color: var(--background);
+    color: var(--foreground);
+    outline: var(--hairline) solid var(--gray-a6);
+    outline-offset: calc(-1 * var(--hairline));
   }
 
   .tk-seg label:hover input:not(:checked) + span {
@@ -60,13 +64,13 @@ tokens-dashboard {
 
   .tk-seg input:focus-visible + span {
     outline: 2px solid var(--ring);
-    outline-offset: 1px;
+    outline-offset: 0;
   }
 
   /* Compact variant for in-chart controls (the trend stack toggle). */
   .tk-seg-sm span {
     padding: 0.0625rem 0.5rem;
-    font-size: 0.6875rem;
+    font-size: var(--step--2);
   }
 
   /* Stat cards: the readout is shared with the feeds (feed.css). */
@@ -97,7 +101,7 @@ tokens-dashboard {
     display: flex;
     block-size: 0.875rem;
     overflow: hidden;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     background-color: var(--gray-4);
   }
 
@@ -115,7 +119,7 @@ tokens-dashboard {
   }
 
   .tk-mix [data-k="1"] {
-    --c: color-mix(in oklab, var(--foreground) 60%, var(--background));
+    --c: var(--gray-10);
   }
 
   .tk-mix [data-k="2"] {
@@ -123,7 +127,7 @@ tokens-dashboard {
   }
 
   .tk-mix [data-k="3"] {
-    --c: color-mix(in oklab, var(--accent-fill) 50%, var(--background));
+    --c: var(--grass-7);
   }
 
   .tk-mix [data-k="4"] {

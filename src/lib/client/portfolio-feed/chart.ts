@@ -42,8 +42,6 @@ export type ChartSpec = {
   dateOf: (index: number) => string
   /** Called with the scrubbed point, and with null when it lets go. */
   onScrub?: (index: number | null) => void
-  /** Draw the line in from the left (a first paint, a new range). */
-  animate?: boolean
 }
 
 export type Chart = {
@@ -57,8 +55,6 @@ const PAD_X = 2
 
 /** Clip-path ids, unique on the page. */
 let clipSerial = 0
-
-const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches
 
 export function drawChart(svg: SVGSVGElement, spec: ChartSpec): Chart {
   const width = Math.max(svg.clientWidth, 1)
@@ -246,29 +242,6 @@ export function drawChart(svg: SVGSVGElement, spec: ChartSpec): Chart {
     event.preventDefault()
   }
   scrub(null)
-
-  if (
-    spec.animate &&
-    !reduced() &&
-    typeof stroke.getTotalLength === "function"
-  ) {
-    const length = stroke.getTotalLength()
-    stroke.animate(
-      [
-        { strokeDasharray: `${length}`, strokeDashoffset: length },
-        { strokeDasharray: `${length}`, strokeDashoffset: 0 },
-      ],
-      { duration: 900, easing: "cubic-bezier(0.3, 0.7, 0.2, 1)" },
-    )
-    for (const node of nodes) {
-      if (node === stroke || node === scrubber) continue
-      node.animate([{ opacity: 0 }, { opacity: 1 }], {
-        duration: 500,
-        delay: 350,
-        fill: "backwards",
-      })
-    }
-  }
 
   return { scrub }
 }

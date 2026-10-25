@@ -92,9 +92,6 @@ tokens-dashboard {
     stroke-width: 6;
     stroke-linecap: round;
     cursor: pointer;
-    transition:
-      opacity 0.15s ease,
-      stroke-width 0.15s ease;
   }
 
   /* The open client's arc stands proud of the rest; the others mute
@@ -164,6 +161,7 @@ tokens-dashboard {
   }
 
   .tk-rows.tk-day-legend .tk-sub .tk-row::before {
-    background-color: color-mix(in oklab, var(--p) 16%, transparent);
+    background-color: var(--p);
+    opacity: 0.16;
   }
 }

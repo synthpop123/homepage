@@ -253,7 +253,7 @@ export function createDayPanel(q: Query, icons: Icons, onBack: () => void) {
           name: entry.label,
           value: formatTokens(entry.tokens),
           share: entry.share,
-          title: `${entry.label} — ${formatExact(entry.tokens)} tokens · ${formatCostExact(
+          title: `${entry.label} — ${formatExact(entry.tokens)} tokens, ${formatCostExact(
             entry.models.reduce((sum, cell) => sum + cell.cost, 0),
           )}`,
         }

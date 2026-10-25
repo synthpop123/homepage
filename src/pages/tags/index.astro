@@ -22,7 +22,7 @@ const letters = Map.groupBy(tags, ([tag]) => tag[0].toUpperCase())
             <li>
               <a href={`/tags/${tag}`}>
                 <span>{tag}</span>
-                <tag-count style={`--n: ${posts.length}`}>
+                <tag-count>
                   {posts.length}
                   <span class="sr">{posts.length === 1 ? " post" : " posts"}</span>
                 </tag-count>
@@ -52,13 +52,12 @@ const letters = Map.groupBy(tags, ([tag]) => tag[0].toUpperCase())
     font-family: var(--font-mono);
     font-feature-settings: normal;
     font-size: var(--step--1);
-    font-weight: var(--font-weight-display);
+    font-weight: var(--font-weight-strong);
     letter-spacing: 0;
-    color: var(--accent);
+    color: var(--muted-foreground);
   }
 
-  /* Name, a dotted leader, and the count, which carries one small
-     square per post. */
+  /* Name, a dotted leader, and the count. */
   a {
     display: flex;
     align-items: baseline;
@@ -72,34 +71,22 @@ const letters = Map.groupBy(tags, ([tag]) => tag[0].toUpperCase())
       flex: 1;
       order: 1;
       min-inline-size: 1rem;
-      border-block-end: 1.5px dotted var(--border);
+      border-block-end: var(--hairline) dotted var(--border-strong);
     }
 
     &:hover > span {
       text-decoration-line: underline;
-      text-decoration-color: var(--accent);
+      text-decoration-color: currentColor;
     }
   }
 
   tag-count {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
     order: 2;
     font-family: var(--font-mono);
     font-feature-settings: normal;
-    font-size: 0.75rem;
+    font-size: var(--step--2);
     letter-spacing: 0;
-    color: var(--faint-foreground);
+    color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
-
-    &::before {
-      content: "";
-      inline-size: calc(min(var(--n), 8) * 7px - 2px);
-      block-size: 5px;
-      background:
-        linear-gradient(to right, var(--heat-3) 5px, transparent 0) 0 0 / 7px
-        100% repeat-x;
-    }
   }
 </style>

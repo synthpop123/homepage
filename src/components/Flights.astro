@@ -122,28 +122,14 @@ const tallies = [
      reach of Astro's scoped styles; every rule is nested under the
      element instead. */
   flights-feed {
-    --flights-accent: light-dark(#e2700b, #ffb547);
-    --flights-land: color-mix(
-      in oklab,
-      var(--foreground) 5%,
-      var(--background)
-    );
-    --flights-coast: color-mix(
-      in oklab,
-      var(--foreground) 16%,
-      var(--background)
-    );
-    --flights-grid: color-mix(
-      in oklab,
-      var(--foreground) 4%,
-      var(--background)
-    );
+    /* The site's one accent: Grass 9 for the route in focus, Grass 11
+       for its words; land a Gray 3 fill under Gray 6 coasts. */
+    --flights-accent: var(--accent-fill);
+    --flights-land: var(--gray-3);
+    --flights-coast: var(--gray-6);
+    --flights-grid: var(--gray-a3);
 
     display: block;
-
-    & .readout {
-      --readout-accent: var(--flights-accent);
-    }
 
     /* The map ---------------------------------------------------------- */
 
@@ -172,14 +158,10 @@ const tallies = [
       background-color: var(--muted);
     }
 
-    &[aria-busy="true"] .flights-map {
-      animation: var(--sk-pulse);
-    }
-
     & .graticule {
       fill: none;
       stroke: var(--flights-grid);
-      stroke-width: 0.6;
+      stroke-width: var(--hairline);
     }
 
     & .land {
@@ -189,13 +171,13 @@ const tallies = [
     & .coast {
       fill: none;
       stroke: var(--flights-coast);
-      stroke-width: 0.5;
+      stroke-width: var(--hairline);
     }
 
     & .borders {
       fill: none;
       stroke: var(--flights-coast);
-      stroke-width: 0.6;
+      stroke-width: var(--hairline);
       stroke-dasharray: 2 2;
     }
 
@@ -204,7 +186,6 @@ const tallies = [
       stroke: var(--flights-accent);
       stroke-linecap: round;
       opacity: 0.45;
-      transition: opacity 0.2s ease;
 
       &[data-upcoming] {
         stroke-dasharray: 2 4;
@@ -232,9 +213,6 @@ const tallies = [
       stroke: var(--foreground);
       stroke-width: 1.3;
       pointer-events: none;
-      transition:
-        fill 0.2s ease,
-        stroke 0.2s ease;
 
       &[data-on] {
         fill: var(--flights-accent);
@@ -245,7 +223,7 @@ const tallies = [
     & .label {
       font-family: var(--font-mono);
       font-feature-settings: normal;
-      font-size: 10.5px;
+      font-size: var(--step--2);
       font-weight: var(--font-weight-medium);
       fill: var(--foreground);
       paint-order: stroke;
@@ -253,31 +231,30 @@ const tallies = [
       stroke-width: 3px;
       stroke-linejoin: round;
       pointer-events: none;
-      transition: fill 0.2s ease;
 
       & .city {
         font-family: var(--font-sans);
-        font-size: 10px;
+        font-size: var(--step--2);
         font-weight: var(--font-weight-normal);
         fill: var(--muted-foreground);
       }
 
       &[data-on] {
-        fill: var(--flights-accent);
+        fill: var(--accent);
       }
     }
 
     /* The inset: the knot of airports drawn again, larger, in a corner. */
     & .lens {
       fill: none;
-      stroke: var(--muted-foreground);
-      stroke-width: 0.8;
+      stroke: var(--gray-8);
+      stroke-width: var(--hairline);
     }
 
     & .leader {
       fill: none;
-      stroke: var(--muted-foreground);
-      stroke-width: 0.6;
+      stroke: var(--gray-8);
+      stroke-width: var(--hairline);
       stroke-dasharray: 2 2.5;
     }
 
@@ -288,6 +265,7 @@ const tallies = [
     & .inset-rim {
       fill: none;
       stroke: var(--border);
+      stroke-width: var(--hairline);
     }
 
     /* The strip: the route in focus, codes large at either end. ------- */
@@ -304,10 +282,10 @@ const tallies = [
         align-items: center;
         min-inline-size: 2.2em;
         min-block-size: 1lh;
-        font-size: clamp(2rem, 1.2rem + 4vw, 3.25rem);
-        font-weight: 600;
+        font-size: var(--step-1);
+        font-weight: var(--font-weight-strong);
         line-height: 1;
-        letter-spacing: -0.03em;
+        letter-spacing: -0.02em;
       }
 
       & [data-part="to"] {
@@ -360,62 +338,33 @@ const tallies = [
       }
     }
 
-    /* A dashed track the flown line fills along, the plane at its head. */
+    /* A hairline from code to code, the plane at its arrival end. */
     & .flights-line {
       position: relative;
       inline-size: 100%;
       block-size: 1rem;
 
-      &::before,
-      &::after {
+      &::before {
         content: "";
         position: absolute;
-        inset-inline: 0;
+        inset-inline: 0 0.5rem;
         inset-block-start: 50%;
-      }
-
-      &::before {
-        border-block-start: 1.5px dashed var(--border);
-      }
-
-      &::after {
-        border-block-start: 1.5px solid var(--flights-accent);
-        transform-origin: left;
-        scale: 0 1;
+        border-block-start: var(--hairline) solid var(--border-strong);
       }
 
       & svg {
         position: absolute;
         inset-block-start: 50%;
-        inset-inline-start: 0;
+        inset-inline-end: 0;
         inline-size: 1rem;
         block-size: 1rem;
-        translate: -50% -50%;
+        translate: 0 -50%;
         fill: var(--foreground);
-        opacity: 0;
       }
+    }
 
-      &[data-drawn] {
-        &::after {
-          scale: 1 1;
-          transition: scale 0.9s cubic-bezier(0.3, 0.7, 0.2, 1);
-        }
-
-        & svg {
-          inset-inline-start: 100%;
-          opacity: 1;
-          transition:
-            inset-inline-start 0.9s cubic-bezier(0.3, 0.7, 0.2, 1),
-            opacity 0.2s ease;
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        &[data-drawn]::after,
-        &[data-drawn] svg {
-          transition: none;
-        }
-      }
+    &[aria-busy="true"] .flights-line svg {
+      visibility: hidden;
     }
 
     /* The lists -------------------------------------------------------- */
@@ -449,7 +398,7 @@ const tallies = [
        filled to its share of the most flown route. */
     & .route-hit {
       --share: 0%;
-      --fill: color-mix(in oklab, var(--foreground) 6%, transparent);
+      --fill: var(--gray-a3);
 
       display: grid;
       grid-template-columns: 6em minmax(0, 1fr) auto;
@@ -458,7 +407,7 @@ const tallies = [
       inline-size: 100%;
       min-block-size: 2rem;
       padding-inline: var(--space-2xs);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-md);
       background-image: linear-gradient(
         to right,
         var(--fill) var(--share),
@@ -468,13 +417,12 @@ const tallies = [
       font-size: var(--step--1);
       font-variant-numeric: tabular-nums;
       cursor: pointer;
-      transition: background-color 0.15s ease;
 
       &[aria-pressed="true"] {
-        --fill: color-mix(in oklab, var(--flights-accent) 22%, transparent);
+        --fill: var(--grass-a5);
 
         & .route-code {
-          color: var(--flights-accent);
+          color: var(--accent);
         }
       }
 
@@ -484,7 +432,7 @@ const tallies = [
 
       @media (hover: hover) {
         &:not([data-skeleton]):hover {
-          background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+          background-color: var(--muted);
         }
       }
     }
@@ -513,8 +461,8 @@ const tallies = [
       margin-block-start: var(--space-m);
     }
 
-    /* A composition bar: the named rows in shades of the accent, the rest
-       in its faintest one. */
+    /* A composition bar: the named rows down the activity scale, the rest
+       in grey. */
     & .comp-bar {
       display: flex;
       gap: 2px;
@@ -525,11 +473,6 @@ const tallies = [
 
       & span {
         flex-basis: 0;
-        background-color: color-mix(
-          in oklab,
-          var(--flights-accent) var(--shade),
-          var(--muted)
-        );
       }
 
       & .sk-line {
@@ -552,16 +495,31 @@ const tallies = [
     & .comp-row i {
       inline-size: 0.5rem;
       block-size: 0.5rem;
-      border-radius: 2px;
-      background-color: color-mix(
-        in oklab,
-        var(--flights-accent) var(--shade),
-        var(--muted)
-      );
+      border-radius: var(--radius-xs);
 
       &[data-skeleton] {
-        background-color: var(--gray-5);
+        background-color: var(--gray-4);
       }
+    }
+
+    & [data-shade="0"] {
+      background-color: var(--gray-6);
+    }
+
+    & [data-shade="1"] {
+      background-color: var(--heat-1);
+    }
+
+    & [data-shade="2"] {
+      background-color: var(--heat-2);
+    }
+
+    & [data-shade="3"] {
+      background-color: var(--heat-3);
+    }
+
+    & [data-shade="4"] {
+      background-color: var(--heat-4);
     }
 
     & .comp-n {
@@ -586,7 +544,6 @@ const tallies = [
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;
-        transition: rotate 0.15s ease;
       }
 
       &[aria-expanded="true"] svg {

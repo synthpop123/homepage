@@ -132,8 +132,8 @@ const section = NAVIGATION.find(
   nav > ul {
     --rail: 0.75rem;
     margin-inline-start: calc(-1 * var(--rail));
-    padding-inline-start: calc(var(--rail) - 1px);
-    border-inline-start: 1px solid var(--border);
+    padding-inline-start: calc(var(--rail) - var(--hairline));
+    border-inline-start: var(--hairline) solid var(--border);
 
     @media (width < 64rem) {
       margin-inline-start: 0;
@@ -153,7 +153,6 @@ const section = NAVIGATION.find(
       margin-inline-start: var(--indent, 0px);
       color: var(--muted-foreground);
       text-decoration: none;
-      transition: color 0.15s ease;
 
       &:hover,
       &[aria-current="page"] {
@@ -167,10 +166,8 @@ const section = NAVIGATION.find(
       position: absolute;
       inset-block: 0.15em;
       inset-inline-start: calc(-1 * var(--rail) - var(--indent, 0px));
-      inline-size: 2px;
-      border-radius: 1px;
+      inline-size: var(--hairline);
       background-color: transparent;
-      transition: background-color 0.15s ease;
     }
 
     a:hover::before {
@@ -227,7 +224,7 @@ const section = NAVIGATION.find(
       a::before {
         inset: auto 0 -0.3rem;
         inline-size: auto;
-        block-size: 2px;
+        block-size: var(--hairline);
       }
     }
   }

@@ -57,7 +57,7 @@ const authors = await getEntries(post.data.authors)
       flex-direction: column;
 
       > a {
-        font-size: var(--step-1);
+        font-size: var(--step-0);
         line-height: calc(var(--leading-offset) + 1em);
         font-weight: var(--font-weight-medium);
       }
@@ -66,28 +66,15 @@ const authors = await getEntries(post.data.authors)
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: var(--space-3xs);
+        gap: var(--space-3xs) var(--space-xs);
         margin-block-end: var(--space-3xs);
         font-size: var(--step--1);
         color: var(--muted-foreground);
 
-        time:not(:first-child)::before {
-          content: "·";
-          margin-inline-end: var(--space-3xs);
-        }
-
         entry-tags {
           display: flex;
           flex-wrap: wrap;
-          gap: var(--space-3xs);
-
-          span {
-            color: var(--faint-foreground);
-          }
-        }
-
-        time ~ entry-tags::before {
-          content: "·";
+          gap: var(--space-2xs);
         }
       }
 

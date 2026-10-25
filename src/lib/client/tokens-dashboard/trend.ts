@@ -210,8 +210,8 @@ export function createTrendChart(q: Query) {
     const noun = metric === "cost" ? "cost" : "tokens"
     const scopeText =
       range === "all"
-        ? `Monthly ${noun} · all time`
-        : `Daily ${noun} · last ${meta.days} days`
+        ? `Monthly ${noun}, all time`
+        : `Daily ${noun}, last ${meta.days} days`
 
     const scope = q(".tk-chart-scope")
     if (scope) scope.textContent = scopeText
@@ -405,7 +405,7 @@ export function createRhythmChart(q: Query) {
       lines.push(stat.total > 0 ? formatMetric(stat.total, metric) : "No usage")
     } else {
       lines.push(
-        `≈ ${formatMetric(stat.average, metric)} on average · ${formatMetric(stat.total, metric)} total`,
+        `≈ ${formatMetric(stat.average, metric)} on average, ${formatMetric(stat.total, metric)} total`,
         `active on ${stat.activeDays} of ${stat.occurrences} ${name}s`,
       )
     }
@@ -437,7 +437,7 @@ export function createRhythmChart(q: Query) {
     const noun = nextMetric === "cost" ? "cost" : "tokens"
     const scope = q(".tk-rhythm-scope")
     if (scope) {
-      scope.textContent = `Weekday ${noun} · ${meta.days ? `last ${meta.days} days` : "all time"}`
+      scope.textContent = `Weekday ${noun}, ${meta.days ? `last ${meta.days} days` : "all time"}`
     }
 
     const max = Math.max(...stats.map((stat) => stat.average))

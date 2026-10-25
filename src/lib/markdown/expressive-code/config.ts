@@ -24,8 +24,9 @@ const ecOptions: SatteriExpressiveCodeOptions = {
   styleOverrides: {
     codeFontSize: "var(--step--1)",
     codeFontFamily: "var(--font-mono)",
-    codeBackground: "color-mix(in oklab, var(--muted) 25%, transparent)",
+    codeBackground: "var(--surface)",
     borderColor: "var(--border)",
+    borderWidth: "var(--hairline)",
     borderRadius: "0",
     uiFontFamily: "var(--font-sans)",
     lineNumbers: {
@@ -40,7 +41,7 @@ const ecOptions: SatteriExpressiveCodeOptions = {
       editorTabBarBackground: "transparent",
       editorTabBarBorderBottomColor: "transparent",
       frameBoxShadowCssValue: "none",
-      terminalBackground: "color-mix(in oklab, var(--muted) 25%, transparent)",
+      terminalBackground: "var(--surface)",
       terminalTitlebarBackground: "transparent",
       terminalTitlebarBorderBottomColor: "transparent",
       terminalTitlebarForeground: "var(--muted-foreground)",

@@ -20,7 +20,6 @@ import { markRoute, renderComposition, renderRoutes } from "./lists"
 import { createRouteMap } from "./map"
 
 const numberFormatter = new Intl.NumberFormat("en-US")
-const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)")
 
 function mount(feed: HTMLElement) {
   const endpoint = feed.dataset.endpoint
@@ -62,7 +61,7 @@ function mount(feed: HTMLElement) {
     const route = site.routes[index]
     const airport = (code: string) =>
       site?.airports.find((a) => a.code === code)
-    map.select(index, !reducedMotion.matches)
+    map.select(index)
     markRoute(routeList, index)
     part("from").textContent = route.from
     part("to").textContent = route.to
@@ -76,12 +75,7 @@ function mount(feed: HTMLElement) {
         : `${route.upcoming} upcoming`,
     ]
       .filter(Boolean)
-      .join(" · ")
-    // Replay the line's fill toward the arrival end.
-    const line = part("line")
-    line.removeAttribute("data-drawn")
-    void line.offsetWidth
-    line.setAttribute("data-drawn", "")
+      .join(", ")
   }
 
   /** Flips a list's fold, renders it again, and keeps focus on its toggle. */

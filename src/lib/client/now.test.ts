@@ -67,7 +67,7 @@ describe("tokensLabel", () => {
   it("claims today only for today's payload", () => {
     expect(tokensLabel("2026-09-27", "2026-09-27")).toBe("Tokens today")
     expect(tokensLabel("2026-09-26", "2026-09-27")).toBe("Tokens yesterday")
-    expect(tokensLabel("2026-09-20", "2026-09-27")).toBe("Tokens · Sep 20")
+    expect(tokensLabel("2026-09-20", "2026-09-27")).toBe("Tokens on Sep 20")
   })
 })
 
@@ -96,9 +96,9 @@ describe("tile text", () => {
     const bars = tokenBars([0, 25, 100], "2026-09-27")
     expect(bars.map(({ height }) => height)).toEqual([0, 0.5, 1])
     expect(bars.map(({ title }) => title)).toEqual([
-      "Sep 25 · 0",
-      "Sep 26 · 25",
-      "Sep 27 · 100",
+      "Sep 25: 0",
+      "Sep 26: 25",
+      "Sep 27: 100",
     ])
     expect(tokenBars([0, 0], "2026-09-27").map(({ height }) => height)).toEqual(
       [0, 0],

@@ -82,7 +82,7 @@ export function mountPortfolio(feed: HTMLElement) {
   let pinSegment: (symbol: string | null) => void = () => {}
 
   /** The open row's panel, filled for the state's range. */
-  const openPanel = (animate: boolean) => {
+  const openPanel = () => {
     if (!site || !state.open) return
     const item = list.querySelector<HTMLElement>(
       `.holding[data-symbol="${CSS.escape(state.open)}"]`,
@@ -98,9 +98,9 @@ export function mountPortfolio(feed: HTMLElement) {
     button.setAttribute("aria-expanded", "true")
     item.dataset.open = ""
     panel.hidden = false
-    fillPanel(panel, site, row, state.openRange, animate, (range) => {
+    fillPanel(panel, site, row, state.openRange, (range) => {
       state.openRange = range
-      openPanel(true)
+      openPanel()
     })
     pinSegment(state.open)
   }
@@ -120,7 +120,7 @@ export function mountPortfolio(feed: HTMLElement) {
   }
 
   /** Everything that depends on the account and range. */
-  const draw = (animate: boolean) => {
+  const draw = () => {
     if (!site) return
     const current = site
     const resolved = view(current, state.account, state.range)
@@ -137,7 +137,7 @@ export function mountPortfolio(feed: HTMLElement) {
       state.account,
       (key) => {
         state.account = key
-        draw(true)
+        draw()
       },
     )
     syncButtons(
@@ -148,7 +148,7 @@ export function mountPortfolio(feed: HTMLElement) {
         // An open row follows the section's range when it changes.
         state.range = key as Range
         state.openRange = key as Range
-        draw(true)
+        draw()
       },
     )
 
@@ -202,7 +202,6 @@ export function mountPortfolio(feed: HTMLElement) {
         hero(at)
         light(at === null ? null : start + at)
       },
-      animate,
     })
 
     fillReadout(feed, resolved.cards)
@@ -215,7 +214,7 @@ export function mountPortfolio(feed: HTMLElement) {
       ...resolved.rows.map((row) => buildRow(current, row, start)),
       ...resolved.cash.map(buildCashRow),
     )
-    if (state.open) openPanel(animate)
+    if (state.open) openPanel()
   }
 
   list.onclick = (event) => {
@@ -229,7 +228,7 @@ export function mountPortfolio(feed: HTMLElement) {
     if (wasOpen) return
     state.open = symbol
     state.openRange = state.range
-    openPanel(true)
+    openPanel()
   }
   list.onpointerover = (event) => {
     const symbol = (event.target as HTMLElement).closest<HTMLElement>(
@@ -248,24 +247,19 @@ export function mountPortfolio(feed: HTMLElement) {
     })
   }
 
-  // The line draws itself in once, on the first payload; a refreshed one
-  // replaces it in place.
-  let drawn = false
   const render = whenChanged<Site>((next) => {
     site = next
-    draw(!drawn)
-    drawn = true
+    draw()
     settle(feed, body, fallback, true)
   })
 
-  // Charts are drawn in pixels: a new width is a redraw, without the
-  // draw-in.
+  // Charts are drawn in pixels: a new width is a redraw.
   let width = 0
   new ResizeObserver(() => {
     const now = svg.clientWidth
     if (now === width) return
     width = now
-    if (site) draw(false)
+    if (site) draw()
   }).observe(svg)
 
   loadSite(endpoint, render).catch(() => settle(feed, body, fallback, false))

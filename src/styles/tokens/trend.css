@@ -23,11 +23,11 @@ tokens-dashboard {
     align-items: flex-end;
     gap: 2px;
     block-size: clamp(8rem, 24vw, 11rem);
-    border-block-end: 1px solid var(--border);
+    border-block-end: var(--hairline) solid var(--border-strong);
     background-image: repeating-linear-gradient(
       to top,
-      color-mix(in oklab, var(--border) 55%, transparent) 0 1px,
-      transparent 1px 25%
+      var(--gray-a4) 0 var(--hairline),
+      transparent var(--hairline) 25%
     );
   }
 
@@ -44,7 +44,6 @@ tokens-dashboard {
 
   .tk-chart-bars span {
     cursor: pointer;
-    transition: opacity 0.15s ease;
   }
 
   /* The bar under the pointer, or the one pinned by a tap or the arrow
@@ -80,10 +79,9 @@ tokens-dashboard {
     gap: var(--space-3xs);
     max-inline-size: min(18rem, 100%);
     padding: var(--space-2xs) var(--space-xs);
-    border: 1px solid var(--border);
+    border: var(--hairline) solid var(--border-strong);
     border-radius: var(--radius-md);
-    background-color: color-mix(in oklab, var(--background) 92%, transparent);
-    backdrop-filter: blur(var(--blur-sm));
+    background-color: var(--background);
     font-size: var(--step--1);
     pointer-events: none;
   }
@@ -127,7 +125,7 @@ tokens-dashboard {
     gap: 0.375rem 0.5rem;
     margin-block-start: var(--space-3xs);
     padding-block-start: var(--space-2xs);
-    border-block-start: 1px solid var(--border);
+    border-block-start: var(--hairline) solid var(--border);
   }
 
   .tk-tip li {
@@ -164,7 +162,7 @@ tokens-dashboard {
     display: flex;
     justify-content: space-between;
     margin-block-start: var(--space-3xs);
-    font-size: 0.6875rem;
+    font-size: var(--step--2);
     color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
   }
@@ -206,7 +204,7 @@ tokens-dashboard {
 
   .tk-rhythm-plot {
     block-size: clamp(6.5rem, 18vw, 8.5rem);
-    border-block-end: 1px solid var(--border);
+    border-block-end: var(--hairline) solid var(--border-strong);
   }
 
   .tk-rhythm-plot svg {
@@ -217,13 +215,12 @@ tokens-dashboard {
   }
 
   .tk-rhythm-plot .grid {
-    stroke: color-mix(in oklab, var(--border) 55%, transparent);
-    stroke-width: 1;
-    shape-rendering: crispedges;
+    stroke: var(--gray-a4);
+    stroke-width: var(--hairline);
   }
 
   .tk-rhythm-plot .area {
-    fill: color-mix(in oklab, var(--accent-fill) 12%, transparent);
+    fill: var(--grass-a3);
   }
 
   .tk-rhythm-plot .line {
@@ -241,7 +238,7 @@ tokens-dashboard {
   }
 
   .tk-rhythm-plot .dot[data-peak] {
-    stroke: color-mix(in oklab, var(--accent-fill) 35%, var(--background));
+    stroke: var(--grass-6);
     stroke-width: 2.5;
   }
 
@@ -253,14 +250,13 @@ tokens-dashboard {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     margin-block-start: var(--space-3xs);
-    font-size: 0.6875rem;
+    font-size: var(--step--2);
     color: var(--muted-foreground);
     text-align: center;
   }
 
   .tk-rhythm-plot[data-skeleton] {
     border-radius: var(--radius-sm);
-    background-color: var(--gray-5);
-    animation: var(--sk-pulse);
+    background-color: var(--gray-4);
   }
 }

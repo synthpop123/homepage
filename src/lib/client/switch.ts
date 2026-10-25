@@ -224,7 +224,7 @@ export function rowFoot(
   const parts = [lastPlayedLabel(game.lastPlayedDate, today)]
   if (game.recentMinutes > 0 && game.recentMinutes < game.totalMinutes)
     parts.push(`${formatPlaytime(game.recentMinutes)} in ${recentDays}d`)
-  return parts.filter(Boolean).join(" · ")
+  return parts.filter(Boolean).join(", ")
 }
 
 export const loadSite = (

@@ -1,6 +1,6 @@
 /* The mark after an external link in a post (src/lib/site-icons.ts): the
-   site's logo, or an arrow, drawn as a mask so it takes the link's colour,
-   dimmed, and outside the underline. Its last word is glued to it so it
+   site's logo, or an arrow, drawn as a mask in Gray 9 (11 on hover),
+   outside the underline. Its last word is glued to it so it
    never starts a line alone. */
 prose-content {
   [data-glue] {
@@ -13,14 +13,12 @@ prose-content {
     block-size: 0.75em;
     margin-inline-start: 0.2em;
     vertical-align: -0.04em;
-    background-color: currentColor;
-    opacity: 0.45;
+    background-color: var(--gray-9);
     mask: var(--site-icon) center / contain no-repeat;
-    transition: opacity 150ms;
   }
 
   a:hover [data-site-icon] {
-    opacity: 0.8;
+    background-color: var(--muted-foreground);
   }
 }
 

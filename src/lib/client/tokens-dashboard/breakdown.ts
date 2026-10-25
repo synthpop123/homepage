@@ -130,7 +130,7 @@ export function createBreakdown(q: Query, icons: Icons) {
           name: row.name,
           value: formatMetric(row.usage[metric], metric),
           share: total > 0 ? row.usage[metric] / total : NaN,
-          title: `${row.name} — ${parts.join(" · ")}`,
+          title: `${row.name} — ${parts.join(", ")}`,
         }
         // One model still earns a disclosure: the row names the client or
         // the vendor, never the model behind it. Only an empty list —

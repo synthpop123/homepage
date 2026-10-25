@@ -35,15 +35,15 @@ const { href } = Astro.props
 </copy-markdown>
 
 <style>
-  /* One soft chip split in two — no border, so it sits in the meta row as
-     an object rather than a form control; the hairline between the halves
-     is the only line it draws. */
+  /* One chip split in two: a Gray 3 fill, no border, and a hairline
+     between the halves. Each half is a 6px corner's worth of padding in,
+     so the hover fill keeps the chip's corners. */
   copy-markdown {
     display: inline-flex;
     align-items: stretch;
     margin-inline-start: auto;
     border-radius: var(--radius-md);
-    background-color: color-mix(in oklab, var(--muted) 70%, transparent);
+    background-color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
   }
@@ -56,13 +56,14 @@ const { href } = Astro.props
     padding-block: 0.25rem;
     color: var(--muted-foreground);
     cursor: pointer;
-    transition:
-      color 0.15s ease,
-      background-color 0.15s ease;
 
     &:hover {
       color: var(--foreground);
-      background-color: var(--muted);
+      background-color: var(--muted-hover);
+    }
+
+    &:active {
+      background-color: var(--muted-active);
     }
 
     &:focus-visible {
@@ -84,8 +85,7 @@ const { href } = Astro.props
   a {
     padding-inline: 0.4rem;
     text-decoration-line: none;
-    border-inline-start: 1px solid
-      color-mix(in oklab, var(--border) 70%, transparent);
+    border-inline-start: var(--hairline) solid var(--border);
   }
 
   /* The mark turns into a check in place, so the chip never
@@ -101,15 +101,12 @@ const { href } = Astro.props
 
     > * {
       grid-area: 1 / 1;
-      transition:
-        opacity 0.2s ease,
-        scale 0.2s ease;
+      transition: opacity var(--duration) var(--ease);
     }
   }
 
   [data-done] {
     opacity: 0;
-    scale: 0.5;
   }
 
   /* Only the glyph answers: brightening the text as well reads as a hover
@@ -117,12 +114,10 @@ const { href } = Astro.props
   button[data-state="copied"] {
     [data-idle] {
       opacity: 0;
-      scale: 0.5;
     }
 
     [data-done] {
       opacity: 1;
-      scale: 1;
     }
   }
 

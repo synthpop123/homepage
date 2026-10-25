@@ -37,7 +37,7 @@ tokens-dashboard {
     z-index: -1;
     inline-size: calc(var(--w, 0) * 100%);
     border-radius: var(--radius-xs);
-    background-color: color-mix(in oklab, var(--gray-5) 55%, transparent);
+    background-color: var(--gray-a3);
   }
 
   .tk-rows .ico {
@@ -106,7 +106,6 @@ tokens-dashboard {
     inline-size: 0.85em;
     block-size: 0.85em;
     color: var(--muted-foreground);
-    transition: rotate 0.15s;
   }
 
   .tk-rows .tk-row-toggle[aria-expanded="true"] .name svg {
@@ -153,7 +152,6 @@ tokens-dashboard {
   .tk-rows .tk-more-btn svg {
     inline-size: 1em;
     block-size: 1em;
-    transition: rotate 0.15s;
   }
 
   .tk-rows .tk-more-btn[aria-expanded="true"] svg {

@@ -53,8 +53,6 @@ function renderImage(item: MemoMedia, sizes: string) {
     img.height = item.height
   }
 
-  const reveal = () => img.classList.add("is-loaded")
-  img.addEventListener("load", reveal)
   img.addEventListener("error", () => {
     // One retry, straight at the original: dropping the srcset alone
     // would re-request the preview that just failed.
@@ -62,11 +60,8 @@ function renderImage(item: MemoMedia, sizes: string) {
       img.removeAttribute("srcset")
       img.removeAttribute("sizes")
       img.src = item.href
-    } else {
-      reveal()
     }
   })
-  if (img.complete && img.naturalWidth > 0) reveal()
 
   link.append(img)
   return link

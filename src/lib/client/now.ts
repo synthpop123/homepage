@@ -146,7 +146,7 @@ export function tokensLabel(day: string, today: string): string {
   if (day >= today) return "Tokens today"
   return daysBetween(day, today) === 1
     ? "Tokens yesterday"
-    : `Tokens · ${monthDay.format(dayInstant(day))}`
+    : `Tokens on ${monthDay.format(dayInstant(day))}`
 }
 
 /** ["$14.48", "155 messages"]: two runs, so a narrow tile can put the
@@ -182,12 +182,9 @@ export function tokenBars(recent: number[], day: string): TokenBar[] {
     height: most > 0 ? Math.sqrt(tokens / most) : 0,
     title: `${monthDay.format(
       dayInstant(shiftDays(day, i + 1 - recent.length)),
-    )} · ${formatTokens(tokens)}`,
+    )}: ${formatTokens(tokens)}`,
   }))
 }
-
-/** The range the portfolio tile covers, as /misc names it. */
-export const PORTFOLIO_RANGE = "3M"
 
 export type PortfolioView = {
   change: number

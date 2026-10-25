@@ -28,9 +28,10 @@ const previews = Object.fromEntries(
           title: entry.data.title,
           lang: titleLang(entry),
           description: entry.data.description,
-          meta: `${formatDate(entry.data.date)} · ${formatCompact(
-            postWords(chain, entry),
-          )} words`,
+          meta: [
+            formatDate(entry.data.date),
+            `${formatCompact(postWords(chain, entry))} words`,
+          ],
         },
       ]),
   ),
@@ -64,10 +65,9 @@ const previews = Object.fromEntries(
     inline-size: min(20rem, calc(100vw - 2 * var(--space-s)));
     margin: var(--space-2xs) 0;
     padding: var(--space-xs) var(--space-s);
-    border: 1px solid var(--border);
+    border: var(--hairline) solid var(--border-strong);
     border-radius: var(--radius-lg);
     background-color: var(--background);
-    box-shadow: 0 12px 32px -16px rgb(0 0 0 / 0.3);
     color: var(--foreground);
     font-size: var(--step--1);
     line-height: 1.5;
@@ -77,34 +77,18 @@ const previews = Object.fromEntries(
       display: grid;
       gap: var(--space-3xs);
     }
-
-    @media (prefers-reduced-motion: no-preference) {
-      transition: opacity 0.15s ease;
-
-      @starting-style {
-        opacity: 0;
-      }
-    }
   }
 
-  /* The date and length, after a lit cell of the logo. */
+  /* The date and length, set apart by space alone. */
   .meta {
     display: flex;
     align-items: center;
-    gap: 0.5em;
+    gap: 1em;
     font-family: var(--font-mono);
     font-feature-settings: normal;
-    font-size: 0.6875rem;
+    font-size: var(--step--2);
     letter-spacing: 0;
-    color: var(--faint-foreground);
-
-    &::before {
-      content: "";
-      inline-size: 0.375rem;
-      block-size: 0.375rem;
-      border-radius: 1.5px;
-      background-color: var(--accent-fill);
-    }
+    color: var(--muted-foreground);
   }
 
   strong {
@@ -127,7 +111,7 @@ const previews = Object.fromEntries(
     title: string
     lang?: string
     description: string
-    meta: string
+    meta: string[]
   }
 
   const card = document.querySelector<HTMLElement>("link-preview")
@@ -151,7 +135,13 @@ const previews = Object.fromEntries(
         title.textContent = preview.title
         if (preview.lang) title.lang = preview.lang
         else title.removeAttribute("lang")
-        meta.textContent = preview.meta
+        meta.replaceChildren(
+          ...preview.meta.map((part) => {
+            const span = document.createElement("span")
+            span.textContent = part
+            return span
+          }),
+        )
         summary.textContent = preview.description
       }
       if (!card.matches(":popover-open")) card.showPopover()

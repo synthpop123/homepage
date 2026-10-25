@@ -12,9 +12,8 @@ const posts = (await getPosts()).slice(0, 5)
   <MetaPage slot="head" title="404" noindex />
   <PageTitle>Page not found</PageTitle>
   <p>
-    Nothing lives at this address: it may have moved, or never existed. Try
-    <a href="/blog">the blog</a>
-    or <a href="/">the home page</a>, or one of the latest posts.
+    This page has moved or never existed. Try one of the latest posts, or browse
+    <a href="/blog">the blog</a>.
   </p>
   <PostList posts={posts} />
 </Layout>

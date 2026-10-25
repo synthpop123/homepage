@@ -2,7 +2,7 @@
 /**
  * When a post was written, and when it last changed. A revised post
  * leads with the newer date, the one that says how current it is, and
- * keeps the first as an aside — `Updated Oct 10, 2026 · first Jul 4`.
+ * keeps the first as an aside — `Updated Oct 10, 2026   Published Jul 4`.
  * The first date drops a year the newer one already states.
  */
 
@@ -22,12 +22,13 @@ const first =
 <post-dates>
   {revised ? (
       <>
-        <span>Updated</span>
-        <time datetime={revised.toISOString()} data-revised>
-          {formatDate(revised)}
-        </time>
+        <span>
+          Updated <time datetime={revised.toISOString()} data-revised>
+            {formatDate(revised)}
+          </time>
+        </span>
         <span data-first>
-          <span>first<span class="sr"> published</span></span>
+          <span>Published</span>
           <time datetime={date.toISOString()}>{first}</time>
         </span>
       </>
@@ -41,21 +42,13 @@ const first =
     display: inline-flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-3xs);
-
-    &:not(:first-child)::before {
-      content: "·";
-    }
+    column-gap: var(--space-xs);
 
     /* On a phone the two dates outgrow the byline's row: they take a
-       line of their own rather than open one with a stray separator. */
+       line of their own. */
     @media (width < 40rem) {
       &:has([data-revised]) {
         flex-basis: 100%;
-
-        &::before {
-          display: none;
-        }
       }
     }
   }
@@ -68,12 +61,8 @@ const first =
      from its label when the row wraps. */
   [data-first] {
     display: inline-flex;
-    gap: var(--space-3xs);
-    color: var(--faint-foreground);
+    gap: 0.25em;
+    color: var(--muted-foreground);
     white-space: nowrap;
-
-    &::before {
-      content: "·";
-    }
   }
 </style>

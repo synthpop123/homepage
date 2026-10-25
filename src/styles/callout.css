@@ -1,16 +1,15 @@
 prose-content {
+  /* A callout is a tinted block (its hue's alpha step 3) with the title
+     in the hue's text step: no edge line, the fill alone sets it apart.
+     Hues are Radix Blue, Grass, Amber, Red and Purple. */
   [data-callout] {
-    --accent:         var(--muted-foreground);
-    --callout-border: var(--accent);
-    --callout-text:   light-dark(
-      oklch(from var(--accent) 0.48 calc(c * 1.05) h),
-      oklch(from var(--accent) 0.83 calc(c * 0.5) h)
-    );
+    --callout-fill: var(--muted);
+    --callout-text: var(--muted-foreground);
 
     position: relative;
-    padding-block: 0.75rem;
-    padding-inline: 1rem 0;
-    border-inline-start: 4px solid var(--callout-border);
+    padding: var(--space-xs) var(--space-s);
+    border-radius: var(--radius-lg);
+    background-color: var(--callout-fill);
 
     > summary {
       display: flex;
@@ -47,13 +46,12 @@ prose-content {
 
         > span {
           font-weight: var(--font-weight-normal);
-          opacity: 0.7;
         }
       }
     }
 
     &[open] > summary {
-      margin-block-end: 0.75rem;
+      margin-block-end: var(--space-2xs);
 
       svg:last-child {
         rotate: 180deg;
@@ -65,9 +63,24 @@ prose-content {
     }
   }
 
-  [data-callout="note"]      { --accent: #0090ff; }
-  [data-callout="tip"]       { --accent: #30a46c; }
-  [data-callout="warning"]   { --accent: #ffc53d; }
-  [data-callout="caution"]   { --accent: #e5484d; }
-  [data-callout="important"] { --accent: #8e4ec6; }
+  [data-callout="note"] {
+    --callout-fill: light-dark(#008ff519, #0077ff3a);
+    --callout-text: light-dark(#0d74ce, #70b8ff);
+  }
+  [data-callout="tip"] {
+    --callout-fill: var(--grass-a3);
+    --callout-text: var(--grass-11);
+  }
+  [data-callout="warning"] {
+    --callout-fill: light-dark(#ffde003d, #fa820022);
+    --callout-text: light-dark(#ab6400, #ffca16);
+  }
+  [data-callout="caution"] {
+    --callout-fill: light-dark(#f3000d14, #ff173f2d);
+    --callout-text: light-dark(#ce2c31, #ff9592);
+  }
+  [data-callout="important"] {
+    --callout-fill: light-dark(#8e00f112, #c150ff2d);
+    --callout-text: light-dark(#8145b5, #d19dff);
+  }
 }

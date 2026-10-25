@@ -48,25 +48,12 @@ tokens-dashboard {
     align-content: start;
     padding: var(--space-s);
     overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    background-color: color-mix(in oklab, var(--muted) 45%, transparent);
+    border-radius: var(--radius-lg);
     isolation: isolate;
   }
 
-  /* The subscription's card is washed in its vendor's hue — faint
-     enough that the meters, in the full hue, still carry the colour. */
-  .tk-plans .tk-plan[data-p] {
-    border-color: color-mix(in oklab, var(--p) 22%, var(--border));
-    background-color: color-mix(
-      in oklab,
-      var(--p) 5%,
-      color-mix(in oklab, var(--muted) 45%, var(--background))
-    );
-  }
-
   /* The vendor mark as the card's backdrop, cropped by its corner (the
-     Uses cards do the same with theirs). */
+     Uses cards do the same with theirs): the vendor's hue at 12%. */
   .tk-plans .plan-mark {
     position: absolute;
     z-index: -1;
@@ -74,9 +61,9 @@ tokens-dashboard {
     inset-inline-end: -1.25rem;
     inline-size: 8rem;
     block-size: 8rem;
-    color: color-mix(in oklab, var(--p) 12%, transparent);
+    color: var(--p);
+    opacity: 0.12;
     pointer-events: none;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .tk-plans .plan-mark svg {
@@ -84,13 +71,14 @@ tokens-dashboard {
     block-size: 100%;
   }
 
-  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    .tk-plans .tk-plan:hover .plan-mark {
-      transform: rotate(-8deg) scale(1.04);
-    }
+  /* A tile like the home page's: Gray 3, no border. [data-p] carries
+     the vendor's hue for the meters and the mark, not for the card. */
+  .tk-plans .tk-plan,
+  .tk-plans .tk-plan[data-p] {
+    background-color: var(--muted);
   }
 
-  /* Mark, name and tier read as one phrase on one line — "Codex · Team"
+  /* Mark, name and tier read as one phrase on one line — "Codex Team"
      — so the row never wraps and the mark sits on the text's centre
      rather than its baseline. The age is pushed to the far end. */
   .tk-plans .plan-head {
@@ -191,21 +179,15 @@ tokens-dashboard {
   }
 
   /* A quota window is a gauge against a ceiling, not a share of a whole,
-     so it gets a gauge: a thin track carrying one rounded head, with a
-     floor under the head's width so a barely-touched week still shows
-     that it was touched. The track is a wash of the same hue as the
-     head — the vendor's own — so an empty window still says whose
-     ceiling it measures, and the ceiling itself stays visible at a
-     glance instead of being implied by an unfilled remainder. */
-  .tk-plans .tk-meter {
+     so it gets a gauge: a Gray 5 track carrying one rounded head, with
+     a floor under the head's width so a barely-touched week still shows
+     that it was touched. */
+  .tk-plans .tk-meter,
+  .tk-plans .tk-meter[data-p] {
     position: relative;
     block-size: var(--tk-meter);
     border-radius: var(--radius-full);
-    background-color: var(--gray-4);
-  }
-
-  .tk-plans .tk-meter[data-p] {
-    background-color: color-mix(in oklab, var(--p) 22%, var(--gray-3));
+    background-color: var(--gray-a5);
   }
 
   .tk-plans .tk-fill {
@@ -218,8 +200,8 @@ tokens-dashboard {
   }
 
   /* The head cut by where the spend went: the largest share in the
-     full hue, each after it a step lighter, hairline gaps between. The
-     split legend under the foot (.win-split) keys its dots the same. */
+     full hue, each after it lighter, 1px cuts between. The split legend
+     under the foot (.win-split) keys its dots the same. */
   .tk-plans .tk-fill i {
     flex-basis: 0;
     min-inline-size: 2px;
@@ -235,20 +217,27 @@ tokens-dashboard {
     --shade: var(--gray-8);
   }
 
-  .tk-plans [data-shade="0"] {
+  .tk-plans :is([data-shade="0"], [data-shade="1"], [data-shade="2"]) {
     --shade: var(--p);
-  }
-
-  .tk-plans [data-shade="1"] {
-    --shade: color-mix(in oklab, var(--p) 60%, var(--background));
-  }
-
-  .tk-plans [data-shade="2"] {
-    --shade: color-mix(in oklab, var(--p) 36%, var(--background));
   }
 
   .tk-plans .tk-fill i {
     background-color: var(--shade);
+  }
+
+  .tk-plans .tk-fill i,
+  .tk-plans .win-split li {
+    opacity: 1;
+  }
+
+  .tk-plans .tk-fill i[data-shade="1"],
+  .tk-plans .win-split li[data-shade="1"]::before {
+    opacity: 0.6;
+  }
+
+  .tk-plans .tk-fill i[data-shade="2"],
+  .tk-plans .win-split li[data-shade="2"]::before {
+    opacity: 0.36;
   }
 
   /* Where the clock stands in the window. It stands proud of the track
@@ -260,7 +249,7 @@ tokens-dashboard {
     inline-size: 2px;
     margin-inline-start: -1px;
     border-radius: 1px;
-    background-color: color-mix(in oklab, var(--foreground) 55%, transparent);
+    background-color: var(--gray-9);
     pointer-events: none;
   }
 
@@ -275,13 +264,8 @@ tokens-dashboard {
     font-variant-numeric: tabular-nums;
   }
 
-  .tk-plans .win-pace,
   .tk-plans .win-left {
     white-space: nowrap;
-  }
-
-  .tk-plans .win-pace[data-pace="over"] {
-    color: var(--foreground);
   }
 
   /* The split's key: a dot in the share's shade, the surface, its
@@ -297,8 +281,9 @@ tokens-dashboard {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Transparent over the page-wide [data-shade] band fills: here the
-     shade only colours the dot. */
+  /* Transparent, and at full opacity, over the page-wide [data-p] and
+     [data-shade] rules (shared.css): here the shade only colours the
+     dot. */
   .tk-plans .win-split li {
     background-color: transparent;
     display: inline-flex;
@@ -347,7 +332,7 @@ tokens-dashboard {
     gap: 0.4em;
     min-inline-size: 0;
     padding: var(--space-3xs) var(--space-2xs);
-    border: 1px solid var(--border);
+    border: var(--hairline) solid var(--border-strong);
     border-radius: var(--radius-md);
     font-size: var(--step--1);
     font-variant-numeric: tabular-nums;
@@ -360,11 +345,9 @@ tokens-dashboard {
     flex-shrink: 0;
   }
 
-  /* The one to spend next wears the plan's hue — the same wash the
-     meters' tracks use, so it reads as this subscription's. */
+  /* The one to spend next: ink, and its mark in the plan's hue. */
   .tk-plans .credit[data-next] {
-    border-color: color-mix(in oklab, var(--p) 45%, var(--border));
-    background-color: color-mix(in oklab, var(--p) 10%, transparent);
+    border-color: var(--gray-8);
     color: var(--foreground);
   }
 
@@ -380,9 +363,7 @@ tokens-dashboard {
 
   /* The brand hue says which subscription is being measured; red is
      reserved for the one case where the reading is a warning rather
-     than a measurement. It is swapped in as --p, so the track's wash
-     turns with the head — a red head on a coral wash would read as two
-     subjects in one gauge. */
+     than a measurement. */
   .tk-plans .tk-meter[data-high] {
     --p: var(--red-9);
   }

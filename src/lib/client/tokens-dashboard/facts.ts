@@ -33,7 +33,7 @@ export function renderFacts(q: Query, site: Site) {
     "biggest",
     facts.biggest ? formatTokens(facts.biggest.tokens) : "—",
     facts.biggest
-      ? `${formatDay(facts.biggest.date)} · ${formatCost(facts.biggest.cost)}`
+      ? `${formatDay(facts.biggest.date)}, ${formatCost(facts.biggest.cost)}`
       : "no usage yet",
     facts.biggest
       ? `${formatExact(facts.biggest.tokens)} tokens on ${formatDate(facts.biggest.date)}`
@@ -109,7 +109,7 @@ export function renderFacts(q: Query, site: Site) {
     tracked.ms > 0
       ? `wall-clock agent time across ${tracked.days} tracked ${
           tracked.days === 1 ? "day" : "days"
-        } · ${formatCost(perHour(tracked.cost, tracked.ms))} per hour`
+        }, ${formatCost(perHour(tracked.cost, tracked.ms))} per hour`
       : undefined,
   )
 }

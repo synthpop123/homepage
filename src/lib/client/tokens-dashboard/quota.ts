@@ -60,20 +60,6 @@ const CREDIT_URGENT_MS = 24 * 60 * 60 * 1000
 
 const MS = { d: 86_400_000, h: 3_600_000, m: 60_000, s: 1_000 } as const
 
-/**
- * How far spend may stray from the clock, in percentage points, before
- * the pace line calls it ahead or behind. A window is never spent
- * evenly, and "ahead of pace" over a two-point gap would be noise.
- */
-const PACE_SLACK = 5
-
-/**
- * Before this much of a window has passed, the pace verdict is withheld:
- * one prompt in the first minutes of a session is "ahead of pace" by any
- * arithmetic and by no useful reading. The tick on the meter still shows.
- */
-const PACE_MIN_ELAPSED = 0.1
-
 /** The fields the window arithmetic reads — the breakdown plays no part
  *  in when a window opens or resets. */
 type WindowTiming = Pick<QuotaWindow, "label" | "usedPercent" | "resetsAt">
@@ -218,26 +204,11 @@ export function windowElapsed(
 }
 
 /**
- * Spend measured against the clock: a week 11% spent with a fifth of it
- * gone is running under the rate that would use it up exactly at the
- * reset. The verdict is words, the numbers ride in the title — and it is
- * withheld early in a window, where any spend at all reads as a sprint.
+ * Spend measured against the clock, for the meter's tooltip: the tick on
+ * the track shows where time stands, and the numbers ride in the title.
  */
-type PaceView = {
-  verdict: "under" | "on" | "over" | null
-  text: string | null
-  title: string
-}
-
-export function paceView(used: number, elapsed: number): PaceView {
-  const gone = Math.round(elapsed * 100)
-  const title = `${Math.round(used)}% used with ${gone}% of the window gone`
-  if (elapsed < PACE_MIN_ELAPSED) return { verdict: null, text: null, title }
-  const gap = used - elapsed * 100
-  if (gap > PACE_SLACK) return { verdict: "over", text: "ahead of pace", title }
-  if (gap < -PACE_SLACK) return { verdict: "under", text: "under pace", title }
-  return { verdict: "on", text: "on pace", title }
-}
+export const paceTitle = (used: number, elapsed: number) =>
+  `${Math.round(used)}% used with ${Math.round(elapsed * 100)}% of the window gone`
 
 export function windowView(
   window: WindowTiming,
@@ -261,7 +232,7 @@ export function windowView(
     return {
       state: "reset",
       used: 0,
-      foot: `reset ${relativeTime(at, now)} · awaiting report`,
+      foot: `reset ${relativeTime(at, now)}`,
       title: `Reset ${instant}`,
     }
   }
@@ -325,7 +296,7 @@ export function allowanceView(
       state: "expired",
       used: (spent / limit) * 100,
       figure: formatMoney(spent),
-      foot: `expired ${relativeTime(at, now)} · awaiting report`,
+      foot: `expired ${relativeTime(at, now)}`,
       title: `Expired ${formatInstant(allowance.expiresAt ?? "")}`,
       left: "none left",
     }
@@ -358,7 +329,7 @@ function figureRow(label: string, value: string, unit: string) {
   const head = el("div", "win-head")
   const figure = el("span", "win-used")
   figure.append(el("b", "", value), ` ${unit}`)
-  head.append(el("span", "win-label", label), figure)
+  head.append(el("span", "win-label", label.replace(" · ", " ")), figure)
   return head
 }
 
@@ -422,21 +393,12 @@ function renderWindow(
   foot.append(when)
 
   // Where the clock stands in the window: a tick on the track, so a
-  // head short of it is spend running slower than time. The verdict
-  // sits at the foot's far end, once enough of the window has passed
-  // for one to mean anything.
+  // head short of it is spend running slower than time.
   if (view.elapsed !== undefined) {
-    const pace = paceView(view.used, view.elapsed)
     const tick = el("b", "tk-pace")
     tick.style.insetInlineStart = `${view.elapsed * 100}%`
     bar.append(tick)
-    bar.title = pace.title
-    if (pace.text && pace.verdict) {
-      const verdict = el("span", "win-pace", pace.text)
-      verdict.dataset.pace = pace.verdict
-      verdict.title = pace.title
-      foot.append(verdict)
-    }
+    bar.title = paceTitle(view.used, view.elapsed)
   }
 
   item.append(
@@ -498,9 +460,8 @@ function creditTitle(credit: QuotaCredit) {
 function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   const item = el("li", "tk-plan")
 
-  // Mark, name and tier are one phrase — "Codex · Team" — not a name
-  // with a badge stuck to it, so the separator is part of the text. The
-  // age trails at the far end: each plan is read by its own collector on
+  // Mark, name and tier are one phrase — "Codex Team", the tier muted —
+  // not a name with a badge stuck to it. The age trails at the far end: each plan is read by its own collector on
   // its own timer, so it is a fact about this card, not about the page.
   // Claude's card wears the model star rather than Anthropic's corporate
   // mark: the subscription is "Claude", and the star is what this page
@@ -520,7 +481,7 @@ function renderPlan(plan: QuotaPlan, icons: Icons, now: number): HTMLElement {
   backdrop.className = "plan-mark"
   item.append(backdrop)
   head.append(el("span", "plan-name", plan.label))
-  if (plan.plan) head.append(el("span", "plan-tier", `· ${plan.plan}`))
+  if (plan.plan) head.append(el("span", "plan-tier", plan.plan))
 
   const capturedAt = Date.parse(plan.capturedAt)
   const age = el("span", "plan-age", relativeTime(capturedAt, now))

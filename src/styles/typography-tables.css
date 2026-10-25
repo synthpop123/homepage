@@ -11,18 +11,14 @@ prose-content {
   }
 
   table {
-    --table-border: color-mix(
-      in oklab,
-      var(--muted-foreground) 30%,
-      transparent
-    );
+    --table-border: var(--border);
 
     thead {
-      border-block-end: 1.5px solid var(--table-border);
+      border-block-end: var(--hairline) solid var(--border-strong);
     }
 
     tr {
-      border-block: 1.5px solid var(--table-border);
+      border-block: var(--hairline) solid var(--table-border);
 
       &:first-child {
         border-block-start: 0;

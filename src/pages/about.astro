@@ -41,7 +41,7 @@ const stats = [
 ]
 
 const sections = [
-  { id: "who-am-i", label: "Who Am I" },
+  { id: "who-am-i", label: "Who am I" },
   { id: "blog", label: "Blog in numbers" },
   { id: "site", label: "About this site" },
 ]
@@ -71,7 +71,7 @@ const toc = [
     </ul>
   </header>
   <section>
-    <h2 id="who-am-i">Who Am I</h2>
+    <h2 id="who-am-i">Who am I</h2>
     <prose-content>
       <ul>
         <li>INTP-T (I Need To sleeP)</li>
@@ -82,7 +82,6 @@ const toc = [
   </section>
   <section>
     <h2 id="blog">Blog in numbers</h2>
-    <p>What the writing here adds up to, counted at build time.</p>
     <dl class="blog-stats">
       {stats.map(({ label, value }) => (
         <div class="stat">
@@ -98,9 +97,10 @@ const toc = [
       <div>
         <dt>Built with</dt>
         <dd>
-          <a href="https://astro.build" {...ext}>Astro</a>. No UI or CSS
-          framework, just hand-written CSS on
-          <a href="https://utopia.fyi" {...ext}>Utopia</a>
+          <a href="https://astro.build" {...ext}>Astro</a>
+          and hand-written CSS, coloured with
+          <a href="https://www.radix-ui.com/colors" {...ext}>Radix Colors</a>
+          and spaced on <a href="https://utopia.fyi" {...ext}>Utopia</a>
           fluid scales.
         </dd>
       </div>
@@ -188,18 +188,13 @@ const toc = [
 
   h2 {
     margin-block-end: var(--space-s);
-    font-size: var(--step-1);
+    font-size: var(--step-0);
     line-height: calc(var(--leading-offset) + 1em);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-strong);
 
     @media (width >= 64rem) {
       scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
     }
-  }
-
-  section > p {
-    margin-block-end: var(--space-s);
-    color: var(--muted-foreground);
   }
 
   .blog-stats {
@@ -213,11 +208,14 @@ const toc = [
     }
   }
 
+  /* The readout's figure on a hairline (feed.css), drawn here without
+     the runtime: dt first for validity, the value on top. */
   .stat {
     display: flex;
-    /* dt comes first in the DOM for validity, value renders on top */
     flex-direction: column-reverse;
     gap: var(--space-3xs);
+    padding-block-start: var(--space-2xs);
+    border-block-start: var(--hairline) solid var(--border);
   }
 
   .stat .value {
@@ -234,7 +232,7 @@ const toc = [
   }
 
   /* About this site as a book's colophon: a small label, then the line
-     it introduces, row under dotted row. The type row sets its own
+     it introduces, row under ruled row. The type row sets its own
      specimens. */
   .colophon {
     --underline: var(--muted-foreground);
@@ -248,10 +246,10 @@ const toc = [
       gap: var(--space-s);
       align-items: baseline;
       padding-block: var(--space-2xs);
-      border-block-start: 1px dotted var(--border);
+      border-block-start: var(--hairline) solid var(--border);
 
       &:last-child {
-        border-block-end: 1px dotted var(--border);
+        border-block-end: var(--hairline) solid var(--border);
       }
 
       @media (width < 40rem) {
@@ -263,10 +261,10 @@ const toc = [
     dt {
       font-family: var(--font-mono);
       font-feature-settings: normal;
-      font-size: 0.6875rem;
-      letter-spacing: 0.08em;
+      font-size: var(--step--2);
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--faint-foreground);
+      color: var(--muted-foreground);
     }
 
     dd {
@@ -288,7 +286,7 @@ const toc = [
   }
 
   /* The two faces as a pair, side by side at one size, split by the
-     colophon's own dotted rule; stacked on a phone. */
+     colophon's own hairline; stacked on a phone. */
   .colophon .specimens {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -305,13 +303,13 @@ const toc = [
 
     & + & {
       padding-inline: var(--space-s) 0;
-      border-inline-start: 1px dotted var(--border);
+      border-inline-start: var(--hairline) solid var(--border);
 
       @media (width < 30rem) {
         margin-block-start: var(--space-2xs);
         padding: var(--space-2xs) 0 0;
         border-inline-start: 0;
-        border-block-start: 1px dotted var(--border);
+        border-block-start: var(--hairline) solid var(--border);
       }
     }
 
@@ -364,13 +362,13 @@ const toc = [
     }
 
     small {
-      font-size: 0.5625rem;
+      font-size: var(--step--2);
       letter-spacing: 0.24em;
     }
 
     time {
-      font-size: 1.05rem;
-      font-weight: 600;
+      font-size: var(--step-0);
+      font-weight: var(--font-weight-strong);
       letter-spacing: 0.06em;
     }
   }

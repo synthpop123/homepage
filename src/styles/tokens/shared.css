@@ -17,31 +17,25 @@ tokens-dashboard {
      day ring (day.ts) keeps the same rule for its arcs. */
   --tk-meter: 0.375rem;
 
-  /* Brand palette for stacked segments and chips. Client ids map onto
-     their vendor's hue (see the [data-p] rules below). */
-  --tk-p-anthropic: light-dark(#d97757, #cc785c);
-  --tk-p-openai: light-dark(#10a37f, #2dc79f);
-  --tk-p-google: light-dark(#4285f4, #7cacf8);
-  --tk-p-alibaba: light-dark(#ff6a00, #ff8a3d);
-  --tk-p-xai: light-dark(#52525b, #a1a1aa);
-  --tk-p-cursor: light-dark(#8b5cf6, #a78bfa);
-  --tk-p-deepseek: light-dark(#4d6bfe, #8ba0ff);
-  --tk-p-meta: light-dark(#0866ff, #4d9fff);
-  --tk-p-openrouter: light-dark(#6366f1, #818cf8);
-  --tk-p-zed: light-dark(#084ccf, #7a9bff);
-  --tk-p-opencode: light-dark(#78716c, #a8a29e);
-  /* Nous ships a cream-on-black brand; a parchment tan keeps it apart
-     from the zinc (xAI) and stone (OpenCode) neutrals. */
-  --tk-p-hermes: light-dark(#8a7248, #cdb37e);
-  /* Craft Agents' brand mauve (#9570be). It lands in the same family
-     as Cursor's violet, but at less than half the saturation, which
-     is what keeps the two apart where they stack together. */
-  --tk-p-craft: light-dark(#8257b3, #b99ada);
-  /* Moonshot's brand near-black (#16191e), lifted for dark mode. */
-  --tk-p-moonshot: light-dark(#16191e, #e4e4e7);
-  /* Z.ai brands near-black like Moonshot; keep its Zhipu-heritage
-     blue (deeper than Zed's azure) so the two stay apart in stacks. */
-  --tk-p-zai: light-dark(#3859ff, #8da2ff);
+  /* Brand palette for stacked segments and chips: each vendor gets the
+     Radix scale nearest its brand hue, at the solid step (9, or 10 / 11
+     where the dark scheme needs the lift). Client ids map onto their
+     vendor's hue (see the [data-p] rules below). */
+  --tk-p-anthropic: light-dark(#d97757, #cc785c); /* Claude's own coral */
+  --tk-p-openai: light-dark(#29a383, #27b08b); /* Jade 9 / 10 */
+  --tk-p-google: light-dark(#0090ff, #3b9eff); /* Blue 9 / 10 */
+  --tk-p-alibaba: light-dark(#f76b15, #ff801f); /* Orange 9 / 10 */
+  --tk-p-xai: light-dark(#646464, #b4b4b4); /* Gray 11 */
+  --tk-p-cursor: light-dark(#6e56cf, #7d66d9); /* Violet 9 / 10 */
+  --tk-p-deepseek: light-dark(#3e63dd, #5472e4); /* Indigo 9 / 10 */
+  --tk-p-meta: light-dark(#0d74ce, #70b8ff); /* Blue 11 */
+  --tk-p-openrouter: light-dark(#5b5bd6, #6e6ade); /* Iris 9 / 10 */
+  --tk-p-zed: light-dark(#0797b9, #23afd0); /* Cyan 10 */
+  --tk-p-opencode: light-dark(#8d8d86, #7c7b74); /* Sand 9 / 10 */
+  --tk-p-hermes: light-dark(#978365, #a39073); /* Gold 9 / 10 */
+  --tk-p-craft: light-dark(#ab4aba, #b658c4); /* Plum 9 / 10 */
+  --tk-p-moonshot: light-dark(#202020, #eeeeee); /* Gray 12 */
+  --tk-p-zai: light-dark(#3a5bc7, #9eb1ff); /* Indigo 11 */
   --tk-p-other: var(--gray-8);
 
   display: block;
@@ -55,9 +49,9 @@ tokens-dashboard {
 
   h2 {
     margin-block-end: var(--space-s);
-    font-size: var(--step-1);
+    font-size: var(--step-0);
     line-height: calc(var(--leading-offset) + 1em);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-strong);
 
     @media (width >= 64rem) {
       scroll-margin-block-start: calc(var(--page-offset-top) - 0.2em);
@@ -154,32 +148,24 @@ tokens-dashboard {
      grey. Must follow the [data-p] rules above: same specificity, and
      these override the flat background-color they set. */
   [data-shade="1"] {
-    background-color: color-mix(in oklab, var(--p) 78%, var(--background));
+    opacity: 0.78;
   }
 
   [data-shade="2"] {
-    background-color: color-mix(in oklab, var(--p) 58%, var(--background));
+    opacity: 0.58;
   }
 
   [data-shade="3"] {
-    background-color: color-mix(in oklab, var(--p) 40%, var(--background));
+    opacity: 0.4;
   }
 
-  /* Failure state — the body's stand-in, so it takes the body's
-     place: one bordered panel in the tooltip's idiom (same border,
-     same radius), a plain statement of what is missing, and the one
-     action that can change it. The button wears the checked-segment
-     look of the controls (overview.css), the page's one solid pill,
-     because it is the only thing on this screen to press. */
+  /* Failure state, in the body's place: what is missing, and the one
+     action that can change it. */
 
   .tk-fallback {
     display: grid;
     gap: var(--space-xs);
     justify-items: start;
-    max-inline-size: 36rem;
-    padding: var(--space-s) var(--space-m);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
   }
 
   .tk-fallback[hidden] {
@@ -190,33 +176,20 @@ tokens-dashboard {
     font-weight: var(--font-weight-medium);
   }
 
-  .tk-fallback .fallback-body {
-    font-size: var(--step--1);
-    color: var(--muted-foreground);
-    text-wrap: pretty;
-  }
-
-  .tk-fallback .fallback-body a {
-    color: var(--foreground);
-    text-decoration: underline;
-  }
-
   .tk-retry {
-    margin-block-start: var(--space-3xs);
-    padding: 0.25rem 0.875rem;
-    border-radius: var(--radius-full);
-    background-color: var(--foreground);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-md);
+    background-color: var(--muted);
     font-size: var(--step--1);
-    color: var(--background);
     cursor: pointer;
   }
 
   .tk-retry:hover {
-    background-color: color-mix(
-      in oklab,
-      var(--foreground) 85%,
-      var(--background)
-    );
+    background-color: var(--muted-hover);
+  }
+
+  .tk-retry:active {
+    background-color: var(--muted-active);
   }
 
   .tk-retry:focus-visible {
@@ -295,8 +268,7 @@ tokens-dashboard {
   .tk-chart-bars[data-skeleton],
   .tk-chart-legend [data-skeleton] .chip,
   .tk-device[data-skeleton] .dot {
-    background-color: var(--gray-5);
-    animation: var(--sk-pulse);
+    background-color: var(--gray-4);
   }
 
   .tk-chart-bars[data-skeleton] {
@@ -305,7 +277,6 @@ tokens-dashboard {
   }
 
   .tk-donut[data-skeleton] circle {
-    stroke: var(--gray-5);
-    animation: var(--sk-pulse);
+    stroke: var(--gray-4);
   }
 }

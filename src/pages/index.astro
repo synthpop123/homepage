@@ -149,40 +149,25 @@ const toc = [
       button.disabled = true
       stack.setAttribute("data-loading", "")
       stack.setAttribute("aria-busy", "true")
-      let out: Animation | undefined
       try {
         const url = `https://cataas.com/cat?width=1280&t=${Date.now()}`
         await fetchCat(url)
-        // The top print is pulled off the stack; the new one settles
-        // where it lay.
-        if (!still.matches) {
-          out = print.animate(
-            [{}, { translate: "45% -6%", rotate: "10deg", opacity: 0 }],
-            {
-              duration: 320,
-              easing: "cubic-bezier(0.4, 0, 1, 1)",
-              fill: "forwards",
-            },
-          )
-          await out.finished
-        }
         // Drop the build-time srcset so the freshly fetched cat wins.
         img.removeAttribute("srcset")
         img.src = url
         await img.decode().catch(() => {})
         serial.textContent = catSerial()
         tilt()
-        if (out) {
-          out.cancel()
-          print.animate(
-            [{ translate: "0 0.5rem", scale: 0.96, opacity: 0 }, {}],
-            { duration: 360, easing: "cubic-bezier(0.2, 0, 0, 1)" },
-          )
+        // The new print fades in where the old one lay.
+        if (!still.matches) {
+          print.animate([{ opacity: 0 }, {}], {
+            duration: 250,
+            easing: "ease-out",
+          })
         }
       } catch {
         // No new cat: the old print stays where it was, ready to retry.
       } finally {
-        out?.cancel()
         button.disabled = false
         stack.removeAttribute("data-loading")
         stack.removeAttribute("aria-busy")
@@ -202,22 +187,23 @@ const toc = [
     }
 
     h1 {
-      font-size: var(--step-2);
+      font-size: var(--step-1);
       line-height: calc(var(--leading-offset) + 1em);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--font-weight-display);
+      letter-spacing: var(--tracking-display);
       color: var(--foreground);
       margin-block-end: var(--space-2xs);
     }
 
     /* The cat as a print on a small stack of them: a photo on paper,
        never quite square to the page, its number written underneath.
-       The photo keeps the 3:2 frame it always had. */
+       The photo keeps the 3:2 frame it always had. No shadows: each
+       sheet is held by a hairline edge. */
     cat-figure {
-      /* White paper on a light page; on a dark one a grey print, so it
-         sits in the dark instead of glowing. */
-      --paper: light-dark(#ffffff, var(--gray-4));
-      /* Shadows vanish on a dark page; a hairline keeps each edge. */
-      --paper-edge: light-dark(transparent, var(--gray-6));
+      /* Paper a step off the page: Gray 1 on light, Gray 3 on dark, so
+         it sits in the dark instead of glowing. */
+      --paper: light-dark(var(--gray-1), var(--gray-3));
+      --paper-edge: var(--gray-6);
 
       position: relative;
       isolation: isolate;
@@ -232,11 +218,9 @@ const toc = [
         content: "";
         position: absolute;
         inset: 0;
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         background-color: var(--paper);
-        box-shadow:
-          0 0 0 1px var(--paper-edge),
-          0 1px 3px rgb(0 0 0 / 0.12);
+        outline: var(--hairline) solid var(--paper-edge);
       }
 
       &::before {
@@ -254,14 +238,10 @@ const toc = [
         z-index: 1;
         margin: 0;
         padding: 0.75rem 0.75rem 0;
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         background-color: var(--paper);
-        box-shadow:
-          0 0 0 1px var(--paper-edge),
-          0 1px 2px rgb(0 0 0 / 0.08),
-          0 12px 32px -14px rgb(0 0 0 / 0.3);
+        outline: var(--hairline) solid var(--paper-edge);
         rotate: var(--tilt, -1.5deg);
-        transition: rotate 0.5s cubic-bezier(0.2, 0, 0, 1);
       }
 
       img {
@@ -270,8 +250,6 @@ const toc = [
         block-size: auto;
         aspect-ratio: 3 / 2;
         object-fit: cover;
-        border-radius: 1px;
-        transition: opacity 0.3s ease;
       }
 
       figcaption {
@@ -281,7 +259,7 @@ const toc = [
         block-size: 2.5rem;
         font-family: var(--font-mono);
         font-feature-settings: normal;
-        font-size: 0.75rem;
+        font-size: var(--step--2);
         letter-spacing: 0;
         color: var(--muted-foreground);
       }
@@ -291,17 +269,7 @@ const toc = [
         color: var(--muted-foreground);
 
         &:hover {
-          background-color: color-mix(
-            in oklab,
-            var(--foreground) 8%,
-            transparent
-          );
-        }
-      }
-
-      @media (hover: hover) {
-        figure:hover {
-          rotate: calc(var(--tilt, -1.5deg) * -0.4);
+          background-color: var(--muted);
         }
       }
 
@@ -341,9 +309,9 @@ const toc = [
 
     h2 {
       margin: 0;
-      font-size: var(--step--1);
+      font-size: var(--step--2);
       font-weight: var(--font-weight-medium);
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       line-height: 1.4;
       text-transform: uppercase;
       color: var(--muted-foreground);

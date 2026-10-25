@@ -24,8 +24,8 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
 
 {mini ? (
     <post-strip data-mini aria-hidden="true">
-      {cells.map(({ cell }, i) => (
-        <i data-cell={cell} style={`--i: ${cells.length - i}`} />
+      {cells.map(({ cell }) => (
+        <i data-cell={cell} />
       ))}
     </post-strip>
   ) : (
@@ -96,9 +96,8 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
         content: "";
         display: block;
         block-size: 100%;
-        border-radius: 3px;
+        border-radius: var(--radius-xs);
         background-color: var(--fill);
-        transition: scale 0.15s ease;
       }
 
       &:is(:hover, :focus-visible)::before {
@@ -118,9 +117,9 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
     margin: 0;
     font-family: var(--font-mono);
     font-feature-settings: normal;
-    font-size: 0.6875rem;
+    font-size: var(--step--2);
     letter-spacing: 0;
-    color: var(--faint-foreground);
+    color: var(--muted-foreground);
   }
 
   p > :last-child {
@@ -133,7 +132,6 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
     min-inline-size: 0;
     grid-row: 2;
     grid-column: 1 / -1;
-    transition: opacity 0.12s ease;
   }
 
   post-strip:has(a:is(:hover, :focus-visible)) .mid {
@@ -155,7 +153,7 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
 
     time {
       margin-inline-start: 0.5em;
-      color: var(--faint-foreground);
+      color: var(--muted-foreground);
     }
   }
 
@@ -164,7 +162,7 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
   }
 
   /* Home: small squares inside the "all posts" link; hovering the link
-     tints the posts it leads to, newest first. */
+     tints the posts it leads to. */
   post-strip[data-mini] {
     display: inline-flex;
     gap: 2px;
@@ -172,9 +170,8 @@ const year = (index: number) => cells.at(index)?.post.data.date.getUTCFullYear()
     i {
       inline-size: 7px;
       block-size: 7px;
-      border-radius: 1.5px;
+      border-radius: var(--radius-xs);
       background-color: var(--fill);
-      transition: background-color 0.25s ease calc(var(--i) * 25ms);
     }
   }
 

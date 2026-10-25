@@ -204,7 +204,7 @@ function drawLabels(
       },
       parent,
     )
-    text.append(group.codes.join(" · "))
+    text.append(group.codes.join(" / "))
     // A label placed without its city (see `label`) is one line high.
     if (box.h > CODE_HEIGHT)
       svg("tspan", { class: "city", x: round(x), dy: 11 }, text).textContent =
@@ -220,7 +220,7 @@ type RouteMap = {
    * neither the payload nor the size has changed since the last draw.
    */
   draw(site: Site): Promise<void>
-  select(index: number | null, animate: boolean): void
+  select(index: number | null): void
 }
 
 /**
@@ -447,7 +447,7 @@ export function createRouteMap(
     function label(parent: Element, list: Group[], avoid: Box[], bounds: Box) {
       const ordered = [...list].sort((a, b) => b.visits - a.visits)
       const spec = (group: Group, city: boolean): LabelSpec => {
-        const code = measure(group.codes.join(" · "), "code")
+        const code = measure(group.codes.join(" / "), "code")
         return {
           key: group.key,
           x: group.x,
@@ -486,10 +486,10 @@ export function createRouteMap(
     root.replaceChildren(sheet)
     const current = selected
     selected = null
-    if (current !== null) select(current, false)
+    if (current !== null) select(current)
   }
 
-  const select = (index: number | null, animate: boolean) => {
+  const select = (index: number | null) => {
     if (index === selected) return
     selected = index
     const route = index === null ? null : routes[index]
@@ -499,17 +499,8 @@ export function createRouteMap(
       const on = i === index
       arc.toggleAttribute("data-on", on)
       if (!on) return
-      // Raise it over the routes it crosses, then draw it in.
+      // Raise it over the routes it crosses.
       arc.parentElement?.append(arc)
-      if (!animate) return
-      const length = arc.getTotalLength()
-      arc.animate(
-        [
-          { strokeDasharray: `0 ${length}` },
-          { strokeDasharray: `${length} 0` },
-        ],
-        { duration: 800, easing: "cubic-bezier(.3,.7,.2,1)" },
-      )
     })
     for (const [code, list] of dots)
       for (const dot of list)

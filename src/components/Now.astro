@@ -78,7 +78,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     <li class="now-tile" data-tile="portfolio">
       <a class="now-link" href="/misc#portfolio">
         <span class="now-info">
-          <span class="now-label">Portfolio · 3M</span>
+          <span class="now-label">Portfolio</span>
           <span class="now-figure"
             ><span class="sk-line sk-figure"></span></span
           >
@@ -171,7 +171,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       padding: 0;
     }
 
-    /* One surface for every tile: a soft fill and a round corner, no
+    /* One surface for every tile: a Gray 3 fill and an 8px corner, no
        border, so the grid reads as one object cut into parts. */
     .now-link {
       position: relative;
@@ -181,22 +181,26 @@ const { endpoint = NOW.endpoint } = Astro.props
       min-inline-size: 0;
       padding: var(--space-s);
       overflow: hidden;
-      border-radius: var(--radius-xl);
-      background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+      border-radius: var(--radius-lg);
+      background-color: var(--muted);
       color: var(--foreground);
       text-decoration: none;
       isolation: isolate;
-      transition: background-color 0.15s ease;
     }
 
     @media (hover: hover) {
       .now-link[href]:hover {
-        background-color: var(--muted);
+        background-color: var(--muted-hover);
       }
     }
 
+    .now-link[href]:active {
+      background-color: var(--muted-active);
+    }
+
     /* A brand mark as the tile's backdrop, large, faint and cropped by its
-       corner, the way the quota and Uses cards carry theirs. */
+       corner, the way the quota and Uses cards carry theirs: the brand's
+       colour at 10%. */
     .now-mark {
       position: absolute;
       z-index: -1;
@@ -204,9 +208,9 @@ const { endpoint = NOW.endpoint } = Astro.props
       inset-inline-end: -1.25rem;
       font-size: 7rem;
       line-height: 0;
-      color: color-mix(in oklab, var(--mark) 10%, transparent);
+      color: var(--mark);
+      opacity: 0.1;
       pointer-events: none;
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     [data-tile="listen"] .now-mark {
@@ -218,29 +222,16 @@ const { endpoint = NOW.endpoint } = Astro.props
       font-size: 6rem;
     }
 
-    @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-      .now-link[href]:hover .now-mark {
-        transform: rotate(-8deg) scale(1.04);
-      }
-    }
-
     .now-label {
       display: flex;
       justify-content: space-between;
       gap: var(--space-2xs);
-      font-size: 0.6875rem;
+      font-size: var(--step--2);
       font-weight: var(--font-weight-medium);
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       line-height: 1.4;
       text-transform: uppercase;
       color: var(--muted-foreground);
-    }
-
-    .now-when {
-      letter-spacing: 0;
-      text-transform: none;
-      font-weight: var(--font-weight-normal);
-      font-variant-numeric: tabular-nums;
     }
 
     .now-title {
@@ -295,13 +286,6 @@ const { endpoint = NOW.endpoint } = Astro.props
         min-inline-size: 0;
       }
 
-      .now-title {
-        @container (width >= 34rem) {
-          font-size: var(--step-1);
-          line-height: 1.25;
-        }
-      }
-
       &[data-playing] .now-label::before {
         content: "";
         order: -1;
@@ -314,7 +298,7 @@ const { endpoint = NOW.endpoint } = Astro.props
 
       &[data-playing] .now-label {
         justify-content: start;
-        color: light-dark(#216e39, #3dd68c);
+        color: var(--accent);
       }
     }
 
@@ -345,47 +329,17 @@ const { endpoint = NOW.endpoint } = Astro.props
           inline-size: 100%;
           block-size: 100%;
           object-fit: cover;
-          transition:
-            scale 0.6s cubic-bezier(0.2, 0, 0, 1),
-            filter 0.3s ease;
         }
 
         /* Keep the poster's original colours on a light page. Only the
-           dark scheme needs a veil to temper its brightness; the foot's
-           scrim provides text contrast in both schemes. */
+           dark scheme needs a veil (Radix Black A5) to temper its
+           brightness; the foot's scrim gives the words their contrast in
+           both schemes. */
         &::after {
           content: "";
           position: absolute;
           inset: 0;
-          background-color: light-dark(
-            transparent,
-            color-mix(in oklab, var(--background) 30%, transparent)
-          );
-          transition: background-color 0.3s ease;
-        }
-      }
-
-      /* Hover leans in: the poster pushes in a touch and its colour
-         comes up — no veil on a light page, so nothing washes it out —
-         and the dark scheme's veil lifts. */
-      @media (hover: hover) {
-        .now-link[href]:hover .now-art {
-          img {
-            filter: saturate(1.12) contrast(1.04);
-          }
-
-          @media (prefers-reduced-motion: no-preference) {
-            img {
-              scale: 1.04;
-            }
-          }
-
-          &::after {
-            background-color: light-dark(
-              transparent,
-              color-mix(in oklab, var(--background) 10%, transparent)
-            );
-          }
+          background-color: light-dark(transparent, rgb(0 0 0 / 0.3));
         }
       }
 
@@ -396,10 +350,11 @@ const { endpoint = NOW.endpoint } = Astro.props
         flex-direction: column;
         gap: var(--space-3xs);
         padding: var(--space-xl) var(--space-s) var(--space-s);
+        /* Radix Black A10 to A8; the words in White and White A10. */
         background-image: linear-gradient(
           to top,
-          rgb(0 0 0 / 0.86),
-          rgb(0 0 0 / 0.62) 50%,
+          rgb(0 0 0 / 0.8),
+          rgb(0 0 0 / 0.6) 50%,
           transparent
         );
         color: #fff;
@@ -408,7 +363,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       .now-label,
       .now-foot,
       .now-year {
-        color: rgb(255 255 255 / 0.78);
+        color: rgb(255 255 255 / 0.8);
       }
 
       .now-year {
@@ -416,18 +371,13 @@ const { endpoint = NOW.endpoint } = Astro.props
       }
 
       .sk-line {
-        background-color: rgb(255 255 255 / 0.25);
+        background-color: rgb(255 255 255 / 0.2);
       }
 
       /* An inset hairline, so a pale poster keeps its edge on a pale page. */
-      .now-link::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        box-shadow: inset 0 0 0 1px
-          color-mix(in oklab, var(--foreground) 12%, transparent);
-        pointer-events: none;
+      .now-link {
+        outline: var(--hairline) solid var(--gray-a6);
+        outline-offset: calc(-1 * var(--hairline));
       }
 
       /* No film: no poster to lay words over, so no scrim either. */
@@ -444,10 +394,10 @@ const { endpoint = NOW.endpoint } = Astro.props
     .now-rating {
       --score: 0;
       position: relative;
-      font-size: 0.8125rem;
+      font-size: var(--step--2);
       letter-spacing: 0.05em;
       line-height: 1;
-      color: rgb(255 255 255 / 0.35);
+      color: rgb(255 255 255 / 0.4);
 
       &::before {
         content: "★★★★★";
@@ -469,30 +419,16 @@ const { endpoint = NOW.endpoint } = Astro.props
 
     /* The two figure tiles: a label at the top, a figure and one line at
        the foot. Their runs (cost and messages) sit on one line where the
-       tile has room and two where it does not, never one cut short. Every
-       run carries its separator in front, in a strip the clip cuts away
-       at the start of each line, so a wrapped run never begins with a
-       stray dot. */
+       tile has room and two where it does not, never one cut short; the
+       space between them is the only separator. */
     :is([data-tile="tokens"], [data-tile="portfolio"]) .now-foot {
       flex-wrap: wrap;
-      gap: 0;
-      margin-inline-start: -0.9em;
+      gap: 0 var(--space-xs);
       overflow: visible;
       white-space: normal;
-      clip-path: inset(0 0 0 0.9em);
 
       span {
-        position: relative;
-        padding-inline-start: 0.9em;
         white-space: nowrap;
-      }
-
-      span::before {
-        content: "·";
-        position: absolute;
-        inset-inline-start: 0;
-        inline-size: 0.9em;
-        text-align: center;
       }
     }
 
@@ -500,16 +436,16 @@ const { endpoint = NOW.endpoint } = Astro.props
       min-block-size: 1lh;
       margin-block-start: auto;
       padding-block-start: var(--space-s);
-      font-size: var(--step-2);
+      font-size: var(--step-1);
       font-weight: var(--font-weight-medium);
       font-variant-numeric: tabular-nums;
-      line-height: 1.15;
+      line-height: 1.2;
       letter-spacing: -0.02em;
       white-space: nowrap;
 
       .unit {
-        margin-inline: 0.05em;
-        font-size: 0.56em;
+        margin-inline: 0.1em;
+        font-size: var(--step--1);
         font-weight: var(--font-weight-normal);
         letter-spacing: 0;
         color: var(--muted-foreground);
@@ -590,18 +526,13 @@ const { endpoint = NOW.endpoint } = Astro.props
       i {
         display: block;
         block-size: max(2px, calc(var(--bar, 0.08) * 100%));
-        border-radius: 2px 2px 1px 1px;
+        border-radius: var(--radius-xs) var(--radius-xs) 0 0;
         background-color: var(--gray-6);
-        transition: block-size 0.5s cubic-bezier(0.2, 0, 0, 1);
       }
 
       i:last-child {
         background-color: var(--accent-fill);
       }
-    }
-
-    [aria-busy="true"] .now-bars i {
-      animation: var(--sk-pulse);
     }
 
     /* Portfolio: one ink line with the S&P 500 as a dashed ghost rebased
@@ -643,19 +574,18 @@ const { endpoint = NOW.endpoint } = Astro.props
     }
 
     .now-ghost {
-      stroke: var(--muted-foreground);
+      stroke: var(--gray-9);
       stroke-dasharray: 2.5 2.5;
       stroke-width: 1;
-      opacity: 0.7;
     }
 
     .now-area {
-      fill: color-mix(in oklab, var(--foreground) 7%, transparent);
+      fill: var(--gray-a3);
     }
 
     .now-base {
-      stroke: color-mix(in oklab, var(--foreground) 14%, transparent);
-      stroke-width: 1;
+      stroke: var(--gray-a6);
+      stroke-width: var(--hairline);
     }
 
     .now-dot {
@@ -666,7 +596,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       block-size: 7px;
       border-radius: var(--radius-full);
       background-color: var(--foreground);
-      box-shadow: 0 0 0 2px var(--background);
+      outline: 2px solid var(--background);
       translate: -50% -50%;
 
       &[data-dir="up"] {
@@ -691,7 +621,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       block-size: 0.6rem;
 
       i {
-        border-radius: 2px;
+        border-radius: var(--radius-xs);
         background-color: var(--heat-0);
       }
 
@@ -732,9 +662,9 @@ const { endpoint = NOW.endpoint } = Astro.props
       justify-content: space-between;
       gap: var(--space-s);
       min-block-size: 1lh;
-      font-size: 0.6875rem;
+      font-size: var(--step--2);
       line-height: 1.4;
-      color: var(--faint-foreground);
+      color: var(--muted-foreground);
       font-variant-numeric: tabular-nums;
     }
 
@@ -758,7 +688,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     }
 
     .now-key-ghost::before {
-      border-block-start: 1px dashed var(--muted-foreground);
+      border-block-start: 1px dashed var(--gray-9);
     }
 
     @container (width >= 34rem) {
@@ -814,8 +744,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       block-size: 0.85em;
       margin-block: 0.2em;
       border-radius: var(--radius-sm);
-      background-color: var(--gray-5);
-      animation: var(--sk-pulse);
+      background-color: var(--gray-4);
     }
 
     .sk-title {

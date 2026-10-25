@@ -138,7 +138,7 @@ describe("rowFoot", () => {
   it("adds the recent clause only when it is less than the whole", () => {
     expect(rowFoot(game(100, 100), 14, "2026-08-29")).toBe("Played today")
     expect(rowFoot(game(100, 40), 14, "2026-08-29")).toBe(
-      "Played today · 40m in 14d",
+      "Played today, 40m in 14d",
     )
     expect(rowFoot(game(100, 0), 14, "2026-08-29")).toBe("Played today")
   })

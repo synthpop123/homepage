@@ -14,7 +14,6 @@ import {
 } from "@/lib/client/feed"
 import { isPlaying } from "@/lib/client/music"
 import {
-  PORTFOLIO_RANGE,
   portfolioView,
   type Site,
   tokenBars,
@@ -149,7 +148,7 @@ export function renderTokens(tile: HTMLElement, site: Site, today: string) {
   const model = tile.querySelector<HTMLElement>(".now-model")
   if (model) {
     model.replaceChildren(tokens.top ? topModelText(tokens.top) : "")
-    model.title = tokens.top ? "The past 7 days' busiest model" : ""
+    model.title = tokens.top ? "Most used model, last 7 days" : ""
   }
   tile.querySelector(".now-bars")?.replaceChildren(
     ...tokenBars(tokens.recent, site.today).map(({ height, title }) => {
@@ -176,7 +175,7 @@ export function renderPortfolio(tile: HTMLElement, site: Site) {
   const link = tile.querySelector("a")!
   link.setAttribute("href", "/misc#portfolio")
   link.title = view.title
-  text(tile, ".now-label", `Portfolio · ${PORTFOLIO_RANGE}`)
+  text(tile, ".now-label", "Portfolio")
   const figure = tile.querySelector<HTMLElement>(".now-figure")
   if (figure) {
     figure.dataset.dir = view.dir

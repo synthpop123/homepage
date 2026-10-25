@@ -31,7 +31,7 @@ import Qwen from "@/assets/icons/ai/qwen.svg"
 import XAI from "@/assets/icons/ai/xai.svg"
 import Zai from "@/assets/icons/ai/zai.svg"
 import Zed from "@/assets/icons/ai/zed.svg"
-import { API, type DeviceKind, TOKENS } from "@/consts"
+import { type DeviceKind, TOKENS } from "@/consts"
 import { COMPOSITION, RANGES, TOP_ROWS } from "@/lib/client/tokens"
 import { SKELETON_ROWS } from "@/lib/utils"
 // One stylesheet per renderer in tokens-dashboard/, in the order the
@@ -161,12 +161,6 @@ const LEGEND_CHIPS = 4
       return <span data-icon={`device:${name}`}><Icon /></span>
     })}
   </div>
-  <p class="tk-intro">
-    Token usage across my AI coding agents, live from my
-    <a href={API} target="_blank" rel="noopener noreferrer"
-      >self-hosted collector</a
-    >.
-  </p>
   <div class="tk-body">
     <section class="tk-quota-section">
       <h2 id="quota">Quota</h2>
@@ -256,7 +250,7 @@ const LEGEND_CHIPS = 4
             </ul>
           </div>
         </div>
-        <p class="tk-day-empty" hidden>Zero-byte kind of day.</p>
+        <p class="tk-day-empty" hidden>No usage on this day.</p>
       </div>
     </section>
     <section>
@@ -437,7 +431,6 @@ const LEGEND_CHIPS = 4
             </div>
             <div class="dev-id">
               <h3 class="dev-name"><span class="sk-line" style="inline-size: 6em" /></h3>
-              <p class="dev-since"><span class="sk-line sk-sub" style="inline-size: 9em" /></p>
             </div>
             <div class="dev-share">
               <span class="dev-tokens"><span class="sk-line" style="inline-size: 2.5em" /></span>
@@ -465,14 +458,7 @@ const LEGEND_CHIPS = 4
     both.
   -->
   <div class="tk-fallback" role="status" hidden>
-    <p class="fallback-title">Couldn’t reach the collector</p>
-    <p class="fallback-body">
-      These numbers come live from
-      <a href={API} target="_blank" rel="noopener noreferrer"
-        >{new URL(API).host}</a
-      >, and it didn’t answer this time. That is usually the Worker waking up,
-      or the network between here and there — a second try tends to do it.
-    </p>
+    <p class="fallback-title">Couldn’t load usage data.</p>
     <button type="button" class="tk-retry">Try again</button>
   </div>
 </tokens-dashboard>

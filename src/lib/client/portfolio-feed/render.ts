@@ -220,8 +220,8 @@ export function buildAllocation(
   const segments = rows.map((row, i) => {
     const segment = el("span", "alloc-seg")
     segment.style.flexGrow = String(row.weight)
-    // Heaviest darkest, fading down the list, never quite to nothing.
-    segment.style.setProperty("--shade", `${Math.max(18, 88 - i * 11)}%`)
+    // Heaviest darkest, down Gray 12 to Gray 7, never quite to nothing.
+    segment.dataset.shade = String(Math.min(i, 5))
     segment.dataset.symbol = row.symbol
     return segment
   })
@@ -246,8 +246,8 @@ export function buildAllocation(
     const row = rows.find((entry) => entry.symbol === symbol)
     const money = cash.find((entry) => cashKey(entry.currency) === symbol)
     left.textContent = row
-      ? `${row.symbol} · ${row.name}`
-      : `Cash · ${money?.currency ?? ""}`
+      ? `${row.symbol} ${row.name}`
+      : `Cash ${money?.currency ?? ""}`
     right.textContent = formatWeight(row?.weight ?? money?.weight ?? 0)
   }
   bar.onpointerover = (event) => {
@@ -460,7 +460,6 @@ export function fillPanel(
   site: Site,
   row: Row,
   range: Range,
-  animate: boolean,
   onRange: (range: Range) => void,
 ): Chart | null {
   const resolved = priceView(site, row.symbol, range)
@@ -516,7 +515,7 @@ export function fillPanel(
     if (at === null || at === undefined || from === null) return
     price.textContent = formatPrice(at, entry.currency)
     const moved = change(values, values.indexOf(from), end) ?? 0
-    delta.textContent = `${formatPriceChange(at - from, entry.currency)} · ${formatReturn(moved)}`
+    delta.textContent = `${formatPriceChange(at - from, entry.currency)} (${formatReturn(moved)})`
     delta.dataset.dir = direction(moved)
     when.textContent =
       index === null
@@ -576,6 +575,5 @@ export function fillPanel(
     },
     dateOf: (i) => formatDay(site.days[start + i]),
     onScrub: show,
-    animate,
   })
 }

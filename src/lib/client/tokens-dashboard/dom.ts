@@ -25,7 +25,7 @@ import {
 
 /**
  * Color a stack segment or chip: `data-p` picks the brand hue out of the
- * palette in Tokens.astro, `data-shade` mixes it toward the background
+ * palette in Tokens.astro, `data-shade` lightens it (shared.css)
  * so two models of the same vendor stay tellable apart. Shade 0 is the
  * pure hue and carries no attribute, which is what every non-model
  * stacking renders as.
@@ -146,13 +146,13 @@ export const modelSubRows = (
     .map((cell) => {
       const name = modelLabel(cell.model)
       const messages =
-        "messages" in cell ? ` · ${formatExact(cell.messages)} messages` : ""
+        "messages" in cell ? `, ${formatExact(cell.messages)} messages` : ""
       return {
         icon: aiIcon("model", cell.model),
         name,
         value: formatMetric(cell[metric], metric),
         share: rowTotal > 0 ? cell[metric] / rowTotal : Number.NaN,
-        title: `${name} — ${formatExact(cell.tokens)} tokens · ${formatCostExact(
+        title: `${name} — ${formatExact(cell.tokens)} tokens, ${formatCostExact(
           cell.cost,
         )}${messages}`,
       }

@@ -3,23 +3,6 @@
    them. Row layouts stay local. Each component that draws one imports
    this file, so a page without one — a post, /about — ships none of it. */
 
-/* The pulse every skeleton placeholder shares, referenced as
-   `animation: var(--sk-pulse)` so the name and timing live in one place;
-   the global reduced-motion rule in reset.css neutralizes it. */
-:root {
-  --sk-pulse: sk-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes sk-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
-}
-
 /* The small link at the far end of a heading row (SectionHead.astro, the
    home page's section heads): muted, not underlined, brightening on
    hover. An external one carries an arrow. */
@@ -29,7 +12,6 @@
   font-weight: var(--font-weight-normal);
   color: var(--muted-foreground);
   text-decoration: none;
-  transition: color 0.15s ease;
 
   span {
     display: inline-block;
@@ -52,11 +34,9 @@
 
 .music-fallback a,
 .movies-fallback a,
-.memos-intro a,
 .memos-empty a,
 .memos-fallback a,
-.switch-fallback a,
-.tk-intro a {
+.switch-fallback a {
   color: var(--foreground);
   text-decoration: underline;
 }
@@ -68,9 +48,9 @@
 .tk-label,
 .uses-label {
   margin-block: var(--space-m) var(--space-2xs);
-  font-size: var(--step--1);
+  font-size: var(--step--2);
   font-weight: var(--font-weight-medium);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -81,15 +61,10 @@
 }
 
 /* Readout: the stat panel every summary grid shares (Music, Switch,
-   Flights, the Tokens day/overview/Patterns cards). Not a box cut into
-   cells but a row of instruments on a rule — each figure standing on its
-   own hairline, with a short accent tick where the rule starts. The
-   figure is set in two sizes by `setReadout` (src/lib/client/readout.ts):
-   numbers large, units small and dim, so `145.1M` reads as a quantity
-   rather than a string. The first time a panel scrolls into view
-   (`data-seen`), its rules draw in one cell after another while the
-   numbers count up; hovering a cell runs its tick the length of the rule
-   and lets a wash of the accent down behind it.
+   Flights, the Tokens day/overview/Patterns cards): a row of figures,
+   each standing on its own hairline. The figure is set in two sizes by
+   `setReadout` (src/lib/client/readout.ts): numbers large, units small
+   and muted, so `145.1M` reads as a quantity rather than a string.
 
    Two across or four, never three: a row left short would read as a
    figure missing. The column count switches on the panel's own width
@@ -99,9 +74,6 @@
    and at most one short line under it; that line never wraps, since a
    wrapped one is a line its skeleton didn't reserve. */
 .readout {
-  /* The site's accent, the heatmap's green, which every panel but two
-     sits above. */
-  --readout-accent: var(--accent-fill);
   --panel-wide: 32rem;
   --readout-gap: var(--space-s);
 
@@ -121,82 +93,12 @@
   margin: 0;
 }
 
-switch-feed .readout {
-  --readout-accent: light-dark(#e60012, #ff4d5a);
-}
-
 .readout > div {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
   padding-block-start: var(--space-2xs);
-  background: linear-gradient(
-      color-mix(in oklab, var(--readout-accent) 9%, transparent),
-      transparent
-    )
-    no-repeat;
-  background-size: 100% 0;
-  transition: background-size 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-.readout > div:nth-child(2) { --i: 1; }
-.readout > div:nth-child(3) { --i: 2; }
-.readout > div:nth-child(4) { --i: 3; }
-.readout > div:nth-child(5) { --i: 4; }
-.readout > div:nth-child(6) { --i: 5; }
-.readout > div:nth-child(7) { --i: 6; }
-.readout > div:nth-child(8) { --i: 7; }
-
-/* The rule, and the tick at its start. Both are pseudo-elements so they
-   can be drawn in: a border can't grow from the left. */
-.readout > div::before,
-.readout > div::after {
-  content: "";
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition:
-    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--i, 0) * 70ms),
-    inline-size 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-.readout > div::before {
-  inline-size: 100%;
-  block-size: 1px;
-  background-color: var(--border);
-}
-
-.readout > div::after {
-  inline-size: 1.25rem;
-  block-size: 2px;
-  margin-block-start: -0.5px;
-  border-radius: 1px;
-  background-color: var(--readout-accent);
-}
-
-.readout[data-seen] > div::before,
-.readout[data-seen] > div::after {
-  transform: none;
-}
-
-@media (hover: hover) {
-  .readout > div:hover {
-    background-size: 100% 100%;
-  }
-
-  .readout > div:hover::after {
-    inline-size: 100%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .readout > div::before,
-  .readout > div::after {
-    transform: none;
-  }
+  border-block-start: var(--hairline) solid var(--border);
 }
 
 .readout dt {
@@ -206,10 +108,10 @@ switch-feed .readout {
 
 .readout .value {
   margin: 0;
-  font-size: var(--step-2);
+  font-size: var(--step-1);
   font-weight: var(--font-weight-medium);
   font-variant-numeric: tabular-nums;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   white-space: nowrap;
   /* The skeleton bar is shorter than a line of figures; reserve the line. */
@@ -217,8 +119,8 @@ switch-feed .readout {
 }
 
 .readout .value .unit {
-  margin-inline: 0.05em;
-  font-size: 0.56em;
+  margin-inline: 0.1em;
+  font-size: var(--step--1);
   font-weight: var(--font-weight-normal);
   letter-spacing: 0;
   color: var(--muted-foreground);
@@ -269,8 +171,7 @@ switch-feed [data-skeleton] .cover,
 switch-feed .sk-line,
 portfolio-feed .sk-line,
 flights-feed .sk-line {
-  background-color: var(--gray-5);
-  animation: var(--sk-pulse);
+  background-color: var(--gray-4);
 }
 
 music-feed .sk-line,
@@ -285,12 +186,6 @@ flights-feed .sk-line {
   border-radius: var(--radius-sm);
 }
 
-.memos-intro,
-.tk-intro {
-  margin-block-end: var(--space-m);
-  color: var(--muted-foreground);
-}
-
 .memos-empty,
 .memos-fallback {
   color: var(--muted-foreground);
@@ -299,11 +194,9 @@ flights-feed .sk-line {
 /* Vinyl: a sleeve with the record half out of it, for the newest listen
    (the Music lead on /misc, the listen tile on the home page). The markup
    is `.sleeve > .disc > .disc-label > img` beside `.sleeve > .cover > img`;
-   `--sleeve` sets the cover's size and everything scales with it. The
-   grooves are radial, so turning them would show nothing; the label is
-   printed with the cover art, and it is the label that shows the record
-   turning — only while its card is hovered or focused; otherwise it sits
-   still where it stopped. */
+   `--sleeve` sets the cover's size and everything scales with it. It sits
+   still: the picture says "a record", it doesn't need to play. The record
+   is black in both schemes (Radix Gray 1 and 2, dark). */
 
 .sleeve {
   --sleeve: 6.5rem;
@@ -322,10 +215,8 @@ flights-feed .sk-line {
     overflow: hidden;
     border-radius: var(--radius-md);
     background-color: var(--muted);
-    box-shadow:
-      inset 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent),
-      0 1px 2px rgb(0 0 0 / 0.1),
-      0 8px 18px -10px rgb(0 0 0 / 0.45);
+    outline: var(--hairline) solid var(--gray-a6);
+    outline-offset: calc(-1 * var(--hairline));
 
     img {
       inline-size: 100%;
@@ -351,13 +242,10 @@ flights-feed .sk-line {
       rgb(255 255 255 / 0.05) 31%,
       transparent 32%
     ),
-    repeating-radial-gradient(circle, #161616 0 1.5px, #0c0c0c 1.5px 3px);
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent),
-    0 6px 14px -8px rgb(0 0 0 / 0.5);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    repeating-radial-gradient(circle, #191919 0 1.5px, #111111 1.5px 3px);
+  outline: var(--hairline) solid var(--gray-a6);
 
-  /* A fixed sheen over the grooves: light doesn't turn with the record. */
+  /* A fixed sheen over the grooves (Radix White A1 and A2). */
   &::after {
     content: "";
     position: absolute;
@@ -368,7 +256,7 @@ flights-feed .sk-line {
       transparent 0 8%,
       rgb(255 255 255 / 0.1) 13%,
       transparent 20% 55%,
-      rgb(255 255 255 / 0.07) 62%,
+      rgb(255 255 255 / 0.05) 62%,
       transparent 70%
     );
     pointer-events: none;
@@ -381,32 +269,11 @@ flights-feed .sk-line {
   overflow: hidden;
   border-radius: 50%;
   background-color: var(--gray-8);
-  animation: vinyl-spin 3.2s linear infinite paused;
 
   img {
     inline-size: 100%;
     block-size: 100%;
     object-fit: cover;
     mask: radial-gradient(circle, transparent 0 6%, #000 7%);
-  }
-}
-
-a:focus-visible .disc-label {
-  animation-play-state: running;
-}
-
-@keyframes vinyl-spin {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
-@media (hover: hover) {
-  a:hover .sleeve .disc {
-    transform: translateX(12%);
-  }
-
-  a:hover .disc-label {
-    animation-play-state: running;
   }
 }

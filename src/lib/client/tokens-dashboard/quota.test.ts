@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test"
 import {
   allowanceView,
   formatMoney,
-  paceView,
+  paceTitle,
   windowDurationMs,
   windowElapsed,
   windowHasReset,
@@ -210,7 +210,7 @@ describe("windowView", () => {
       capturedAt,
     )
     expect(view).toMatchObject({ state: "reset", used: 0 })
-    expect(view.foot).toBe("reset 1h ago · awaiting report")
+    expect(view.foot).toBe("reset 1h ago")
   })
 
   it("rolls over while the page is open, not only on load", () => {
@@ -265,19 +265,9 @@ describe("windowElapsed", () => {
   })
 })
 
-describe("paceView", () => {
+describe("paceTitle", () => {
   it("compares spend to the share of the window gone", () => {
-    expect(paceView(11, 0.2).verdict).toBe("under")
-    expect(paceView(22, 0.2).verdict).toBe("on")
-    expect(paceView(40, 0.2)).toMatchObject({
-      verdict: "over",
-      text: "ahead of pace",
-      title: "40% used with 20% of the window gone",
-    })
-  })
-
-  it("withholds a verdict early in the window", () => {
-    expect(paceView(6, 0.03)).toMatchObject({ verdict: null, text: null })
+    expect(paceTitle(40, 0.2)).toBe("40% used with 20% of the window gone")
   })
 })
 
@@ -310,7 +300,7 @@ describe("allowanceView", () => {
       figure: "$25.50",
       left: "none left",
     })
-    expect(view.foot).toBe("expired 1h ago · awaiting report")
+    expect(view.foot).toBe("expired 1h ago")
   })
 
   it("says so when the vendor dates nothing", () => {

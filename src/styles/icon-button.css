@@ -8,7 +8,11 @@
   cursor: pointer;
 
   &:hover {
-    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    background-color: var(--muted);
+  }
+
+  &:active {
+    background-color: var(--muted-hover);
   }
 
   svg {

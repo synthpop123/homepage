@@ -1,6 +1,6 @@
 prose-content {
   blockquote {
-    border-inline-start: 2px solid var(--border);
+    border-inline-start: var(--hairline) solid var(--border-strong);
     padding-inline-start: 1.25em;
     color: var(--muted-foreground);
 
@@ -11,11 +11,11 @@ prose-content {
 
   hr {
     margin-block: var(--space-l);
-    border-block-start: 1.5px solid var(--border);
+    border-block-start: var(--hairline) solid var(--border);
   }
 
   /* Content images (not the inline custom emoji on /memos) get the
-     same soft corners as the media cards there. */
+     tiles' corner. */
   :is(img, video):not(.emoji) {
     margin-inline: auto;
     border-radius: var(--radius-lg);
@@ -33,7 +33,7 @@ prose-content {
   .footnotes {
     margin-block-start: var(--space-l);
     padding-block-start: var(--space-s);
-    border-block-start: 1.5px solid var(--border);
+    border-block-start: var(--hairline) solid var(--border);
   }
 
   pre.mermaid {
@@ -51,8 +51,8 @@ prose-content {
     &[data-failed] {
       justify-content: start;
       padding: var(--space-s);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
+      border: var(--hairline) solid var(--border);
+      border-radius: var(--radius-lg);
       font-family: var(--font-mono);
       font-size: var(--step--1);
     }
@@ -93,7 +93,7 @@ prose-content {
     }
 
     .frame.has-title:not(.is-terminal) .header {
-      border-block-end: var(--ec-brdWd) solid var(--border);
+      border-block-end: var(--hairline) solid var(--border);
     }
 
     .expand {
