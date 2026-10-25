@@ -210,7 +210,7 @@ export function createDayPanel(q: Query, icons: Icons, onBack: () => void) {
 
     relabel()
     if (back) {
-      back.hidden = view.isLatest
+      back.toggleAttribute("data-latest", view.isLatest)
       back.title = `Back to ${formatDate(site.today)}`
     }
 

@@ -26,8 +26,13 @@ tokens-dashboard {
     cursor: pointer;
   }
 
-  .tk-day-back[hidden] {
-    display: none;
+  /* On today it is invisible but still laid out, not [hidden] (which
+     reset.css makes `display: none`): its line (step -1) is taller than
+     the label's (step -2), so dropping it shrank the head and shifted
+     the panel on every switch to and from today. `visibility` also
+     takes it out of the tab order and the accessibility tree. */
+  .tk-day-back[data-latest] {
+    visibility: hidden;
   }
 
   .tk-day-body {
