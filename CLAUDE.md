@@ -107,7 +107,7 @@ Every live section reads **cf-workers-api** (sibling repo `../cf-workers-api`), 
 - **`/memos`** (`Memos.astro`, `memos.ts`, `memos-feed/`): latest Mastodon statuses from `/memos/site` as a year-grouped thread. Status HTML is Mastodon's own, so `memos-feed/sanitize.ts` (allow-list, needs `DOMParser`) is the security boundary; every URL goes through `safeHttpUrl`.
 - **`/tokens`** (`Tokens.astro`, `tokens/`, `tokens-dashboard/`, styles in `src/styles/tokens/`): AI token-usage dashboard — Quota, Activity (heatmap doubles as day picker for the day panel), overview/trend/breakdowns, Patterns, Devices.
   - The service owns model/provider id mapping; the page never guesses a vendor from a model name (it reads `byModel[].providers`).
-  - Quota cards are *reported* data and must admit their age: per-card `capturedAt`, a window past its reset reads `reset 1h ago` in the warning colour rather than a stale percentage, times shown in **Asia/Shanghai** (the collector's zone, which buckets every calendar day). The section re-renders every minute.
+  - Quota cards are *reported* data and must admit their age: per-card `capturedAt`, a window past its reset reads `reset 1h ago` (muted, like any foot) rather than a stale percentage, times shown in **Asia/Shanghai** (the collector's zone, which buckets every calendar day). The section re-renders every minute.
   - `PLACEHOLDER_IDS` (`unknown`, `<synthetic>`) are dropped everywhere, so shares may not sum to 100%.
   - Device kinds (backdrop icons) come from `TOKENS.devices` in `consts.ts`; the payload has no hardware info.
   - Decoded but deliberately not drawn: `extraUsage`, `mcpServers`.

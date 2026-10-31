@@ -165,17 +165,12 @@ tokens-dashboard {
   }
 
   /* A window past its reset reads 0% because the ceiling is back, not
-     because anyone reported it: the figure drops to the unit's colour,
-     and the foot — "awaiting report" — takes the page's colour for a
-     reading that is no longer current, as a stale card's age does. */
+     because anyone reported it: the figure drops to the unit's colour.
+     The foot ("reset 1h ago") stays muted like any other foot; the
+     words say it, a colour would shout it. */
   .tk-plans .tk-window[data-state="reset"] .win-used b {
     font-weight: inherit;
     color: inherit;
-  }
-
-  .tk-plans .tk-window[data-state="reset"] .win-foot,
-  .tk-plans .tk-window[data-state="expired"] .win-foot {
-    color: var(--destructive);
   }
 
   /* A quota window is a gauge against a ceiling, not a share of a whole,
