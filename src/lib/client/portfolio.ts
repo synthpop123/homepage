@@ -29,7 +29,8 @@ export type SiteHolding = {
   symbol: string
   weight: number
   /** The position's own return over its life in the account, as the
-   *  owner's Ghostfolio computes it (ROI); null when it can't say. */
+   *  owner's Ghostfolio computes it (ROI: gain over the sum of the buys);
+   *  null when it can't say. */
   performance: number | null
   /** Average price paid per share in this account, in the symbol's
    *  currency; null when Ghostfolio can't say. */
