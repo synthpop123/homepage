@@ -1,18 +1,36 @@
 name: CI
 
+# Files that never reach the build. The repo is private on a free plan,
+# so there are no required checks a skipped run could leave pending; if
+# branch protection ever requires these jobs, drop this list first.
 on:
   push:
     branches: [main]
+    paths-ignore: &docs
+      - README.md
+      - LICENSE
+      - CLAUDE.md
+      - AGENTS.md
+      - .claude/**
   pull_request:
+    paths-ignore: *docs
+
+# A new push to a PR supersedes its running checks; every commit on main
+# (the deploy branch) still gets a full run, one group per SHA.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # The workflow only reads the repo; nothing here needs write access.
 permissions:
   contents: read
 
+# Two parallel jobs: `astro check` (~20s) and the site build (~15s) were
+# the bulk of one serial job, and neither needs the other's output.
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       # Third-party actions are pinned to commit SHAs; mutable tags
       # could be repointed at malicious code.
@@ -22,14 +40,42 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
-      - run: bun install --frozen-lockfile
+      # No dependency cache: restoring node_modules (~750 MB) takes longer
+      # than this install from the registry (~5s).
+      - id: install
+        run: bun install --frozen-lockfile
+      # Each check below runs even if an earlier one failed, so one red
+      # run reports every problem at once.
       # High-severity advisories in what the site builds and ships with.
       # Ignored: GHSA-ch52-4w7c-c8xp (http-cache-semantics via astro, no
       # fixed release) — it concerns shared HTTP caches, and the build's
       # image cache is a private, single-user one.
-      - run: bun audit --prod --audit-level=high --ignore GHSA-ch52-4w7c-c8xp
-      - run: bun run format:check
-      - run: bun test
-      # `build` runs `astro check` first, so there is no separate step.
-      - run: bun run build
+      - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
+        run: bun audit --prod --audit-level=high --ignore GHSA-ch52-4w7c-c8xp
+      - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
+        run: bun run format:check
+      - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
+        run: bun test
+      - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
+        run: bun run astro check
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      # Astro's optimized-image cache (a few MB): its entries are keyed by
+      # source and options, so a stale restore only means more re-encoding.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.astro/assets
+          key: astro-assets-${{ hashFiles('src/content/**/assets/**', 'src/assets/**') }}
+          restore-keys: astro-assets-
+      - run: bun install --frozen-lockfile
+      # `bun run build` minus `astro check`, which the check job runs.
+      - run: bun run prebuild:assets
+      - run: bun run astro build --force
       - run: bun run check:links
