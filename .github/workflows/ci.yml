@@ -41,8 +41,8 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
-      # No dependency cache: restoring node_modules (~750 MB) takes longer
-      # than this install from the registry (~5s).
+      # No dependency cache: tried with Bun's package cache (235 MB), the
+      # restore alone (5-7s) outlasted this install from the registry (4-6s).
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.bun/install/cache
