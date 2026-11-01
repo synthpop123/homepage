@@ -14,6 +14,7 @@ on:
       - .claude/**
   pull_request:
     paths-ignore: *docs
+  workflow_dispatch:
 
 # A new push to a PR supersedes its running checks; every commit on main
 # (the deploy branch) still gets a full run, one group per SHA.
