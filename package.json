@@ -54,7 +54,7 @@
     "topojson-simplify": "^3.0.3",
     "typescript": "^6.0.3",
     "world-atlas": "^2.0.2",
-    "wrangler": "^4.151.0"
+    "wrangler": "^4.156.0"
   },
   "overrides": {
     "fflate": "^0.7.5",

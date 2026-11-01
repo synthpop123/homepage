@@ -48,11 +48,10 @@ jobs:
       # Each check below runs even if an earlier one failed, so one red
       # run reports every problem at once.
       # High-severity advisories in what the site builds and ships with.
-      # Ignored: GHSA-ch52-4w7c-c8xp (http-cache-semantics via astro, no
-      # fixed release) — it concerns shared HTTP caches, and the build's
-      # image cache is a private, single-user one.
+      # An advisory that doesn't apply gets `--ignore <GHSA id>` here,
+      # with its reason.
       - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
-        run: bun audit --prod --audit-level=high --ignore GHSA-ch52-4w7c-c8xp
+        run: bun audit --prod --audit-level=high
       - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
         run: bun run format:check
       - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
