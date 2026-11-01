@@ -43,10 +43,6 @@ jobs:
           bun-version-file: .bun-version
       # No dependency cache: tried with Bun's package cache (235 MB), the
       # restore alone (5-7s) outlasted this install from the registry (4-6s).
-      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ hashFiles('bun.lock') }}
       - id: install
         run: bun install --frozen-lockfile
       # Each check below runs even if an earlier one failed, so one red
@@ -79,10 +75,6 @@ jobs:
           path: node_modules/.astro/assets
           key: astro-assets-${{ hashFiles('src/content/**/assets/**', 'src/assets/**') }}
           restore-keys: astro-assets-
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ hashFiles('bun.lock') }}
       - run: bun install --frozen-lockfile
       # `bun run build` minus `astro check`, which the check job runs.
       - run: bun run prebuild:assets
