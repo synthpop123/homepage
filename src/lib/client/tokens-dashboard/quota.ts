@@ -254,7 +254,7 @@ export function windowView(
       // A vendor that reports spend with no reset time is a shape
       // neither collector has produced, but the foot must not claim the
       // window has not started while the bar says otherwise.
-      foot: used > 0 ? "reset time not reported" : "full tank, engine off",
+      foot: used > 0 ? "reset time not reported" : "on standby",
       ...(used > 0 ? {} : { title: "The clock starts at first use" }),
     }
   }

@@ -211,7 +211,7 @@ describe("windowView", () => {
     ).toEqual({
       state: "idle",
       used: 0,
-      foot: "full tank, engine off",
+      foot: "on standby",
       title: "The clock starts at first use",
     })
   })
