@@ -26,7 +26,7 @@ import { renderDevices } from "./devices"
 import { createIcons, scopedQuery } from "./dom"
 import { renderFacts } from "./facts"
 import { renderOverview } from "./overview"
-import { renderQuota } from "./quota"
+import { followUpDue, renderQuota } from "./quota"
 import { createRhythmChart, createTrendChart } from "./trend"
 
 type Controls = { range: RangeKey; metric: MetricKey; stackDim: StackDim }
@@ -200,6 +200,9 @@ export function mountTokensDashboard(root: HTMLElement) {
       renderQuota(q, site, icons)
       renderDevices(q, site, icons)
       activity.tick()
+      // A window just rolled over: the collector re-reads that plan
+      // right after, so fetch its report instead of waiting for reload.
+      if (followUpDue(site, Date.now())) fetchSite().catch(() => {})
     },
     // Also after a failed first load, which a later answer recovers
     // from without the visitor finding the retry button.

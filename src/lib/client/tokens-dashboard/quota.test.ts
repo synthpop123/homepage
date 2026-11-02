@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test"
 import {
   allowanceView,
+  followUpDue,
   formatMoney,
   paceTitle,
   windowDurationMs,
@@ -167,6 +168,34 @@ describe("windowHasReset", () => {
   })
 })
 
+describe("followUpDue", () => {
+  const site = (resetsAt: string) => ({
+    quota: [
+      {
+        capturedAt: "2026-08-27T06:00:00Z",
+        windows: [{ label: "Session", usedPercent: 30, resetsAt }],
+      },
+    ],
+  })
+  const reset = Date.parse("2026-08-27T07:00:00Z")
+  const min = 60_000
+
+  it("fires once, in the minute the collector's report should land", () => {
+    const due = (at: number) =>
+      followUpDue(site("2026-08-27T07:00:00Z") as never, at)
+    expect(due(reset + 1 * min)).toBe(false)
+    expect(due(reset + 2 * min)).toBe(true)
+    expect(due(reset + 2.9 * min)).toBe(true)
+    expect(due(reset + 3 * min)).toBe(false)
+  })
+
+  it("ignores a window still counting down", () => {
+    expect(
+      followUpDue(site("2026-08-27T07:00:00Z") as never, reset - 2 * min),
+    ).toBe(false)
+  })
+})
+
 describe("windowView", () => {
   it("names what starts an unanchored window rather than going blank", () => {
     expect(
@@ -179,7 +208,12 @@ describe("windowView", () => {
         now,
         capturedAt,
       ),
-    ).toEqual({ state: "idle", used: 0, foot: "starts on first use" })
+    ).toEqual({
+      state: "idle",
+      used: 0,
+      foot: "full tank, engine off",
+      title: "The clock starts at first use",
+    })
   })
 
   it("counts down a 0% window that has already been anchored", () => {

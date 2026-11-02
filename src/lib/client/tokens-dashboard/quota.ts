@@ -12,7 +12,10 @@
  * instead of showing a percentage that is no longer true. No control
  * applies to it, but the clock does: the controller re-renders it every
  * minute, so countdowns tick and a window that rolls over while the page
- * is open turns into its reset state without a reload.
+ * is open turns into its reset state without a reload. The collector
+ * re-reads a plan 90 s after each of its windows resets (on top of its
+ * half-hourly timer), and `followUpDue` has the page fetch that report
+ * shortly after, so the reset state is a minute or two, not half an hour.
  */
 
 import { relativeTime } from "../feed"
@@ -57,6 +60,13 @@ const PLACEHOLDER_SLACK_MS = 2 * 60 * 1000
  * tile is the only part of the list that is a warning.
  */
 const CREDIT_URGENT_MS = 24 * 60 * 60 * 1000
+
+/**
+ * When, after a window's reset, the page asks for the report the
+ * collector makes for it: the collector re-runs 90 s after the reset
+ * (`arm-quota-reset.sh` on its host), so this leaves it time to land.
+ */
+const FOLLOW_UP_MS = { from: 2 * 60_000, to: 3 * 60_000 } as const
 
 const MS = { d: 86_400_000, h: 3_600_000, m: 60_000, s: 1_000 } as const
 
@@ -158,12 +168,33 @@ export function windowHasReset(
 }
 
 /**
+ * Whether a window reset two to three minutes ago on a plan whose report
+ * predates it — the moment the collector's post-reset report should have
+ * landed. The page ticks once a minute, so exactly one tick falls in the
+ * band and the follow-up fetch runs once per reset; a tick missed (a
+ * hidden tab) leaves it to the regular five-minute reload.
+ */
+export function followUpDue(site: Pick<Site, "quota">, now: number): boolean {
+  return site.quota.some((plan) => {
+    const capturedAt = Date.parse(plan.capturedAt)
+    return plan.windows.some((window) => {
+      if (!windowHasReset(window, now, capturedAt) || !window.resetsAt) {
+        return false
+      }
+      const since = now - Date.parse(window.resetsAt)
+      return since >= FOLLOW_UP_MS.from && since < FOLLOW_UP_MS.to
+    })
+  })
+}
+
+/**
  * What one window's row says, decided once so the renderer only writes
  * it down:
  *
  * - `idle`  — the vendor has not anchored the window (OpenAI's drifting
  *   placeholder, Anthropic's omitted reset). Nothing is counting down,
- *   so the foot says what starts the clock instead of going blank — an
+ *   so the foot says the window is untouched and idle (its title, what
+ *   starts the clock) instead of going blank — an
  *   empty foot is what left one card's rows a line out of step with
  *   the other's.
  * - `open`  — the reading is current: "resets in 2h 5m". Only the reset,
@@ -223,7 +254,8 @@ export function windowView(
       // A vendor that reports spend with no reset time is a shape
       // neither collector has produced, but the foot must not claim the
       // window has not started while the bar says otherwise.
-      foot: used > 0 ? "reset time not reported" : "starts on first use",
+      foot: used > 0 ? "reset time not reported" : "full tank, engine off",
+      ...(used > 0 ? {} : { title: "The clock starts at first use" }),
     }
   }
   const at = Date.parse(window.resetsAt)
