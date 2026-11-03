@@ -6,6 +6,10 @@
   "compatibility_date": "2026-08-22",
   "workers_dev": false,
   "preview_urls": true,
+  // Workers Builds runs `wrangler preview` for a pull request's branch,
+  // which refuses a config without this block. Empty: a preview takes
+  // the assets and settings above as they are.
+  "previews": {},
   "routes": [{ "pattern": "lkwplus.com", "custom_domain": true }],
   "assets": {
     "directory": "./dist",
