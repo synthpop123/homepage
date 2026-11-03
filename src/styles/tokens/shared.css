@@ -22,7 +22,7 @@ tokens-dashboard {
      (as nearest steps they were 0.024: Indigo 9 and Iris 9 read as one).
      Client ids map onto their vendor's hue (see the [data-p] rules
      below). */
-  --tk-p-anthropic: var(--brand-claude); /* Tomato 9 / 10 */
+  --tk-p-anthropic: light-dark(#d97757, #cc785c); /* Claude's own coral */
   --tk-p-openai: light-dark(#29a383, #27b08b); /* Jade 9 / 10 */
   --tk-p-google: light-dark(#0090ff, #70b8ff); /* Blue 9 / 11 */
   --tk-p-alibaba: light-dark(#f76b15, #ff801f); /* Orange 9 / 10 */

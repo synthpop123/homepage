@@ -159,10 +159,10 @@
   --record-1:    #111111;
   --record-2:    #191919;
 
-  /* Brand marks, each the Radix solid step nearest its brand colour:
-     Claude's coral is Tomato (Orange, nearer, is Alibaba's on /tokens),
-     Spotify's green is Green, kept apart from the Grass accent. */
-  --brand-claude:  light-dark(#e54d2e, #ec6142); /* Tomato 9 / 10 */
+  /* Brand marks. Claude's is its own coral, the one colour on the site
+     outside Radix (the audit allows exactly this value). Spotify's green
+     is Green, the Radix step nearest it, kept apart from the Grass accent. */
+  --brand-claude:  #d97757;
   --brand-spotify: light-dark(#30a46c, #33b074); /* Green 9 / 10 */
 
   /* The activity scale (heatmaps, Switch's recent share, a portfolio's

@@ -72,12 +72,18 @@ describe("Radix Colors", () => {
         if (typeof value === "string")
           radix.add(value.toLowerCase().replace(/\s+/g, " "))
 
+  // The one exception: Claude's own coral (light, and its dark tint on
+  // /tokens), kept by the owner's choice over the nearest Radix step.
+  const BRAND = new Set(["#d97757", "#cc785c"])
+
   // Where colour literals are allowed, each must be a Radix value. Black
   // and White A (rgb() with an alpha) are checked by value too.
   it.each(ALLOW)("%s uses Radix values only", (file) => {
     const text = readFileSync(file, "utf8")
     const hexes = text.match(/#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?\b/g) ?? []
-    const off = hexes.filter((hex) => !radix.has(hex.toLowerCase()))
+    const off = hexes.filter(
+      (hex) => !radix.has(hex.toLowerCase()) && !BRAND.has(hex.toLowerCase()),
+    )
     const alphas = [
       ...text.matchAll(/rgb\((0|255) \1 \1 \/ ([\d.]+)\)/g),
     ].filter(([, c, a]) => !radix.has(`rgba(${c}, ${c}, ${c}, ${a})`))
