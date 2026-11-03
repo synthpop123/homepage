@@ -60,9 +60,9 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
 
 <style>
   /* The section sizes itself against its own column rather than the
-     viewport: between 64rem and 76rem the sidebar and the table of
-     contents take their cut first, so a viewport query would lay out
-     three columns while the column itself is still narrow. */
+     viewport: from 64rem the sidebar takes its cut first, and from 76rem
+     the table of contents too, so a viewport query would lay out three
+     columns while the column itself is still narrow. */
   uses-list {
     display: grid;
     gap: var(--space-l);

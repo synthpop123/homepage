@@ -73,7 +73,7 @@ const lang = postLang(parent)
 const chromeLang = lang === SITE.locale ? undefined : SITE.locale
 ---
 
-<Layout lang={lang}>
+<Layout lang={lang} strip={false}>
   <MetaPost
     slot="head"
     post={post}

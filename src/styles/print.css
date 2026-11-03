@@ -1,0 +1,47 @@
+/* On paper: the post and its words, without the site around it. Light
+   colours whatever the screen's scheme, nothing that only works on a
+   screen (the bars, the TOC, buttons, previews), and long blocks broken
+   between rather than through. A page is narrower than 64rem, so the
+   layout is already the phone's single column.
+
+   Unlayered and last, so it holds against every component's own rules. */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  page-header,
+  page-footer,
+  post-actions,
+  copy-markdown,
+  link-preview,
+  [data-skip-link],
+  [data-scroll-top],
+  [data-heading-anchor],
+  [data-site-icon] {
+    display: none !important;
+  }
+
+  /* A link's address, after its words, since paper can't follow it. */
+  prose-content a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: var(--step--2);
+    color: var(--muted-foreground);
+    overflow-wrap: anywhere;
+  }
+
+  /* Code prints whole: no inner scroll, long lines wrapped. */
+  prose-content .expressive-code pre {
+    max-block-size: none;
+    overflow: visible;
+    white-space: pre-wrap;
+  }
+
+  prose-content :is(pre, figure, table, [data-callout], .expressive-code) {
+    break-inside: avoid;
+  }
+
+  prose-content :is(h2, h3, h4) {
+    break-after: avoid;
+  }
+}
