@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
 /* The day panel under the heatmap (tokens-dashboard/day.ts): its head,
    the client ring and the legend beside it. */
 
@@ -169,4 +172,5 @@ tokens-dashboard {
     background-color: var(--p);
     opacity: 0.16;
   }
+}
 }

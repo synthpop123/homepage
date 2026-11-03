@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
 /* Breakdown (tokens-dashboard/breakdown.ts): the expandable model,
    client and provider lists. The day panel's legend is built from the
    same rows; day.css adjusts them. */
@@ -37,7 +40,7 @@ tokens-dashboard {
     z-index: -1;
     inline-size: calc(var(--w, 0) * 100%);
     border-radius: var(--radius-xs);
-    background-color: var(--gray-a3);
+    background-color: var(--neutral-a3);
   }
 
   .tk-rows .ico {
@@ -180,4 +183,5 @@ tokens-dashboard {
   .tk-split .tk-label:first-child {
     margin-block-start: 0;
   }
+}
 }

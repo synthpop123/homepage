@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer tokens {
 @font-face {
   font-family: "Inter";
   src: url("../assets/fonts/Inter-Variable.woff2") format("woff2");
@@ -64,4 +67,5 @@ body {
 
 :where(code, kbd, samp, pre) {
   font-feature-settings: normal;
+}
 }

@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer prose {
 prose-content {
   /* The scroller around every table (table-scroll.ts): it takes the
      overflow, so the table stays `display: table` and keeps its
@@ -56,4 +59,5 @@ prose-content {
       }
     }
   }
+}
 }

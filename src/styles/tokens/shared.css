@@ -1,13 +1,11 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
 /* Shared by every Tokens section: the host's tokens (accent, meter,
    brand hues), section headings, the [data-p] palette, the failure
-   state and the skeletons.
-
-   Tokens.astro imports this file last, after the section files, and
-   the skeletons are why: `[data-skeleton] .win-used` overrides
-   `.tk-plans .win-used` (quota.css) at equal specificity, so it has
-   to come later. Nothing else here ties with a section rule on
-   specificity and property for the same element, so being last
-   changes nothing for it. */
+   state and the skeletons. The skeletons sit in the later
+   feeds.states layer, so they win over the section rules whatever the
+   import order. */
 
 tokens-dashboard {
   /* The quota meters' height. Thin enough that a bar reads as a
@@ -17,26 +15,29 @@ tokens-dashboard {
      day ring (day.ts) keeps the same rule for its arcs. */
   --tk-meter: 0.375rem;
 
-  /* Brand palette for stacked segments and chips: each vendor gets the
-     Radix scale nearest its brand hue, at the solid step (9, or 10 / 11
-     where the dark scheme needs the lift). Client ids map onto their
-     vendor's hue (see the [data-p] rules below). */
+  /* Brand palette for stacked segments and chips: each vendor gets a
+     Radix scale near its brand hue, at a solid or text step (9 to 11).
+     Seven vendors are blue to violet, so their scale and step were picked
+     together to keep any two at least 0.06 apart in OKLab in both schemes
+     (as nearest steps they were 0.024: Indigo 9 and Iris 9 read as one).
+     Client ids map onto their vendor's hue (see the [data-p] rules
+     below). */
   --tk-p-anthropic: light-dark(#d97757, #cc785c); /* Claude's own coral */
   --tk-p-openai: light-dark(#29a383, #27b08b); /* Jade 9 / 10 */
-  --tk-p-google: light-dark(#0090ff, #3b9eff); /* Blue 9 / 10 */
+  --tk-p-google: light-dark(#0090ff, #70b8ff); /* Blue 9 / 11 */
   --tk-p-alibaba: light-dark(#f76b15, #ff801f); /* Orange 9 / 10 */
   --tk-p-xai: light-dark(#646464, #b4b4b4); /* Gray 11 */
-  --tk-p-cursor: light-dark(#6e56cf, #7d66d9); /* Violet 9 / 10 */
-  --tk-p-deepseek: light-dark(#3e63dd, #5472e4); /* Indigo 9 / 10 */
-  --tk-p-meta: light-dark(#0d74ce, #70b8ff); /* Blue 11 */
-  --tk-p-openrouter: light-dark(#5b5bd6, #6e6ade); /* Iris 9 / 10 */
-  --tk-p-zed: light-dark(#0797b9, #23afd0); /* Cyan 10 */
+  --tk-p-cursor: light-dark(#8145b5, #d19dff); /* Purple 11 */
+  --tk-p-deepseek: light-dark(#3358d4, #3e63dd); /* Indigo 10 / 9 */
+  --tk-p-meta: light-dark(#00749e, #7ce2fe); /* Sky 11 / 9 */
+  --tk-p-openrouter: light-dark(#6e56cf, #6e56cf); /* Violet 9 */
+  --tk-p-zed: light-dark(#0797b9, #00a2c7); /* Cyan 10 / 9 */
   --tk-p-opencode: light-dark(#8d8d86, #7c7b74); /* Sand 9 / 10 */
   --tk-p-hermes: light-dark(#978365, #a39073); /* Gold 9 / 10 */
   --tk-p-craft: light-dark(#ab4aba, #b658c4); /* Plum 9 / 10 */
   --tk-p-moonshot: light-dark(#202020, #eeeeee); /* Gray 12 */
-  --tk-p-zai: light-dark(#3a5bc7, #9eb1ff); /* Indigo 11 */
-  --tk-p-other: var(--gray-8);
+  --tk-p-zai: light-dark(#0d74ce, #0090ff); /* Blue 11 / 9 */
+  --tk-p-other: var(--neutral-8);
 
   display: block;
 
@@ -196,7 +197,13 @@ tokens-dashboard {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+}
+}
 
+/* A later sub-layer than every section rule, so a skeleton wins whatever
+   the specificity or the import order. */
+@layer feeds.states {
+tokens-dashboard {
   /* Skeletons */
 
   /* A placeholder line is shorter than the text it stands for (0.85em
@@ -268,7 +275,7 @@ tokens-dashboard {
   .tk-chart-bars[data-skeleton],
   .tk-chart-legend [data-skeleton] .chip,
   .tk-device[data-skeleton] .dot {
-    background-color: var(--gray-4);
+    background-color: var(--neutral-4);
   }
 
   .tk-chart-bars[data-skeleton] {
@@ -277,6 +284,7 @@ tokens-dashboard {
   }
 
   .tk-donut[data-skeleton] circle {
-    stroke: var(--gray-4);
+    stroke: var(--neutral-4);
   }
+}
 }

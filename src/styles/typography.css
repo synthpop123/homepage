@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer prose {
 :root {
     /* Four sizes, no more: 12px for labels, axes and footnotes, 14px for
        interface text and meta, 16px for reading, 24px for a page's title
@@ -13,6 +16,9 @@
     --font-weight-strong: 600;
 
     --tracking-tight: -0.015em;
+    /* Uppercase labels open up; a large figure tightens. */
+    --tracking-label: 0.06em;
+    --tracking-figure: -0.02em;
     /* A page's title (PageTitle, a post's h1): a step heavier than the
        text and set tighter, as Inter wants at size.
        Han characters are drawn on a full em and touch when tracked in,
@@ -22,7 +28,7 @@
     --leading-offset: 0.65rem;
 
     --prose-foreground: var(--foreground);
-    --prose-marker: var(--gray-8);
+    --prose-marker: var(--neutral-8);
     /* Parenthetical asides: Radix's second text step. */
     --prose-aside: var(--muted-foreground);
 
@@ -98,4 +104,5 @@ prose-content {
     :is(p, li) {
         color: var(--prose-foreground);
     }
+}
 }

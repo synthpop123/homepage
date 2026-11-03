@@ -189,7 +189,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     border-radius: var(--radius-xs);
     /* Brand marks are drawn for a white ground: Gray 1 (light), in
        either scheme. */
-    background-color: #fcfcfc;
+    background-color: var(--logo-ground);
   }
 
   @media (hover: hover) {
@@ -201,7 +201,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   portfolio-feed :global(.portfolio-accounts button[aria-pressed="true"]) {
     color: var(--foreground);
     background-color: var(--background);
-    outline: var(--hairline) solid var(--gray-a6);
+    outline: var(--hairline) solid var(--neutral-a6);
     outline-offset: calc(-1 * var(--hairline));
   }
 
@@ -237,7 +237,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     margin-inline-start: -0.3rem;
     overflow: hidden;
     border-radius: var(--radius-sm);
-    background-color: #fcfcfc;
+    background-color: var(--logo-ground);
     outline: 2px solid var(--background);
     transition:
       inline-size var(--duration) var(--ease),
@@ -249,7 +249,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     content: attr(data-monogram);
     font-size: var(--step--2);
     font-weight: var(--font-weight-medium);
-    color: #646464;
+    color: var(--logo-ink);
   }
 
   portfolio-feed :global(.broker img) {
@@ -331,12 +331,12 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   portfolio-feed :global(.chart-area) {
-    fill: var(--gray-a2);
+    fill: var(--neutral-a2);
   }
 
   portfolio-feed :global(.chart-ghost) {
     fill: none;
-    stroke: var(--gray-9);
+    stroke: var(--neutral-9);
     stroke-width: 1.25;
     stroke-dasharray: 4 3;
   }
@@ -363,11 +363,11 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   }
 
   portfolio-feed :global(.chart-loss) {
-    fill: var(--gray-a3);
+    fill: var(--neutral-a3);
   }
 
   portfolio-feed :global(.chart-cost) {
-    stroke: var(--gray-9);
+    stroke: var(--neutral-9);
     stroke-width: 1;
     stroke-dasharray: 3 3;
   }
@@ -445,7 +445,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     outline-offset: 1px;
   }
 
-  /* Range tabs: mono labels, the picked one on a Gray 3 fill. */
+  /* Range tabs: mono labels, the picked one on a neutral 3 fill. */
   portfolio-feed :global(.range-tabs) {
     display: flex;
     flex-wrap: wrap;
@@ -533,33 +533,33 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   portfolio-feed :global(.alloc-seg) {
     min-inline-size: 2px;
     border-radius: var(--radius-xs);
-    background-color: var(--gray-12);
+    background-color: var(--neutral-12);
   }
 
   portfolio-feed :global(.alloc-seg[data-shade="1"]) {
-    background-color: var(--gray-11);
+    background-color: var(--neutral-11);
   }
 
   portfolio-feed :global(.alloc-seg[data-shade="2"]) {
-    background-color: var(--gray-10);
+    background-color: var(--neutral-10);
   }
 
   portfolio-feed :global(.alloc-seg[data-shade="3"]) {
-    background-color: var(--gray-9);
+    background-color: var(--neutral-9);
   }
 
   portfolio-feed :global(.alloc-seg[data-shade="4"]) {
-    background-color: var(--gray-8);
+    background-color: var(--neutral-8);
   }
 
   portfolio-feed :global(.alloc-seg[data-shade="5"]) {
-    background-color: var(--gray-7);
+    background-color: var(--neutral-7);
   }
 
   portfolio-feed :global(.alloc-cash) {
     background: repeating-linear-gradient(
       -45deg,
-      var(--gray-a7) 0 1.5px,
+      var(--neutral-a7) 0 1.5px,
       transparent 1.5px 4px
     );
   }
@@ -634,14 +634,14 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     overflow: hidden;
     border-radius: var(--radius-md);
     background-color: var(--muted);
-    outline: var(--hairline) solid var(--gray-a6);
+    outline: var(--hairline) solid var(--neutral-a6);
     outline-offset: calc(-1 * var(--hairline));
   }
 
   /* The monogram only where there is no logo; a logo sits on white (Gray
      1, light), the ground brand marks are drawn for, in either scheme. */
   portfolio-feed :global(.holding-logo:has(img)) {
-    background-color: #fcfcfc;
+    background-color: var(--logo-ground);
   }
 
   portfolio-feed :global(.holding-logo:not(:has(img, svg))::before) {
@@ -783,7 +783,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     display: grid;
     gap: var(--space-xs);
     padding: var(--space-s) var(--space-xs) var(--space-xs);
-    background-color: var(--gray-a2);
+    background-color: var(--neutral-a2);
   }
 
   /* The head: the price set large with its move as a tinted figure and
@@ -861,7 +861,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     content: "";
     inline-size: 0.7em;
     block-size: 0.7em;
-    background-color: var(--gray-9);
+    background-color: var(--neutral-9);
     mask: url("../assets/icons/sites/external.svg") center / contain no-repeat;
   }
 
@@ -909,7 +909,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   portfolio-feed :global(.key-cost::before) {
     content: "";
     inline-size: 1rem;
-    border-block-start: 1px dashed var(--gray-9);
+    border-block-start: 1px dashed var(--neutral-9);
   }
 
   portfolio-feed :global(.key-buy::before) {
@@ -977,7 +977,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     inline-size: 0;
     block-size: 0.625rem;
     border-radius: 0;
-    border-inline-start: 1px dashed var(--gray-9);
+    border-inline-start: 1px dashed var(--neutral-9);
     background: none;
   }
 
@@ -1003,7 +1003,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
   portfolio-feed :global(.band-cost) {
     position: absolute;
     inset-block: -0.25rem;
-    border-inline-start: 1px dashed var(--gray-9);
+    border-inline-start: 1px dashed var(--neutral-9);
   }
 
   portfolio-feed :global(.band-pin) {

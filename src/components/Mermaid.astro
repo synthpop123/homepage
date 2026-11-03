@@ -31,45 +31,34 @@
       return theme === "dark" || (!theme && prefersDark.matches)
     }
 
-    // Mermaid can't read CSS variables, so the Radix Gray steps the page
-    // uses are spelled out: fills at 2 and 3, edges at 7, lines at 9,
-    // text at 12.
-    const palette = (dark: boolean) =>
-      dark
-        ? {
-            darkMode: true,
-            background: "#111111",
-            mainBkg: "#222222",
-            primaryColor: "#222222",
-            secondaryColor: "#2a2a2a",
-            tertiaryColor: "#191919",
-            primaryBorderColor: "#484848",
-            clusterBkg: "#191919",
-            clusterBorder: "#3a3a3a",
-            lineColor: "#6e6e6e",
-            primaryTextColor: "#eeeeee",
-            textColor: "#eeeeee",
-            noteBkgColor: "#222222",
-            noteBorderColor: "#484848",
-            edgeLabelBackground: "#111111",
-          }
-        : {
-            darkMode: false,
-            background: "#fcfcfc",
-            mainBkg: "#f0f0f0",
-            primaryColor: "#f0f0f0",
-            secondaryColor: "#e8e8e8",
-            tertiaryColor: "#f9f9f9",
-            primaryBorderColor: "#cecece",
-            clusterBkg: "#f9f9f9",
-            clusterBorder: "#d9d9d9",
-            lineColor: "#8d8d8d",
-            primaryTextColor: "#202020",
-            textColor: "#202020",
-            noteBkgColor: "#f0f0f0",
-            noteBorderColor: "#cecece",
-            edgeLabelBackground: "#fcfcfc",
-          }
+    // Mermaid can't read CSS variables, so each colour is resolved through
+    // a probe: a custom property reads back as its declared light-dark()
+    // text, but a property set from it reads back as the colour the current
+    // scheme picks. Fills at neutral 2–4, edges at 6–7, lines at 9, text at 12.
+    const probe = document.createElement("span")
+    probe.hidden = true
+    document.body.append(probe)
+    const token = (name: string) => {
+      probe.style.color = `var(--${name})`
+      return getComputedStyle(probe).color
+    }
+    const palette = (dark: boolean) => ({
+      darkMode: dark,
+      background: token("neutral-1"),
+      mainBkg: token("neutral-3"),
+      primaryColor: token("neutral-3"),
+      secondaryColor: token("neutral-4"),
+      tertiaryColor: token("neutral-2"),
+      primaryBorderColor: token("neutral-7"),
+      clusterBkg: token("neutral-2"),
+      clusterBorder: token("neutral-6"),
+      lineColor: token("neutral-9"),
+      primaryTextColor: token("neutral-12"),
+      textColor: token("neutral-12"),
+      noteBkgColor: token("neutral-3"),
+      noteBorderColor: token("neutral-7"),
+      edgeLabelBackground: token("neutral-1"),
+    })
 
     const render = async () => {
       for (const [el, source] of sources) {

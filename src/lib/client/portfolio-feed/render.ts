@@ -220,7 +220,7 @@ export function buildAllocation(
   const segments = rows.map((row, i) => {
     const segment = el("span", "alloc-seg")
     segment.style.flexGrow = String(row.weight)
-    // Heaviest darkest, down Gray 12 to Gray 7, never quite to nothing.
+    // Heaviest darkest, down neutral 12 to 7, never quite to nothing.
     segment.dataset.shade = String(Math.min(i, 5))
     segment.dataset.symbol = row.symbol
     return segment

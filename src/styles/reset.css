@@ -1,3 +1,9 @@
+/* Cascade layers, lowest first. Each global stylesheet opens with the
+   same statement, so the order holds whichever file is bundled first;
+   component <style> blocks are unlayered and win over all of them. */
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer reset {
 *,
 ::after,
 ::before,
@@ -208,7 +214,10 @@ input:where([type="button"], [type="reset"], [type="submit"]),
 ::-webkit-outer-spin-button {
   height: auto;
 }
+}
 
+/* Unlayered on purpose: a layered rule loses to any component style,
+   and these three must hold against all of them. */
 [hidden]:where(:not([hidden="until-found"])) {
   display: none !important;
 }

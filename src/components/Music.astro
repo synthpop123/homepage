@@ -118,7 +118,7 @@ const stats: { key: keyof SiteStats; label: string }[] = [
     overflow: hidden;
     border-radius: var(--radius-sm);
     background-color: var(--muted);
-    outline: var(--hairline) solid var(--gray-a6);
+    outline: var(--hairline) solid var(--neutral-a6);
     outline-offset: calc(-1 * var(--hairline));
   }
 
@@ -179,7 +179,7 @@ const stats: { key: keyof SiteStats; label: string }[] = [
   music-feed :global([data-lead] .when) {
     font-size: var(--step--2);
     font-weight: var(--font-weight-medium);
-    letter-spacing: 0.06em;
+    letter-spacing: var(--tracking-label);
     text-transform: uppercase;
     color: var(--muted-foreground);
   }

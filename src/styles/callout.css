@@ -1,10 +1,16 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer prose {
 prose-content {
   /* A callout is a tinted block (its hue's alpha step 3) with the title
-     in the hue's text step: no edge line, the fill alone sets it apart.
-     Hues are Radix Blue, Grass, Amber, Red and Purple. */
+     in the hue's step 12 in light and 11 in dark (step 11 on its own fill
+     falls under 4.5:1 in light), its icon in step 11: no edge line, the
+     fill alone sets it apart. Hues are Radix Blue, Grass, Amber, Red and
+     Purple. */
   [data-callout] {
     --callout-fill: var(--muted);
     --callout-text: var(--muted-foreground);
+    --callout-icon: var(--muted-foreground);
 
     position: relative;
     padding: var(--space-xs) var(--space-s);
@@ -29,6 +35,7 @@ prose-content {
 
       svg {
         flex-shrink: 0;
+        color: var(--callout-icon);
         inline-size: 1.25rem;
         block-size: 1.25rem;
       }
@@ -64,23 +71,29 @@ prose-content {
   }
 
   [data-callout="note"] {
-    --callout-fill: light-dark(#008ff519, #0077ff3a);
-    --callout-text: light-dark(#0d74ce, #70b8ff);
+    --callout-fill: var(--blue-a3);
+    --callout-text: light-dark(var(--blue-12), var(--blue-11));
+    --callout-icon: var(--blue-11);
   }
   [data-callout="tip"] {
     --callout-fill: var(--grass-a3);
-    --callout-text: var(--grass-11);
+    --callout-text: light-dark(var(--grass-12), var(--grass-11));
+    --callout-icon: var(--grass-11);
   }
   [data-callout="warning"] {
-    --callout-fill: light-dark(#ffde003d, #fa820022);
-    --callout-text: light-dark(#ab6400, #ffca16);
+    --callout-fill: var(--amber-a3);
+    --callout-text: light-dark(var(--amber-12), var(--amber-11));
+    --callout-icon: var(--amber-11);
   }
   [data-callout="caution"] {
-    --callout-fill: light-dark(#f3000d14, #ff173f2d);
-    --callout-text: light-dark(#ce2c31, #ff9592);
+    --callout-fill: var(--red-a3);
+    --callout-text: light-dark(var(--red-12), var(--red-11));
+    --callout-icon: var(--red-11);
   }
   [data-callout="important"] {
-    --callout-fill: light-dark(#8e00f112, #c150ff2d);
-    --callout-text: light-dark(#8145b5, #d19dff);
+    --callout-fill: var(--purple-a3);
+    --callout-text: light-dark(var(--purple-12), var(--purple-11));
+    --callout-icon: var(--purple-11);
   }
+}
 }

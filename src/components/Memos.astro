@@ -95,13 +95,13 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   memos-feed :global(.memos-list > li:last-child::before) {
     inset-block-end: auto;
     block-size: calc(var(--node-y) + 3rem);
-    mask: linear-gradient(#000 calc(100% - 3rem), transparent);
+    mask: linear-gradient(black calc(100% - 3rem), transparent);
   }
 
   memos-feed :global(.memos-list > li:only-child::before) {
     inset-block-start: var(--node-y);
     block-size: 3rem;
-    mask: linear-gradient(#000, transparent);
+    mask: linear-gradient(black, transparent);
   }
 
   memos-feed :global(.memos-list > li::after) {
@@ -112,7 +112,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     inline-size: var(--node);
     aspect-ratio: 1;
     border-radius: 50%;
-    background-color: var(--gray-8);
+    background-color: var(--neutral-8);
   }
 
   @media (hover: hover) {
@@ -166,7 +166,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     column-gap: 0.5em;
     font-size: var(--step--2);
     font-weight: var(--font-weight-medium);
-    letter-spacing: 0.06em;
+    letter-spacing: var(--tracking-label);
     line-height: calc(var(--leading-offset) + 1rem);
     text-transform: uppercase;
     color: var(--muted-foreground);
@@ -276,7 +276,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
     margin: 0;
     overflow: hidden;
     background-color: var(--muted);
-    outline: var(--hairline) solid var(--gray-a6);
+    outline: var(--hairline) solid var(--neutral-a6);
     outline-offset: calc(-1 * var(--hairline));
   }
 
@@ -333,7 +333,7 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   }
 
   memos-feed :global(.memos-list > .memo-year[data-skeleton]::after) {
-    background-color: var(--gray-4);
+    background-color: var(--neutral-4);
   }
 
   .sk-year {
@@ -354,6 +354,6 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
   }
 
   .sk-media {
-    background-color: var(--gray-4);
+    background-color: var(--neutral-4);
   }
 </style>

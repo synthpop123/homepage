@@ -1,3 +1,5 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
 /* Moving between pages cross-fades: a cross-document view transition,
    CSS only, with no client-side router. The theme is set before first
    paint, so both sides of the fade carry it. The sidebar (named `sidebar`
@@ -20,6 +22,7 @@
   animation: none;
 }
 
+@layer layout {
 :root {
   /* https://utopia.fyi/grid/calculator?c=320,16,1.125,1024,18,1.2,6,1,&s=0.75%7C0.5%7C0.25,1.5%7C2%7C3%7C4%7C6,s-l%7Cs-m&g=s,m,2xl,12 */
   --space-3xs: clamp(0.25rem, 0.2269rem + 0.1127vw, 0.3125rem);
@@ -84,4 +87,5 @@ html {
       --bar-toc-height: calc(1.5 * var(--step--1) + 2 * var(--space-2xs) + var(--hairline));
     }
   }
+}
 }

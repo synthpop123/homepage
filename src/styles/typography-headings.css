@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer prose {
 prose-content {
   :is(h1, h2, h3, h4, h5, h6) {
     margin-block: 1.5em 0.5em;
@@ -62,4 +65,5 @@ prose-content {
     font-size: var(--step--1);
     color: var(--muted-foreground);
   }
+}
 }

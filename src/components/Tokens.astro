@@ -35,7 +35,8 @@ import { type DeviceKind, TOKENS } from "@/consts"
 import { COMPOSITION, RANGES, TOP_ROWS } from "@/lib/client/tokens"
 import { SKELETON_ROWS } from "@/lib/utils"
 // One stylesheet per renderer in tokens-dashboard/, in the order the
-// rules were written; shared.css goes last (its header says why).
+// rules were written. The layers (feeds.sections, feeds.states) settle
+// which rule wins, not this order.
 import "@/styles/tokens/activity.css"
 import "@/styles/tokens/day.css"
 import "@/styles/tokens/overview.css"

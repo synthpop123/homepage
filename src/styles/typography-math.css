@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer prose {
 prose-content {
   counter-reset: tmlEqnNo;
 
@@ -396,4 +399,5 @@ prose-content {
     overflow-x: auto;
     overflow-y: hidden;
   }
+}
 }

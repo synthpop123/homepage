@@ -6,14 +6,15 @@ import { SITE } from "@/consts"
 import type { TimelineCell } from "@/lib/content"
 import { formatCompact, formatDate } from "@/lib/utils"
 
-// Colors mirror the light theme grays in src/styles/color.css.
-const BG = "#fcfcfc"
-const FG = "#202020"
-const MUTED = "#646464"
+// Colors mirror the light theme in src/styles/color.css (tokens-audit.test.ts
+// checks they still do).
+const BG = "#fcfdfc"
+const FG = "#1d211c"
+const MUTED = "#60655f"
 // The timeline's cells: the heatmap's empty, faintest and accent steps.
-const CELL = "#e8e8e8"
-const RELATED = "#9be9a8"
-const ACCENT = "#30a14e"
+const CELL = "#e7e9e7"
+const RELATED = "#94ce9a"
+const ACCENT = "#3e9b4f"
 
 const WIDTH = 1200
 const HEIGHT = 630

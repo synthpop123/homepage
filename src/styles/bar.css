@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer primitives {
 [data-bar] {
   @media (width < 64rem) {
     padding-block: var(--space-2xs);
@@ -6,4 +9,5 @@
     border-block-end: var(--hairline) solid var(--border);
     border-image: var(--bar-border-image);
   }
+}
 }

@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
 /* Shared section typography and loading surfaces for the live sections
    (home's Now, /misc, /memos, /tokens) and the static sections beside
    them. Row layouts stay local. Each component that draws one imports
@@ -50,7 +53,7 @@
   margin-block: var(--space-m) var(--space-2xs);
   font-size: var(--step--2);
   font-weight: var(--font-weight-medium);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -112,7 +115,7 @@
   font-weight: var(--font-weight-medium);
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-figure);
   white-space: nowrap;
   /* The skeleton bar is shorter than a line of figures; reserve the line. */
   min-block-size: 1lh;
@@ -171,7 +174,7 @@ switch-feed [data-skeleton] .cover,
 switch-feed .sk-line,
 portfolio-feed .sk-line,
 flights-feed .sk-line {
-  background-color: var(--gray-4);
+  background-color: var(--neutral-4);
 }
 
 music-feed .sk-line,
@@ -215,7 +218,7 @@ flights-feed .sk-line {
     overflow: hidden;
     border-radius: var(--radius-md);
     background-color: var(--muted);
-    outline: var(--hairline) solid var(--gray-a6);
+    outline: var(--hairline) solid var(--neutral-a6);
     outline-offset: calc(-1 * var(--hairline));
 
     img {
@@ -239,11 +242,11 @@ flights-feed .sk-line {
     radial-gradient(
       circle,
       transparent 0 30%,
-      rgb(255 255 255 / 0.05) 31%,
+      var(--white-a1) 31%,
       transparent 32%
     ),
-    repeating-radial-gradient(circle, #191919 0 1.5px, #111111 1.5px 3px);
-  outline: var(--hairline) solid var(--gray-a6);
+    repeating-radial-gradient(circle, var(--record-2) 0 1.5px, var(--record-1) 1.5px 3px);
+  outline: var(--hairline) solid var(--neutral-a6);
 
   /* A fixed sheen over the grooves (Radix White A1 and A2). */
   &::after {
@@ -254,9 +257,9 @@ flights-feed .sk-line {
     background: conic-gradient(
       from 20deg,
       transparent 0 8%,
-      rgb(255 255 255 / 0.1) 13%,
+      var(--white-a2) 13%,
       transparent 20% 55%,
-      rgb(255 255 255 / 0.05) 62%,
+      var(--white-a1) 62%,
       transparent 70%
     );
     pointer-events: none;
@@ -268,12 +271,13 @@ flights-feed .sk-line {
   aspect-ratio: 1;
   overflow: hidden;
   border-radius: 50%;
-  background-color: var(--gray-8);
+  background-color: var(--neutral-8);
 
   img {
     inline-size: 100%;
     block-size: 100%;
     object-fit: cover;
-    mask: radial-gradient(circle, transparent 0 6%, #000 7%);
+    mask: radial-gradient(circle, transparent 0 6%, black 7%);
   }
+}
 }
