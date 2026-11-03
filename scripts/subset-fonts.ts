@@ -17,12 +17,14 @@
  * 600 for Inter (body, --font-weight-medium's 450, one 600 in Flights),
  * 400 to 700 for Geist Mono, whose code theme sets bold tokens. The
  * @font-face `font-weight` ranges in fonts.css have to match. Inter's
- * `opsz` axis is pinned to its text size (14): headings top out near
- * 28px, too small for the display cut to earn its extra third of a file.
+ * `opsz` axis keeps 14 to 24, the text cut up to the site's largest size,
+ * and the browser picks the cut from the font size (font-optical-sizing:
+ * auto): a 24px title is set in a tighter, finer cut than 16px text. The
+ * range costs about 24 kB; up to 32 would add 4 kB for sizes never set.
  *
  * Inter keeps only the layout features a browser applies by itself plus
- * the ones the site sets: `tnum` (tabular-nums) and the stylistic sets in
- * --font-sans-features (fonts.css). The circled/squared sets, fractions,
+ * the ones the site sets: `tnum` (tabular-nums), the stylistic sets in
+ * --font-sans-features and `case` in --font-label-features (fonts.css). The circled/squared sets, fractions,
  * superiors and the rest go. Adding a feature to --font-sans-features
  * means adding it here and re-running.
  *
@@ -49,8 +51,9 @@ const FULL_MATH_COMMIT = "3b2daa0"
 
 /** Shaping a browser does unasked (GSUB and GPOS), kept for Inter. */
 const DEFAULT_FEATURES = ["calt", "ccmp", "kern", "locl", "mark", "mkmk"]
-/** What the CSS asks for: tabular-nums and --font-sans-features. */
-const SET_FEATURES = ["tnum", "ss01", "ss03", "ss04", "cv11"]
+/** What the CSS asks for: tabular-nums, --font-sans-features and
+ *  --font-label-features. */
+const SET_FEATURES = ["tnum", "ss01", "ss03", "ss04", "cv11", "case"]
 
 const RANGES: [number, number][] = [
   [0x20, 0x7e], // ASCII
@@ -107,7 +110,10 @@ const webFonts: {
     file: "Inter-Variable.woff2",
     commit: FULL_INTER_COMMIT,
     ranges: RANGES,
-    axes: { wght: { min: 400, max: 600, default: 400 }, opsz: 14 },
+    axes: {
+      wght: { min: 400, max: 600, default: 400 },
+      opsz: { min: 14, max: 24, default: 14 },
+    },
     features: [...DEFAULT_FEATURES, ...SET_FEATURES],
   },
   {

@@ -16,6 +16,13 @@ prose-content {
     font-style: normal;
   }
 
+  /* Han has no italic: emphasis is the dot under each character, as in
+     Chinese print. */
+  :lang(zh) :is(em, i) {
+    text-emphasis: filled dot;
+    text-emphasis-position: under right;
+  }
+
   /* A parenthetical aside (src/lib/asides.ts) steps back a shade, links and
      emphasis inside it included; a link keeps its underline. */
   [data-aside] {
