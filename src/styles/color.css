@@ -203,6 +203,13 @@
   --ring:               var(--accent);
 
   color-scheme: light dark;
+
+  /* The browser's own parts in the site's colours: form controls in the
+     accent, the caret in its text step, scrollbars a border step on no
+     track. */
+  accent-color: var(--accent-fill);
+  caret-color: var(--accent);
+  scrollbar-color: var(--neutral-a7) transparent;
 }
 
 /* Asked for more contrast: secondary text joins the primary, and lines

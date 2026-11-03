@@ -1,6 +1,18 @@
 ---
+import PostStrip from "@/components/PostStrip.astro"
 import SocialIcons from "@/components/SocialIcons.astro"
 import { SITE, SOCIALS } from "@/consts"
+import { getSeries, timeline } from "@/lib/content"
+
+type Props = { strip?: boolean }
+
+const { strip = true } = Astro.props
+const series = strip ? await getSeries() : []
+// Every post as a cell, oldest first, the newest lit: the writing at a
+// glance, and a way to all of it.
+const cells = series.length
+  ? timeline(series, [series[0][0].id], { related: false })
+  : []
 ---
 
 <footer>
@@ -8,14 +20,23 @@ import { SITE, SOCIALS } from "@/consts"
     &copy; 2021-{new Date().getFullYear()}
     {SITE.title}
   </p>
+  {cells.length > 0 && (
+      <a
+        class="footer-strip"
+        href="/blog"
+        aria-label={`All ${series.length} posts`}
+      >
+        <PostStrip cells={cells} mini />
+      </a>
+    )}
   <SocialIcons links={SOCIALS} />
 </footer>
 
 <style>
-  /* One line for as long as the two of them fit on one — the pair is barely
-     17rem wide, so that is every phone. Wrapping is the fallback rather than
-     the mobile layout, and once a line holds only one of them it reads
-     better centred than pinned to an edge. */
+  /* One line for as long as the two of them fit on one — the pair is
+     barely 17rem wide, so that is every phone. Wrapping is the fallback
+     rather than the mobile layout, and once a line holds only one of
+     them it reads better centred than pinned to an edge. */
   footer {
     display: flex;
     flex-wrap: wrap;
@@ -31,6 +52,17 @@ import { SITE, SOCIALS } from "@/consts"
     p {
       font-size: var(--step--1);
       color: var(--muted-foreground);
+    }
+  }
+
+  /* The strip joins them where there is room for three on a line, and
+     is left out below that rather than given a line of its own. */
+  .footer-strip {
+    display: inline-flex;
+    padding-block: var(--space-3xs);
+
+    @media (width < 30rem) {
+      display: none;
     }
   }
 </style>

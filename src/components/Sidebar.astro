@@ -1,5 +1,7 @@
 ---
-import Logo from "@/assets/logo.svg"
+// Written by scripts/prebuild.ts: logo.svg, its cells redrawn from the
+// last three days of activity when the Tokens snapshot is reachable.
+import Logo from "@/assets/logo-live.svg"
 import ThemeToggle from "@/components/ThemeToggle.astro"
 import { NAVIGATION, SITE } from "@/consts"
 import { normalizePath } from "@/lib/utils"
@@ -49,7 +51,7 @@ const section = NAVIGATION.find(
           ))}
         {!section &&
             crumbs.map((crumb, i) => (
-              <li data-depth={i ? 1 : undefined}>
+              <li data-crumb data-depth={i ? 1 : undefined}>
                 <a
                   href={crumb.href}
                   aria-current={i === crumbs.length - 1 ? "page" : undefined}
@@ -212,7 +214,11 @@ const section = NAVIGATION.find(
         font-size: var(--step--1);
       }
 
-      ul {
+      /* The row holds the sections alone: a page's crumbs, nested or
+         (outside any section, as on the 404) at the top level, would push
+         the theme toggle past the edge. */
+      ul,
+      li[data-crumb] {
         display: none;
       }
 

@@ -102,7 +102,7 @@ const { title, sections } = Astro.props
     );
     font-size: var(--step--1);
 
-    @media (width < 64rem) {
+    @media (width < 76rem) {
       position: relative;
       top: auto;
       max-height: none;
@@ -150,7 +150,7 @@ const { title, sections } = Astro.props
       color: var(--muted-foreground);
     }
 
-    @media (width < 64rem) {
+    @media (width < 76rem) {
       display: none;
     }
   }
@@ -158,7 +158,7 @@ const { title, sections } = Astro.props
   label {
     display: none;
 
-    @media (width < 64rem) {
+    @media (width < 76rem) {
       display: flex;
       align-items: center;
       gap: var(--space-2xs);
@@ -212,14 +212,14 @@ const { title, sections } = Astro.props
   }
 
   nav:has(input:focus-visible) label {
-    @media (width < 64rem) {
+    @media (width < 76rem) {
       outline: 2px solid var(--ring);
       outline-offset: -2px;
     }
   }
 
   nav:has(input:checked) label > svg:last-of-type {
-    @media (width < 64rem) {
+    @media (width < 76rem) {
       rotate: 180deg;
     }
   }
@@ -235,7 +235,7 @@ const { title, sections } = Astro.props
       display: none;
     }
 
-    @media (width < 64rem) {
+    @media (width < 76rem) {
       display: none;
       position: absolute;
       inset-block-start: 100%;
@@ -245,7 +245,7 @@ const { title, sections } = Astro.props
   }
 
   nav:has(input:checked) > ul {
-    @media (width < 64rem) {
+    @media (width < 76rem) {
       display: flex;
     }
   }

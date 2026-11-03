@@ -14,6 +14,7 @@ import "@/styles/layout.css"
 import "@/styles/icon-button.css"
 import "@/styles/bar.css"
 import "@/styles/shape.css"
+import "@/styles/print.css"
 
 import Footer from "@/components/Footer.astro"
 import MetaHead from "@/components/MetaHead.astro"
@@ -24,9 +25,12 @@ type Props = {
   crumbs?: { label: string; href: string }[]
   /** The page's language, when it is not the site's (a Chinese post). */
   lang?: string
+  /** The footer's strip of every post; off where the page draws its own
+   *  (a post's end, the home page's Writing). */
+  strip?: boolean
 }
 
-const { crumbs, lang = SITE.locale } = Astro.props
+const { crumbs, lang = SITE.locale, strip = true } = Astro.props
 // The chrome is English on every page, so a page in another language says
 // so around it.
 const chromeLang = lang === SITE.locale ? undefined : SITE.locale
@@ -51,7 +55,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
       </page-header>
       <page-content>
         <main id="main" tabindex="-1"><slot /></main>
-        <page-footer lang={chromeLang}><Footer /></page-footer>
+        <page-footer lang={chromeLang}><Footer strip={strip} /></page-footer>
       </page-content>
     </page-grid>
   </body>
@@ -138,11 +142,39 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
     grid-column: 10 / 13;
     grid-row: 1;
 
-    @media screen and (width >= 64rem) {
+    @media screen and (width >= 76rem) {
       position: fixed;
       inset-block: var(--page-offset-top) var(--page-offset-bottom);
       inset-inline-end: var(--grid-edge);
       width: calc(3 * var(--grid-column-width) + 2 * var(--grid-gutter));
+    }
+
+    /* Between 64rem and 76rem a TOC column would leave the text too
+       narrow, so the TOC folds into the bar it is on a phone and sits
+       at the head of the content column, which takes the TOC's columns
+       back up to the measure. It sticks to the top of the window, where
+       the sidebar leaves room for it. */
+    @media screen and (64rem <= width < 76rem) {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 10;
+      grid-column: 3 / 13;
+      align-self: start;
+      max-inline-size: var(--measure);
+      margin-block-start: calc(-1 * var(--page-offset-top));
+      margin-block-end: calc(var(--page-offset-top) - var(--space-s));
+    }
+  }
+
+  page-grid:has(page-toc) {
+    @media screen and (64rem <= width < 76rem) {
+      grid-template-rows: auto 1fr;
+
+      page-content {
+        grid-column: 3 / 13;
+        grid-row: 2;
+        max-inline-size: var(--measure);
+      }
     }
   }
 
