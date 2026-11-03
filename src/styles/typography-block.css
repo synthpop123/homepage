@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer prose {
 prose-content {
   blockquote {
     border-inline-start: var(--hairline) solid var(--border-strong);
@@ -62,7 +65,12 @@ prose-content {
       block-size: auto;
     }
   }
+}
+}
 
+/* Unlayered: these override Expressive Code's own stylesheet, which is
+   unlayered and would win over anything inside a layer. */
+prose-content {
   .expressive-code {
     content-visibility: auto;
     contain-intrinsic-block-size: auto 20rem;

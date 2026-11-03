@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer prose {
 prose-content {
   a {
     --underline: var(--muted-foreground);
@@ -54,4 +57,5 @@ prose-content {
     border: var(--hairline) solid var(--border-strong);
     border-radius: var(--radius-sm);
   }
+}
 }

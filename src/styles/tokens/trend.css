@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
 /* Trend (tokens-dashboard/trend.ts): the stacked bars, the weekly
    rhythm line, and the tooltip each of them owns. */
 
@@ -26,7 +29,7 @@ tokens-dashboard {
     border-block-end: var(--hairline) solid var(--border-strong);
     background-image: repeating-linear-gradient(
       to top,
-      var(--gray-a4) 0 var(--hairline),
+      var(--neutral-a4) 0 var(--hairline),
       transparent var(--hairline) 25%
     );
   }
@@ -60,7 +63,7 @@ tokens-dashboard {
   }
 
   .tk-chart-bars span[data-zero] {
-    background-color: var(--gray-6);
+    background-color: var(--neutral-6);
   }
 
   .tk-chart-bars i {
@@ -215,7 +218,7 @@ tokens-dashboard {
   }
 
   .tk-rhythm-plot .grid {
-    stroke: var(--gray-a4);
+    stroke: var(--neutral-a4);
     stroke-width: var(--hairline);
   }
 
@@ -257,6 +260,7 @@ tokens-dashboard {
 
   .tk-rhythm-plot[data-skeleton] {
     border-radius: var(--radius-sm);
-    background-color: var(--gray-4);
+    background-color: var(--neutral-4);
   }
+}
 }

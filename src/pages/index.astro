@@ -200,10 +200,10 @@ const toc = [
        The photo keeps the 3:2 frame it always had. No shadows: each
        sheet is held by a hairline edge. */
     cat-figure {
-      /* Paper a step off the page: Gray 1 on light, Gray 3 on dark, so
+      /* Paper a step off the page: neutral 1 on light, neutral 3 on dark, so
          it sits in the dark instead of glowing. */
-      --paper: light-dark(var(--gray-1), var(--gray-3));
-      --paper-edge: var(--gray-6);
+      --paper: light-dark(var(--neutral-1), var(--neutral-3));
+      --paper-edge: var(--neutral-6);
 
       position: relative;
       isolation: isolate;
@@ -311,7 +311,7 @@ const toc = [
       margin: 0;
       font-size: var(--step--2);
       font-weight: var(--font-weight-medium);
-      letter-spacing: 0.06em;
+      letter-spacing: var(--tracking-label);
       line-height: 1.4;
       text-transform: uppercase;
       color: var(--muted-foreground);

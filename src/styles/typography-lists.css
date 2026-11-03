@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer prose {
 prose-content {
   :is(ul, ol) {
     padding-inline-start: 1.5rem;
@@ -62,4 +65,5 @@ prose-content {
       }
     }
   }
+}
 }

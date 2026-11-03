@@ -123,11 +123,11 @@ const tallies = [
      element instead. */
   flights-feed {
     /* The site's one accent: Grass 9 for the route in focus, Grass 11
-       for its words; land a Gray 3 fill under Gray 6 coasts. */
+       for its words; land a neutral 3 fill under neutral 6 coasts. */
     --flights-accent: var(--accent-fill);
-    --flights-land: var(--gray-3);
-    --flights-coast: var(--gray-6);
-    --flights-grid: var(--gray-a3);
+    --flights-land: var(--neutral-3);
+    --flights-coast: var(--neutral-6);
+    --flights-grid: var(--neutral-a3);
 
     display: block;
 
@@ -247,13 +247,13 @@ const tallies = [
     /* The inset: the knot of airports drawn again, larger, in a corner. */
     & .lens {
       fill: none;
-      stroke: var(--gray-8);
+      stroke: var(--neutral-8);
       stroke-width: var(--hairline);
     }
 
     & .leader {
       fill: none;
-      stroke: var(--gray-8);
+      stroke: var(--neutral-8);
       stroke-width: var(--hairline);
       stroke-dasharray: 2 2.5;
     }
@@ -285,7 +285,7 @@ const tallies = [
         font-size: var(--step-1);
         font-weight: var(--font-weight-strong);
         line-height: 1;
-        letter-spacing: -0.02em;
+        letter-spacing: var(--tracking-figure);
       }
 
       & [data-part="to"] {
@@ -398,7 +398,7 @@ const tallies = [
        filled to its share of the most flown route. */
     & .route-hit {
       --share: 0%;
-      --fill: var(--gray-a3);
+      --fill: var(--neutral-a3);
 
       display: grid;
       grid-template-columns: 6em minmax(0, 1fr) auto;
@@ -498,12 +498,12 @@ const tallies = [
       border-radius: var(--radius-xs);
 
       &[data-skeleton] {
-        background-color: var(--gray-4);
+        background-color: var(--neutral-4);
       }
     }
 
     & [data-shade="0"] {
-      background-color: var(--gray-6);
+      background-color: var(--neutral-6);
     }
 
     & [data-shade="1"] {

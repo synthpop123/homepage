@@ -73,7 +73,7 @@ const profileUrl = `https://letterboxd.com/${LETTERBOXD.username}/`
     }
   }
 
-  /* The card answers the pointer the way the Music rows do, a Gray 3
+  /* The card answers the pointer the way the Music rows do, a neutral 3
      wash behind it, its corner concentric with the poster's. */
   movies-feed :global(.movie-link) {
     display: flex;
@@ -105,7 +105,7 @@ const profileUrl = `https://letterboxd.com/${LETTERBOXD.username}/`
     background-color: var(--muted);
     /* An inset hairline, so a pale poster keeps its edge on a pale page
        without a border changing its size. */
-    outline: var(--hairline) solid var(--gray-a6);
+    outline: var(--hairline) solid var(--neutral-a6);
     outline-offset: calc(-1 * var(--hairline));
   }
 
@@ -126,7 +126,7 @@ const profileUrl = `https://letterboxd.com/${LETTERBOXD.username}/`
     color: var(--background);
     font-size: var(--step--2);
     font-weight: var(--font-weight-medium);
-    letter-spacing: 0.06em;
+    letter-spacing: var(--tracking-label);
     line-height: 1.4;
     text-transform: uppercase;
   }
@@ -180,7 +180,7 @@ const profileUrl = `https://letterboxd.com/${LETTERBOXD.username}/`
     font-size: var(--step--2);
     letter-spacing: 0.05em;
     line-height: 1;
-    color: var(--gray-6);
+    color: var(--neutral-6);
   }
 
   movies-feed :global(.rating::before) {

@@ -171,7 +171,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       padding: 0;
     }
 
-    /* One surface for every tile: a Gray 3 fill and an 8px corner, no
+    /* One surface for every tile: a neutral 3 fill and an 8px corner, no
        border, so the grid reads as one object cut into parts. */
     .now-link {
       position: relative;
@@ -214,11 +214,11 @@ const { endpoint = NOW.endpoint } = Astro.props
     }
 
     [data-tile="listen"] .now-mark {
-      --mark: light-dark(#1db954, #1ed760);
+      --mark: var(--brand-spotify);
     }
 
     [data-tile="tokens"] .now-mark {
-      --mark: #d97757;
+      --mark: var(--brand-claude);
       font-size: 6rem;
     }
 
@@ -228,7 +228,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       gap: var(--space-2xs);
       font-size: var(--step--2);
       font-weight: var(--font-weight-medium);
-      letter-spacing: 0.06em;
+      letter-spacing: var(--tracking-label);
       line-height: 1.4;
       text-transform: uppercase;
       color: var(--muted-foreground);
@@ -339,7 +339,7 @@ const { endpoint = NOW.endpoint } = Astro.props
           content: "";
           position: absolute;
           inset: 0;
-          background-color: light-dark(transparent, rgb(0 0 0 / 0.3));
+          background-color: light-dark(transparent, var(--black-a5));
         }
       }
 
@@ -353,17 +353,17 @@ const { endpoint = NOW.endpoint } = Astro.props
         /* Radix Black A10 to A8; the words in White and White A10. */
         background-image: linear-gradient(
           to top,
-          rgb(0 0 0 / 0.8),
-          rgb(0 0 0 / 0.6) 50%,
+          var(--black-a10),
+          var(--black-a8) 50%,
           transparent
         );
-        color: #fff;
+        color: white;
       }
 
       .now-label,
       .now-foot,
       .now-year {
-        color: rgb(255 255 255 / 0.8);
+        color: var(--white-a10);
       }
 
       .now-year {
@@ -371,12 +371,12 @@ const { endpoint = NOW.endpoint } = Astro.props
       }
 
       .sk-line {
-        background-color: rgb(255 255 255 / 0.2);
+        background-color: var(--white-a4);
       }
 
       /* An inset hairline, so a pale poster keeps its edge on a pale page. */
       .now-link {
-        outline: var(--hairline) solid var(--gray-a6);
+        outline: var(--hairline) solid var(--neutral-a6);
         outline-offset: calc(-1 * var(--hairline));
       }
 
@@ -397,7 +397,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       font-size: var(--step--2);
       letter-spacing: 0.05em;
       line-height: 1;
-      color: rgb(255 255 255 / 0.4);
+      color: var(--white-a6);
 
       &::before {
         content: "★★★★★";
@@ -409,7 +409,7 @@ const { endpoint = NOW.endpoint } = Astro.props
         inset-inline-start: 0;
         inline-size: calc(var(--score) / 5 * 100%);
         overflow: hidden;
-        color: #fff;
+        color: white;
 
         &::before {
           content: "★★★★★";
@@ -440,7 +440,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       font-weight: var(--font-weight-medium);
       font-variant-numeric: tabular-nums;
       line-height: 1.2;
-      letter-spacing: -0.02em;
+      letter-spacing: var(--tracking-figure);
       white-space: nowrap;
 
       .unit {
@@ -527,7 +527,7 @@ const { endpoint = NOW.endpoint } = Astro.props
         display: block;
         block-size: max(2px, calc(var(--bar, 0.08) * 100%));
         border-radius: var(--radius-xs) var(--radius-xs) 0 0;
-        background-color: var(--gray-6);
+        background-color: var(--neutral-6);
       }
 
       i:last-child {
@@ -574,17 +574,17 @@ const { endpoint = NOW.endpoint } = Astro.props
     }
 
     .now-ghost {
-      stroke: var(--gray-9);
+      stroke: var(--neutral-9);
       stroke-dasharray: 2.5 2.5;
       stroke-width: 1;
     }
 
     .now-area {
-      fill: var(--gray-a3);
+      fill: var(--neutral-a3);
     }
 
     .now-base {
-      stroke: var(--gray-a6);
+      stroke: var(--neutral-a6);
       stroke-width: var(--hairline);
     }
 
@@ -688,7 +688,7 @@ const { endpoint = NOW.endpoint } = Astro.props
     }
 
     .now-key-ghost::before {
-      border-block-start: 1px dashed var(--gray-9);
+      border-block-start: 1px dashed var(--neutral-9);
     }
 
     @container (width >= 34rem) {
@@ -744,7 +744,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       block-size: 0.85em;
       margin-block: 0.2em;
       border-radius: var(--radius-sm);
-      background-color: var(--gray-4);
+      background-color: var(--neutral-4);
     }
 
     .sk-title {

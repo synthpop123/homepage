@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer primitives {
 [data-icon-button] {
   display: inline-flex;
   align-items: center;
@@ -19,4 +22,5 @@
     width: 1rem;
     height: 1rem;
   }
+}
 }

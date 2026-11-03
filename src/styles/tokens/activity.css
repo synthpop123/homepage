@@ -1,3 +1,6 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
 /* Activity (tokens-dashboard/activity.ts): the section's heading row
    with its freshness note. The heatmap is Heatmap.astro's. */
 
@@ -24,4 +27,5 @@ tokens-dashboard {
     font-size: var(--step--1);
     color: var(--muted-foreground);
   }
+}
 }

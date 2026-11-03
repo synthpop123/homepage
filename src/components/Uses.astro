@@ -96,7 +96,7 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
     }
   }
 
-  /* A tile like the home page's: a Gray 3 fill and an 8px corner, no
+  /* A tile like the home page's: a neutral 3 fill and an 8px corner, no
      border. */
   dl > div {
     position: relative;
@@ -138,7 +138,7 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
   /* The mark has to live in the dt (a dl's div admits only dt and dd), but
      it is positioned against the card, so where it sits in the markup
      costs the layout nothing. It is the card's backdrop rather than a
-     chip beside its name: drawn large in Gray A3 and cropped by the
+     chip beside its name: drawn large in neutral A3 and cropped by the
      corner, it says what the thing is before the words do, and costs the
      text no width. The stroke is thinned so it scales up as a line
      drawing instead of a slab. */
@@ -149,7 +149,7 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
     inset-inline-end: -0.15em;
     font-size: 4.5rem;
     line-height: 0;
-    color: var(--gray-a4);
+    color: var(--neutral-a4);
 
     & :global(g) {
       stroke-width: 1.25;

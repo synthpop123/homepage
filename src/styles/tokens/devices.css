@@ -1,7 +1,10 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
 /* Devices (tokens-dashboard/devices.ts): one card per device. */
 
 tokens-dashboard {
-  /* Devices — one card per device, in the quota cards' idiom: a Gray 3
+  /* Devices — one card per device, in the quota cards' idiom: a neutral 3
      tile with its kind drawn large and cropped by the corner as a
      backdrop, the way the Uses cards carry theirs. auto-fill sets the
      column count, so three sit side by side in the column and stack on
@@ -39,7 +42,7 @@ tokens-dashboard {
     inset-block-end: -0.18em;
     inset-inline-end: -0.16em;
     font-size: 7.5rem;
-    color: var(--gray-a4);
+    color: var(--neutral-a4);
 
     & g {
       stroke-width: 1.25;
@@ -69,7 +72,7 @@ tokens-dashboard {
     inline-size: 0.4rem;
     block-size: 0.4rem;
     border-radius: var(--radius-full);
-    background-color: var(--gray-8);
+    background-color: var(--neutral-8);
   }
 
   .tk-devices [data-online] .dot {
@@ -121,7 +124,7 @@ tokens-dashboard {
         var(--dev-hue, var(--foreground))
       )
       no-repeat 0 / var(--share, 0%) 100%,
-      var(--gray-a4);
+      var(--neutral-a4);
   }
 
   .tk-devices .dev-cap {
@@ -152,4 +155,5 @@ tokens-dashboard {
       font-variant-numeric: tabular-nums;
     }
   }
+}
 }
