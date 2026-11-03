@@ -22,6 +22,15 @@
   animation: none;
 }
 
+/* A post's title in a list and the same title as the post's h1 share a
+   name (titleTransition() in site-links.ts), so opening a post carries
+   the title from its line in the list up to the head of the page, on the
+   site's one easing. */
+::view-transition-group(*) {
+  animation-duration: var(--duration);
+  animation-timing-function: var(--ease);
+}
+
 @layer layout {
 :root {
   /* https://utopia.fyi/grid/calculator?c=320,16,1.125,1024,18,1.2,6,1,&s=0.75%7C0.5%7C0.25,1.5%7C2%7C3%7C4%7C6,s-l%7Cs-m&g=s,m,2xl,12 */

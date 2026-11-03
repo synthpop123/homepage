@@ -569,15 +569,15 @@ const { endpoint = NOW.endpoint } = Astro.props
 
     .now-line {
       stroke: var(--foreground);
-      stroke-width: 1.5;
+      stroke-width: var(--chart-stroke);
       stroke-linecap: round;
       stroke-linejoin: round;
     }
 
     .now-ghost {
-      stroke: var(--neutral-9);
-      stroke-dasharray: 2.5 2.5;
-      stroke-width: 1;
+      stroke: var(--chart-ghost);
+      stroke-dasharray: var(--chart-dash);
+      stroke-width: var(--chart-stroke-thin);
     }
 
     .now-area {

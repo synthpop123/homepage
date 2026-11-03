@@ -29,7 +29,7 @@ tokens-dashboard {
     border-block-end: var(--hairline) solid var(--border-strong);
     background-image: repeating-linear-gradient(
       to top,
-      var(--neutral-a4) 0 var(--hairline),
+      var(--chart-grid) 0 var(--hairline),
       transparent var(--hairline) 25%
     );
   }
@@ -218,7 +218,7 @@ tokens-dashboard {
   }
 
   .tk-rhythm-plot .grid {
-    stroke: var(--neutral-a4);
+    stroke: var(--chart-grid);
     stroke-width: var(--hairline);
   }
 
@@ -229,7 +229,7 @@ tokens-dashboard {
   .tk-rhythm-plot .line {
     fill: none;
     stroke: var(--accent-fill);
-    stroke-width: 1.5;
+    stroke-width: var(--chart-stroke);
     stroke-linejoin: round;
     stroke-linecap: round;
   }
@@ -237,7 +237,7 @@ tokens-dashboard {
   .tk-rhythm-plot .dot {
     fill: var(--accent-fill);
     stroke: var(--background);
-    stroke-width: 1.5;
+    stroke-width: var(--chart-halo);
   }
 
   .tk-rhythm-plot .dot[data-peak] {

@@ -77,6 +77,19 @@ const previews = Object.fromEntries(
       display: grid;
       gap: var(--space-3xs);
     }
+
+    /* It fades in over the site's one duration and leaves at once.
+       Opacity alone: the card may open above or below the link, so a
+       slide would go the wrong way half the time. */
+    @media (prefers-reduced-motion: no-preference) {
+      transition: opacity var(--duration) var(--ease);
+
+      @starting-style {
+        &:popover-open {
+          opacity: 0;
+        }
+      }
+    }
   }
 
   /* The date and length, set apart by space alone. */

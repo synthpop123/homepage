@@ -64,7 +64,33 @@ const { title, sections } = Astro.props
 </nav>
 
 <style>
+  /* How far down the page the reader is, 0 to 1, drawn by both rings.
+     Registered so it can be animated: where the browser has scroll-driven
+     animations the page's own scroll drives it, off the main thread, and
+     the script below only writes the percentage; elsewhere the script
+     sets it on every scroll. */
+  @property --progress {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+  }
+
+  @keyframes toc-progress {
+    to {
+      --progress: 1;
+    }
+  }
+
   nav {
+    /* Longhands: the minifier would fold a shorthand and the timeline
+       into one `animation`, which can't carry a timeline. */
+    @supports (animation-timeline: scroll()) {
+      animation-name: toc-progress;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(root block);
+    }
+
     position: sticky;
     top: var(--page-offset-top);
     display: flex;
@@ -318,10 +344,13 @@ const { title, sections } = Astro.props
     if (!nav) return
 
     const percent = nav.querySelector("toc-progress span")
+    // With a scroll timeline the rings follow the scroll in CSS; the
+    // percentage is text, so it stays here either way.
+    const driven = CSS.supports("animation-timeline: scroll()")
     const progress = () => {
       const max = document.documentElement.scrollHeight - innerHeight
       const read = max > 0 ? Math.min(scrollY / max, 1) : 0
-      nav.style.setProperty("--progress", String(read))
+      if (!driven) nav.style.setProperty("--progress", String(read))
       if (percent) percent.textContent = `${Math.round(read * 100)}%`
     }
     addEventListener("scroll", progress, { passive: true })
