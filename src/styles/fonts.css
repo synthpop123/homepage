@@ -51,12 +51,20 @@
   /* There are no italic faces: emphasis is set upright, never slanted by
      the browser. */
   font-synthesis-style: none;
-  --font-sans: "Inter", "Inter Fallback", sans-serif;
+  /* Han falls through Inter to the platform's own CJK face, named so a
+     page in Chinese gets PingFang or Noto Sans SC rather than whatever
+     the browser's generic sans-serif happens to be. */
+  --font-sans:
+    "Inter", "Inter Fallback", "PingFang SC", "Hiragino Sans GB",
+    "Noto Sans SC", "Microsoft YaHei", sans-serif;
   /* Inter's open 3 4 6 9, serifed I and tailed l, round quotes and
      commas, single-storey a. Set on body; monospace resets it, since
      Geist Mono has ss01–ss04 of its own. The subset keeps only these
      (scripts/subset-fonts.ts). */
   --font-sans-features: "ss01", "ss03", "ss04", "cv11";
+  /* Uppercase labels add case-sensitive forms: hyphens, brackets and
+     the colon lifted to cap height. */
+  --font-label-features: var(--font-sans-features), "case";
   --font-mono: "Geist Mono", "Geist Mono Fallback", monospace;
   --font-math: "STIX Two Math", math;
 }

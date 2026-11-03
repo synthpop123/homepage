@@ -27,7 +27,8 @@ const ecOptions: SatteriExpressiveCodeOptions = {
     codeBackground: "var(--surface)",
     borderColor: "var(--border)",
     borderWidth: "var(--hairline)",
-    borderRadius: "0",
+    // A tile, like a callout and the home page cards.
+    borderRadius: "var(--radius-lg)",
     uiFontFamily: "var(--font-sans)",
     lineNumbers: {
       foreground: "var(--muted-foreground)",

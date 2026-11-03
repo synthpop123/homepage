@@ -20,11 +20,13 @@
     --tracking-label: 0.06em;
     --tracking-figure: -0.02em;
     /* A page's title (PageTitle, a post's h1): a step heavier than the
-       text and set tighter, as Inter wants at size.
+       text and set a little tighter. Inter's optical size follows the
+       font size, so at 24px the display cut already closes up; the
+       tracking only finishes it.
        Han characters are drawn on a full em and touch when tracked in,
        so a Chinese page keeps the text's tracking. */
     --font-weight-display: 600;
-    --tracking-display: -0.035em;
+    --tracking-display: -0.02em;
     --leading-offset: 0.65rem;
 
     --prose-foreground: var(--foreground);
@@ -37,6 +39,15 @@
 
 :lang(zh) {
     --tracking-display: var(--tracking-tight);
+    /* A quarter-em between Han and Latin or digits, drawn by the browser
+       rather than typed into the source. */
+    text-autospace: normal;
+}
+
+/* Han is set solid on a full em and wants more room between lines than
+   Latin at the same size. */
+prose-content:lang(zh) {
+    line-height: calc(var(--leading-offset) + 1.15em);
 }
 
 *,
