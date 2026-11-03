@@ -101,29 +101,4 @@ html {
     }
   }
 }
-
-/* A disclosure (a callout, a TOC group, a content warning, a folded
-   code block) opens and closes over the site's one duration instead of
-   jumping: its content's height eases between nothing and auto. Where
-   ::details-content or interpolate-size is missing, it jumps as before.
-   Clipped while it moves, with a margin so a focus ring at its edge
-   still shows. */
-@media (prefers-reduced-motion: no-preference) {
-  details {
-    interpolate-size: allow-keywords;
-
-    &::details-content {
-      block-size: 0;
-      overflow: clip;
-      overflow-clip-margin: 0.25rem;
-      transition:
-        block-size var(--duration) var(--ease),
-        content-visibility var(--duration) var(--ease) allow-discrete;
-    }
-
-    &[open]::details-content {
-      block-size: auto;
-    }
-  }
-}
 }
