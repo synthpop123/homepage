@@ -3,7 +3,6 @@ dist/
 .wrangler/
 # Downloaded by scripts/prebuild.ts on every build
 src/assets/cat.jpg
-src/assets/logo-live.svg
 public/headache.js
 node_modules/
 npm-debug.log*

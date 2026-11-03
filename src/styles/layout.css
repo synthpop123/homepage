@@ -17,18 +17,22 @@
   display: none;
 }
 
+/* Switching themes (ThemeToggle.astro) fades the whole page as one,
+   sidebar included, over the site's one duration. */
+:root[data-theme-fade] {
+  aside[data-bar] {
+    view-transition-name: none;
+  }
+
+  &::view-transition-group(root) {
+    animation-duration: var(--duration);
+    animation-timing-function: var(--ease);
+  }
+}
+
 ::view-transition-group(sidebar),
 ::view-transition-new(sidebar) {
   animation: none;
-}
-
-/* A post's title in a list and the same title as the post's h1 share a
-   name (titleTransition() in site-links.ts), so opening a post carries
-   the title from its line in the list up to the head of the page, on the
-   site's one easing. */
-::view-transition-group(*) {
-  animation-duration: var(--duration);
-  animation-timing-function: var(--ease);
 }
 
 @layer layout {
@@ -94,6 +98,31 @@ html {
 
     &:has(page-toc) {
       --bar-toc-height: calc(1.5 * var(--step--1) + 2 * var(--space-2xs) + var(--hairline));
+    }
+  }
+}
+
+/* A disclosure (a callout, a TOC group, a content warning, a folded
+   code block) opens and closes over the site's one duration instead of
+   jumping: its content's height eases between nothing and auto. Where
+   ::details-content or interpolate-size is missing, it jumps as before.
+   Clipped while it moves, with a margin so a focus ring at its edge
+   still shows. */
+@media (prefers-reduced-motion: no-preference) {
+  details {
+    interpolate-size: allow-keywords;
+
+    &::details-content {
+      block-size: 0;
+      overflow: clip;
+      overflow-clip-margin: 0.25rem;
+      transition:
+        block-size var(--duration) var(--ease),
+        content-visibility var(--duration) var(--ease) allow-discrete;
+    }
+
+    &[open]::details-content {
+      block-size: auto;
     }
   }
 }

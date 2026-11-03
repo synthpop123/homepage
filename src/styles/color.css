@@ -212,6 +212,40 @@
   scrollbar-color: var(--neutral-a7) transparent;
 }
 
+/* On a wide-gamut screen the accent takes Radix's P3 Grass, the same
+   steps a little more saturated than sRGB can show. Only Grass: the
+   neutral is near grey, where P3 adds nothing, and brand marks keep
+   their published colours. A screen without P3 keeps the values above. */
+@media (color-gamut: p3) {
+  :root {
+    --grass-1:   light-dark(color(display-p3 0.986 0.996 0.985), color(display-p3 0.062 0.083 0.067));
+    --grass-2:   light-dark(color(display-p3 0.966 0.983 0.964), color(display-p3 0.083 0.103 0.085));
+    --grass-3:   light-dark(color(display-p3 0.923 0.965 0.917), color(display-p3 0.118 0.163 0.122));
+    --grass-4:   light-dark(color(display-p3 0.872 0.94 0.865), color(display-p3 0.142 0.225 0.15));
+    --grass-5:   light-dark(color(display-p3 0.811 0.908 0.802), color(display-p3 0.178 0.279 0.186));
+    --grass-6:   light-dark(color(display-p3 0.733 0.864 0.724), color(display-p3 0.217 0.337 0.224));
+    --grass-7:   light-dark(color(display-p3 0.628 0.803 0.622), color(display-p3 0.258 0.4 0.264));
+    --grass-8:   light-dark(color(display-p3 0.477 0.72 0.482), color(display-p3 0.302 0.47 0.305));
+    --grass-9:   light-dark(color(display-p3 0.38 0.647 0.378), color(display-p3 0.38 0.647 0.378));
+    --grass-10:  light-dark(color(display-p3 0.344 0.598 0.342), color(display-p3 0.426 0.694 0.426));
+    --grass-11:  light-dark(color(display-p3 0.263 0.488 0.261), color(display-p3 0.535 0.807 0.542));
+    --grass-12:  light-dark(color(display-p3 0.151 0.233 0.153), color(display-p3 0.797 0.936 0.776));
+
+    --grass-a1:  light-dark(color(display-p3 0.024 0.757 0.024 / 0.016), color(display-p3 0 0.992 0.071 / 0.017));
+    --grass-a2:  light-dark(color(display-p3 0.024 0.565 0.024 / 0.036), color(display-p3 0.482 0.996 0.584 / 0.038));
+    --grass-a3:  light-dark(color(display-p3 0.059 0.576 0.008 / 0.083), color(display-p3 0.549 0.992 0.588 / 0.106));
+    --grass-a4:  light-dark(color(display-p3 0.035 0.565 0.008 / 0.134), color(display-p3 0.51 0.996 0.557 / 0.169));
+    --grass-a5:  light-dark(color(display-p3 0.047 0.545 0.008 / 0.197), color(display-p3 0.553 1 0.588 / 0.227));
+    --grass-a6:  light-dark(color(display-p3 0.031 0.502 0.004 / 0.275), color(display-p3 0.584 1 0.608 / 0.29));
+    --grass-a7:  light-dark(color(display-p3 0.012 0.482 0.004 / 0.377), color(display-p3 0.604 1 0.616 / 0.358));
+    --grass-a8:  light-dark(color(display-p3 0 0.467 0.008 / 0.522), color(display-p3 0.608 1 0.62 / 0.433));
+    --grass-a9:  light-dark(color(display-p3 0.008 0.435 0 / 0.624), color(display-p3 0.573 1 0.569 / 0.622));
+    --grass-a10: light-dark(color(display-p3 0.008 0.388 0 / 0.659), color(display-p3 0.6 0.996 0.6 / 0.673));
+    --grass-a11: light-dark(color(display-p3 0.263 0.488 0.261), color(display-p3 0.535 0.807 0.542));
+    --grass-a12: light-dark(color(display-p3 0.151 0.233 0.153), color(display-p3 0.797 0.936 0.776));
+  }
+}
+
 /* Asked for more contrast: secondary text joins the primary, and lines
    step up to where a control's edge reads on its own. */
 @media (prefers-contrast: more) {

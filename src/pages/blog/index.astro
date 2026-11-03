@@ -4,7 +4,6 @@ import MetaPage from "@/components/MetaPage.astro"
 import PageTitle from "@/components/PageTitle.astro"
 import Layout from "@/layouts/Layout.astro"
 import { getSeries, postWords, titleLang } from "@/lib/content"
-import { titleTransition } from "@/lib/site-links"
 import { formatCompact, formatMonthDay } from "@/lib/utils"
 
 // The index as a ledger: one line per post, filed under its year, with
@@ -34,11 +33,7 @@ const years = Map.groupBy(entries, ({ post }) =>
               {formatMonthDay(post.data.date)}
             </time>
             <post-line>
-              <a
-                href={`/blog/${post.id}`}
-                lang={titleLang(post)}
-                style={`view-transition-name: ${titleTransition(post.id)}`}
-              >
+              <a href={`/blog/${post.id}`} lang={titleLang(post)}>
                 {post.data.title}
               </a>
               {post.data.ai && (

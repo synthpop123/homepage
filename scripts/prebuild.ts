@@ -7,14 +7,10 @@
  *    committed src/assets/cat-default.jpg, or the image named by the
  *    CAT_IMAGE env var (an http(s) URL or a local path) to override it
  *    for one build/deploy.
- * 3. Writes the sidebar's logo to src/assets/logo-live.svg (gitignored):
- *    the committed logo with its three lighter cells redrawn from the
- *    last three days of the Tokens snapshot (src/lib/live-logo.ts).
  *
- * Every step degrades gracefully: on network failure the committed
+ * Both steps degrade gracefully: on network failure the committed
  * fallback (src/assets/headache-fallback.js) or previous tracker is
- * used, an unreadable CAT_IMAGE falls back to the default cat, and a
- * snapshot that can't be fetched or read leaves the committed logo, so
+ * used, and an unreadable CAT_IMAGE falls back to the default cat, so
  * offline builds and CI never break.
  */
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs"
@@ -23,9 +19,7 @@ import sharp from "sharp"
 // Runs under bun, which resolves the tsconfig path alias and the svg
 // imports inside consts.ts (file loader), so the tracker config has a
 // single source of truth.
-import { TOKENS, UMAMI } from "../src/consts"
-import { isSite } from "../src/lib/client/tokens/schema"
-import { logoSvg, recentLevels } from "../src/lib/live-logo"
+import { UMAMI } from "../src/consts"
 
 const root = process.cwd()
 
@@ -36,8 +30,6 @@ const UMAMI_FALLBACK = path.join(root, "src/assets/headache-fallback.js")
 const CAT_SOURCE = process.env.CAT_IMAGE?.trim()
 const CAT_DEST = path.join(root, "src/assets/cat.jpg")
 const CAT_DEFAULT = path.join(root, "src/assets/cat-default.jpg")
-
-const LOGO_DEST = path.join(root, "src/assets/logo-live.svg")
 
 const fetchWithTimeout = (url: string, ms = 15_000) =>
   fetch(url, { signal: AbortSignal.timeout(ms) })
@@ -87,19 +79,4 @@ async function syncCat() {
   copyFileSync(CAT_DEFAULT, CAT_DEST)
 }
 
-async function syncLogo() {
-  try {
-    const response = await fetchWithTimeout(TOKENS.endpoint)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const site: unknown = await response.json()
-    if (!isSite(site)) throw new Error("unexpected payload")
-    const levels = recentLevels(site)
-    writeFileSync(LOGO_DEST, logoSvg(levels))
-    console.log(`[prebuild] logo: levels ${levels.join(" ")} to ${site.today}`)
-  } catch (error) {
-    writeFileSync(LOGO_DEST, logoSvg())
-    console.warn(`[prebuild] logo: tokens failed (${error}), using default`)
-  }
-}
-
-await Promise.all([syncUmami(), syncCat(), syncLogo()])
+await Promise.all([syncUmami(), syncCat()])

@@ -65,23 +65,42 @@ import SunIcon from "@/assets/icons/sun.svg"
     setTimeout(() => style.remove())
   }
 
+  const still = matchMedia("(prefers-reduced-motion: reduce)")
+
+  /**
+   * The whole page cross-fades from one scheme to the other: a view
+   * transition, with the sidebar's own name lifted for its length
+   * (data-theme-fade, layout.css) so the sidebar fades with the rest
+   * instead of being swapped at once as it is between pages. Without
+   * view transitions, or with reduced motion, the change is immediate.
+   */
+  const crossFade = (change: () => void) => {
+    if (!document.startViewTransition || still.matches) return change()
+    root.dataset.themeFade = ""
+    const transition = document.startViewTransition(change)
+    transition.finished.finally(() => delete root.dataset.themeFade)
+  }
+
   /** Flips the scheme. Landing on the system's own scheme drops the
    *  stored choice, so the page follows the system again from there. */
   const toggleTheme = () =>
-    instantly(() => {
-      const dark =
-        root.dataset.theme === "dark" || (!root.dataset.theme && system.matches)
-      const theme = dark ? "light" : "dark"
-      const follow = (theme === "dark") === system.matches
-      if (follow) delete root.dataset.theme
-      else root.dataset.theme = theme
-      try {
-        if (follow) localStorage.removeItem("theme")
-        else localStorage.theme = theme
-      } catch {
-        // Storage blocked: the choice holds for this page only.
-      }
-    })
+    crossFade(() =>
+      instantly(() => {
+        const dark =
+          root.dataset.theme === "dark" ||
+          (!root.dataset.theme && system.matches)
+        const theme = dark ? "light" : "dark"
+        const follow = (theme === "dark") === system.matches
+        if (follow) delete root.dataset.theme
+        else root.dataset.theme = theme
+        try {
+          if (follow) localStorage.removeItem("theme")
+          else localStorage.theme = theme
+        } catch {
+          // Storage blocked: the choice holds for this page only.
+        }
+      }),
+    )
 
   const button = document.getElementById("theme-toggle")
   if (button) button.onclick = toggleTheme

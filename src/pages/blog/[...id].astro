@@ -15,7 +15,6 @@ import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { SITE } from "@/consts"
 import { getSeries, pageTitle, postLang } from "@/lib/content"
-import { titleTransition } from "@/lib/site-links"
 import { isSubpost, subpostSlug } from "@/lib/utils"
 import { Image } from "astro:assets"
 import { getEntries, render, type CollectionEntry } from "astro:content"
@@ -97,11 +96,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
         lang={postLang(entry) === lang ? undefined : postLang(entry)}
       >
         <header>
-          <h1
-            style={i === 0
-              ? `view-transition-name: ${titleTransition(entry.id)}`
-              : undefined}
-          >{entry.data.title}</h1>
+          <h1>{entry.data.title}</h1>
           <post-meta lang={chromeLang}>
             <Byline authors={authors} ai={entry.data.ai} interactive />
             <PostDates

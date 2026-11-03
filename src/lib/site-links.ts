@@ -36,11 +36,3 @@ export function postLinks(markdown: string): string[] {
   }
   return [...ids]
 }
-
-/** The view-transition-name a post's title carries in a list and as its
- *  page's h1, so following the link morphs one into the other. A name is
- *  a CSS ident: anything past letters, digits, `-` and `_` becomes `_`,
- *  and the `post-` prefix keeps it from starting with a digit. */
-export function titleTransition(id: string): string {
-  return `post-${id.replace(/[^\w-]/g, "_")}`
-}

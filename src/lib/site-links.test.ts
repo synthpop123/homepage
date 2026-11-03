@@ -1,10 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import {
-  linkedPostId,
-  postLinks,
-  sitePath,
-  titleTransition,
-} from "./site-links"
+import { linkedPostId, postLinks, sitePath } from "./site-links"
 
 describe("sitePath", () => {
   it("reads root-relative and absolute links into the site", () => {
@@ -43,14 +38,5 @@ describe("postLinks", () => {
       "[again](/blog/a)",
     ].join("\n")
     expect(postLinks(markdown)).toEqual(["a", "b"])
-  })
-})
-
-describe("titleTransition", () => {
-  it("makes a CSS ident of any post id", () => {
-    expect(titleTransition("komodo-gitops")).toBe("post-komodo-gitops")
-    expect(titleTransition("2024-review")).toBe("post-2024-review")
-    expect(titleTransition("parent/sub.v2")).toBe("post-parent_sub_v2")
-    expect(titleTransition("摊还")).toBe("post-__")
   })
 })
