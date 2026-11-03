@@ -20,6 +20,18 @@
   --radius-lg:   0.5rem;
   --radius-full: 9999px;
 
+  /* Charts share one vocabulary: a series is an ink (or accent) line at
+     --chart-stroke; what it is read against (a benchmark, a cost level)
+     is a thinner dashed ghost in neutral 9; a grid line is a hairline;
+     a dot is ringed in the page colour so it lifts off the line. */
+  --chart-stroke:      1.75;
+  --chart-stroke-thin: 1.25;
+  --chart-halo:        2;
+  --chart-dash:        4 3;
+  --chart-dash-level:  3 3;
+  --chart-ghost:       var(--neutral-9);
+  --chart-grid:        var(--neutral-a4);
+
   /* The one motion: a state change eases out over 250ms. Anything the
      reader triggers often (hover, keys) changes at once instead. */
   --duration: 250ms;
