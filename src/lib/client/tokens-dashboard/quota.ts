@@ -311,7 +311,8 @@ type AllowanceView = {
   figure: string
   foot: string
   title?: string
-  left: string
+  /** The ceiling: "$100 total", beside the figure's "used". */
+  total: string
 }
 
 export function allowanceView(
@@ -319,7 +320,7 @@ export function allowanceView(
   now: number,
 ): AllowanceView {
   const limit = allowance.limitDollars
-  const of = `of ${formatMoney(limit)}`
+  const total = `${formatMoney(limit)} total`
   const at =
     allowance.expiresAt === null ? Number.NaN : Date.parse(allowance.expiresAt)
   const spent = Math.min(limit, Math.max(0, allowance.usedDollars))
@@ -330,7 +331,7 @@ export function allowanceView(
       figure: formatMoney(spent),
       foot: `expired ${relativeTime(at, now)}`,
       title: `Expired ${formatInstant(allowance.expiresAt ?? "")}`,
-      left: "none left",
+      total,
     }
   }
   return {
@@ -343,12 +344,9 @@ export function allowanceView(
     ...(Number.isFinite(at)
       ? { title: `Expires ${formatInstant(allowance.expiresAt ?? "")}` }
       : {}),
-    // The ceiling is only worth restating once some of it is gone: an
-    // untouched "$100 left" under "$0 used" already says what it is.
-    left:
-      spent > 0
-        ? `${formatMoney(limit - spent)} ${of} left`
-        : `${formatMoney(limit)} left`,
+    // What is left is the ceiling less the figure: say the ceiling once
+    // and let "used" and the bar do the subtraction.
+    total,
   }
 }
 
@@ -474,7 +472,7 @@ function renderAllowance(
   const foot = el("p", "win-foot")
   const when = el("span", "", view.foot)
   if (view.title) when.title = view.title
-  foot.append(when, el("span", "win-left", view.left))
+  foot.append(when, el("span", "win-total", view.total))
 
   item.append(
     figureRow(allowance.label, view.figure, "used"),

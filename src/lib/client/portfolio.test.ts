@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test"
 import {
   availableRanges,
+  bestDay,
   change,
   formatPoints,
   formatPrice,
@@ -102,13 +103,13 @@ describe("isSite, per position", () => {
 })
 
 describe("holdingFacts", () => {
-  const msft = view(site, "all", "3M").rows.find((row) => row.symbol === "MSFT")
+  const avgo = view(site, "all", "3M").rows.find((row) => row.symbol === "AVGO")
 
   it("say what the company is and how the position stands against its cost", () => {
-    if (!msft) throw new Error("MSFT is in the fixture")
-    const facts = holdingFacts(site, msft)
+    if (!avgo) throw new Error("AVGO is in the fixture")
+    const facts = holdingFacts(site, avgo)
     expect(facts?.about).toEqual(["Technology", "United States"])
-    expect(facts?.site?.host).toBe("microsoft.com")
+    expect(facts?.site?.host).toBe("broadcom.com")
     expect(facts?.cards.map((card) => card.label)).toEqual([
       "Avg cost",
       "vs cost",
@@ -123,8 +124,8 @@ describe("holdingFacts", () => {
   })
 
   it("stretch the band to reach a cost outside the year's prices", () => {
-    if (!msft) throw new Error("MSFT is in the fixture")
-    const band = holdingFacts(site, { ...msft, cost: 1 })?.band
+    if (!avgo) throw new Error("AVGO is in the fixture")
+    const band = holdingFacts(site, { ...avgo, cost: 1 })?.band
     expect(band?.cost).toBe(0)
     expect(band?.low).toBeGreaterThan(1)
   })
@@ -241,10 +242,10 @@ describe("view", () => {
     const resolved = view(site, "all", "3M")
     expect(resolved.range).toBe("3M")
     expect(resolved.cards.map((card) => card.label)).toEqual([
-      "Return",
       "Last session",
       "vs S&P 500",
       "Max drawdown",
+      "Best day",
     ])
     expect(resolved.rows.length).toBe(site.accounts[0].holdings.length)
     // Rows keep the account's weight order.
@@ -260,5 +261,24 @@ describe("view", () => {
 
   it("falls back to the whole portfolio for an unknown account", () => {
     expect(view(site, "gone", "3M").account.id).toBe("all")
+  })
+})
+
+describe("bestDay", () => {
+  const best = [
+    { date: "2026-10-30", change: 0.01 },
+    { date: "2026-09-15", change: 0.03 },
+    { date: "2026-03-02", change: 0.05 },
+  ]
+
+  it("takes the earliest record after the range's start", () => {
+    expect(bestDay(best, "2026-01-02")?.change).toBe(0.05)
+    expect(bestDay(best, "2026-08-01")?.change).toBe(0.03)
+    expect(bestDay(best, "2026-09-15")?.change).toBe(0.01)
+  })
+
+  it("is null when no day falls inside the range", () => {
+    expect(bestDay(best, "2026-10-30")).toBeNull()
+    expect(bestDay([], "2026-01-02")).toBeNull()
   })
 })

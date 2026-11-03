@@ -161,12 +161,14 @@ export function createBreakdown(q: Query, icons: Icons) {
           el(
             "span",
             "more-label",
-            isOpen ? "Show less" : `Show ${rest.length} more ${noun}`,
+            isOpen ? "Show less" : `${rest.length} more ${noun}`,
           ),
         )
         if (!isOpen) {
           const sum = rest.reduce((acc, r) => acc + r.usage[metric], 0)
-          button.append(el("span", "more-amount", formatMetric(sum, metric)))
+          const amount = el("span", "more-amount", formatMetric(sum, metric))
+          amount.title = `${formatMetric(sum, metric)} between them`
+          button.append(amount)
         }
         button.addEventListener("click", () => {
           if (isOpen) expanded.delete(group.key)

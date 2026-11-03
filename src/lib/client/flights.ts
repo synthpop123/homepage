@@ -8,7 +8,7 @@
  * itself is d3-geo's, in flights-feed/map.ts. Pure and browser-safe.
  */
 
-import { isCalendarDay, isCount, isRecord, swr } from "./feed"
+import { formatMinutes, isCalendarDay, isCount, isRecord, swr } from "./feed"
 import { miscSection } from "./misc"
 
 export type SiteAirport = {
@@ -152,13 +152,8 @@ export function isSite(data: unknown): data is Site {
 
 const numberFormatter = new Intl.NumberFormat("en-US")
 
-/** Minutes as `2h 15m`, `45m` below the hour. */
-export function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60)
-  const rest = minutes % 60
-  if (hours === 0) return `${rest}m`
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
-}
+/** Minutes in the site's one duration format (`formatMinutes`). */
+export const formatDuration = formatMinutes
 
 export const formatKm = (km: number) => `${numberFormatter.format(km)} km`
 
@@ -227,7 +222,7 @@ export const flownRoutes = (site: Site) =>
 
 /**
  * A list cut after its first `named` items, the rest to fold behind a
- * "Show N more" row. A rest of one is shown instead, since a row that
+ * "N more" row. A rest of one is shown instead, since a row that
  * reveals a single row saves nothing.
  */
 export function fold<T>(items: T[], named: number): { named: T[]; rest: T[] } {

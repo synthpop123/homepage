@@ -65,5 +65,115 @@ prose-content {
       }
     }
   }
+
+  /* :::steps (steps.ts): each step numbered in the margin in small mono
+     figures, a hairline running down from its number to the next. No
+     circles: the number and the line are the whole mark. */
+  step-list {
+    --step-line: calc(var(--leading-offset) + var(--step-0));
+
+    display: block;
+
+    &:lang(zh) {
+      --step-line: calc(var(--leading-offset) + 1.15 * var(--step-0));
+    }
+
+    > ol {
+      padding-inline-start: 0;
+      list-style: none;
+      counter-reset: step;
+    }
+
+    > ol > li {
+      position: relative;
+      margin-block-start: 0;
+      padding-inline-start: 2.25rem;
+      padding-block-end: 1em;
+      counter-increment: step;
+
+      &::before {
+        content: counter(step, decimal-leading-zero);
+        position: absolute;
+        inset-inline-start: 0;
+        font-family: var(--font-mono);
+        font-feature-settings: normal;
+        font-size: var(--step--2);
+        font-variant-numeric: tabular-nums;
+        line-height: var(--step-line);
+        color: var(--muted-foreground);
+      }
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset-block: calc(var(--step-line) + 0.2rem) 0.3rem;
+        inset-inline-start: 0.45rem;
+        inline-size: var(--hairline);
+        background-color: var(--border-strong);
+      }
+
+      &:last-child {
+        padding-block-end: 0;
+
+        &::after {
+          display: none;
+        }
+      }
+    }
+  }
+
+  /* :::file-tree (file-tree.ts): a directory listing on the code
+     surface, names in mono, each level hung off a hairline guide under
+     its directory, comments in the text face, muted. */
+  file-tree {
+    display: block;
+    margin-block: 1.5em;
+    padding: var(--space-xs) var(--space-s);
+    overflow-x: auto;
+    border: var(--hairline) solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--surface);
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    font-size: var(--step--1);
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    ul ul {
+      margin-block: 0;
+      margin-inline-start: 0.5ch;
+      padding-inline-start: 2ch;
+      border-inline-start: var(--hairline) solid var(--border-strong);
+    }
+
+    li {
+      margin: 0;
+      padding: 0;
+    }
+
+    [data-name] {
+      color: var(--foreground);
+      white-space: nowrap;
+    }
+
+    [data-mark] {
+      padding-inline: 0.25em;
+      margin-inline: -0.25em;
+      border-radius: var(--radius-sm);
+      background-color: var(--muted);
+      font-weight: var(--font-weight-medium);
+    }
+
+    [data-note] {
+      margin-inline-start: 2ch;
+      font-family: var(--font-sans);
+      font-feature-settings: var(--font-sans-features);
+      color: var(--muted-foreground);
+    }
+  }
 }
 }

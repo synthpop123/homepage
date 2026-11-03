@@ -1,6 +1,6 @@
 import { SITE } from "@/consts"
 import { getSeries, postBody } from "@/lib/content"
-import { feedCallouts, feedHtml } from "@/lib/markdown/feed-html"
+import { feedCallouts, feedHtml, feedLists } from "@/lib/markdown/feed-html"
 import { temmlMath } from "@/lib/markdown/math"
 import { unhandledDirectives } from "@/lib/markdown/unhandled-directives"
 import rss from "@astrojs/rss"
@@ -11,7 +11,8 @@ import { markdownToHtml } from "satteri"
 // Full text, not a teaser, so a reader never has to leave the feed to
 // read a post. Rendered from the same Markdown as /blog/<id>.md (assets
 // already published URLs) with only the plugins whose output a feed
-// reader can show: callouts as blockquotes, and MathML. Code stays plain <pre><code>,
+// reader can show: callouts as blockquotes, steps and file trees as
+// plain lists, and MathML. Code stays plain <pre><code>,
 // since highlighting is inline styles a reader strips anyway, and would
 // multiply the feed's size.
 //
@@ -30,7 +31,7 @@ export async function GET(context: APIContext) {
   const render = async (entry: CollectionEntry<"blog">) =>
     markdownToHtml(await postBody(entry, site), {
       features: { directive: true, math: true },
-      mdastPlugins: [feedCallouts, temmlMath, unhandledDirectives],
+      mdastPlugins: [feedCallouts, feedLists, temmlMath, unhandledDirectives],
     }).html
   const items = await Promise.all(
     (await getSeries()).map(async ([post, ...subposts]) => {

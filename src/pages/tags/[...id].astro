@@ -19,7 +19,12 @@ type Props = { tag: string; posts: CollectionEntry<"blog">[] }
 const { tag, posts } = Astro.props
 ---
 
-<Layout crumbs={[{ label: `#${tag}`, href: `/tags/${tag}` }]}>
+<Layout
+  crumbs={[
+    { label: "Tags", href: "/tags" },
+    { label: `#${tag}`, href: `/tags/${tag}` },
+  ]}
+>
   <MetaPage
     slot="head"
     title={`Posts tagged "${tag}"`}

@@ -73,11 +73,9 @@ describe("heatmapWindow", () => {
 
 describe("lastPlayedLabel", () => {
   it("counts days back from the payload's own today", () => {
-    expect(lastPlayedLabel("2026-08-29", "2026-08-29")).toBe("Played today")
-    expect(lastPlayedLabel("2026-08-28", "2026-08-29")).toBe("Played yesterday")
-    expect(lastPlayedLabel("2026-07-30", "2026-08-29")).toBe(
-      "Played 30 days ago",
-    )
+    expect(lastPlayedLabel("2026-08-29", "2026-08-29")).toBe("Today")
+    expect(lastPlayedLabel("2026-08-28", "2026-08-29")).toBe("Yesterday")
+    expect(lastPlayedLabel("2026-07-30", "2026-08-29")).toBe("30 days ago")
   })
 
   it("says nothing without a day, or for one that hasn't happened", () => {
@@ -136,11 +134,14 @@ describe("statCards", () => {
 
 describe("rowFoot", () => {
   it("adds the recent clause only when it is less than the whole", () => {
-    expect(rowFoot(game(100, 100), 14, "2026-08-29")).toBe("Played today")
+    expect(rowFoot(game(100, 100), 14, "2026-08-29")).toBe("Today")
     expect(rowFoot(game(100, 40), 14, "2026-08-29")).toBe(
-      "Played today, 40m in 14d",
+      "Today, 40m in 2 weeks",
     )
-    expect(rowFoot(game(100, 0), 14, "2026-08-29")).toBe("Played today")
+    expect(rowFoot(game(100, 40), 10, "2026-08-29")).toBe(
+      "Today, 40m in 10 days",
+    )
+    expect(rowFoot(game(100, 0), 14, "2026-08-29")).toBe("Today")
   })
 
   it("reads as an empty line when nothing is known", () => {

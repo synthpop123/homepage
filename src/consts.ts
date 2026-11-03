@@ -19,15 +19,14 @@ export const UMAMI = {
   performance: true,
 } as const
 
-export const NAVIGATION: { href: string; label: string; wideOnly?: boolean }[] =
-  [
-    { href: "/blog", label: "Blog" },
-    { href: "/tags", label: "Tags", wideOnly: true },
-    { href: "/memos", label: "Memos" },
-    { href: "/tokens", label: "Tokens" },
-    { href: "/misc", label: "Misc" },
-    { href: "/about", label: "About" },
-  ]
+/** `also`: other paths filed under the entry (the tags under Blog). */
+export const NAVIGATION: { href: string; label: string; also?: string[] }[] = [
+  { href: "/blog", label: "Blog", also: ["/tags"] },
+  { href: "/memos", label: "Memos" },
+  { href: "/tokens", label: "Tokens" },
+  { href: "/misc", label: "Misc" },
+  { href: "/about", label: "About" },
+]
 
 /** What the writing here may be used under: About and every post's end. */
 export const LICENSE = {

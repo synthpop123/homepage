@@ -391,19 +391,21 @@ brew update && brew upgrade && brew cu --all --yes --cleanup \
 && mas upgrade && brew cleanup
 ```
 
+:::steps
 1. `brew update`：更新 Homebrew 自身及其相关软件源的信息，确保 Index 信息准确；
 
 2. `brew upgrade`：将系统中已安装的所有 Homebrew 软件包升级到最新版本；
 
 3. `brew cu --all --yes --cleanup`：自动升级所有可更新的 Homebrew cask 软件包到最新版本，并在完成后清理删除旧版本；
 
-- _--all_: Include apps that auto-update in the upgrade.
-- _--yes_: Update all outdated apps; answer yes to updating packages.
-- _--cleanup_: Cleans up cached downloads and tracker symlinks after updating.
+   - _--all_: Include apps that auto-update in the upgrade.
+   - _--yes_: Update all outdated apps; answer yes to updating packages.
+   - _--cleanup_: Cleans up cached downloads and tracker symlinks after updating.
 
 4. `mas upgrade`: 一键更新从 Mac App Store 安装的应用程序；
 
 5. `brew cleanup`: 用于清理 Homebrew 安装的软件包时产生的临时文件和缓存，以释放磁盘空间。
+:::
 
 执行结果样例如下：
 

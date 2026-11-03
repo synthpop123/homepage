@@ -39,6 +39,9 @@ export type SiteHolding = {
   since: string | null
 }
 
+/** One market day's move of a growth index. */
+export type SiteMove = { date: string; change: number }
+
 /** Cash in one currency, and its share of the account. */
 export type SiteCash = { currency: string; weight: number }
 
@@ -49,6 +52,9 @@ export type SiteAccount = {
   logo: string | null
   /** Growth index on `days`, 1 at the account's first day, null before. */
   index: (number | null)[]
+  /** The best days on record, newest first, each beating every day
+   *  after it, read off the daily index (`bestDay` cuts it to a range). */
+  best: SiteMove[]
   holdings: SiteHolding[]
   cash: SiteCash[]
 }
@@ -80,7 +86,7 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/portfolio/compose.ts. */
-export const SITE_SCHEMA_VERSION = 3
+export const SITE_SCHEMA_VERSION = 4
 
 /* Decoder ---------------------------------------------------------------- */
 
@@ -120,6 +126,13 @@ const isCurrency = (value: unknown): value is string =>
 const isCash = (value: unknown): value is SiteCash =>
   isRecord(value) && isCurrency(value.currency) && isShare(value.weight)
 
+const isMove = (value: unknown): value is SiteMove =>
+  isRecord(value) &&
+  isCalendarDay(value.date) &&
+  typeof value.change === "number" &&
+  Number.isFinite(value.change) &&
+  value.change >= -1
+
 const isAccount = (value: unknown, length: number): value is SiteAccount =>
   isRecord(value) &&
   typeof value.id === "string" &&
@@ -127,6 +140,8 @@ const isAccount = (value: unknown, length: number): value is SiteAccount =>
   (value.logo === null || typeof value.logo === "string") &&
   isSeries(value.index, length) &&
   (value.index as unknown[]).some((entry) => entry !== null) &&
+  Array.isArray(value.best) &&
+  value.best.every(isMove) &&
   Array.isArray(value.holdings) &&
   value.holdings.every(isHolding) &&
   Array.isArray(value.cash) &&
@@ -322,6 +337,11 @@ export function maxDrawdown(
   return worst
 }
 
+/** The best day after `from` (a range's start, exclusive): the earliest
+ *  of the worker's records dated after it. */
+export const bestDay = (best: SiteMove[], from: string): SiteMove | null =>
+  best.findLast((move) => move.date > from) ?? null
+
 /* The strip: one cell per day, week or month of the range --------------- */
 
 export type Grain = "day" | "week" | "month"
@@ -516,9 +536,10 @@ export function view(site: Site, accountId: string, wanted: Range): View {
   const bench = change(site.benchmark.closes, start)
   const session = change(account.index, Math.max(start, end - 1))
   const drawdown = maxDrawdown(account.index, start)
+  const best = bestDay(account.best, site.days[start])
 
+  // The range's return is the hero figure; the cells say what it hides.
   const cards: ReadoutCard[] = [
-    { label: "Return", value: formatReturn(total), note: label },
     {
       label: "Last session",
       value: formatReturn(end > 0 ? (session ?? 0) : 0),
@@ -530,7 +551,7 @@ export function view(site: Site, accountId: string, wanted: Range): View {
       note:
         bench === null
           ? `No ${site.benchmark.label} closes`
-          : `${site.benchmark.label} ${formatReturn(bench, 1)}`,
+          : `${site.benchmark.label} ${formatReturn(bench)}`,
     },
     drawdown
       ? {
@@ -539,6 +560,13 @@ export function view(site: Site, accountId: string, wanted: Range): View {
           note: `${monthDay.format(dayInstant(site.days[drawdown.peak]))} → ${monthDay.format(dayInstant(site.days[drawdown.trough]))}`,
         }
       : { label: "Max drawdown", value: "None", note: "Never below a peak" },
+    best && best.change > 0
+      ? {
+          label: "Best day",
+          value: formatReturn(best.change),
+          note: monthDay.format(dayInstant(best.date)),
+        }
+      : { label: "Best day", value: "None", note: "No day up" },
   ]
 
   const symbols = new Map(site.symbols.map((entry) => [entry.symbol, entry]))
@@ -576,22 +604,17 @@ export function view(site: Site, accountId: string, wanted: Range): View {
   }
 }
 
-/** The line under the hero figure, at rest or while scrubbing to `at`. */
+/** The line under the hero figure: the range at rest, its two days
+ *  while scrubbing to `at`. The benchmark is the readout's. */
 export function heroNote(
   site: Site,
   start: number,
   label: string,
   at: number | null,
 ): string {
-  const end = at ?? site.days.length - 1
-  const bench = change(site.benchmark.closes, start, end)
-  const when =
-    at === null
-      ? label
-      : `${formatDay(site.days[start])} → ${formatDay(site.days[end])}`
-  return bench === null
-    ? when
-    : `${when}, ${site.benchmark.label} ${formatReturn(bench)}`
+  return at === null
+    ? label
+    : `${formatDay(site.days[start])} → ${formatDay(site.days[at])}`
 }
 
 /** A holding's price line over a range, for the expanded row. */

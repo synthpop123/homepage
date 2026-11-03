@@ -2,7 +2,7 @@
  * The lists under the map: the routes flown, ranked, each row a bar of
  * its share of the most flown and a way to show it on the map; and the
  * airline and aircraft composition bars. Each shows its first few and
- * folds the rest behind a "Show N more" row, as the Tokens breakdowns do.
+ * folds the rest behind an "N more" row, as the Tokens breakdowns do.
  */
 
 import { el } from "@/lib/client/dom"
@@ -87,7 +87,7 @@ const chevron = () => {
   return icon
 }
 
-/** The fold row: `Show 6 more` and the flights behind it, or `Show less`. */
+/** The fold row: `6 more` and the flights between them, or `Show less`. */
 function moreRow(
   count: number,
   flights: number,
@@ -100,10 +100,13 @@ function moreRow(
   button.setAttribute("aria-expanded", String(open))
   button.append(
     chevron(),
-    el("span", "comp-more-label", open ? "Show less" : `Show ${count} more`),
+    el("span", "comp-more-label", open ? "Show less" : `${count} more`),
   )
-  if (!open)
-    button.append(el("span", "comp-n", numberFormatter.format(flights)))
+  if (!open) {
+    const sum = el("span", "comp-n", numberFormatter.format(flights))
+    sum.title = `${numberFormatter.format(flights)} ${flights === 1 ? "flight" : "flights"} between them`
+    button.append(sum)
+  }
   button.addEventListener("click", toggle)
   row.append(button)
   return row

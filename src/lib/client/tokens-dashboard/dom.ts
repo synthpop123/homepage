@@ -64,6 +64,16 @@ export const setCard = (
   if (subEl && sub !== undefined) subEl.textContent = sub
 }
 
+/** Rename a card whose meaning shifts with the data. */
+export const setCardLabel = (
+  cards: HTMLElement | null,
+  key: string,
+  label: string,
+) => {
+  const term = cards?.querySelector(`.tk-card[data-key="${key}"] > dt`)
+  if (term && term.textContent !== label) term.textContent = label
+}
+
 /**
  * Fill a comparison line — "↑ 34% vs prior". The arrow and the
  * magnitude carry the emphasis, the baseline it is measured against

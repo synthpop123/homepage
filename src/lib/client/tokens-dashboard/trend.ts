@@ -446,7 +446,7 @@ export function createRhythmChart(q: Query) {
     if (peak) {
       peak.textContent =
         max > 0 && peakStat
-          ? `peak ${WEEKDAYS[peakStat.weekday].slice(0, 3)} ${single ? "" : "≈ "}${formatMetric(max, nextMetric)}`
+          ? `peak ${WEEKDAYS[peakStat.weekday].slice(0, 3)} ${formatMetric(max, nextMetric)}`
           : ""
     }
     rhythm?.setAttribute(

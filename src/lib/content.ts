@@ -1,7 +1,7 @@
 import { SITE } from "@/consts"
 import { getImage } from "astro:assets"
 import { getCollection, type CollectionEntry } from "astro:content"
-import { countWords, detectLang } from "@/lib/lang"
+import { countWords, detectLang, readingMinutes } from "@/lib/lang"
 import { isSubpost } from "@/lib/utils"
 
 export const pageTitle = (title: string) => `${title} | ${SITE.title}`
@@ -24,6 +24,17 @@ export const countEntryWords = (entries: CollectionEntry<"blog">[]) =>
  *  counts the series whole (its page is the series), a subpost itself. */
 export const postWords = (chain: CollectionEntry<"blog">[], post = chain[0]) =>
   countEntryWords(post === chain[0] ? chain : [post])
+
+/** The same length in minutes of reading (`readingMinutes`). */
+export const postMinutes = (
+  chain: CollectionEntry<"blog">[],
+  post = chain[0],
+) =>
+  readingMinutes(
+    (post === chain[0] ? chain : [post])
+      .map((entry) => entry.body ?? "")
+      .join("\n\n"),
+  )
 
 export async function getPosts(): Promise<CollectionEntry<"blog">[]> {
   const posts = await getCollection("blog", ({ data }) => !data.draft)

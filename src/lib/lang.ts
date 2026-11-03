@@ -27,10 +27,22 @@ export const prose = (markdown: string): string =>
  *  of Chinese counts them, plus every Latin word or number, code
  *  included — a walkthrough that is mostly commands is still long. */
 export function countWords(markdown: string): number {
+  const { han, latin } = words(markdown)
+  return han + latin
+}
+
+/** The same words as minutes of reading: 400 Han characters or 230
+ *  Latin words a minute, at least one. */
+export function readingMinutes(markdown: string): number {
+  const { han, latin } = words(markdown)
+  return Math.max(1, Math.round(han / 400 + latin / 230))
+}
+
+const words = (markdown: string) => {
   const text = readable(markdown.replace(FENCE, "$2"))
   const han = text.match(HAN)?.length ?? 0
   const latin = text.replace(HAN, " ").match(/[A-Za-z0-9][\w'’.-]*/g)
-  return han + (latin?.length ?? 0)
+  return { han, latin: latin?.length ?? 0 }
 }
 
 export function detectLang(markdown: string, fallback: string): string {

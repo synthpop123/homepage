@@ -10,6 +10,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test"
 import {
   calendarDay,
+  formatMinutes,
   dateFormatter,
   dayInstant,
   daysBetween,
@@ -298,5 +299,20 @@ describe("whenChanged", () => {
     fail = false
     render({ n: 1 })
     expect(drawn).toEqual([1])
+  })
+})
+
+describe("formatMinutes", () => {
+  it("writes hours and minutes below 100 hours", () => {
+    expect(formatMinutes(0)).toBe("0m")
+    expect(formatMinutes(45)).toBe("45m")
+    expect(formatMinutes(120)).toBe("2h")
+    expect(formatMinutes(157)).toBe("2h 37m")
+    expect(formatMinutes(99 * 60 + 59)).toBe("99h 59m")
+  })
+
+  it("writes whole hours from 100", () => {
+    expect(formatMinutes(100 * 60)).toBe("100h")
+    expect(formatMinutes(1796.8 * 60)).toBe("1,797h")
   })
 })

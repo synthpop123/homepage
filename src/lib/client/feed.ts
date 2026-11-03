@@ -110,6 +110,22 @@ export function relativeTime(
   return monthDay.format(then)
 }
 
+const hourFormatter = new Intl.NumberFormat("en-US")
+
+/**
+ * The one duration on the site (Tokens, Flights, Switch): `45m`, `2h`,
+ * `2h 37m`, and from 100 hours whole hours, `1,797h`, where the minutes
+ * stop meaning anything.
+ */
+export function formatMinutes(minutes: number): string {
+  const whole = Math.max(0, Math.round(minutes))
+  const hours = Math.floor(whole / 60)
+  const rest = whole % 60
+  if (hours >= 100) return `${hourFormatter.format(Math.round(whole / 60))}h`
+  if (hours === 0) return `${rest}m`
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
+}
+
 const dayParts = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "2-digit",

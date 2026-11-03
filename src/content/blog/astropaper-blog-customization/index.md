@@ -316,7 +316,7 @@ index 43a4a71..54264c7 100644
 
 ### 添加 KaTeX 支持
 
-详见此前的博客文章 [为 AstroPaper 主题添加 KaTeX 支持](https://blog.lkwplus.com/posts/how-to-add-katex-to-astropaper/)。
+详见此前的博客文章 为 AstroPaper 主题添加 KaTeX 支持。
 
 ### Last.fm 最近听歌记录展示
 
@@ -337,7 +337,7 @@ index 43a4a71..54264c7 100644
 
 由于国内的最好用的记录观影记录的平台豆瓣存在各种限制，也并不提供标准可访问的 API，我选择采用相对小众一点的 [Letterboxd](https://letterboxd.com/) 平台来记录自己所看的电影。
 
-同样，我借助开源项目 [letterboxd-embed-landing-page](https://github.com/timciep/letterboxd-embed-landing-page)，将最近的观影记录（包含影评）嵌入到博客中，具体效果可以在博客的 [Misc](https://blog.lkwplus.com/misc) 页面查看。
+同样，我借助开源项目 [letterboxd-embed-landing-page](https://github.com/timciep/letterboxd-embed-landing-page)，将最近的观影记录（包含影评）嵌入到博客中，具体效果可以在博客的 [Misc](/misc) 页面查看。
 
 1. 在项目提供的 [前端](https://letterboxd-embed.timcieplowski.com) 中输入自己的 Letterboxd 用户名，点击 `Generate` 按钮，生成嵌入代码，如下图所示：
 

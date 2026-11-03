@@ -1,5 +1,5 @@
 /** Date arithmetic and every number-to-text rule the dashboard prints. */
-import { dayInstant, TIME_ZONE } from "../feed"
+import { dayInstant, formatMinutes, TIME_ZONE } from "../feed"
 import type { MetricKey } from "./schema"
 
 /* Dates ------------------------------------------------------------- */
@@ -169,13 +169,10 @@ export const formatIn = (epochMs: number, now = Date.now()) => {
   return remaining === null ? null : `in ${remaining}`
 }
 
-/** "42 min" / "9.5 h" — for CLI-reported active time. */
-export const formatDuration = (ms: number) => {
-  const minutes = ms / 60_000
-  if (minutes < 1) return "<1 min"
-  if (minutes < 90) return `${Math.round(minutes)} min`
-  return `${(minutes / 60).toFixed(1)} h`
-}
+/** CLI-reported active time in the site's one duration format
+ *  (`formatMinutes`): "42m", "9h 30m", "<1m" for a moment. */
+export const formatDuration = (ms: number) =>
+  ms < 60_000 ? "<1m" : formatMinutes(ms / 60_000)
 
 /**
  * "↑ 23%" / "↓ 8%" / "→ 0%" for period-over-period change; beyond +200%

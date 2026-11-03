@@ -24,6 +24,21 @@ prose-content {
     border-radius: var(--radius-lg);
   }
 
+  /* An image's caption is written as an emphasised line right under it
+     (`*…*`): set small and muted, centred under the picture, with none of
+     the emphasis dots a whole Chinese sentence would otherwise carry. */
+  p:has(> img:only-child) + p:has(> :is(em, i):only-child) {
+    margin-block-start: calc(-1 * var(--space-2xs));
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+    text-align: center;
+    text-wrap: balance;
+
+    > :is(em, i) {
+      text-emphasis: none;
+    }
+  }
+
   summary {
     cursor: pointer;
     font-weight: var(--font-weight-medium);

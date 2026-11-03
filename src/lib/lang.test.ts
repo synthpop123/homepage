@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { countWords, detectLang, prose } from "./lang"
+import { countWords, detectLang, prose, readingMinutes } from "./lang"
 
 describe("prose", () => {
   it("drops code, maths, HTML and link targets", () => {
@@ -49,5 +49,20 @@ describe("countWords", () => {
     const markdown =
       "看[文档](https://example.com/docs)\n```sh\nrun this now\n```"
     expect(countWords(markdown)).toBe(6)
+  })
+})
+
+describe("readingMinutes", () => {
+  it("reads 400 Han characters or 230 Latin words a minute", () => {
+    expect(readingMinutes("字".repeat(4000))).toBe(10)
+    expect(readingMinutes("word ".repeat(2300))).toBe(10)
+    expect(readingMinutes(`${"字".repeat(2000)} ${"word ".repeat(1150)}`)).toBe(
+      10,
+    )
+  })
+
+  it("never says less than a minute", () => {
+    expect(readingMinutes("")).toBe(1)
+    expect(readingMinutes("短文。")).toBe(1)
   })
 })

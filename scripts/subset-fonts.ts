@@ -77,6 +77,7 @@ const BOX: [number, number] = [0x2500, 0x257f]
 function usedChars(): string {
   const files = [
     ...globSync("src/content/**/*.md"),
+    ...globSync("src/fixtures/**/*.md"),
     ...globSync("src/content/**/*.json"),
     ...globSync("src/**/*.{astro,ts}"),
   ]

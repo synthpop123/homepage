@@ -144,8 +144,8 @@ export function fillKicker(kicker: HTMLElement, site: Site, accountId: string) {
     }),
   )
   const account = site.accounts.find((entry) => entry.id === accountId)
-  name.textContent =
-    accountId === "all" ? "All accounts" : (account?.name ?? "")
+  // The whole portfolio is the deck itself; only one account is named.
+  name.textContent = accountId === "all" ? "" : (account?.name ?? "")
 }
 
 /** The cells under the chart; returns the hook the chart's scrubber

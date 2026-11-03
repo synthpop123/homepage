@@ -252,7 +252,7 @@ tokens-dashboard {
   }
 
   /* The reset countdown at the start, what the clock makes of the spend
-     (or, on an allowance, what is left) at the end. */
+     (or, on an allowance, its total) at the end. */
   .tk-plans .win-foot {
     display: flex;
     justify-content: space-between;
@@ -262,7 +262,7 @@ tokens-dashboard {
     font-variant-numeric: tabular-nums;
   }
 
-  .tk-plans .win-left {
+  .tk-plans .win-total {
     white-space: nowrap;
   }
 

@@ -36,7 +36,7 @@ Outdated.
 
 我的主要媒体资源存放于 115 网盘 (~130 TB)，通过 [p115dav](https://hub.docker.com/r/cgkings/p115dav) 转换为对外的 WebDAV 服务，并使用 [Clouddrive2](https://www.clouddrive2.com/) 将 WebDAV 挂载到本地，采用 [Plex](https://www.plex.tv/) 作为媒体库管理工具进行元数据刮削和影视播放。
 
-个人采用 [Prowlarr](https://prowlarr.com/) 管理各类 Indexer (PT/Usenet)，分别对接下载器 [qBittorrent](https://blog.lkwplus.com/posts/self-hosting#qbittorrent) 和 [SABnzbd](https://blog.lkwplus.com/posts/self-hosting#sabnzbd)，完成资源的下载，使用脚本采用 [torcp](https://github.com/ccf-2012/torcp) 对资源进行符合规范的命名后上传至网盘。
+个人采用 [Prowlarr](https://prowlarr.com/) 管理各类 Indexer (PT/Usenet)，分别对接下载器 [qBittorrent](#qbittorrent) 和 [SABnzbd](#sabnzbd)，完成资源的下载，使用脚本采用 [torcp](https://github.com/ccf-2012/torcp) 对资源进行符合规范的命名后上传至网盘。
 
 而 [Radarr](https://radarr.video/)（适用于电影）和 [Sonarr](https://sonarr.tv)（适用于剧集）又采用 Prowlarr 作为后端，完成对各类影视剧（已上映和未上映）的资源追踪和格式管理等，感兴趣的各位可以参考 [TRaSH-Guides](https://trash-guides.info/) 实现更高级的媒体自动化请求流程管理。
 
@@ -54,62 +54,66 @@ Outdated.
 
 #### [安装 Docker](https://docs.docker.com/engine/install/debian/)
 
+:::steps
 1. 卸载旧版本：
 
-```shell
-for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
-```
+   ```shell
+   for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
+   ```
 
 2. 配置 Docker apt 仓库：
 
-```shell
-# Add Docker's official GPG key:
-sudo apt-get update
-sudo apt-get install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
+   ```shell
+   # Add Docker's official GPG key:
+   sudo apt-get update
+   sudo apt-get install ca-certificates curl
+   sudo install -m 0755 -d /etc/apt/keyrings
+   sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+   sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-# Add the repository to Apt sources:
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-```
+   # Add the repository to Apt sources:
+   echo \
+     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+     $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+     sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   sudo apt-get update
+   ```
 
 3. 安装最新版本 Docker：
 
-```shell
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+   ```shell
+   sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# 验证安装成功
-sudo docker run hello-world
-```
+   # 验证安装成功
+   sudo docker run hello-world
+   ```
+:::
 
 #### 配置 Node 环境
 
+:::steps
 1. 安装 pnpm：
 
-```shell
-curl -fsSL https://get.pnpm.io/install.sh | sh -
-```
+   ```shell
+   curl -fsSL https://get.pnpm.io/install.sh | sh -
+   ```
 
 2. 安装 Node.js：
 
-```shell
-# LTS 版本
-pnpm env use --g lts
+   ```shell
+   # LTS 版本
+   pnpm env use --g lts
 
-# Latest 版本：
-pnpm env use --g latest
-```
+   # Latest 版本：
+   pnpm env use --g latest
+   ```
 
 3. 安装 PM2：
 
-```shell
-pnpm install -g pm2
-```
+   ```shell
+   pnpm install -g pm2
+   ```
+:::
 
 ### Caddy
 
@@ -2002,7 +2006,7 @@ Zeabur 是一个比较新的云端部署服务，作为国人团队开发的产�
 
 Zeabur 最近推出了“独立服务器”的功能，用户可以将自己的服务器注册到 Zeabur 上，从而无需支付硬件资源的使用费用，又能享受到平台为部署流程带来的便利。我用 VKVM 的洛杉矶 9950X 4C8G VPS 测试了下，效果还不错，但是占用系统资源比较多，如果有闲置的大内存机器可以尝试。
 
-### [Blog](https://blog.lkwplus.com)
+### [Blog](/blog)
 
 基于 Astro 构建，修改自 [astro-erudite](https://github.com/jktrn/astro-erudite)，并使用了 [astro-theme-pure](https://github.com/cworld1/astro-theme-pure) 中的部分组件样式。
 

@@ -33,6 +33,18 @@ export const feedCallouts = defineMdastPlugin({
 })
 
 /**
+ * Steps and file trees as the lists they are written as: a feed reader
+ * draws neither the step rail nor the tree's guides.
+ */
+export const feedLists = defineMdastPlugin({
+  name: "feed-lists",
+  containerDirective(node, ctx) {
+    if (node.name !== "steps" && node.name !== "file-tree") return
+    ctx.setProperty(node, "data", { hName: "div" })
+  },
+})
+
+/**
  * A rendered post's HTML made fit for a feed reader, which runs none of
  * the page's scripts, loads none of its styles and resolves root-relative
  * URLs against nothing: inline <script>/<style> go, and every `/…` in

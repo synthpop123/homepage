@@ -5,7 +5,7 @@
  * validates against. Pure and browser-safe.
  */
 
-import { swr, isRecord, isCount, isCalendarDay } from "./feed"
+import { formatMinutes, isCalendarDay, isCount, isRecord, swr } from "./feed"
 import { miscSection } from "./misc"
 
 export type SiteStats = {
@@ -147,18 +147,13 @@ export function lastPlayedLabel(
       86_400_000,
   )
   if (!Number.isFinite(days) || days < 0) return null
-  if (days === 0) return "Played today"
-  if (days === 1) return "Played yesterday"
-  return `Played ${days} days ago`
+  if (days === 0) return "Today"
+  if (days === 1) return "Yesterday"
+  return `${days} days ago`
 }
 
-/** Minutes as `12h 30m`, or `45m` below the hour. */
-export function formatPlaytime(minutes: number): string {
-  const hours = Math.floor(minutes / 60)
-  const rest = minutes % 60
-  if (hours === 0) return `${rest}m`
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
-}
+/** Minutes in the site's one duration format (`formatMinutes`). */
+export const formatPlaytime = formatMinutes
 
 const numberFormatter = new Intl.NumberFormat("en-US")
 // zh-CN so the sign is a bare ¥ rather than en-US's "CN¥"; the note
@@ -216,6 +211,12 @@ export function statCards(stats: SiteStats): StatCard[] {
  * title played entirely inside the window the clause would restate the
  * amount beside it.
  */
+/** The recent window in words: `2 weeks`, or `10 days` off the week. */
+export const windowLabel = (days: number) =>
+  days % 7 === 0
+    ? `${days / 7} ${days === 7 ? "week" : "weeks"}`
+    : `${days} ${days === 1 ? "day" : "days"}`
+
 export function rowFoot(
   game: SiteGame,
   recentDays: number,
@@ -223,7 +224,9 @@ export function rowFoot(
 ): string {
   const parts = [lastPlayedLabel(game.lastPlayedDate, today)]
   if (game.recentMinutes > 0 && game.recentMinutes < game.totalMinutes)
-    parts.push(`${formatPlaytime(game.recentMinutes)} in ${recentDays}d`)
+    parts.push(
+      `${formatPlaytime(game.recentMinutes)} in ${windowLabel(recentDays)}`,
+    )
   return parts.filter(Boolean).join(", ")
 }
 

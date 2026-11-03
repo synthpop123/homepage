@@ -1,8 +1,8 @@
 ---
 /**
- * The post's Markdown source, served at `href`: a chip that copies it on
- * click (the Markdown mark turning into a check), beside an arrow that
- * opens it.
+ * The post's Markdown source, served at `href`: an icon chip at the end
+ * of the byline row, the Markdown mark copying it on click (and turning
+ * into a check), beside an arrow that opens it.
  */
 
 import ArrowUpRight from "@/assets/icons/arrow-up-right.svg"
@@ -15,12 +15,11 @@ const { href } = Astro.props
 ---
 
 <copy-markdown>
-  <button type="button">
+  <button type="button" aria-label="Copy Markdown" title="Copy Markdown">
     <span class="glyph" aria-hidden="true">
       <MarkdownIcon data-idle />
       <CheckIcon data-done />
     </span>
-    Copy Markdown
   </button>
   <a
     href={href}
@@ -36,8 +35,8 @@ const { href } = Astro.props
 
 <style>
   /* One chip split in two: a neutral 3 fill, no border, and a hairline
-     between the halves. Each half is a 6px corner's worth of padding in,
-     so the hover fill keeps the chip's corners. */
+     between the halves. Icons only, so it ends the byline's line instead
+     of wrapping onto one of its own. */
   copy-markdown {
     display: inline-flex;
     align-items: stretch;
@@ -79,7 +78,7 @@ const { href } = Astro.props
   }
 
   button {
-    padding-inline: 0.5rem;
+    padding-inline: 0.45rem;
   }
 
   a {
@@ -89,7 +88,7 @@ const { href } = Astro.props
   }
 
   /* The mark turns into a check in place, so the chip never
-     changes width — the label stays put and only the glyph answers. */
+     changes width. */
   .glyph {
     display: grid;
     place-items: center;
@@ -109,8 +108,6 @@ const { href } = Astro.props
     opacity: 0;
   }
 
-  /* Only the glyph answers: brightening the text as well reads as a hover
-     stuck on for two seconds after the pointer has left. */
   button[data-state="copied"] {
     [data-idle] {
       opacity: 0;

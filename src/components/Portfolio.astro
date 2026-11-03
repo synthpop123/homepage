@@ -219,6 +219,10 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     color: var(--muted-foreground);
   }
 
+  portfolio-feed :global(.kicker-name:empty) {
+    display: none;
+  }
+
   /* The brokers' marks: small rounded tiles, overlapped like a fanned
      deck, each cut out of the page by a ring of the background. Picking
      an account folds the others away over 250ms. */
@@ -715,10 +719,18 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     :global(
       :is(.holding-price, .holding-cost, .holding-weight, .holding-change)
     ) {
-    font-size: var(--step--1);
     font-variant-numeric: tabular-nums;
     text-align: end;
     white-space: nowrap;
+  }
+
+  /* Figures only in the rows: the head keeps its label size. */
+  portfolio-feed
+  :global(
+    .holding
+      :is(.holding-price, .holding-cost, .holding-weight, .holding-change)
+  ) {
+    font-size: var(--step--1);
   }
 
   portfolio-feed :global(:is(.holding-cost, .holding-weight)) {
@@ -731,7 +743,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     color: var(--muted-foreground);
   }
 
-  portfolio-feed :global(.holding-change) {
+  portfolio-feed :global(.holding .holding-change) {
     font-weight: var(--font-weight-medium);
   }
 

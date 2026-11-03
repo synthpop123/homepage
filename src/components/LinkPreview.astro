@@ -12,12 +12,12 @@
 import { getSeries, postWords, titleLang } from "@/lib/content"
 import { postLinks } from "@/lib/site-links"
 import { formatCompact, formatDate } from "@/lib/utils"
-import type { CollectionEntry } from "astro:content"
 
-type Props = { entries: CollectionEntry<"blog">[] }
+/** The Markdown of every body on the page. */
+type Props = { bodies: string[] }
 
-const { entries } = Astro.props
-const linked = new Set(entries.flatMap((entry) => postLinks(entry.body ?? "")))
+const { bodies } = Astro.props
+const linked = new Set(bodies.flatMap((body) => postLinks(body)))
 const previews = Object.fromEntries(
   (await getSeries()).flatMap((chain) =>
     chain

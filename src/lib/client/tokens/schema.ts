@@ -202,7 +202,7 @@ export const rangeMeta = (key: RangeKey) =>
   RANGES.find((entry) => entry.key === key) ?? DEFAULT_RANGE
 
 /**
- * How many rows each Breakdown list shows before its "Show more" —
+ * How many rows each Breakdown list shows before its "N more" row —
  * and, so the skeleton lands in the same geometry, how many placeholder
  * rows Tokens.astro draws for the models list.
  */

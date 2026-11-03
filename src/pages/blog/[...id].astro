@@ -127,7 +127,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
   {chain.length > 1 && <SeriesReader />}
   {hasMermaid && <Mermaid />}
   <Lightbox />
-  <LinkPreview entries={chain} />
+  <LinkPreview bodies={chain.map((entry) => entry.body ?? "")} />
 </Layout>
 
 <style>
@@ -170,6 +170,19 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
       margin-block-start: var(--space-2xs);
       font-size: var(--step--1);
       color: var(--muted-foreground);
+
+      /* Where the dates would push the Copy Markdown chip onto a line of
+         its own, it ends the author's line and the dates take the next. */
+      @media (width < 40rem) {
+        :global(copy-markdown) {
+          order: 1;
+        }
+
+        :global(post-dates) {
+          order: 2;
+          flex-basis: 100%;
+        }
+      }
     }
   }
 

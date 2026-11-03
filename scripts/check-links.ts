@@ -12,6 +12,10 @@
  * shallower than the sources they are built from, so a `./assets/…`
  * that survives into one is a broken picture no HTML page would show.
  *
+ * A link to the old blog host (`blog.lkwplus.com`) fails too: those
+ * URLs redirect or 404, and they read as external, so the internal
+ * rewrite, the link preview and this check would all pass over them.
+ *
  * Exits non-zero listing every broken link with the page it came from.
  */
 import { existsSync, readFileSync, statSync } from "node:fs"
@@ -70,6 +74,9 @@ const resolveTarget = (pathname: string): string | null => {
   return null
 }
 
+/** The blog's old host: its URLs are gone or redirect, never link one. */
+const OLD_HOST = /^(?:https?:)?\/\/blog\.lkwplus\.com(?:[/?#]|$)/i
+
 type Broken = { page: string; link: string; reason: string }
 const broken: Broken[] = []
 let checked = 0
@@ -91,6 +98,10 @@ for (const page of pages) {
   }
 
   for (const link of links) {
+    if (OLD_HOST.test(link)) {
+      broken.push({ page, link, reason: "old blog host" })
+      continue
+    }
     if (!link || link === "#" || EXTERNAL.test(link)) continue
     checked++
     const url = new URL(link, `https://site.invalid${route}`)
@@ -139,6 +150,10 @@ for (const artifact of artifacts) {
 
   for (const match of text.matchAll(MD_LINK)) {
     const link = match[1]
+    if (OLD_HOST.test(link)) {
+      broken.push({ page: artifact, link, reason: "old blog host" })
+      continue
+    }
     if (!link || link.startsWith("#")) continue
     const url = new URL(link, `https://site.invalid${route}`)
     const external = EXTERNAL.test(link)

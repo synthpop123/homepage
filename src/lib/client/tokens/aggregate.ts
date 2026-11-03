@@ -527,9 +527,14 @@ type Facts = {
   /** Median tokens across active days — the "typical" day. */
   median: number | null
   weekday: { name: string; share: number } | null
-  longest: { length: number; from: string; to: string } | null
-  current: { length: number; since: string } | null
+  longest: Streak | null
+  /** The longest run that ended before the current one began. */
+  previous: Streak | null
+  /** `record`: no earlier run is longer, so this one is the longest. */
+  current: { length: number; since: string; record: boolean } | null
 }
+
+type Streak = { length: number; from: string; to: string }
 
 /**
  * Fun stats over the dense daily series. Streaks count any activity
@@ -540,7 +545,7 @@ export function computeFacts(days: SiteDay[]): Facts {
   let biggest: SiteDay | null = null
   const byWeekday = [0, 0, 0, 0, 0, 0, 0]
   let total = 0
-  let longest: Facts["longest"] = null
+  const runs: Streak[] = []
   let run = 0
   let runStart = ""
   let busiestWeek: Facts["busiestWeek"] = null
@@ -555,8 +560,10 @@ export function computeFacts(days: SiteDay[]): Facts {
     if (hasActivity(day)) {
       if (run === 0) runStart = day.date
       run += 1
-      if (!longest || run > longest.length)
-        longest = { length: run, from: runStart, to: day.date }
+      if (run === 1) runs.push({ length: 0, from: runStart, to: day.date })
+      const last = runs[runs.length - 1]
+      last.length = run
+      last.to = day.date
     } else {
       run = 0
     }
@@ -579,6 +586,16 @@ export function computeFacts(days: SiteDay[]): Facts {
     since = days[i].date
   }
 
+  // The first of equal runs is the longest, as it was when it ended.
+  const longestOf = (list: Streak[]) =>
+    list.reduce<Streak | null>(
+      (best, entry) => (!best || entry.length > best.length ? entry : best),
+      null,
+    )
+  const longest = longestOf(runs)
+  const previous =
+    length > 0 ? longestOf(runs.filter((entry) => entry.to < since)) : longest
+
   active.sort((a, b) => a - b)
   const median =
     active.length === 0
@@ -595,7 +612,11 @@ export function computeFacts(days: SiteDay[]): Facts {
     weekday:
       total > 0 ? { name: WEEKDAYS[top], share: byWeekday[top] / total } : null,
     longest,
-    current: length > 0 ? { length, since } : null,
+    previous,
+    current:
+      length > 0
+        ? { length, since, record: length >= (previous?.length ?? 0) }
+        : null,
   }
 }
 

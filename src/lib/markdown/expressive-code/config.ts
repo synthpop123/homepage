@@ -18,6 +18,9 @@ const ecOptions: SatteriExpressiveCodeOptions = {
   plugins: [pluginCollapsibleSections(), pluginLineNumbers()],
   defaultProps: {
     wrap: true,
+    // A wrapped line's rest sits two columns in, so it never reads as a
+    // command of its own.
+    hangingIndent: 2,
     showLineNumbers: true,
     collapseStyle: "collapsible-auto",
     overridesByLang: {

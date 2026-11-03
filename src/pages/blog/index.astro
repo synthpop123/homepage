@@ -3,15 +3,16 @@ import ClaudeIcon from "@/assets/icons/ai/claude.svg"
 import MetaPage from "@/components/MetaPage.astro"
 import PageTitle from "@/components/PageTitle.astro"
 import Layout from "@/layouts/Layout.astro"
-import { getSeries, postWords, titleLang } from "@/lib/content"
-import { formatCompact, formatMonthDay } from "@/lib/utils"
+import { getSeries, postMinutes, postWords, titleLang } from "@/lib/content"
+import { formatMonthDay } from "@/lib/utils"
 
 // The index as a ledger: one line per post, filed under its year, with
-// a bar for how long it is — the series counted whole, against the
-// longest on the site.
+// how long it takes to read over a bar for its length — the series
+// counted whole, against the longest on the site.
 const entries = (await getSeries()).map((chain) => ({
   post: chain[0],
   words: postWords(chain),
+  minutes: postMinutes(chain),
 }))
 const longest = Math.max(...entries.map(({ words }) => words), 1)
 // Newest first, so each year's group opens where the last one closed.
@@ -22,12 +23,15 @@ const years = Map.groupBy(entries, ({ post }) =>
 
 <Layout>
   <MetaPage slot="head" title="Blog" />
-  <PageTitle>Blog</PageTitle>
+  <PageTitle>
+    Blog
+    <a slot="aside" href="/tags">Tags</a>
+  </PageTitle>
   {[...years].map(([year, posts]) => (
     <section aria-labelledby={`y${year}`}>
       <h2 id={`y${year}`}>{year}</h2>
       <ol>
-        {posts.map(({ post, words }) => (
+        {posts.map(({ post, words, minutes }) => (
           <li>
             <time datetime={post.data.date.toISOString()}>
               {formatMonthDay(post.data.date)}
@@ -45,8 +49,8 @@ const years = Map.groupBy(entries, ({ post }) =>
               title={`${words.toLocaleString("en-US")} words`}
               style={`--share: ${words / longest}`}
             >
-              <span>{formatCompact(words)}</span>
-              <span class="sr"> words</span>
+              <span>{minutes} min</span>
+              <span class="sr"> read</span>
             </post-length>
           </li>
         ))}

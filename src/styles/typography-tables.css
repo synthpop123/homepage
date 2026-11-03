@@ -37,6 +37,16 @@ prose-content {
       max-width: 22rem;
     }
 
+    /* No frame, only rules between rows: the outer columns sit on the
+       text's edges. */
+    :is(th, td):first-child {
+      padding-inline-start: 0;
+    }
+
+    :is(th, td):last-child {
+      padding-inline-end: 0;
+    }
+
     th {
       padding: 0.5em 1em;
       font-weight: var(--font-weight-medium);

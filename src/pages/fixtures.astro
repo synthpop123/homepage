@@ -1,0 +1,48 @@
+---
+/**
+ * Every Markdown feature on one page (src/fixtures/fixtures.md), drawn
+ * the way a post draws it: same pipeline, prose styles, code assets,
+ * diagrams, lightbox and link previews. Out of the sitemap, the feeds
+ * and llms.txt; noindex.
+ */
+import Lightbox from "@/components/Lightbox.astro"
+import LinkPreview from "@/components/LinkPreview.astro"
+import Mermaid from "@/components/Mermaid.astro"
+import MetaPage from "@/components/MetaPage.astro"
+import PageTitle from "@/components/PageTitle.astro"
+import TableOfContents from "@/components/TableOfContents.astro"
+import Layout from "@/layouts/Layout.astro"
+import * as fixture from "@/fixtures/fixtures.md"
+import "@/styles/typography-math.css"
+import "virtual:expressive-code.css"
+
+const { Content } = fixture
+const headings = fixture
+  .getHeadings()
+  .filter(({ depth, text }) => depth >= 2 && depth <= 4 && text.trim())
+---
+
+<Layout strip={false}>
+  <MetaPage
+    slot="head"
+    title={fixture.frontmatter.title}
+    description="Every Markdown feature on one page."
+    noindex
+  />
+  <TableOfContents
+    slot="toc"
+    title={fixture.frontmatter.title}
+    sections={[{ label: fixture.frontmatter.title, open: true, headings }]}
+  />
+  <PageTitle>{fixture.frontmatter.title}</PageTitle>
+  <prose-content>
+    <Content />
+  </prose-content>
+  <Mermaid />
+  <Lightbox />
+  <LinkPreview bodies={[fixture.rawContent()]} />
+</Layout>
+
+<script>
+  import "virtual:expressive-code.js"
+</script>

@@ -729,6 +729,7 @@ describe("computeFacts", () => {
       median: null,
       weekday: null,
       longest: null,
+      previous: null,
       current: null,
     })
   })
@@ -769,6 +770,41 @@ describe("computeFacts", () => {
     })
   })
 
+  it("sets a record current streak against the longest before it", () => {
+    const facts = computeFacts([
+      day("2026-07-01", 1),
+      day("2026-07-02", 1),
+      day("2026-07-03", 0),
+      day("2026-07-04", 1),
+      day("2026-07-05", 1),
+      day("2026-07-06", 1),
+    ])
+    expect(facts.current).toEqual({
+      length: 3,
+      since: "2026-07-04",
+      record: true,
+    })
+    expect(facts.previous).toEqual({
+      length: 2,
+      from: "2026-07-01",
+      to: "2026-07-02",
+    })
+    expect(facts.longest?.from).toBe("2026-07-04")
+  })
+
+  it("keeps an earlier, longer run as the record", () => {
+    const facts = computeFacts([
+      day("2026-07-01", 1),
+      day("2026-07-02", 1),
+      day("2026-07-03", 1),
+      day("2026-07-04", 0),
+      day("2026-07-05", 1),
+    ])
+    expect(facts.current?.record).toBe(false)
+    expect(facts.previous).toEqual(facts.longest)
+    expect(facts.longest?.length).toBe(3)
+  })
+
   it("forgives only a idle today for the current streak", () => {
     const active = [
       day("2026-07-17", 1),
@@ -776,7 +812,11 @@ describe("computeFacts", () => {
       day("2026-07-19", 3),
     ]
     const idleToday = computeFacts([...active, day("2026-07-20", 0)])
-    expect(idleToday.current).toEqual({ length: 3, since: "2026-07-17" })
+    expect(idleToday.current).toEqual({
+      length: 3,
+      since: "2026-07-17",
+      record: true,
+    })
 
     const idleTwoDays = computeFacts([
       ...active.slice(0, 2),

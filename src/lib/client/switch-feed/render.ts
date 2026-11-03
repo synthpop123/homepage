@@ -77,6 +77,8 @@ export const buildRow = (
     img.decoding = "async"
     img.width = 112
     img.height = 112
+    // A cover that fails leaves the tile's ground, like one never sent.
+    img.addEventListener("error", () => img.remove(), { once: true })
     cover.append(img)
   }
 

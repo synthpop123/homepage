@@ -319,7 +319,7 @@ describe("allowanceView", () => {
       used: 25.5,
       figure: "$25.50",
       foot: "expires in 5d",
-      left: "$74.50 of $100 left",
+      total: "$100 total",
     })
   })
 
@@ -332,7 +332,7 @@ describe("allowanceView", () => {
       state: "expired",
       used: 25.5,
       figure: "$25.50",
-      left: "none left",
+      total: "$100 total",
     })
     expect(view.foot).toBe("expired 1h ago")
   })

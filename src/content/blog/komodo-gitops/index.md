@@ -102,26 +102,26 @@ networks:
 
 所有机器和服务的声明统一放在同一个 Git 仓库中，这样一套 Renovate 规则和一条流水线就能覆盖全部服务，跨服务的调整也可以在单个 Commit 里完成：
 
-```text title="仓库目录结构"
-homelab-infra/
-├── komodo/
-│   └── sync.toml          # Stack、Procedure 与 Server 的集中声明
-├── stacks/                # 服务目录，每个子目录对应一个 Stack
-│   ├── wallos/
-│   │   └── compose.yaml
-│   └── immich/
-│       ├── compose.yaml
-│       └── config.example.yaml  # 去除敏感信息的配置文件模板
-├── bootstrap/             # 手动部署的控制平面与宿主机基础配置
-│   ├── komodo/            # Komodo 自身的 Compose 与环境变量模板
-│   ├── firewall/          # DOCKER-USER 防火墙脚本与 systemd 单元
-│   └── fail2ban/          # SSH 防爆破配置
-├── scripts/
-│   └── validate.sh        # 本地与 CI 共用的静态校验脚本
-├── renovate.json          # Renovate 自动升级规则
-└── docs/
-    └── ports.md           # 宿主机端口分配登记表
-```
+:::file-tree
+- homelab-infra/
+  - komodo/
+    - **sync.toml** Stack、Procedure 与 Server 的集中声明
+  - stacks/ 服务目录，每个子目录对应一个 Stack
+    - wallos/
+      - compose.yaml
+    - immich/
+      - compose.yaml
+      - config.example.yaml 去除敏感信息的配置文件模板
+  - bootstrap/ 手动部署的控制平面与宿主机基础配置
+    - komodo/ Komodo 自身的 Compose 与环境变量模板
+    - firewall/ DOCKER-USER 防火墙脚本与 systemd 单元
+    - fail2ban/ SSH 防爆破配置
+  - scripts/
+    - validate.sh 本地与 CI 共用的静态校验脚本
+  - renovate.json Renovate 自动升级规则
+  - docs/
+    - ports.md 宿主机端口分配登记表
+:::
 
 Komodo 会把仓库克隆到宿主机的工作目录（默认位于 `/etc/komodo/repos/`）。因此仓库内只存放声明式配置，运行期产生的数据和敏感信息全部留在仓库目录之外：应用持久化数据统一放在 `/srv/<service>/`，真实密钥保存在 Komodo 的变量库中（部署时动态生成 `.env`），控制平面自身的状态则存放在 Komodo 数据库里。
 

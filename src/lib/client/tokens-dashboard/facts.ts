@@ -20,7 +20,7 @@ import {
   PLACEHOLDER_IDS,
   type Site,
 } from "../tokens"
-import { type Query, setCard } from "./dom"
+import { type Query, setCard, setCardLabel } from "./dom"
 
 export function renderFacts(q: Query, site: Site) {
   const cards = q('[data-cards="facts"]')
@@ -65,19 +65,27 @@ export function renderFacts(q: Query, site: Site) {
     facts.weekday?.name ?? "—",
     facts.weekday ? `${formatShare(facts.weekday.share)} of tokens` : "—",
   )
+  // A current streak that is the record would repeat the longest one,
+  // so that card steps back to the best run before it.
+  const record = facts.current?.record ?? false
+  const longest = record ? facts.previous : facts.longest
+  setCardLabel(cards, "longest", record ? "Previous best" : "Longest streak")
   setCard(
     cards,
     "longest",
-    facts.longest ? days(facts.longest.length) : "—",
-    facts.longest
-      ? `${formatDay(facts.longest.from)} – ${formatDay(facts.longest.to)}`
-      : "—",
+    longest ? days(longest.length) : "—",
+    longest ? `${formatDay(longest.from)} – ${formatDay(longest.to)}` : "—",
   )
   setCard(
     cards,
     "current",
     facts.current ? days(facts.current.length) : "0 days",
-    facts.current ? `since ${formatDay(facts.current.since)}` : "—",
+    facts.current
+      ? record
+        ? "longest so far"
+        : `since ${formatDay(facts.current.since)}`
+      : "—",
+    facts.current ? `since ${formatDate(facts.current.since)}` : undefined,
   )
 
   // Counted off the payload rather than off what the lists render, so
