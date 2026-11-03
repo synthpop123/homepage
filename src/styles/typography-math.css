@@ -358,7 +358,7 @@ prose-content {
 
       .tml-fbox {
         padding: 3pt;
-        border: 1px solid;
+        border: var(--hairline) solid;
       }
 
       .circle-pad {

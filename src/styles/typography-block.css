@@ -100,6 +100,14 @@ prose-content {
       letter-spacing: var(--tracking-tight);
     }
 
+    /* The copy button is a small control: the 4px corner, and it shows
+       and hides at once, as every hover on the site does. */
+    .copy button,
+    .copy button div {
+      border-radius: var(--radius-sm);
+      transition: none;
+    }
+
     .frame.has-title:not(.is-terminal) .header {
       border-block-end: var(--hairline) solid var(--border);
     }

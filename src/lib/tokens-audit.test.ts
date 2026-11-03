@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test"
 import { readFileSync } from "node:fs"
+import * as radixColors from "@radix-ui/colors"
 import { Glob } from "bun"
 
 /**
@@ -59,5 +60,28 @@ describe("OG cards", () => {
     ["ACCENT", "accent-fill"],
   ])("%s mirrors --%s in the light scheme", (og, token) => {
     expect(constant(og)).toBe(lightValue(css, token))
+  })
+})
+
+describe("Radix Colors", () => {
+  // Every Radix value: solid, alpha and P3 scales, light and dark.
+  const radix = new Set<string>()
+  for (const scale of Object.values(radixColors))
+    if (scale && typeof scale === "object")
+      for (const value of Object.values(scale as Record<string, unknown>))
+        if (typeof value === "string")
+          radix.add(value.toLowerCase().replace(/\s+/g, " "))
+
+  // Where colour literals are allowed, each must be a Radix value. Black
+  // and White A (rgb() with an alpha) are checked by value too.
+  it.each(ALLOW)("%s uses Radix values only", (file) => {
+    const text = readFileSync(file, "utf8")
+    const hexes = text.match(/#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?\b/g) ?? []
+    const off = hexes.filter((hex) => !radix.has(hex.toLowerCase()))
+    const alphas = [
+      ...text.matchAll(/rgb\((0|255) \1 \1 \/ ([\d.]+)\)/g),
+    ].filter(([, c, a]) => !radix.has(`rgba(${c}, ${c}, ${c}, ${a})`))
+    expect(off).toEqual([])
+    expect(alphas.map(([m]) => m)).toEqual([])
   })
 })

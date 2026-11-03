@@ -358,7 +358,7 @@ const { endpoint = NOW.endpoint } = Astro.props
           var(--black-a8) 50%,
           transparent
         );
-        color: white;
+        color: var(--white-a12);
       }
 
       .now-label,
@@ -410,7 +410,7 @@ const { endpoint = NOW.endpoint } = Astro.props
         inset-inline-start: 0;
         inline-size: calc(var(--score) / 5 * 100%);
         overflow: hidden;
-        color: white;
+        color: var(--white-a12);
 
         &::before {
           content: "★★★★★";

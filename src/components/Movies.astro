@@ -115,13 +115,15 @@ const profileUrl = `https://letterboxd.com/${LETTERBOXD.username}/`
     object-fit: cover;
   }
 
-  /* Solid, not frosted: a tag on artwork has to read on any poster. */
+  /* Solid, not frosted: a tag on artwork has to read on any poster. Its
+     corner is the poster's less the inset (6px = 2px + 4px), so the two
+     curves run parallel. */
   movies-feed :global(.rewatch) {
     position: absolute;
-    inset-block-start: var(--space-3xs);
-    inset-inline-start: var(--space-3xs);
+    inset-block-start: 0.25rem;
+    inset-inline-start: 0.25rem;
     padding: 0.125rem 0.375rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-xs);
     background-color: var(--foreground);
     color: var(--background);
     font-size: var(--step--2);

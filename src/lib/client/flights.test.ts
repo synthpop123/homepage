@@ -86,8 +86,8 @@ describe("statCards", () => {
   it("fills four cells with a foot line each", () => {
     expect(statCards(sample).map((card) => [card.value, card.foot])).toEqual([
       ["25", "since 2023"],
-      ["34,511 km", "0.86× the equator"],
-      ["65h 37m", "≈ 2.7 days aloft"],
+      ["34,511 km", "1,380 km per flight"],
+      ["65h 37m", "2h 37m per flight"],
       ["15", "in 1 country"],
     ])
   })

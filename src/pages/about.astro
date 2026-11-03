@@ -334,36 +334,31 @@ const toc = [
     }
   }
 
-  /* The build day as a library date stamp, inked over the last row: a
-     double rule in the accent, tilted, its ink broken up by a noise
-     mask. */
+  /* The build day, set apart in the accent: a hairline box, small
+     caps over the date. */
   .built {
     display: flex;
     justify-content: flex-end;
-    margin-block-start: -0.9rem;
-    padding-inline-end: var(--space-s);
+    margin-block-start: var(--space-s);
 
     > span {
       display: inline-grid;
       justify-items: center;
       gap: 0.1rem;
-      padding: 0.4rem 0.85rem 0.45rem;
-      border: 3px double var(--accent);
-      border-radius: 7px;
+      padding: var(--space-3xs) var(--space-xs);
+      border: var(--hairline) solid var(--accent);
+      border-radius: var(--radius-sm);
       font-family: var(--font-mono);
       font-feature-settings: normal;
       letter-spacing: 0;
       line-height: 1.1;
       text-transform: uppercase;
       color: var(--accent);
-      opacity: 0.88;
-      rotate: -4deg;
-      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3.2 0 0 0 -.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
 
     small {
       font-size: var(--step--2);
-      letter-spacing: 0.24em;
+      letter-spacing: var(--tracking-label);
     }
 
     time {

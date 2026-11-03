@@ -2,14 +2,8 @@
 
 @layer tokens {
 :root {
-  /* Every rule, border and divider is a hairline: one device pixel where
-     the screen has two to the CSS pixel, a whole pixel below that, where a
-     half pixel would be smeared across one at half strength. */
-  --hairline: 1px;
-
-  @media (resolution >= 2x) {
-    --hairline: 0.5px;
-  }
+  /* Every rule, border and divider is a hairline. */
+  --hairline: 0.5px;
 
   /* Corners, sparingly: 4px for small controls and tags, 6px for buttons
      and thumbnails, 8px for tiles. A corner nested inside another is the

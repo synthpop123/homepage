@@ -166,9 +166,6 @@ export const formatKm = (km: number) => `${numberFormatter.format(km)} km`
 export const routeLabel = (route: Pick<SiteRoute, "from" | "to">) =>
   `${route.from} ⇄ ${route.to}`
 
-/** Once round the equator. */
-const EARTH_KM = 40_075
-
 export type StatCard = {
   key: string
   label: string
@@ -183,8 +180,9 @@ export type StatCard = {
  */
 export function statCards(site: Site): StatCard[] {
   const { stats } = site
-  const laps = stats.km / EARTH_KM
-  const days = stats.minutes / (60 * 24)
+  // Per flight, so the totals have a scale beside them.
+  const each = (total: number) =>
+    stats.flights > 0 ? total / stats.flights : 0
   return [
     {
       key: "flights",
@@ -196,13 +194,19 @@ export function statCards(site: Site): StatCard[] {
       key: "distance",
       label: "Distance",
       value: formatKm(stats.km),
-      foot: `${laps.toFixed(laps < 10 ? 2 : 1)}× the equator`,
+      foot:
+        stats.flights > 0
+          ? `${formatKm(Math.round(each(stats.km)))} per flight`
+          : "",
     },
     {
       key: "airtime",
       label: "In the air",
       value: formatDuration(stats.minutes),
-      foot: days >= 1 ? `≈ ${days.toFixed(1)} days aloft` : "under a day aloft",
+      foot:
+        stats.flights > 0
+          ? `${formatDuration(Math.round(each(stats.minutes)))} per flight`
+          : "",
     },
     {
       key: "airports",

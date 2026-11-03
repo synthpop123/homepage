@@ -85,12 +85,15 @@ export function renderFacts(q: Query, site: Site) {
   const models = site.ranges.all.byModel.filter(
     (entry) => !PLACEHOLDER_IDS.has(entry.model),
   )
+  const providers = site.ranges.all.byProvider.filter(
+    (entry) => !PLACEHOLDER_IDS.has(entry.provider),
+  )
   setCard(
     cards,
     "models",
     String(models.length),
-    models.length > 0
-      ? `${site.ranges.all.byClient.length} ${site.ranges.all.byClient.length === 1 ? "client" : "clients"}`
+    providers.length > 0
+      ? `from ${providers.length} ${providers.length === 1 ? "provider" : "providers"}`
       : "—",
     models.length > 0 ? `most used: ${modelLabel(models[0].model)}` : undefined,
   )

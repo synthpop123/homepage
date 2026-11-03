@@ -130,6 +130,7 @@
   --amber-a3:  light-dark(#ffde003d, #fa820022);
   --amber-11:  light-dark(#ab6400, #ffca16);
   --red-a3:    light-dark(#f3000d14, #ff173f2d);
+  --red-a6:    light-dark(#f8000442, #ff3e5668);
   --purple-a3: light-dark(#8e00f112, #c150ff2d);
   --purple-11: light-dark(#8145b5, #d19dff);
   /* Step 12 carries a callout's title in light, where step 11 on its own
@@ -149,6 +150,7 @@
   --white-a4:  rgb(255 255 255 / 0.2);
   --white-a6:  rgb(255 255 255 / 0.4);
   --white-a10: rgb(255 255 255 / 0.8);
+  --white-a12: rgb(255 255 255 / 0.95);
 
   /* Fixed in both schemes: a logo tile is white (Gray 1 and 11, light) and
      the record is black (Gray 1 and 2, dark). */
@@ -157,9 +159,11 @@
   --record-1:    #111111;
   --record-2:    #191919;
 
-  /* Brand marks, the only hues on the site outside Radix. */
-  --brand-claude:  #d97757;
-  --brand-spotify: light-dark(#1db954, #1ed760);
+  /* Brand marks, each the Radix solid step nearest its brand colour:
+     Claude's coral is Tomato (Orange, nearer, is Alibaba's on /tokens),
+     Spotify's green is Green, kept apart from the Grass accent. */
+  --brand-claude:  light-dark(#e54d2e, #ec6142); /* Tomato 9 / 10 */
+  --brand-spotify: light-dark(#30a46c, #33b074); /* Green 9 / 10 */
 
   /* The activity scale (heatmaps, Switch's recent share, a portfolio's
      gains): Grass 7, 8, 9, 11 over an empty neutral 4. It starts at 7
