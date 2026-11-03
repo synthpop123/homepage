@@ -57,21 +57,15 @@
   --space-xl-2xl: clamp(3rem, 2.4453rem + 2.7057vw, 4.5rem);
   --space-2xl-3xl: clamp(4rem, 2.9831rem + 4.9605vw, 6.75rem);
 
-  --grid-max-width: 75.94rem;
+  /* Three tracks: a rail either side, equal, and the column between at
+     a fixed width, so the column sits on the window's centre whether a
+     rail holds the TOC, nothing, or (64 to 76rem) a TOC folded into the
+     column's head. Rails grow to the max width, then the page centres. */
+  --grid-max-width: 82rem;
   --grid-gutter: var(--space-s-m);
-  --grid-columns: 12;
-  --grid-edge: max(
-    var(--grid-gutter),
-    (100% - var(--grid-max-width)) / 2 + var(--grid-gutter)
-  );
-  --grid-column-width: calc(
-    (
-        min(100%, var(--grid-max-width)) -
-          (var(--grid-columns) + 1) * var(--grid-gutter)
-      ) /
-      var(--grid-columns)
-  );
-  --bar-gutter: max(var(--grid-gutter), (100% - var(--measure)) / 2);
+  --content-width: 41.5rem;
+  --rail-min: 9rem;
+  --bar-gutter: max(var(--grid-gutter), (100% - var(--content-width)) / 2);
   --bar-border-image: linear-gradient(
       to right,
       transparent 0 var(--bar-gutter),

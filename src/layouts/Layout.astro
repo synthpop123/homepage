@@ -93,7 +93,10 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
     position: relative;
     isolation: isolate;
     display: grid;
-    grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+    grid-template-columns:
+      [nav] minmax(var(--rail-min), 1fr)
+      [content] minmax(0, var(--content-width))
+      [toc] minmax(var(--rail-min), 1fr);
     gap: var(--grid-gutter);
     max-width: var(--grid-max-width);
     min-height: 100svh;
@@ -122,45 +125,31 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
     }
   }
 
+  /* The rails stretch down the page, so the sidebar and the TOC inside
+     them stick to the top of the window as it scrolls. */
   page-nav {
     display: block;
     min-width: 0;
-    grid-column: 1 / 3;
-    grid-row: 1;
-
-    @media screen and (width >= 64rem) {
-      position: fixed;
-      inset-block: var(--page-offset-top) var(--page-offset-bottom);
-      inset-inline-start: var(--grid-edge);
-      width: calc(2 * var(--grid-column-width) + var(--grid-gutter));
-    }
+    grid-column: nav;
+    grid-row: 1 / -1;
   }
 
   page-toc {
     display: block;
     min-width: 0;
-    grid-column: 10 / 13;
+    grid-column: toc;
     grid-row: 1;
 
-    @media screen and (width >= 76rem) {
-      position: fixed;
-      inset-block: var(--page-offset-top) var(--page-offset-bottom);
-      inset-inline-end: var(--grid-edge);
-      width: calc(3 * var(--grid-column-width) + 2 * var(--grid-gutter));
-    }
-
-    /* Between 64rem and 76rem a TOC column would leave the text too
-       narrow, so the TOC folds into the bar it is on a phone and sits
-       at the head of the content column, which takes the TOC's columns
-       back up to the measure. It sticks to the top of the window, where
-       the sidebar leaves room for it. */
+    /* Between 64rem and 76rem a rail is too narrow for the TOC, so it
+       folds into the bar it is on a phone and sits at the head of the
+       column, sticking to the top of the window. Its rail stays empty,
+       so the column doesn't move. */
     @media screen and (64rem <= width < 76rem) {
       position: sticky;
       inset-block-start: 0;
       z-index: 10;
-      grid-column: 3 / 13;
+      grid-column: content;
       align-self: start;
-      max-inline-size: var(--measure);
       margin-block-start: calc(-1 * var(--page-offset-top));
       margin-block-end: calc(var(--page-offset-top) - var(--space-s));
     }
@@ -171,9 +160,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
       grid-template-rows: auto 1fr;
 
       page-content {
-        grid-column: 3 / 13;
         grid-row: 2;
-        max-inline-size: var(--measure);
       }
     }
   }
@@ -181,7 +168,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
   page-content {
     display: flex;
     flex-direction: column;
-    grid-column: 3 / 10;
+    grid-column: content;
     grid-row: 1;
     min-width: 0;
     margin-block-start: -0.1em;
@@ -199,7 +186,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
       grid-column: 1 / -1;
       grid-row: auto;
       inline-size: 100%;
-      max-inline-size: var(--measure);
+      max-inline-size: var(--content-width);
       margin-inline: auto;
     }
   }
