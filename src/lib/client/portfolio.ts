@@ -24,6 +24,7 @@ import {
   swr,
 } from "./feed"
 import { miscSection } from "./misc"
+import { inset, type Rect, squarify } from "./treemap"
 
 export type SiteHolding = {
   symbol: string
@@ -938,3 +939,280 @@ export function holdingFacts(
     bought: bought >= 0 ? bought : null,
   }
 }
+
+/* Allocation ------------------------------------------------------------ */
+
+/**
+ * The holdings as a treemap: area by weight, each tile graded by the last
+ * session's move or by the position's own return, gains in the heatmap's
+ * greens and losses in ink. Cash and the funds the owner counts as cash
+ * (`PORTFOLIO.cashLike`) form one block the lens can zoom past, so the
+ * invested part can be read at full size.
+ */
+export type ColourBy = "day" | "return"
+
+export type Tile = {
+  /** The symbol, or `cashKey(currency)` for cash (the row's key too). */
+  key: string
+  label: string
+  name: string
+  logo: string | null
+  /** Cash in a currency, drawn hatched. */
+  cash: boolean
+  /** Set aside by the lens: cash, and the funds named as cash-like. */
+  cashLike: boolean
+  weight: number
+  /** The last session's move, and the position's return since bought. */
+  move: number | null
+  performance: number | null
+  /** 0–4 by the picked measure, and its sign. */
+  level: number
+  dir: "up" | "down" | "flat"
+}
+
+/** A key for cash in a currency that no ticker can collide with. */
+export const cashKey = (currency: string) => `cash:${currency}`
+
+/** Where each grade starts: a session moves in tenths of what a position
+ *  does over its life, so the two read on scales of their own. */
+export const TILE_STEPS: Record<ColourBy, number[]> = {
+  day: [0.0025, 0.01, 0.025, 0.05],
+  return: [0.01, 0.05, 0.1, 0.2],
+}
+
+export function tileLevel(value: number | null, by: ColourBy): number {
+  if (value === null) return 0
+  return TILE_STEPS[by].filter((step) => Math.abs(value) >= step).length
+}
+
+const currencyNames = new Intl.DisplayNames(["en"], { type: "currency" })
+
+/** A currency's English name, or its code. */
+export function currencyName(currency: string): string {
+  try {
+    return currencyNames.of(currency) ?? currency
+  } catch {
+    return currency
+  }
+}
+
+/** The account's tiles, heaviest first, cash last. */
+export function allocTiles(
+  site: Site,
+  rows: Row[],
+  cash: SiteCash[],
+  cashLike: readonly string[],
+  by: ColourBy,
+): Tile[] {
+  const symbols = new Map(site.symbols.map((entry) => [entry.symbol, entry]))
+  const last = site.days.length - 1
+  const held = rows.map((row): Tile => {
+    const closes = symbols.get(row.symbol)?.closes ?? []
+    const move = last > 0 ? change(closes, last - 1, last) : null
+    const value = by === "day" ? move : row.performance
+    const level = tileLevel(value, by)
+    return {
+      key: row.symbol,
+      label: row.symbol,
+      name: row.name,
+      logo: row.logo,
+      cash: false,
+      cashLike: cashLike.includes(row.symbol),
+      weight: row.weight,
+      move,
+      performance: row.performance,
+      level,
+      dir: level === 0 ? "flat" : direction(value),
+    }
+  })
+  held.sort((a, b) => b.weight - a.weight)
+  const money = cash.map(
+    (entry): Tile => ({
+      key: cashKey(entry.currency),
+      label: entry.currency,
+      name: currencyName(entry.currency),
+      logo: null,
+      cash: true,
+      cashLike: true,
+      weight: entry.weight,
+      move: null,
+      performance: null,
+      level: 0,
+      dir: "flat",
+    }),
+  )
+  return [...held, ...money.sort((a, b) => b.weight - a.weight)]
+}
+
+/** The two blocks' shares of the account. */
+export function allocShares(tiles: Tile[]) {
+  let cashLike = 0
+  let invested = 0
+  for (const tile of tiles) {
+    if (tile.cashLike) cashLike += tile.weight
+    else invested += tile.weight
+  }
+  return { cashLike, invested }
+}
+
+/** The lens has something to do only with both blocks there. */
+export const canZoom = (tiles: Tile[]) =>
+  tiles.some((tile) => tile.cashLike) && tiles.some((tile) => !tile.cashLike)
+
+export const TILE_GAP = 3
+
+export type AllocLayout = {
+  tiles: Record<string, Rect>
+  /** The two blocks on the whole account (the lens's target, and where
+   *  the cash-like money sits). */
+  cashLike: Rect | null
+  invested: Rect | null
+  zoomed: boolean
+}
+
+/**
+ * Every tile's rectangle in a `width` × `height` frame. On the whole
+ * account the cash-like block and the invested one are each a single
+ * rectangle; zoomed, the invested tiles fill the frame and the cash-like
+ * ones ride the same zoom out of it, so a move between the two reads as
+ * one camera move.
+ */
+export function allocLayout(
+  tiles: Tile[],
+  width: number,
+  height: number,
+  zoomed: boolean,
+): AllocLayout {
+  const frame: Rect = { x0: 0, y0: 0, x1: width, y1: height }
+  const aside = tiles.filter((tile) => tile.cashLike)
+  const kept = tiles.filter((tile) => !tile.cashLike)
+  const groups = [aside, kept].filter((group) => group.length)
+  const sum = (group: Tile[]) => group.reduce((s, tile) => s + tile.weight, 0)
+  const blocks = inset(squarify(groups.map(sum), frame), frame, TILE_GAP)
+  const placed: Record<string, Rect> = {}
+  let cashLike: Rect | null = null
+  let invested: Rect | null = null
+  groups.forEach((group, i) => {
+    const block = blocks[i]
+    if (group === aside) cashLike = block
+    else invested = block
+    const cells = inset(
+      squarify(
+        group.map((tile) => tile.weight),
+        block,
+      ),
+      block,
+      TILE_GAP,
+    )
+    group.forEach((tile, j) => {
+      placed[tile.key] = cells[j]
+    })
+  })
+  const target = invested as Rect | null
+  if (!zoomed || !cashLike || !target) {
+    return { tiles: placed, cashLike, invested, zoomed: false }
+  }
+  const sx = width / Math.max(1, target.x1 - target.x0)
+  const sy = height / Math.max(1, target.y1 - target.y0)
+  const lens: Record<string, Rect> = {}
+  const cells = inset(
+    squarify(
+      kept.map((tile) => tile.weight),
+      frame,
+    ),
+    frame,
+    TILE_GAP,
+  )
+  kept.forEach((tile, i) => {
+    lens[tile.key] = cells[i]
+  })
+  for (const tile of aside) {
+    const at = placed[tile.key]
+    lens[tile.key] = {
+      x0: (at.x0 - target.x0) * sx,
+      y0: (at.y0 - target.y0) * sy,
+      x1: (at.x1 - target.x0) * sx,
+      y1: (at.y1 - target.y0) * sy,
+    }
+  }
+  return { tiles: lens, cashLike, invested, zoomed: true }
+}
+
+/** Geist Mono's advance, in em, for fitting a tile's text. */
+const ADVANCE = 0.6
+
+/**
+ * What a tile can carry: the ticker at 16px over its figure at 14, at 14
+ * over 12, the ticker alone at 12, or nothing (the card has it).
+ */
+export function tileText(
+  label: string,
+  figure: string,
+  width: number,
+  height: number,
+): { size: 12 | 14 | 16; figure: boolean } | null {
+  const fits = (text: string, size: number) =>
+    text.length * ADVANCE * size + 8 <= width
+  if (width >= 96 && height >= 58 && fits(label, 16) && fits(figure, 14))
+    return { size: 16, figure: true }
+  if (width >= 58 && height >= 40 && fits(label, 14) && fits(figure, 12))
+    return { size: 14, figure: true }
+  if (height >= 20 && fits(label, 12)) return { size: 12, figure: false }
+  return null
+}
+
+/** The figure a tile prints: cash its weight, a holding the measure. */
+export function tileFigure(tile: Tile, by: ColourBy): string {
+  if (tile.cash) return formatWeight(tile.weight)
+  const value = by === "day" ? tile.move : tile.performance
+  if (value === null) return "—"
+  return by === "day" ? formatReturn(value) : formatReturn(value, 1)
+}
+
+export type TileCard = {
+  title: string
+  name: string
+  /** The session the move belongs to. */
+  when: string | null
+  rows: { label: string; value: string; dir: "up" | "down" | "flat" | null }[]
+}
+
+/** The card a hovered tile shows. */
+export function tileCard(site: Site, tile: Tile): TileCard {
+  const weight = {
+    label: "Weight",
+    value: formatWeight(tile.weight),
+    dir: null,
+  }
+  if (tile.cash) {
+    return { title: "Cash", name: tile.name, when: null, rows: [weight] }
+  }
+  return {
+    title: tile.label,
+    name: tile.name,
+    when: monthDay.format(dayInstant(site.days[site.days.length - 1])),
+    rows: [
+      weight,
+      {
+        label: "Last session",
+        value: tile.move === null ? "—" : formatReturn(tile.move),
+        dir: tile.move === null ? null : direction(tile.move),
+      },
+      {
+        label: "Return",
+        value:
+          tile.performance === null ? "—" : formatReturn(tile.performance, 1),
+        dir: tile.performance === null ? null : direction(tile.performance),
+      },
+    ],
+  }
+}
+
+/** The map's text alternative: every tile and its weight. */
+export const allocLabel = (tiles: Tile[]) =>
+  `Allocation: ${tiles
+    .map(
+      (tile) =>
+        `${tile.cash ? `Cash ${tile.label}` : tile.label} ${formatWeight(tile.weight)}`,
+    )
+    .join(", ")}`

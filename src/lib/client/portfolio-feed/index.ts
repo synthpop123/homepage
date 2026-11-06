@@ -4,7 +4,7 @@
  * the browser. One mount per <portfolio-feed> root: load the Portfolio section
  * of /misc stale-while-revalidate, and draw the chosen account over the
  * chosen range — the hero figure, the ink line with the benchmark's
- * ghost, the strip of returns, the readout, the allocation bar and the
+ * ghost, the strip of returns, the readout, the allocation map and the
  * holdings, any of which opens into its own price line in place.
  *
  * The pickers and an open row survive a refreshed payload, and a payload
@@ -29,9 +29,9 @@ import {
   type Site,
   view,
 } from "@/lib/client/portfolio"
+import { mountAllocation } from "./allocation"
 import { type Chart, drawChart } from "./chart"
 import {
-  buildAllocation,
   buildCashRow,
   buildRow,
   buildStrip,
@@ -79,7 +79,8 @@ export function mountPortfolio(feed: HTMLElement) {
   }
   let site: Site | null = null
   let rows: Row[] = []
-  let pinSegment: (symbol: string | null) => void = () => {}
+  const allocation = mountAllocation(feed)
+  const pinTile = (key: string | null) => allocation?.pin(key)
 
   /** The open row's panel, filled for the state's range. */
   const openPanel = () => {
@@ -92,7 +93,7 @@ export function mountPortfolio(feed: HTMLElement) {
     const row = rows.find((entry) => entry.symbol === state.open)
     if (!item || !button || !panel || !row) {
       state.open = null
-      pinSegment(null)
+      pinTile(null)
       return
     }
     button.setAttribute("aria-expanded", "true")
@@ -102,7 +103,7 @@ export function mountPortfolio(feed: HTMLElement) {
       state.openRange = range
       openPanel()
     })
-    pinSegment(state.open)
+    pinTile(state.open)
   }
 
   const closePanel = () => {
@@ -116,7 +117,7 @@ export function mountPortfolio(feed: HTMLElement) {
     const panel = item?.querySelector<HTMLElement>(".holding-panel")
     if (panel) panel.hidden = true
     state.open = null
-    pinSegment(null)
+    pinTile(null)
   }
 
   /** Everything that depends on the account and range. */
@@ -192,7 +193,7 @@ export function mountPortfolio(feed: HTMLElement) {
     })
 
     fillReadout(feed, resolved.cards)
-    pinSegment = buildAllocation(feed, resolved.rows, resolved.cash)
+    allocation?.draw(current, resolved.rows, resolved.cash)
 
     rows = resolved.rows
     const rangeHead = feed.querySelector(".portfolio-head .holding-spark")
@@ -221,18 +222,9 @@ export function mountPortfolio(feed: HTMLElement) {
     const symbol = (event.target as HTMLElement).closest<HTMLElement>(
       ".holding",
     )?.dataset.symbol
-    feed.querySelectorAll<HTMLElement>(".alloc-seg").forEach((segment) => {
-      segment.toggleAttribute(
-        "data-hover",
-        symbol !== undefined && segment.dataset.symbol === symbol,
-      )
-    })
+    allocation?.hover(symbol ?? null)
   }
-  list.onpointerleave = () => {
-    feed.querySelectorAll(".alloc-seg[data-hover]").forEach((segment) => {
-      segment.removeAttribute("data-hover")
-    })
-  }
+  list.onpointerleave = () => allocation?.hover(null)
 
   const render = whenChanged<Site>((next) => {
     site = next

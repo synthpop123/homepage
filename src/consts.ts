@@ -105,6 +105,15 @@ export const SWITCH = {
  * behind "Show N more". The route skeleton reserves `routes` rows plus the
  * fold row.
  */
+/**
+ * /misc Portfolio: the funds counted as cash in the allocation map — with
+ * cash itself they form the block its lens zooms past (BOXX is a box-spread
+ * fund, T-bill money in all but name).
+ */
+export const PORTFOLIO = {
+  cashLike: ["BOXX"],
+} as const
+
 export const FLIGHTS = {
   named: 4,
   routes: 10,

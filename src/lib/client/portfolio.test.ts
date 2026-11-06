@@ -1,7 +1,12 @@
 import { describe, expect, it } from "bun:test"
 import {
+  allocLayout,
+  allocShares,
+  allocTiles,
   availableRanges,
   bestDay,
+  canZoom,
+  cashKey,
   change,
   formatPoints,
   formatPrice,
@@ -20,6 +25,10 @@ import {
   type Site,
   SITE_SCHEMA_VERSION,
   stripCells,
+  tileCard,
+  tileFigure,
+  tileLevel,
+  tileText,
   view,
 } from "./portfolio"
 import fixture from "./portfolio.site-fixture.json"
@@ -378,5 +387,101 @@ describe("bestDay", () => {
   it("is null when no day falls inside the range", () => {
     expect(bestDay(best, "2026-10-30")).toBeNull()
     expect(bestDay([], "2026-01-02")).toBeNull()
+  })
+})
+
+describe("allocation", () => {
+  const all = view(site, "all", "3M")
+  const tiles = allocTiles(site, all.rows, all.cash, ["BOXX"], "day")
+
+  it("orders holdings by weight and puts cash last", () => {
+    const keys = tiles.map((tile) => tile.key)
+    expect(keys[keys.length - 1]).toBe(cashKey("USD"))
+    const held = tiles.filter((tile) => !tile.cash)
+    for (let i = 1; i < held.length; i++)
+      expect(held[i - 1].weight).toBeGreaterThanOrEqual(held[i].weight)
+  })
+
+  it("sets cash and the named funds aside", () => {
+    const aside = tiles.filter((tile) => tile.cashLike).map((t) => t.key)
+    expect(aside.sort()).toEqual(["BOXX", cashKey("USD")].sort())
+    const { cashLike, invested } = allocShares(tiles)
+    expect(cashLike + invested).toBeCloseTo(1, 2)
+    expect(canZoom(tiles)).toBe(true)
+    expect(canZoom(tiles.filter((tile) => !tile.cashLike))).toBe(false)
+  })
+
+  it("grades a tile by the picked measure", () => {
+    expect(tileLevel(null, "day")).toBe(0)
+    expect(tileLevel(0.001, "day")).toBe(0)
+    expect(tileLevel(-0.012, "day")).toBe(2)
+    expect(tileLevel(0.3, "return")).toBe(4)
+    const nvda = tiles.find((tile) => tile.key === "NVDA")
+    expect(nvda?.dir).toBe("down")
+    expect(nvda?.level).toBe(4)
+    const byReturn = allocTiles(site, all.rows, all.cash, ["BOXX"], "return")
+    const sofi = byReturn.find((tile) => tile.key === "SOFI")
+    expect(sofi?.level).toBe(0)
+    expect(sofi?.dir).toBe("flat")
+  })
+
+  it("lays the two blocks out whole, and zooms into the invested one", () => {
+    const whole = allocLayout(tiles, 600, 300, false)
+    expect(whole.zoomed).toBe(false)
+    expect(whole.cashLike).not.toBeNull()
+    expect(whole.invested).not.toBeNull()
+    for (const tile of tiles) expect(whole.tiles[tile.key]).toBeDefined()
+    const lens = allocLayout(tiles, 600, 300, true)
+    expect(lens.zoomed).toBe(true)
+    const held = tiles.filter((tile) => !tile.cashLike)
+    const xs = held.map((tile) => lens.tiles[tile.key])
+    expect(Math.min(...xs.map((r) => r.x0))).toBe(0)
+    expect(Math.max(...xs.map((r) => r.x1))).toBe(600)
+    expect(Math.max(...xs.map((r) => r.y1))).toBe(300)
+    // The cash-like block leaves the frame on the way out.
+    const boxx = lens.tiles.BOXX
+    expect(
+      boxx.x1 <= 0 || boxx.x0 >= 600 || boxx.y1 <= 0 || boxx.y0 >= 300,
+    ).toBe(true)
+  })
+
+  it("does not zoom with nothing to set aside", () => {
+    const held = tiles.filter((tile) => !tile.cashLike)
+    expect(allocLayout(held, 600, 300, true).zoomed).toBe(false)
+  })
+
+  it("fits text to the tile", () => {
+    expect(tileText("NVDA", "−9.26%", 120, 80)).toEqual({
+      size: 16,
+      figure: true,
+    })
+    expect(tileText("NVDA", "−9.26%", 70, 44)).toEqual({
+      size: 14,
+      figure: true,
+    })
+    expect(tileText("NVDA", "−9.26%", 40, 24)).toEqual({
+      size: 12,
+      figure: false,
+    })
+    expect(tileText("NVDA", "−9.26%", 20, 24)).toBeNull()
+  })
+
+  it("prints each tile's figure and card", () => {
+    const usd = tiles.find((tile) => tile.cash)
+    if (!usd) throw new Error("no cash")
+    expect(tileFigure(usd, "day")).toBe("9.6%")
+    expect(tileCard(site, usd).title).toBe("Cash")
+    expect(tileCard(site, usd).name).toBe("US Dollar")
+    const nvda = tiles.find((tile) => tile.key === "NVDA")
+    if (!nvda) throw new Error("no NVDA")
+    expect(tileFigure(nvda, "day")).toBe("−9.26%")
+    expect(tileFigure(nvda, "return")).toBe("−1.1%")
+    const card = tileCard(site, nvda)
+    expect(card.rows.map((row) => row.label)).toEqual([
+      "Weight",
+      "Last session",
+      "Return",
+    ])
+    expect(card.when).toBe("Nov 5")
   })
 })

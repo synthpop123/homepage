@@ -1,16 +1,18 @@
 /**
  * The Portfolio section's pieces: the account and range pickers, the strip
- * of returns under the chart, the readout, the allocation bar, and the
- * holdings table with the panel a row opens: its price line against its
- * cost, what it is, and how it has done. Every figure and
- * decision comes from `portfolio.ts`; this file only builds DOM.
+ * of returns under the chart, the readout, and the holdings table with
+ * the panel a row opens: its price line against its cost, what it is, and
+ * how it has done (the allocation map is `allocation.ts`). Every figure
+ * and decision comes from `portfolio.ts`; this file only builds DOM.
  */
 
 import { el } from "@/lib/client/dom"
 import { dayInstant, monthDay, safeHttpUrl } from "@/lib/client/feed"
 import { setReadout } from "@/lib/client/readout"
 import {
+  cashKey,
   change,
+  currencyName,
   direction,
   formatDay,
   formatPrice,
@@ -201,68 +203,9 @@ export function fillReadout(feed: HTMLElement, cards: ReadoutCard[]) {
     })
 }
 
-/** The allocation bar and its caption; returns the hook a row uses to
- *  light its own segment. */
-export function buildAllocation(
-  feed: HTMLElement,
-  rows: Row[],
-  cash: SiteCash[],
-): (symbol: string | null) => void {
-  const bar = feed.querySelector<HTMLElement>(".alloc-bar")
-  const left = feed.querySelector<HTMLElement>(".alloc-what")
-  const right = feed.querySelector<HTMLElement>(".alloc-share")
-  if (!bar || !left || !right) return () => {}
-
-  const rest = () => {
-    left.textContent = "Allocation"
-    right.textContent = `${rows.length} holding${rows.length === 1 ? "" : "s"}`
-  }
-  const segments = rows.map((row, i) => {
-    const segment = el("span", "alloc-seg")
-    segment.style.flexGrow = String(row.weight)
-    // Heaviest darkest, down neutral 12 to 7, never quite to nothing.
-    segment.dataset.shade = String(Math.min(i, 5))
-    segment.dataset.symbol = row.symbol
-    return segment
-  })
-  for (const entry of cash) {
-    const segment = el("span", "alloc-seg alloc-cash")
-    segment.style.flexGrow = String(entry.weight)
-    segment.dataset.symbol = cashKey(entry.currency)
-    segments.push(segment)
-  }
-  bar.replaceChildren(...segments)
-
-  let pinned: string | null = null
-  const show = (symbol: string | null) => {
-    const shown = symbol ?? pinned
-    for (const segment of segments) {
-      segment.toggleAttribute(
-        "data-on",
-        shown !== null && segment.dataset.symbol === shown,
-      )
-    }
-    if (symbol === null) return rest()
-    const row = rows.find((entry) => entry.symbol === symbol)
-    const money = cash.find((entry) => cashKey(entry.currency) === symbol)
-    left.textContent = row
-      ? `${row.symbol} ${row.name}`
-      : `Cash ${money?.currency ?? ""}`
-    right.textContent = formatWeight(row?.weight ?? money?.weight ?? 0)
-  }
-  bar.onpointerover = (event) => {
-    const symbol = (event.target as HTMLElement).dataset.symbol
-    if (symbol !== undefined) show(symbol)
-  }
-  bar.onpointerleave = () => show(null)
-  rest()
-  return (symbol) => {
-    pinned = symbol
-    show(null)
-  }
-}
-
-const logo = (row: { symbol: string; logo: string | null }) => {
+/** A holding's mark: its logo on a tile, a monogram under it for one
+ *  that fails. */
+export const logo = (row: { symbol: string; logo: string | null }) => {
   const mark = el("span", "holding-logo")
   const src = safeHttpUrl(row.logo)
   if (src) {
@@ -344,9 +287,6 @@ export function buildRow(
 
 const SVG_NS = "http://www.w3.org/2000/svg"
 
-/** The allocation bar's key for cash in a currency (never a ticker). */
-const cashKey = (currency: string) => `cash:${currency}`
-
 /** Lucide's banknote, for cash in a currency with no flag here. */
 const cashIcon = () => {
   const svg = document.createElementNS(SVG_NS, "svg")
@@ -372,14 +312,10 @@ const cashIcon = () => {
   return svg
 }
 
-const currencyNames = new Intl.DisplayNames(["en"], { type: "currency" })
-
-/** One row per currency of cash, marked with its flag. */
-export function buildCashRow(entry: SiteCash): HTMLLIElement {
-  const item = el("li", "holding holding-cash") as HTMLLIElement
-  const row = el("div", "holding-row")
+/** Cash's mark: the currency's flag, or a banknote without one. */
+export function cashMark(currency: string): HTMLElement {
   const mark = el("span", "holding-logo holding-logo-cash")
-  const flag = CASH_FLAGS[entry.currency]
+  const flag = CASH_FLAGS[currency]
   if (flag) {
     const img = document.createElement("img")
     img.src = flag
@@ -389,17 +325,20 @@ export function buildCashRow(entry: SiteCash): HTMLLIElement {
     img.decoding = "async"
     mark.append(img)
   } else mark.append(cashIcon())
+  return mark
+}
+
+/** One row per currency of cash, marked with its flag. */
+export function buildCashRow(entry: SiteCash): HTMLLIElement {
+  const item = el("li", "holding holding-cash") as HTMLLIElement
+  const row = el("div", "holding-row")
   const name = el("span", "holding-name")
-  let label = entry.currency
-  try {
-    label = currencyNames.of(entry.currency) ?? entry.currency
-  } catch {}
   name.append(
     el("span", "holding-ticker", "Cash"),
-    el("span", "holding-sub", label),
+    el("span", "holding-sub", currencyName(entry.currency)),
   )
   row.append(
-    mark,
+    cashMark(entry.currency),
     name,
     el("span", "holding-spark"),
     el("span", "holding-price"),
