@@ -53,14 +53,17 @@ function renderImage(item: MemoMedia, sizes: string) {
     img.height = item.height
   }
 
+  // One retry, straight at the original: dropping the srcset alone would
+  // re-request the preview that just failed. Its own flag, not the
+  // srcset's presence — a photo small enough to mirror at one size has
+  // none, and its failed mirror needs the original just the same.
+  let retried = false
   img.addEventListener("error", () => {
-    // One retry, straight at the original: dropping the srcset alone
-    // would re-request the preview that just failed.
-    if (img.srcset) {
-      img.removeAttribute("srcset")
-      img.removeAttribute("sizes")
-      img.src = item.href
-    }
+    if (retried || img.src === item.href) return
+    retried = true
+    img.removeAttribute("srcset")
+    img.removeAttribute("sizes")
+    img.src = item.href
   })
 
   link.append(img)

@@ -505,8 +505,13 @@ export function createRouteMap(
     for (const [code, list] of dots)
       for (const dot of list)
         dot.toggleAttribute("data-on", ends.includes(code))
+    // Airports of one city share a label (PEK / PKX): it is on when any
+    // of its codes is, so settle each element once rather than letting
+    // the last code read decide.
+    const lit = new Map<SVGTextElement, boolean>()
     for (const [code, text] of labels)
-      text.toggleAttribute("data-on", ends.includes(code))
+      lit.set(text, (lit.get(text) ?? false) || ends.includes(code))
+    for (const [text, on] of lit) text.toggleAttribute("data-on", on)
   }
 
   return { draw, select }
