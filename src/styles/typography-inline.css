@@ -12,15 +12,10 @@ prose-content {
     font-weight: var(--font-weight-medium);
   }
 
+  /* No italics, and no emphasis dots under Han either: emphasis reads as
+     the text around it. */
   :is(em, i) {
     font-style: normal;
-  }
-
-  /* Han has no italic: emphasis is the dot under each character, as in
-     Chinese print. */
-  :lang(zh) :is(em, i) {
-    text-emphasis: filled dot;
-    text-emphasis-position: under right;
   }
 
   /* A parenthetical aside (src/lib/asides.ts) steps back a shade, links and
