@@ -20,6 +20,7 @@ import {
   isCount,
   isRecord,
   monthDay,
+  safeHttpUrl,
   swr,
 } from "./feed"
 import { miscSection } from "./misc"
@@ -67,10 +68,12 @@ export type SiteSymbol = {
   currency: string
   kind: "stock" | "etf" | "other"
   logo: string | null
-  /** A stock's GICS sector; null for a fund. */
+  /** A stock's sector; null for a fund. */
   sector: string | null
   /** ISO 3166 alpha-2. */
   country: string | null
+  /** The company's site (check with `safeHttpUrl` before linking). */
+  url: string | null
   closes: (number | null)[]
 }
 
@@ -86,7 +89,7 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/portfolio/compose.ts. */
-export const SITE_SCHEMA_VERSION = 5
+export const SITE_SCHEMA_VERSION = 6
 
 /* Decoder ---------------------------------------------------------------- */
 
@@ -184,6 +187,7 @@ const isSymbol = (value: unknown, length: number): value is SiteSymbol =>
   isText(value.sector) &&
   (value.country === null ||
     (typeof value.country === "string" && /^[A-Z]{2}$/.test(value.country))) &&
+  isText(value.url) &&
   isSeries(value.closes, length)
 
 export function isSite(data: unknown): data is Site {
@@ -773,6 +777,8 @@ export type PriceBand = {
 export type Facts = {
   /** Sector and country, in that order, whichever are known. */
   about: string[]
+  /** The company's site host, without `www.`, and its URL. */
+  site: { host: string; href: string } | null
   cards: ReadoutCard[]
   band: PriceBand | null
   /** Where the first buy falls on the axis, if it does. */
@@ -861,8 +867,12 @@ export function holdingFacts(
   const bought = row.since
     ? site.days.findIndex((day) => day >= (row.since as string))
     : -1
+  const href = safeHttpUrl(entry.url)
   return {
     about,
+    site: href
+      ? { host: new URL(href).hostname.replace(/^www\./, ""), href }
+      : null,
     cards,
     band,
     bought: bought >= 0 ? bought : null,

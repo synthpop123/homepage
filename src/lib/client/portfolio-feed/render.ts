@@ -493,10 +493,19 @@ export function fillPanel(
   const delta = el("span", "panel-delta")
   const when = el("span", "panel-when")
   figure.append(price, delta, when)
-  // What it is: quiet tags.
+  // What it is: quiet tags, then the company's site.
   const about = el("ul", "panel-about")
   about.setAttribute("aria-label", "About")
   for (const fact of facts.about) about.append(el("li", "panel-tag", fact))
+  if (facts.site) {
+    const link = el("a", "panel-site", facts.site.host) as HTMLAnchorElement
+    link.href = facts.site.href
+    link.rel = "noopener"
+    link.target = "_blank"
+    const item = el("li")
+    item.append(link)
+    about.append(item)
+  }
   head.replaceChildren(figure, ...(about.childElementCount ? [about] : []))
 
   const show = (index: number | null) => {

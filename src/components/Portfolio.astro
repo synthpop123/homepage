@@ -860,6 +860,30 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     border-radius: var(--radius-sm);
   }
 
+  /* The site: a plain name with the external arrow, no rule under it. */
+  portfolio-feed :global(.panel-site) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    padding-inline: 0.3rem;
+    color: inherit;
+    text-decoration-line: none;
+  }
+
+  portfolio-feed :global(.panel-site::after) {
+    content: "";
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    background-color: var(--neutral-9);
+    mask: url("../assets/icons/sites/external.svg") center / contain no-repeat;
+  }
+
+  @media (hover: hover) {
+    portfolio-feed :global(.panel-site:hover) {
+      color: var(--foreground);
+    }
+  }
+
   portfolio-feed :global(.panel-chart) {
     display: block;
     inline-size: 100%;

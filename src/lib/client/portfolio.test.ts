@@ -114,7 +114,8 @@ describe("holdingFacts", () => {
   it("say what the company is and how the position stands against its cost", () => {
     if (!avgo) throw new Error("AVGO is in the fixture")
     const facts = holdingFacts(site, avgo)
-    expect(facts?.about).toEqual(["Information Technology", "United States"])
+    expect(facts?.about).toEqual(["Technology", "United States"])
+    expect(facts?.site?.host).toBe("broadcom.com")
     expect(facts?.cards.map((card) => card.label)).toEqual([
       "Avg cost",
       "vs cost",
