@@ -153,15 +153,8 @@ export function mountPortfolio(feed: HTMLElement) {
     )
 
     const { start, label } = resolved
-    const values = resolved.account.index.slice(start)
-    const base = current.benchmark.closes[start]
-    const from = values[0] ?? 1
-    const ghost =
-      base === null
-        ? undefined
-        : current.benchmark.closes
-            .slice(start)
-            .map((close) => (close === null ? null : (close / base) * from))
+    const values = resolved.line
+    const ghost = resolved.ghost ?? undefined
 
     fillKicker(kicker, current, resolved.account.id)
     const hero = (at: number | null) => {
@@ -178,18 +171,12 @@ export function mountPortfolio(feed: HTMLElement) {
 
     let light: (index: number | null) => void = () => {}
     let chart: Chart | null = null
-    light = buildStrip(
-      feed,
-      current,
-      resolved.account.index,
-      start,
-      (index) => {
-        const at = index === null ? null : index - start
-        chart?.scrub(at)
-        hero(at)
-        light(index)
-      },
-    )
+    light = buildStrip(feed, current, resolved.growth, start, (index) => {
+      const at = index === null ? null : index - start
+      chart?.scrub(at)
+      hero(at)
+      light(index)
+    })
     svg.setAttribute("aria-label", `${resolved.account.name}, ${label}`)
     chart = drawChart(svg, {
       values,

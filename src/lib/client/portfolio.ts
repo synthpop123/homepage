@@ -5,12 +5,12 @@
  * which ranges exist, where each starts, the returns, the strip's cells,
  * the readout, the rows and every printed figure. Pure and browser-safe.
  *
- * The payload carries returns, never amounts: per account a growth index
- * (time-weighted, so money moving in or out never moves it), holdings by
- * weight with the average price paid per share, and daily closes of each
- * holding and of the benchmark. Any
- * range's return is two values of a series divided, which is why the
- * ranges are the page's to choose.
+ * The payload carries returns, never amounts: per account its value and
+ * the money put into it as ratios on one scale, holdings by weight with
+ * the average price paid per share, and daily closes of each holding and
+ * of the benchmark. A range's return is what the money did — its gain
+ * over the value it started from plus what was put in since — so a
+ * deposit never reads as a gain, and any range is the page's to choose.
  */
 
 import {
@@ -20,7 +20,6 @@ import {
   isCount,
   isRecord,
   monthDay,
-  safeHttpUrl,
   swr,
 } from "./feed"
 import { miscSection } from "./misc"
@@ -28,18 +27,18 @@ import { miscSection } from "./misc"
 export type SiteHolding = {
   symbol: string
   weight: number
-  /** The position's own return over its life in the account, as the
-   *  owner's Ghostfolio computes it (ROI: gain over the sum of the buys);
-   *  null when it can't say. */
+  /** The position's own return over its life in the account: gain
+   *  (realised, unrealised and income) over what went into it; null when
+   *  the ledger can't say. */
   performance: number | null
   /** Average price paid per share in this account, in the symbol's
-   *  currency; null when Ghostfolio can't say. */
+   *  currency; null when the ledger can't say. */
   cost: number | null
   /** The first buy in this account. */
   since: string | null
 }
 
-/** One market day's move of a growth index. */
+/** One market day's return. */
 export type SiteMove = { date: string; change: number }
 
 /** Cash in one currency, and its share of the account. */
@@ -50,10 +49,13 @@ export type SiteAccount = {
   name: string
   /** The broker's mark; null for the whole portfolio. */
   logo: string | null
-  /** Growth index on `days`, 1 at the account's first day, null before. */
-  index: (number | null)[]
+  /** Value (holdings and cash) on `days` over the most ever put in; null
+   *  before the account starts. */
+  value: (number | null)[]
+  /** Money put in to date, net, on the same scale and days. */
+  invested: (number | null)[]
   /** The best days on record, newest first, each beating every day
-   *  after it, read off the daily index (`bestDay` cuts it to a range). */
+   *  after it, read daily (`bestDay` cuts it to a range). */
   best: SiteMove[]
   holdings: SiteHolding[]
   cash: SiteCash[]
@@ -65,12 +67,10 @@ export type SiteSymbol = {
   currency: string
   kind: "stock" | "etf" | "other"
   logo: string | null
-  /** A stock's sector; null for a fund. */
+  /** A stock's GICS sector; null for a fund. */
   sector: string | null
   /** ISO 3166 alpha-2. */
   country: string | null
-  /** The company's site (check with `safeHttpUrl` before linking). */
-  url: string | null
   closes: (number | null)[]
 }
 
@@ -86,7 +86,7 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/portfolio/compose.ts. */
-export const SITE_SCHEMA_VERSION = 4
+export const SITE_SCHEMA_VERSION = 5
 
 /* Decoder ---------------------------------------------------------------- */
 
@@ -104,6 +104,29 @@ const isSeries = (value: unknown, length: number) => {
     else return false
   }
   return true
+}
+
+/** An account's two series: nulls, then numbers from the same day on —
+ *  a value never below nothing, money in of either sign. */
+const isCapital = (value: unknown, invested: unknown, length: number) => {
+  if (
+    !Array.isArray(value) ||
+    !Array.isArray(invested) ||
+    value.length !== length ||
+    invested.length !== length
+  ) {
+    return false
+  }
+  const start = value.findIndex((entry) => entry !== null)
+  return (
+    start >= 0 &&
+    value.every((entry, i) =>
+      i < start ? entry === null && invested[i] === null : isCount(entry),
+    ) &&
+    invested
+      .slice(start)
+      .every((entry) => typeof entry === "number" && Number.isFinite(entry))
+  )
 }
 
 const isShare = (value: unknown): value is number =>
@@ -138,8 +161,7 @@ const isAccount = (value: unknown, length: number): value is SiteAccount =>
   typeof value.id === "string" &&
   typeof value.name === "string" &&
   (value.logo === null || typeof value.logo === "string") &&
-  isSeries(value.index, length) &&
-  (value.index as unknown[]).some((entry) => entry !== null) &&
+  isCapital(value.value, value.invested, length) &&
   Array.isArray(value.best) &&
   value.best.every(isMove) &&
   Array.isArray(value.holdings) &&
@@ -162,7 +184,6 @@ const isSymbol = (value: unknown, length: number): value is SiteSymbol =>
   isText(value.sector) &&
   (value.country === null ||
     (typeof value.country === "string" && /^[A-Z]{2}$/.test(value.country))) &&
-  isText(value.url) &&
   isSeries(value.closes, length)
 
 export function isSite(data: unknown): data is Site {
@@ -313,6 +334,75 @@ export function change(
   const from = series[start]
   const to = series[end]
   return from === null || to === null ? null : to / from - 1
+}
+
+type Capital = Pick<SiteAccount, "value" | "invested">
+
+/**
+ * Each day's return on the money at work, chained: the gain over the
+ * previous close plus that day's money in (money taken out is added back
+ * to the close). 1 on the account's first day, null before. Money moving
+ * never moves it, so it grades the strip's cells and finds the drawdown;
+ * over one session it is `moneyReturns` over that session.
+ */
+export function growth({ value, invested }: Capital): (number | null)[] {
+  let level: number | null = null
+  return value.map((close, i) => {
+    const before = value[i - 1]
+    if (close === null) return null
+    if (level === null || before === null || before === undefined) {
+      level = 1
+      return level
+    }
+    const flow = (invested[i] as number) - (invested[i - 1] as number)
+    const base = before + Math.max(0, flow)
+    if (base > 0) level *= (close + Math.max(0, -flow)) / base
+    return level
+  })
+}
+
+/**
+ * What the money did from `start` to each day after it: the gain since
+ * `start` over what was at work — the value it started from plus every
+ * sum put in since. A deposit adds to both, so it never reads as a gain;
+ * money taken out leaves what it earned behind. 0 at `start`.
+ *
+ * With a benchmark's closes, the same for the same money in it: the value
+ * at `start` and every sum after it buying the benchmark on its day (and
+ * money taken out selling it), measured the same way. Null without a
+ * close at `start`.
+ */
+export function moneyReturns(account: Capital, start: number): number[]
+export function moneyReturns(
+  account: Capital,
+  start: number,
+  closes: (number | null)[],
+): number[] | null
+export function moneyReturns(
+  { value, invested }: Capital,
+  start: number,
+  closes?: (number | null)[],
+): number[] | null {
+  const v0 = value[start] as number
+  const n0 = invested[start] as number
+  const p0 = closes?.[start]
+  if (closes && (p0 === null || p0 === undefined)) return null
+  let units = closes ? v0 / (p0 as number) : 0
+  let price = p0 ?? 0
+  let added = 0
+  const out = [0]
+  for (let i = start + 1; i < value.length; i++) {
+    const flow = (invested[i] as number) - (invested[i - 1] as number)
+    added += Math.max(0, flow)
+    if (closes) {
+      price = closes[i] ?? price
+      units += flow / price
+    }
+    const now = closes ? units * price : (value[i] as number)
+    const base = v0 + added
+    out.push(base > 0 ? (now - v0 - ((invested[i] as number) - n0)) / base : 0)
+  }
+  return out
 }
 
 /** The deepest fall from a running peak inside [start, end], with the
@@ -514,6 +604,12 @@ export type View = {
   label: string
   change: number
   benchmark: number | null
+  /** The range's return at each of its days, as levels from 1 (what the
+   *  chart draws), and the same money in the benchmark, likewise. */
+  line: number[]
+  ghost: number[] | null
+  /** The account's chained daily returns over the whole axis. */
+  growth: (number | null)[]
   cards: ReadoutCard[]
   rows: Row[]
   cash: SiteCash[]
@@ -523,19 +619,22 @@ export type View = {
 export function view(site: Site, accountId: string, wanted: Range): View {
   const account =
     site.accounts.find((entry) => entry.id === accountId) ?? site.accounts[0]
-  const ranges = availableRanges(site.days, account.index)
+  const ranges = availableRanges(site.days, account.value)
   const range = ranges.includes(wanted)
     ? wanted
     : ranges.includes(DEFAULT_RANGE)
       ? DEFAULT_RANGE
       : "ALL"
-  const start = rangeStart(site.days, range, account.index)
+  const start = rangeStart(site.days, range, account.value)
   const end = site.days.length - 1
   const label = rangeLabel(range, site.days, start)
-  const total = change(account.index, start) ?? 0
-  const bench = change(site.benchmark.closes, start)
-  const session = change(account.index, Math.max(start, end - 1))
-  const drawdown = maxDrawdown(account.index, start)
+  const returns = moneyReturns(account, start)
+  const same = moneyReturns(account, start, site.benchmark.closes)
+  const total = returns[returns.length - 1]
+  const bench = same ? same[same.length - 1] : null
+  const daily = growth(account)
+  const session = change(daily, Math.max(start, end - 1))
+  const drawdown = maxDrawdown(daily, start)
   const best = bestDay(account.best, site.days[start])
 
   // The range's return is the hero figure; the cells say what it hides.
@@ -598,6 +697,9 @@ export function view(site: Site, accountId: string, wanted: Range): View {
     label,
     change: total,
     benchmark: bench,
+    line: returns.map((value) => 1 + value),
+    ghost: same && same.map((value) => 1 + value),
+    growth: daily,
     cards,
     rows,
     cash: account.cash,
@@ -671,8 +773,6 @@ export type PriceBand = {
 export type Facts = {
   /** Sector and country, in that order, whichever are known. */
   about: string[]
-  /** The company's site host, without `www.`, and its URL. */
-  site: { host: string; href: string } | null
   cards: ReadoutCard[]
   band: PriceBand | null
   /** Where the first buy falls on the axis, if it does. */
@@ -761,12 +861,8 @@ export function holdingFacts(
   const bought = row.since
     ? site.days.findIndex((day) => day >= (row.since as string))
     : -1
-  const href = safeHttpUrl(entry.url)
   return {
     about,
-    site: href
-      ? { host: new URL(href).hostname.replace(/^www\./, ""), href }
-      : null,
     cards,
     band,
     bought: bought >= 0 ? bought : null,

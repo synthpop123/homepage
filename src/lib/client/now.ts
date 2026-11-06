@@ -24,6 +24,8 @@ import {
   direction,
   formatReturn,
   grainFor,
+  growth,
+  moneyReturns,
   type StripCell,
   stripCells,
 } from "./portfolio"
@@ -43,12 +45,13 @@ type TokensToday = {
 }
 
 /** The whole portfolio over /misc's 3M range: the session the range is
- *  measured from through the latest, so its return is last over first. */
+ *  measured from through the latest, measured as /misc measures it. */
 type Portfolio = {
   /** Market sessions, oldest first. */
   days: string[]
-  /** The growth index on `days`. */
-  index: number[]
+  /** Value and money put in on `days`: the portfolio view's ratios. */
+  value: number[]
+  invested: number[]
   /** The S&P 500 fund's closes on `days`. */
   benchmark: number[]
 }
@@ -63,7 +66,7 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/now/index.ts. */
-export const SITE_SCHEMA_VERSION = 4
+export const SITE_SCHEMA_VERSION = 5
 
 const isTop = (value: unknown): value is TokensToday["top"] =>
   value === null ||
@@ -87,15 +90,23 @@ const isTokens = (value: unknown): value is TokensToday =>
 const isLevel = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value) && value > 0
 
-const isSeries = (value: unknown, length: number): value is number[] =>
-  Array.isArray(value) && value.length === length && value.every(isLevel)
+const isSeries = (
+  value: unknown,
+  length: number,
+  is: (entry: unknown) => boolean = isLevel,
+): value is number[] =>
+  Array.isArray(value) && value.length === length && value.every(is)
+
+const isReal = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value)
 
 const isPortfolio = (value: unknown): value is Portfolio =>
   isRecord(value) &&
   Array.isArray(value.days) &&
   value.days.length >= 2 &&
   value.days.every(isCalendarDay) &&
-  isSeries(value.index, value.days.length) &&
+  isSeries(value.value, value.days.length, isCount) &&
+  isSeries(value.invested, value.days.length, isReal) &&
   isSeries(value.benchmark, value.days.length)
 
 const nullOr =
@@ -195,8 +206,8 @@ export type PortfolioView = {
   foot: string[]
   /** The link's tooltip: the range's days and both returns. */
   title: string
-  /** Polyline points in a 100 × 100 box, y down: the portfolio, and the
-   *  benchmark rebased onto its first day; `area` closes the first. */
+  /** Polyline points in a 100 × 100 box, y down: the portfolio's return,
+   *  and the same money's in the benchmark; `area` closes the first. */
   line: string
   ghost: string
   area: string
@@ -213,20 +224,20 @@ export type PortfolioView = {
 const round = (value: number) => Math.round(value * 100) / 100
 
 export function portfolioView(portfolio: Portfolio): PortfolioView {
-  const { days, index, benchmark } = portfolio
-  const change = index[index.length - 1] / index[0] - 1
-  const versus = benchmark[benchmark.length - 1] / benchmark[0] - 1
-  // One scale for both, the benchmark starting where the portfolio does.
-  const ghost = benchmark.map((close) => (close / benchmark[0]) * index[0])
-  const low = Math.min(...index, ...ghost)
-  const high = Math.max(...index, ...ghost)
+  const { days, benchmark } = portfolio
+  const returns = moneyReturns(portfolio, 0)
+  const ghost = moneyReturns(portfolio, 0, benchmark) as number[]
+  const change = returns[returns.length - 1]
+  const versus = ghost[ghost.length - 1]
+  const low = Math.min(...returns, ...ghost)
+  const high = Math.max(...returns, ...ghost)
   const pad = (high - low) * 0.08 || 0.01
   const y = (value: number) =>
     round(100 - ((value - low + pad) / (high - low + 2 * pad)) * 100)
   const x = (i: number) => round((i / (days.length - 1)) * 100)
   const points = (series: number[]) =>
     series.map((value, i) => `${x(i)},${y(value)}`).join(" ")
-  const line = points(index)
+  const line = points(returns)
   const from = monthDay.format(dayInstant(days[0]))
   const to = monthDay.format(dayInstant(days[days.length - 1]))
   const benchmarkText = `S&P 500 ${formatReturn(versus)}`
@@ -239,11 +250,14 @@ export function portfolioView(portfolio: Portfolio): PortfolioView {
     line,
     ghost: points(ghost),
     area: `0,100 ${line} 100,100`,
-    base: y(index[0]),
-    end: y(index[index.length - 1]),
-    cells: stripCells(days, index, 0, grainFor(days.length - 1)).map(
-      (cell) => ({ ...cell, dir: direction(cell.change) }),
-    ),
+    base: y(0),
+    end: y(change),
+    cells: stripCells(
+      days,
+      growth(portfolio),
+      0,
+      grainFor(days.length - 1),
+    ).map((cell) => ({ ...cell, dir: direction(cell.change) })),
     from,
     to,
   }

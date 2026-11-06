@@ -36,7 +36,7 @@ describe("isSite", () => {
     const listen = { ...fixture.listen, url: "javascript:alert(1)" }
     expect(isSite({ ...fixture, listen })).toBe(false)
     const { portfolio, tokens } = fixture
-    const short = { ...portfolio, index: portfolio.index.slice(1) }
+    const short = { ...portfolio, value: portfolio.value.slice(1) }
     expect(isSite({ ...fixture, portfolio: short })).toBe(false)
     const gap = {
       ...portfolio,
@@ -109,11 +109,12 @@ describe("tile text", () => {
 describe("portfolioView", () => {
   const portfolio = {
     days: ["2026-07-23", "2026-07-24", "2026-10-23"],
-    index: [1, 0.9, 1.1],
+    value: [1, 0.9, 1.1],
+    invested: [1, 1, 1],
     benchmark: [600, 630, 600],
   }
 
-  it("measures the range as last over first, against the S&P 500", () => {
+  it("measures what the money did, against the same money in the S&P 500", () => {
     const view = portfolioView(portfolio)
     expect(view.change).toBeCloseTo(0.1)
     expect(view.dir).toBe("up")
@@ -125,7 +126,7 @@ describe("portfolioView", () => {
     expect([view.from, view.to]).toEqual(["Jul 23", "Oct 23"])
   })
 
-  it("puts both lines on one scale, the benchmark from the first value", () => {
+  it("puts both lines on one scale, from zero", () => {
     const view = portfolioView(portfolio)
     const ys = (points: string) =>
       points.split(" ").map((point) => Number(point.split(",")[1]))

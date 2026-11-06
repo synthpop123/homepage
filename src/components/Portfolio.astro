@@ -1,13 +1,14 @@
 ---
 /**
  * The owner's portfolio from cf-workers-api's portfolio service (kept in
- * Ghostfolio), delivered in the /misc bundle.
+ * Wealthfolio), delivered in the /misc bundle.
  *
- * Returns, never amounts: the hero figure is the account's time-weighted
- * return over the range, the line its growth with the S&P 500 as a
- * dashed ghost, the strip under it the same line cut into days, weeks or
- * months and graded like the heatmaps (gains in their greens, losses in
- * ink — the site keeps one colour). The table is the holdings by weight
+ * Returns, never amounts: the hero figure is what the money did over the
+ * range — its gain over the value it started from plus everything put in
+ * since — the line that return day by day with the same money in the
+ * S&P 500 as a dashed ghost, the strip under it the daily returns cut
+ * into days, weeks or months and graded like the heatmaps (gains in their
+ * greens, losses in ink — the site keeps one colour). The table is the holdings by weight
  * with price and average cost; a row opens in place into its price line
  * against that cost, what the company is, and how the position has done.
  */
@@ -857,30 +858,6 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     padding: 0.0625rem 0.4rem;
     border: var(--hairline) solid var(--border-strong);
     border-radius: var(--radius-sm);
-  }
-
-  /* The site: a plain name with the external arrow, no rule under it. */
-  portfolio-feed :global(.panel-site) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25em;
-    padding-inline: 0.3rem;
-    color: inherit;
-    text-decoration-line: none;
-  }
-
-  portfolio-feed :global(.panel-site::after) {
-    content: "";
-    inline-size: 0.7em;
-    block-size: 0.7em;
-    background-color: var(--neutral-9);
-    mask: url("../assets/icons/sites/external.svg") center / contain no-repeat;
-  }
-
-  @media (hover: hover) {
-    portfolio-feed :global(.panel-site:hover) {
-      color: var(--foreground);
-    }
   }
 
   portfolio-feed :global(.panel-chart) {

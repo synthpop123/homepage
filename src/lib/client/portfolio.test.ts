@@ -11,7 +11,9 @@ import {
   heldFor,
   holdingFacts,
   isSite,
+  growth,
   maxDrawdown,
+  moneyReturns,
   rangeCutoff,
   rangeStart,
   type Site,
@@ -49,13 +51,17 @@ describe("isSite", () => {
 
   it("rejects a series off the axis, or with a gap after it starts", () => {
     const [first, ...rest] = site.accounts
-    const short = { ...first, index: first.index.slice(1) }
+    const short = { ...first, value: first.value.slice(1) }
     expect(isSite({ ...fixture, accounts: [short, ...rest] })).toBe(false)
-    const gap = [...first.index]
+    const gap = [...first.value]
     gap[5] = null
-    expect(isSite({ ...fixture, accounts: [{ ...first, index: gap }] })).toBe(
+    expect(isSite({ ...fixture, accounts: [{ ...first, value: gap }] })).toBe(
       false,
     )
+    const amount = first.invested.map((entry) => (entry === null ? null : "1"))
+    expect(
+      isSite({ ...fixture, accounts: [{ ...first, invested: amount }] }),
+    ).toBe(false)
   })
 
   it("rejects an amount where a share belongs", () => {
@@ -108,8 +114,7 @@ describe("holdingFacts", () => {
   it("say what the company is and how the position stands against its cost", () => {
     if (!avgo) throw new Error("AVGO is in the fixture")
     const facts = holdingFacts(site, avgo)
-    expect(facts?.about).toEqual(["Technology", "United States"])
-    expect(facts?.site?.host).toBe("broadcom.com")
+    expect(facts?.about).toEqual(["Information Technology", "United States"])
     expect(facts?.cards.map((card) => card.label)).toEqual([
       "Avg cost",
       "vs cost",
@@ -182,6 +187,39 @@ describe("ranges", () => {
     ])
     const late = days.map((_, i) => (i < 220 ? null : 1))
     expect(availableRanges(days, late)).toEqual(["1W", "ALL"])
+  })
+})
+
+describe("moneyReturns", () => {
+  // 100 in, a 10% day, 100 more in, a flat day, then 150 taken out.
+  const account = {
+    value: [null, 1, 1.1, 2.1, 2.1, 0.6],
+    invested: [null, 1, 1, 2, 2, 0.5],
+  }
+
+  it("count what the money did, never the money put in", () => {
+    const returns = moneyReturns(account, 1)
+    expect(returns[1]).toBeCloseTo(0.1)
+    // The deposit adds 1 to the value and 1 to what was at work.
+    expect(returns[2]).toBeCloseTo(0.1 / 2)
+    // Money taken out leaves what it earned behind.
+    expect(returns[4]).toBeCloseTo(0.1 / 2)
+  })
+
+  it("over one session are that day's chained return", () => {
+    const daily = growth(account)
+    expect(daily[0]).toBeNull()
+    expect(daily[2]).toBeCloseTo(1.1)
+    expect(daily[3]).toBeCloseTo(1.1)
+    expect(change(daily, 1, 2)).toBeCloseTo(moneyReturns(account, 1)[1])
+  })
+
+  it("put the same money in the benchmark on the same days", () => {
+    const closes = [null, 10, 10, 20, 20, 20]
+    const same = moneyReturns(account, 1, closes)
+    // 1 buys 0.1 units; doubling makes 2, plus 1 more in at 20.
+    expect(same?.[2]).toBeCloseTo(1 / 2)
+    expect(moneyReturns(account, 0, closes)).toBeNull()
   })
 })
 
