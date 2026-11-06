@@ -84,11 +84,10 @@ tokens-dashboard {
     gap: var(--space-3xs);
   }
 
-  /* 18px: the one size off the four-step scale, by the owner's call —
-     a step up from reading text without rivalling the 24px figure. */
+  /* A step up from reading text without rivalling the 24px figure. */
   .tk-devices .dev-name {
     margin: 0;
-    font-size: 1.125rem;
+    font-size: var(--step-0-5);
     font-weight: var(--font-weight-strong);
     line-height: 1.2;
     overflow-wrap: anywhere;

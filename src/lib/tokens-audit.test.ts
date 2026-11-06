@@ -36,6 +36,37 @@ describe("colour literals", () => {
   })
 })
 
+/**
+ * Text sizes come from the type scale (`--step-*` in typography.css), or
+ * follow their parent. The listed literals are not text: the reset's
+ * `small`/`sub`/`sup`, and the backdrop marks, line drawings sized by 1em.
+ */
+const SIZE = /font-size:\s*([^;}\n]+)/g
+const SIZE_OK = /^(var\(--step-[-0-9]+\)|inherit|1em)$/
+const SIZE_ALLOW: Record<string, string[]> = {
+  "src/styles/reset.css": ["80%", "75%"],
+  "src/styles/tokens/devices.css": ["7.5rem"],
+  "src/components/Now.astro": ["7rem", "6rem"],
+  "src/components/Uses.astro": ["4.5rem", "7.5rem"],
+}
+
+describe("font sizes", () => {
+  it("come from the type scale", async () => {
+    const offenders: string[] = []
+    for await (const file of new Glob("src/**/*.{css,astro,ts}").scan(".")) {
+      if (file.endsWith(".test.ts")) continue
+      const text = stylable(file, readFileSync(file, "utf8"))
+      const allowed = SIZE_ALLOW[file] ?? []
+      const hits = [...text.matchAll(SIZE)]
+        .map((m) => m[1].trim())
+        .filter((v) => !SIZE_OK.test(v) && !allowed.includes(v))
+      if (hits.length)
+        offenders.push(`${file}: ${[...new Set(hits)].join(" ")}`)
+    }
+    expect(offenders).toEqual([])
+  })
+})
+
 /** A token's light-scheme value, following var() aliases through color.css. */
 function lightValue(css: string, name: string): string {
   const decl = css.match(new RegExp(`--${name}:\\s*([^;]+);`))?.[1].trim()

@@ -2,13 +2,17 @@
 
 @layer prose {
 :root {
-    /* Four sizes, no more: 12px for labels, axes and footnotes, 14px for
+    /* Five sizes, no more: 12px for labels, axes and footnotes, 14px for
        interface text and meta, 16px for reading, 24px for a page's title
-       and its one hero figure. Hierarchy past that comes from weight,
-       colour and space, not another size. */
+       and its one hero figure. 18px splits the one wide jump, 16 to 24,
+       and only for a title that has to stand above reading text: a
+       post's h2, and a card's name over its 24px figure (Tokens
+       devices). Hierarchy past that comes from weight, colour and space,
+       not another size. */
     --step--2: 0.75rem;
     --step--1: 0.875rem;
     --step-0: 1rem;
+    --step-0-5: 1.125rem;
     --step-1: 1.5rem;
 
     --font-weight-normal: 400;

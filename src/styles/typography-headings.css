@@ -41,20 +41,22 @@ prose-content {
     }
   }
 
-  /* Only the h1 is set large; below it the levels share the text's size
-     and step down by weight and colour. */
+  /* The h1 is set large and the h2 a step over the text; below them
+     the levels share the text's size and step down by weight and
+     colour. */
   h1 {
     font-size: var(--step-1);
     font-weight: var(--font-weight-display);
   }
 
-  :is(h2, h3, h4) {
-    font-size: var(--step-0);
-  }
-
   h2 {
     margin-block-start: 2em;
+    font-size: var(--step-0-5);
     font-weight: var(--font-weight-strong);
+  }
+
+  :is(h3, h4) {
+    font-size: var(--step-0);
   }
 
   h4 {
