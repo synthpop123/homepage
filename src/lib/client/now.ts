@@ -40,7 +40,9 @@ type TokensToday = {
    *  last (`tokens`); a day with nothing reported is 0. */
   recent: number[]
   /** The model with the most tokens over the last seven days and its
-   *  share of them, 0–1; null when the week has none. */
+   *  share of them, 0–1 (the worker sends it unrounded, so above 0, but a
+   *  tiny one is still a valid answer, not a reason to drop the whole
+   *  section); null when the week has none. */
   top: { model: string; share: number } | null
 }
 
@@ -74,7 +76,7 @@ const isTop = (value: unknown): value is TokensToday["top"] =>
     typeof value.model === "string" &&
     value.model.length > 0 &&
     typeof value.share === "number" &&
-    value.share > 0 &&
+    value.share >= 0 &&
     value.share <= 1)
 
 const isTokens = (value: unknown): value is TokensToday =>
@@ -170,14 +172,19 @@ export const tokensFoot = ({
   `${formatCount(messages)} ${messages === 1 ? "message" : "messages"}`,
 ]
 
-/** "98% Claude Opus 5.5": the week's busiest model, its share first. */
+/** "98% Claude Opus 5.5": the week's busiest model, its share first; a
+ *  share that rounds to nothing (a few tokens against a week of
+ *  unattributed ones) reads "<1%", never "0%". */
 export const topModelText = ({
   model,
   share,
 }: {
   model: string
   share: number
-}) => `${Math.round(share * 100)}% ${modelLabel(model)}`
+}) => {
+  const percent = Math.round(share * 100)
+  return `${percent === 0 ? "<1" : percent}% ${modelLabel(model)}`
+}
 
 export type TokenBar = { height: number; title: string }
 

@@ -51,6 +51,9 @@ describe("isSite", () => {
     const top = { model: "claude-opus-5-5", share: 1.2 }
     expect(isSite({ ...fixture, tokens: { ...tokens, top } })).toBe(false)
     expect(isSite({ ...fixture, tokens: { ...tokens, top: null } })).toBe(true)
+    // A share too small to show is still an answer, never a dropped section.
+    const tiny = { model: "gpt-5.5", share: 0 }
+    expect(isSite({ ...fixture, tokens: { ...tokens, top: tiny } })).toBe(true)
   })
 })
 
@@ -89,6 +92,9 @@ describe("tile text", () => {
     )
     expect(topModelText({ model: "deepseek-v4-flash", share: 0.5 })).toBe(
       "50% DeepSeek V4 Flash",
+    )
+    expect(topModelText({ model: "deepseek-v4-flash", share: 1e-6 })).toBe(
+      "<1% DeepSeek V4 Flash",
     )
   })
 
