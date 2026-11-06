@@ -14,3 +14,15 @@
 # revalidation with an ETag.
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Prerendered text endpoints lose the headers their Response sets, and
+# the asset server types them by extension without a charset, so a
+# browser decodes their Chinese in its locale's legacy encoding.
+/blog/*.md
+  Content-Type: text/markdown; charset=utf-8
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
