@@ -45,6 +45,15 @@ export type SiteMove = { date: string; change: number }
 /** Cash in one currency, and its share of the account. */
 export type SiteCash = { currency: string; weight: number }
 
+/** The deepest fall from a running peak, from `from` to the latest
+ *  session, read daily by the worker; `depth` 0 when it never fell. */
+export type SiteFall = {
+  from: string
+  depth: number
+  peak: string
+  trough: string
+}
+
 export type SiteAccount = {
   id: string
   name: string
@@ -55,6 +64,13 @@ export type SiteAccount = {
   value: (number | null)[]
   /** Money put in to date, net, on the same scale and days. */
   invested: (number | null)[]
+  /** The worker's daily returns chained, on `days`: 1 at the start, null
+   *  before. Its rules (no return on dust) ride along, which the two
+   *  ratios above cannot carry. */
+  growth: (number | null)[]
+  /** The deepest fall from each day the weekly part of the axis keeps,
+   *  read daily — that part hides a week's peak and trough. */
+  falls: SiteFall[]
   /** The best days on record, newest first, each beating every day
    *  after it, read daily (`bestDay` cuts it to a range). */
   best: SiteMove[]
@@ -89,7 +105,7 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/portfolio/compose.ts. */
-export const SITE_SCHEMA_VERSION = 6
+export const SITE_SCHEMA_VERSION = 7
 
 /* Decoder ---------------------------------------------------------------- */
 
@@ -159,12 +175,32 @@ const isMove = (value: unknown): value is SiteMove =>
   Number.isFinite(value.change) &&
   value.change >= -1
 
+const isFall = (value: unknown): value is SiteFall =>
+  isRecord(value) &&
+  isCalendarDay(value.from) &&
+  typeof value.depth === "number" &&
+  Number.isFinite(value.depth) &&
+  value.depth <= 0 &&
+  value.depth >= -1 &&
+  isCalendarDay(value.peak) &&
+  isCalendarDay(value.trough)
+
+/** The growth index starts the day the value does. */
+const isGrowth = (value: unknown, series: unknown, length: number) =>
+  isSeries(value, length) &&
+  Array.isArray(series) &&
+  (value as unknown[]).findIndex((entry) => entry !== null) ===
+    series.findIndex((entry) => entry !== null)
+
 const isAccount = (value: unknown, length: number): value is SiteAccount =>
   isRecord(value) &&
   typeof value.id === "string" &&
   typeof value.name === "string" &&
   (value.logo === null || typeof value.logo === "string") &&
   isCapital(value.value, value.invested, length) &&
+  isGrowth(value.growth, value.value, length) &&
+  Array.isArray(value.falls) &&
+  value.falls.every(isFall) &&
   Array.isArray(value.best) &&
   value.best.every(isMove) &&
   Array.isArray(value.holdings) &&
@@ -346,8 +382,10 @@ type Capital = Pick<SiteAccount, "value" | "invested">
  * Each day's return on the money at work, chained: the gain over the
  * previous close plus that day's money in (money taken out is added back
  * to the close). 1 on the account's first day, null before. Money moving
- * never moves it, so it grades the strip's cells and finds the drawdown;
- * over one session it is `moneyReturns` over that session.
+ * never moves it; over one session it is `moneyReturns` over that
+ * session. Only for a payload without the worker's own (`/now`'s tile):
+ * /misc reads `SiteAccount.growth`, which also applies the worker's rule
+ * that a day starting from dust earns nothing.
  */
 export function growth({ value, invested }: Capital): (number | null)[] {
   let level: number | null = null
@@ -429,6 +467,28 @@ export function maxDrawdown(
     }
   }
   return worst
+}
+
+/** A range's deepest fall, with the days it ran between: the worker's
+ *  daily reading where the range starts on the weekly part of the axis
+ *  (a week's peak and trough are not on it), else measured off the
+ *  daily axis. Null when it never fell. */
+export function rangeDrawdown(
+  site: Pick<Site, "days">,
+  account: Pick<SiteAccount, "growth" | "falls">,
+  start: number,
+): { depth: number; peak: string; trough: string } | null {
+  const from = site.days[start]
+  const fall = account.falls.find((entry) => entry.from === from)
+  if (fall) return fall.depth < 0 ? fall : null
+  const measured = maxDrawdown(account.growth, start)
+  return (
+    measured && {
+      depth: measured.depth,
+      peak: site.days[measured.peak],
+      trough: site.days[measured.trough],
+    }
+  )
 }
 
 /** The best day after `from` (a range's start, exclusive): the earliest
@@ -636,9 +696,9 @@ export function view(site: Site, accountId: string, wanted: Range): View {
   const same = moneyReturns(account, start, site.benchmark.closes)
   const total = returns[returns.length - 1]
   const bench = same ? same[same.length - 1] : null
-  const daily = growth(account)
+  const daily = account.growth
   const session = change(daily, Math.max(start, end - 1))
-  const drawdown = maxDrawdown(daily, start)
+  const drawdown = rangeDrawdown(site, account, start)
   const best = bestDay(account.best, site.days[start])
 
   // The range's return is the hero figure; the cells say what it hides.
@@ -660,7 +720,7 @@ export function view(site: Site, accountId: string, wanted: Range): View {
       ? {
           label: "Max drawdown",
           value: formatReturn(drawdown.depth, 1),
-          note: `${monthDay.format(dayInstant(site.days[drawdown.peak]))} → ${monthDay.format(dayInstant(site.days[drawdown.trough]))}`,
+          note: `${monthDay.format(dayInstant(drawdown.peak))} → ${monthDay.format(dayInstant(drawdown.trough))}`,
         }
       : { label: "Max drawdown", value: "None", note: "Never below a peak" },
     best && best.change > 0

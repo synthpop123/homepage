@@ -14,6 +14,7 @@ import {
   growth,
   maxDrawdown,
   moneyReturns,
+  rangeDrawdown,
   rangeCutoff,
   rangeStart,
   type Site,
@@ -240,6 +241,41 @@ describe("returns", () => {
   })
 })
 
+describe("rangeDrawdown", () => {
+  const days = ["2024-01-05", "2024-01-12", "2026-01-02", "2026-01-05"]
+  const account = {
+    growth: [1, 1, 1.2, 0.9],
+    falls: [
+      {
+        from: "2024-01-05",
+        depth: -0.5,
+        peak: "2024-01-10",
+        trough: "2024-01-12",
+      },
+      {
+        from: "2024-01-12",
+        depth: 0,
+        peak: "2024-01-12",
+        trough: "2024-01-12",
+      },
+    ],
+  }
+
+  it("reads the worker's daily fall where the axis is weekly", () => {
+    // The axis reads 1 → 1 there; the week between rose to 2 and gave it back.
+    expect(rangeDrawdown({ days }, account, 0)).toEqual(account.falls[0])
+    expect(rangeDrawdown({ days }, account, 1)).toBeNull()
+  })
+
+  it("measures the daily axis itself, naming the days", () => {
+    expect(rangeDrawdown({ days }, account, 2)).toEqual({
+      depth: 0.9 / 1.2 - 1,
+      peak: "2026-01-02",
+      trough: "2026-01-05",
+    })
+  })
+})
+
 describe("stripCells", () => {
   it("chains each cell from the previous cell's last close", () => {
     const days = ["2026-01-02", "2026-01-05", "2026-01-06", "2026-01-12"]
@@ -290,6 +326,29 @@ describe("view", () => {
     // Rows keep the account's weight order.
     const weights = resolved.rows.map((row) => row.weight)
     expect([...weights].sort((a, b) => b - a)).toEqual(weights)
+  })
+
+  it("reads the worker's growth, not the ratios, for the session and drawdown", () => {
+    // What the worker sends for an account down to dust: the ratios still
+    // swing (a 1 left behind doubling and halving), its growth holds still.
+    const [all] = site.accounts
+    const start = all.value.findIndex((entry) => entry !== null)
+    const value = all.value.map((entry, i) =>
+      entry === null ? null : i === site.days.length - 2 ? 2e-4 : 1e-4,
+    )
+    const invested = all.invested.map((entry) => (entry === null ? null : 1e-4))
+    const growth = all.growth.map((_, i) => (i < start ? null : 1))
+    const quiet = {
+      ...site,
+      accounts: [{ ...all, value, invested, growth, falls: [] }],
+    }
+    const cards = view(quiet, "all", "1M").cards
+    expect(cards[0].value).toBe("0.00%")
+    expect(cards[2]).toEqual({
+      label: "Max drawdown",
+      value: "None",
+      note: "Never below a peak",
+    })
   })
 
   it("falls back to a range the account has", () => {
