@@ -1147,23 +1147,32 @@ const ADVANCE = 0.6
  */
 export function tileText(
   label: string,
-  figure: string,
+  figure: string | null,
   width: number,
   height: number,
 ): { size: 12 | 14 | 16; figure: boolean } | null {
   const fits = (text: string, size: number) =>
     text.length * ADVANCE * size + 8 <= width
-  if (width >= 96 && height >= 58 && fits(label, 16) && fits(figure, 14))
-    return { size: 16, figure: true }
-  if (width >= 58 && height >= 40 && fits(label, 14) && fits(figure, 12))
-    return { size: 14, figure: true }
+  if (figure === null) {
+    // A label alone: the largest size its line fits.
+    if (width >= 96 && height >= 28 && fits(label, 16))
+      return { size: 16, figure: false }
+    if (width >= 58 && height >= 24 && fits(label, 14))
+      return { size: 14, figure: false }
+  } else {
+    if (width >= 96 && height >= 58 && fits(label, 16) && fits(figure, 14))
+      return { size: 16, figure: true }
+    if (width >= 58 && height >= 40 && fits(label, 14) && fits(figure, 12))
+      return { size: 14, figure: true }
+  }
   if (height >= 20 && fits(label, 12)) return { size: 12, figure: false }
   return null
 }
 
-/** The figure a tile prints: cash its weight, a holding the measure. */
-export function tileFigure(tile: Tile, by: ColourBy): string {
-  if (tile.cash) return formatWeight(tile.weight)
+/** The figure under a holding's ticker, by the measure; cash prints none
+ *  (it neither moves nor returns, and its weight is its area). */
+export function tileFigure(tile: Tile, by: ColourBy): string | null {
+  if (tile.cash) return null
   const value = by === "day" ? tile.move : tile.performance
   if (value === null) return "—"
   return by === "day" ? formatReturn(value) : formatReturn(value, 1)

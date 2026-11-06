@@ -79,7 +79,7 @@ export function mountPortfolio(feed: HTMLElement) {
   }
   let site: Site | null = null
   let rows: Row[] = []
-  const allocation = mountAllocation(feed)
+  const allocation = mountAllocation(feed, (symbol) => toggle(symbol, true))
   const pinTile = (key: string | null) => allocation?.pin(key)
 
   /** The open row's panel, filled for the state's range. */
@@ -205,18 +205,32 @@ export function mountPortfolio(feed: HTMLElement) {
     if (state.open) openPanel()
   }
 
-  list.onclick = (event) => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
-      "button.holding-row",
-    )
-    const symbol = button?.closest<HTMLElement>(".holding")?.dataset.symbol
-    if (!button || !symbol) return
+  /** Open a row, or close the open one; `reveal` (a click on its tile,
+   *  above the table) scrolls the opened row into view. */
+  const toggle = (symbol: string, reveal = false) => {
     const wasOpen = state.open === symbol
     closePanel()
     if (wasOpen) return
     state.open = symbol
     state.openRange = state.range
     openPanel()
+    if (!reveal || state.open !== symbol) return
+    list
+      .querySelector(`.holding[data-symbol="${CSS.escape(symbol)}"]`)
+      ?.scrollIntoView({
+        block: "nearest",
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      })
+  }
+
+  list.onclick = (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      "button.holding-row",
+    )
+    const symbol = button?.closest<HTMLElement>(".holding")?.dataset.symbol
+    if (button && symbol) toggle(symbol)
   }
   list.onpointerover = (event) => {
     const symbol = (event.target as HTMLElement).closest<HTMLElement>(

@@ -2,10 +2,12 @@
  * The allocation map under the readout: the account's holdings as a
  * treemap, area by weight and each tile graded by the last session or by
  * the position's own return. Cash and the funds counted as cash
- * (`PORTFOLIO.cashLike`) form one block; the lens tab by the heading (or a
- * click on the invested block) zooms into the other — the cash-like tiles ride the zoom out of the frame, the
- * invested ones re-lay to fill it — and a breadcrumb with a minimap of the
- * whole zooms back. Hovering a tile shows its card. Every figure and
+ * (`PORTFOLIO.cashLike`) form one block, set aside: the map opens zoomed
+ * into the invested one, and the expand button beside the Day / Return
+ * control widens it to the whole account — the cash-like tiles ride the
+ * zoom back into the frame — and restores it (Escape too), its corners
+ * turning in and out as it goes. Hovering a tile shows its
+ * card; clicking a holding opens its row in the table. Every figure and
  * decision comes from `portfolio.ts`; this file only builds DOM.
  */
 
@@ -47,13 +49,20 @@ const svgEl = <K extends keyof SVGElementTagNameMap>(
   return node
 }
 
-/** Lucide's zoom-in, for the lens tab. */
-const lensIcon = () => {
+/**
+ * Lucide's maximize, one path per corner. Zoomed, CSS turns each corner
+ * half a turn about its own middle, which is Lucide's minimize: the
+ * corners that pointed out now point in.
+ */
+const zoomIcon = () => {
   const icon = svgEl("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" })
-  icon.append(
-    svgEl("circle", { cx: 11, cy: 11, r: 8 }),
-    svgEl("path", { d: "m21 21-4.35-4.35M11 8v6M8 11h6" }),
-  )
+  for (const d of [
+    "M8 3H5a2 2 0 0 0-2 2v3",
+    "M16 3h3a2 2 0 0 1 2 2v3",
+    "M21 16v3a2 2 0 0 1-2 2h-3",
+    "M3 16v3a2 2 0 0 0 2 2h3",
+  ])
+    icon.append(svgEl("path", { d }))
   return icon
 }
 
@@ -81,11 +90,18 @@ const MODES = [
   { key: "return", label: "Return" },
 ]
 
-export function mountAllocation(feed: HTMLElement): Allocation | null {
+/**
+ * `onPick` opens (or closes) a holding's row: a click on its tile.
+ */
+export function mountAllocation(
+  feed: HTMLElement,
+  onPick: (symbol: string) => void,
+): Allocation | null {
   const title = feed.querySelector<HTMLElement>(".alloc-title")
   const modes = feed.querySelector<HTMLElement>(".alloc-modes")
+  const expand = feed.querySelector<HTMLButtonElement>(".alloc-zoom")
   const map = feed.querySelector<HTMLElement>(".alloc-map")
-  if (!title || !modes || !map) return null
+  if (!title || !modes || !expand || !map) return null
 
   const hatch = `alloc-hatch-${++mounts}`
   const svg = svgEl("svg", { class: "alloc-svg", role: "img" })
@@ -106,19 +122,24 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
   const ring = svgEl("rect", { class: "alloc-ring", rx: RADIUS })
   svg.append(defs, layer, ring)
 
-  const lens = el("button", "alloc-lens") as HTMLButtonElement
-  lens.type = "button"
+  expand.replaceChildren(zoomIcon())
+  expand.disabled = false
   const card = el("div", "alloc-card")
   card.hidden = true
   card.setAttribute("aria-hidden", "true")
   map.replaceChildren(svg, card)
-  // Hovering the tab rings the block it zooms into.
-  lens.onpointerenter = () => map.setAttribute("data-lens", "")
-  lens.onpointerleave = () => map.removeAttribute("data-lens")
-  lens.onfocus = () => map.setAttribute("data-lens", "")
-  lens.onblur = () => map.removeAttribute("data-lens")
+  // Hovering the button on the whole account rings the block it restores.
+  expand.onpointerenter = () => map.setAttribute("data-lens", "")
+  expand.onpointerleave = () => map.removeAttribute("data-lens")
+  // Keyboard focus only: a tap leaves focus on the button.
+  expand.onfocus = () =>
+    map.toggleAttribute("data-lens", expand.matches(":focus-visible"))
+  expand.onblur = () => map.removeAttribute("data-lens")
 
-  const state: { by: ColourBy; zoomed: boolean } = { by: "day", zoomed: false }
+  /** `whole`: the reader widened the map to the cash-like block too. */
+  const state: { by: ColourBy; whole: boolean } = { by: "day", whole: false }
+  /** Zoomed into the invested block: the default, when there is one. */
+  const zoomed = () => !state.whole && canZoom(tiles)
   let site: Site | null = null
   let rows: Row[] = []
   let cash: SiteCash[] = []
@@ -183,69 +204,32 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
     }
   }
 
-  /** The heading: the map's name, or, zoomed, the way back to it. */
+  /** The heading names what the map shows; the button says where it
+   *  goes, and hides when there is nothing to zoom past. */
   const heading = () => {
-    if (!state.zoomed || !layout?.invested) {
-      title.replaceChildren("Allocation", lens)
-      return
-    }
-    const width = Math.max(1, map.clientWidth)
-    const height = Math.max(1, map.clientHeight)
-    const whole = allocLayout(tiles, width, height, false)
-    const mini = svgEl("svg", {
-      class: "alloc-mini",
-      viewBox: `0 0 ${width} ${height}`,
-      "aria-hidden": "true",
-    })
-    for (const tile of tiles) {
-      const r = whole.tiles[tile.key]
-      mini.append(
-        svgEl("rect", {
-          class: tile.cashLike ? "mini-aside" : "mini-kept",
-          x: r.x0,
-          y: r.y0,
-          width: Math.max(0, r.x1 - r.x0),
-          height: Math.max(0, r.y1 - r.y0),
-          rx: 10,
-        }),
-      )
-    }
-    const r = whole.invested as Rect
-    mini.append(
-      svgEl("rect", {
-        class: "mini-ring",
-        x: r.x0 - 8,
-        y: r.y0 - 8,
-        width: r.x1 - r.x0 + 16,
-        height: r.y1 - r.y0 + 16,
-        rx: 14,
-      }),
-    )
-    const overview = el(
-      "button",
-      "alloc-back alloc-back-map",
-    ) as HTMLButtonElement
-    overview.type = "button"
-    overview.setAttribute("aria-label", "Zoom out to the whole account")
-    overview.append(mini)
-    const back = el("button", "alloc-back", "Allocation") as HTMLButtonElement
-    back.type = "button"
-    for (const button of [overview, back]) button.onclick = () => zoom(false)
-    const here = el("span", "alloc-here", "Invested ")
-    here.append(el("b", "", formatWeight(allocShares(tiles).invested)))
-    title.replaceChildren(overview, back, el("span", "alloc-sep", "›"), here)
-  }
-
-  /** The lens tab beside the heading, and the ring it lights on the
-   *  invested block. */
-  const overlays = () => {
-    const target = layout?.invested
-    lens.hidden = state.zoomed || !target || !canZoom(tiles)
-    map.toggleAttribute("data-zoomed", state.zoomed)
-    if (lens.hidden || !target) return
     const share = formatWeight(allocShares(tiles).invested)
-    lens.replaceChildren(lensIcon(), el("span", "", `Invested ${share}`))
-    lens.setAttribute("aria-label", `Zoom in on the invested ${share}`)
+    const inside = zoomed() && !!layout?.invested
+    // Rebuilt only when it says something new, so a redraw (a resize)
+    // doesn't fade the share in again.
+    const said = inside ? share : ""
+    if (title.dataset.said !== said) {
+      title.dataset.said = said
+      const here = el("span", "alloc-here")
+      here.append(el("span", "alloc-word", "Invested "), el("b", "", share))
+      if (inside)
+        title.replaceChildren("Allocation", el("span", "alloc-sep", "/"), here)
+      else title.replaceChildren("Allocation")
+    }
+    expand.hidden = !layout?.invested || !canZoom(tiles)
+    expand.setAttribute("aria-pressed", String(!inside))
+    const name = inside
+      ? "Show the whole account, cash included"
+      : `Back to the invested ${share}`
+    expand.setAttribute("aria-label", name)
+    expand.title = name
+    map.toggleAttribute("data-zoomed", inside)
+    const target = layout?.invested
+    if (!target) return
     // Just inside the block: its outer edges are the frame's.
     ring.setAttribute("x", String(target.x0 + 0.75))
     ring.setAttribute("y", String(target.y0 + 0.75))
@@ -259,13 +243,12 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
   const render = (animate: boolean) => {
     if (!site) return
     tiles = allocTiles(site, rows, cash, PORTFOLIO.cashLike, state.by)
-    if (!canZoom(tiles)) state.zoomed = false
     const width = Math.floor(map.clientWidth)
     const height = Math.floor(map.clientHeight)
     if (!width || !height) return
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`)
     svg.setAttribute("aria-label", allocLabel(tiles))
-    const next = allocLayout(tiles, width, height, state.zoomed)
+    const next = allocLayout(tiles, width, height, zoomed())
     layout = next
 
     const keys = new Set(tiles.map((tile) => tile.key))
@@ -298,7 +281,6 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
     }
     marks()
     heading()
-    overlays()
 
     cancelAnimationFrame(frame)
     const settle = () => {
@@ -329,24 +311,15 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
     frame = requestAnimationFrame(step)
   }
 
-  /** Zoom in or out; focus follows to the control that takes the place
-   *  of the one that went away. */
-  const zoom = (zoomed: boolean) => {
-    if (zoomed === state.zoomed || (zoomed && !canZoom(tiles))) return
-    const hadFocus =
-      lens.contains(document.activeElement) ||
-      title.contains(document.activeElement)
-    state.zoomed = zoomed
+  /** Widen to the whole account or restore; the button stays put, so
+   *  focus does too. */
+  const widen = (whole: boolean) => {
+    if (whole === state.whole || !canZoom(tiles)) return
+    state.whole = whole
     hideCard()
     render(true)
-    if (!hadFocus) return
-    if (zoomed)
-      title
-        .querySelector<HTMLElement>(".alloc-back:not(.alloc-back-map)")
-        ?.focus()
-    else lens.focus()
   }
-  lens.onclick = () => zoom(true)
+  expand.onclick = () => widen(!state.whole)
 
   /** Day or Return: the measure the tiles are graded by. */
   const syncModes = () =>
@@ -357,7 +330,7 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
       render(false)
     })
   feed.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.zoomed) zoom(false)
+    if (event.key === "Escape" && state.whole) widen(false)
   })
 
   /* The card ------------------------------------------------------------ */
@@ -370,7 +343,6 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
 
   const hideCard = () => {
     card.hidden = true
-    map.removeAttribute("data-lens")
     for (const node of nodes.values()) node.g.removeAttribute("data-point")
   }
 
@@ -405,10 +377,6 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
     for (const other of nodes.values())
       other.g.toggleAttribute("data-point", other === node)
     if (!node) return hideCard()
-    map.toggleAttribute(
-      "data-lens",
-      !state.zoomed && !node.tile.cashLike && canZoom(tiles),
-    )
     fillCard(node.tile)
     card.hidden = false
     const box = map.getBoundingClientRect()
@@ -432,11 +400,13 @@ export function mountAllocation(feed: HTMLElement): Allocation | null {
     if (event.pointerType === "mouse") showCard(event)
   }
   svg.onpointerleave = hideCard
-  // A click on the invested block zooms; a tap only shows the card (the
-  // lens tab zooms on touch).
+  // A click on a holding opens its row in the table (cash has none); a
+  // tap has shown the card already.
   svg.onclick = (event) => {
     const node = nodeAt(event.target)
-    if (pointer === "mouse" && node && !node.tile.cashLike) zoom(true)
+    if (!node || node.tile.cash) return
+    if (pointer !== "mouse") hideCard()
+    onPick(node.tile.key)
   }
 
   return {

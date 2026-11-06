@@ -80,15 +80,23 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
     <div class="alloc-head">
       <h3 class="portfolio-label alloc-title">Allocation</h3>
-      <div
-        class="alloc-modes"
-        role="group"
-        aria-label="Colour by"
-        aria-busy="true"
-      >
-        {Array.from({ length: 2 }).map(() => (
-          <span class="chip-skeleton" aria-hidden="true"><span class="sk-line" /></span>
-        ))}
+      <div class="alloc-tools">
+        <div
+          class="alloc-modes"
+          role="group"
+          aria-label="Colour by"
+          aria-busy="true"
+        >
+          {Array.from({ length: 2 }).map(() => (
+            <span class="chip-skeleton" aria-hidden="true"><span class="sk-line" /></span>
+          ))}
+        </div>
+        <button
+          class="alloc-zoom"
+          type="button"
+          aria-label="Show the whole account, cash included"
+          disabled
+        ></button>
       </div>
     </div>
     <div class="alloc-map"></div>
@@ -523,8 +531,8 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* Allocation: a treemap of the holdings, area by weight, graded by the
      last session or the position's return like the strip (gains in the
-     heatmap's greens, losses in ink), cash hatched. The cash-like block
-     can be zoomed past through the lens tab on the invested one. */
+     heatmap's greens, losses in ink), cash hatched. It opens on the
+     invested block; the expand button widens it to the cash-like one. */
   /* One row at every width, so zooming never moves the map. */
   .alloc-head {
     display: flex;
@@ -541,11 +549,18 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     min-inline-size: 0;
     min-block-size: 1.75rem;
     margin: 0;
+    overflow: hidden;
     white-space: nowrap;
   }
 
-  .alloc-head .alloc-modes {
+  .alloc-tools {
+    display: flex;
     flex: none;
+    align-items: center;
+    gap: var(--space-3xs);
+  }
+
+  .alloc-head .alloc-modes {
     min-block-size: 0;
   }
 
@@ -553,58 +568,75 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     inline-size: 3.5rem;
   }
 
-  /* Zoomed, the heading is a breadcrumb; its link back keeps the label's
-     own letterforms. */
-  portfolio-feed :global(.alloc-back) {
-    font: inherit;
-    letter-spacing: inherit;
-    text-transform: inherit;
+  /* Expand / restore: a square of the segmented control's track. Its
+     four corners point out (widen to the whole account) and, pressed,
+     each turns half a turn about its own middle to point in. */
+  portfolio-feed .alloc-zoom {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.875rem;
+    block-size: 1.875rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
     color: var(--muted-foreground);
-    text-decoration: underline;
-    text-decoration-thickness: var(--hairline);
-    text-underline-offset: 0.2em;
-    cursor: zoom-out;
+    cursor: pointer;
+  }
+
+  portfolio-feed .alloc-zoom:disabled {
+    cursor: default;
   }
 
   @media (hover: hover) {
-    portfolio-feed :global(.alloc-back:hover) {
+    portfolio-feed .alloc-zoom:enabled:hover {
+      background-color: var(--muted-hover);
       color: var(--foreground);
     }
   }
 
-  portfolio-feed :global(.alloc-back-map) {
-    display: block;
-    border-radius: var(--radius-xs);
+  portfolio-feed .alloc-zoom:enabled:active {
+    background-color: var(--muted-active);
   }
 
-  portfolio-feed :global(.alloc-mini) {
-    display: block;
-    inline-size: 2.75rem;
-    block-size: 1.5rem;
-  }
-
-  portfolio-feed :global(.mini-aside) {
-    fill: var(--neutral-5);
-  }
-
-  portfolio-feed :global(.mini-kept) {
-    fill: var(--neutral-8);
-  }
-
-  portfolio-feed :global(.mini-ring) {
+  portfolio-feed :global(.alloc-zoom svg) {
+    inline-size: 1rem;
+    block-size: 1rem;
     fill: none;
-    stroke: var(--foreground);
-    stroke-width: 24;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
+  portfolio-feed :global(.alloc-zoom path) {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform var(--duration) var(--ease);
+  }
+
+  portfolio-feed :global(.alloc-zoom[aria-pressed="true"] path) {
+    transform: rotate(180deg);
+  }
+
+  /* Zoomed, the heading says how much of the account the map is. */
   portfolio-feed :global(.alloc-sep) {
-    color: var(--muted-foreground);
+    color: var(--border-strong);
+  }
+
+  portfolio-feed :global(.alloc-here) {
+    animation: alloc-in var(--duration) var(--ease);
   }
 
   portfolio-feed :global(.alloc-here b) {
     font-family: var(--font-mono);
     font-weight: var(--font-weight-medium);
     font-feature-settings: normal;
+    color: var(--foreground);
+  }
+
+  @keyframes alloc-in {
+    from {
+      opacity: 0;
+    }
   }
 
   /* The map's height comes from the column's width, never its content. */
@@ -623,7 +655,8 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       block-size: 90cqi;
     }
 
-    portfolio-feed :global(.alloc-back-map) {
+    /* The heading keeps one line beside the tools: the share alone. */
+    portfolio-feed :global(.alloc-word) {
       display: none;
     }
   }
@@ -726,7 +759,8 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     visibility: hidden;
   }
 
-  /* The lens's target: the invested block ringed, the rest stepped back. */
+  /* What the restore keeps: the invested block ringed, the rest stepped
+     back. */
   portfolio-feed :global(.alloc-map[data-lens]:not([data-zoomed]) .alloc-ring) {
     visibility: visible;
   }
@@ -736,39 +770,9 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     opacity: 0.4;
   }
 
-  portfolio-feed :global(.alloc-map[data-lens] .alloc-svg) {
-    cursor: zoom-in;
-  }
-
-  /* The lens tab: an ink chip beside the heading. */
-  portfolio-feed :global(.alloc-lens) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35em;
-    padding: 0.05rem 0.5rem;
-    border-radius: var(--radius-sm);
-    background-color: var(--foreground);
-    font-size: var(--step--2);
-    font-weight: var(--font-weight-medium);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: normal;
-    text-transform: none;
-    white-space: nowrap;
-    color: var(--background);
-    cursor: zoom-in;
-  }
-
-  portfolio-feed :global(.alloc-lens svg) {
-    inline-size: 0.75rem;
-    block-size: 0.75rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.25;
-    stroke-linecap: round;
-  }
-
-  portfolio-feed :global(.alloc-lens:focus-visible) {
-    outline-offset: 2px;
+  /* A holding's tile opens its row; cash has none. */
+  portfolio-feed :global(.alloc-tile:not([data-cash])) {
+    cursor: pointer;
   }
 
   /* The card a hovered tile shows: its mark, name and figures. */

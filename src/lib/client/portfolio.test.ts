@@ -464,12 +464,17 @@ describe("allocation", () => {
       figure: false,
     })
     expect(tileText("NVDA", "−9.26%", 20, 24)).toBeNull()
+    expect(tileText("USD", null, 120, 80)).toEqual({
+      size: 16,
+      figure: false,
+    })
   })
 
   it("prints each tile's figure and card", () => {
     const usd = tiles.find((tile) => tile.cash)
     if (!usd) throw new Error("no cash")
-    expect(tileFigure(usd, "day")).toBe("9.6%")
+    expect(tileFigure(usd, "day")).toBeNull()
+    expect(tileFigure(usd, "return")).toBeNull()
     expect(tileCard(site, usd).title).toBe("Cash")
     expect(tileCard(site, usd).name).toBe("US Dollar")
     const nvda = tiles.find((tile) => tile.key === "NVDA")
