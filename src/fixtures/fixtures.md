@@ -99,6 +99,13 @@ An important callout holding a list:
 
 </div>
 
+A list that starts later keeps its numbers:
+
+:::steps
+3. Picked up where the last section stopped.
+4. And carried on.
+:::
+
 ## File tree
 
 :::file-tree
@@ -111,6 +118,17 @@ An important callout holding a list:
   - scripts/
     - validate.sh shared by local runs and CI, see `make lint`
   - renovate.json 自动升级规则
+:::
+
+Without one root, the tree hangs off `./`:
+
+:::file-tree
+- README.md
+- .env.example every variable, none of the values
+- assets/
+- src/
+  - index.ts
+  - cat.jpg
 :::
 
 ## Code

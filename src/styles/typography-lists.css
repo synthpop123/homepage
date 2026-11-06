@@ -68,7 +68,8 @@ prose-content {
 
   /* :::steps (steps.ts): each step numbered in the margin in small mono
      figures, a hairline running down from its number to the next. No
-     circles: the number and the line are the whole mark. */
+     circles: the number and the line are the whole mark. The number is
+     the list's own counter, so `3.` starts at 03. */
   step-list {
     --step-line: calc(var(--leading-offset) + var(--step-0));
 
@@ -81,7 +82,6 @@ prose-content {
     > ol {
       padding-inline-start: 0;
       list-style: none;
-      counter-reset: step;
     }
 
     > ol > li {
@@ -89,10 +89,9 @@ prose-content {
       margin-block-start: 0;
       padding-inline-start: 2.25rem;
       padding-block-end: 1em;
-      counter-increment: step;
 
       &::before {
-        content: counter(step, decimal-leading-zero);
+        content: counter(list-item, decimal-leading-zero);
         position: absolute;
         inset-inline-start: 0;
         font-family: var(--font-mono);
@@ -123,19 +122,43 @@ prose-content {
   }
 
   /* :::file-tree (file-tree.ts): a directory listing on the code
-     surface, names in mono, each level hung off a hairline guide under
-     its directory, comments in the text face, muted. */
+     surface. Each row is an icon, a mono name and a muted comment in the
+     text face; each entry hangs off its directory's icon by a hairline
+     elbow, the last one turning the corner. The root (the project, or
+     `./`) heads the frame as a code block's title does, `tree`'s count
+     opposite. */
   file-tree {
+    --row: 1.625rem;
+    --icon: 0.875rem;
+    --indent: 1.375rem;
+    --pad: var(--space-s);
+    --guide: var(--hairline) solid var(--border-strong);
+
     display: block;
     margin-block: 1.5em;
-    padding: var(--space-xs) var(--space-s);
-    overflow-x: auto;
     border: var(--hairline) solid var(--border);
     border-radius: var(--radius-lg);
     background-color: var(--surface);
     font-family: var(--font-mono);
     font-feature-settings: normal;
     font-size: var(--step--1);
+    line-height: var(--row);
+
+    [data-head] {
+      display: flex;
+      align-items: start;
+      gap: var(--space-xs);
+      padding: var(--space-3xs) var(--pad);
+      border-block-end: var(--hairline) solid var(--border);
+    }
+
+    [data-count] {
+      margin-inline-start: auto;
+      font-size: var(--step--2);
+      font-variant-numeric: tabular-nums;
+      color: var(--muted-foreground);
+      white-space: nowrap;
+    }
 
     ul {
       margin: 0;
@@ -143,16 +166,75 @@ prose-content {
       list-style: none;
     }
 
+    > ul {
+      padding: var(--space-xs) var(--pad);
+      padding-inline-start: calc(var(--pad) + var(--indent));
+      overflow-x: auto;
+    }
+
     ul ul {
-      margin-block: 0;
-      margin-inline-start: 0.5ch;
-      padding-inline-start: 2ch;
-      border-inline-start: var(--hairline) solid var(--border-strong);
+      padding-inline-start: var(--indent);
     }
 
     li {
+      position: relative;
       margin: 0;
       padding: 0;
+    }
+
+    /* The elbows: a guide down from the directory's icon past each
+       entry, a stub across to the entry's own icon. */
+    ul > li {
+      &::before,
+      &::after {
+        content: "";
+        position: absolute;
+        inset-inline-start: calc(var(--icon) / 2 - var(--indent));
+      }
+
+      &::before {
+        inset-block: 0;
+        border-inline-start: var(--guide);
+        translate: calc(var(--hairline) / -2) 0;
+      }
+
+      &::after {
+        inset-block-start: calc(var(--row) / 2);
+        inline-size: calc(var(--indent) - var(--icon) / 2 - 0.25rem);
+        border-block-start: var(--guide);
+      }
+
+      &:first-child::before {
+        inset-block-start: calc((var(--icon) - var(--row)) / 2 + 0.1875rem);
+      }
+
+      &:last-child::before {
+        inset-block-end: calc(100% - var(--row) / 2);
+      }
+    }
+
+    /* The root's first guide hangs from the head's rule. */
+    > ul > li:first-child::before {
+      inset-block-start: calc(-1 * var(--space-xs));
+    }
+
+    /* The icon hangs in the row's indent, so a comment too long for
+       the line wraps under the name, not under the icon. */
+    [data-row] {
+      position: relative;
+      display: block;
+      padding-inline-start: calc(var(--icon) + 0.5rem);
+
+      &::before {
+        content: "";
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-start: 0;
+        inline-size: var(--icon);
+        block-size: var(--row);
+        background-color: var(--neutral-9);
+        mask: var(--file-icon) center / var(--icon) no-repeat;
+      }
     }
 
     [data-name] {
@@ -168,12 +250,26 @@ prose-content {
       font-weight: var(--font-weight-medium);
     }
 
+    [data-row]:has([data-mark])::before {
+      background-color: var(--foreground);
+    }
+
     [data-note] {
-      margin-inline-start: 2ch;
+      margin-inline-start: 1ch;
       font-family: var(--font-sans);
       font-feature-settings: var(--font-sans-features);
       color: var(--muted-foreground);
     }
   }
 }
+
+/* Shared with titled code blocks (title-icon.ts). */
+[data-kind="folder"] { --file-icon: url("../assets/icons/files/folder.svg"); }
+[data-kind="folder-open"] { --file-icon: url("../assets/icons/files/folder-open.svg"); }
+[data-kind="file"] { --file-icon: url("../assets/icons/files/file.svg"); }
+[data-kind="file-text"] { --file-icon: url("../assets/icons/files/file-text.svg"); }
+[data-kind="file-code"] { --file-icon: url("../assets/icons/files/file-code.svg"); }
+[data-kind="file-config"] { --file-icon: url("../assets/icons/files/file-config.svg"); }
+[data-kind="file-terminal"] { --file-icon: url("../assets/icons/files/file-terminal.svg"); }
+[data-kind="file-image"] { --file-icon: url("../assets/icons/files/file-image.svg"); }
 }

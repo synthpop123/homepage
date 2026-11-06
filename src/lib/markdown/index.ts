@@ -2,7 +2,7 @@
  * The Markdown pipeline, in order. Sätteri runs each list over every
  * post; `astro.config.ts` hands both to the processor. A plugin's own
  * file changing does not invalidate Astro's rendered-post cache — delete
- * `node_modules/.astro/data-store.json` before building.
+ * `.astro/data-store.json` before building.
  */
 
 import { asides } from "./asides"

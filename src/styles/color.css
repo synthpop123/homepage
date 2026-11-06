@@ -306,4 +306,12 @@ body {
   .heat-scale {
     forced-color-adjust: none;
   }
+
+  /* A mask's fill is a background, which forced colours would paint
+     Canvas: the file icons keep the text colour. */
+  file-tree [data-row]::before,
+  .expressive-code .title[data-kind]::before {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
 }

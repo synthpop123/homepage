@@ -122,6 +122,18 @@ prose-content {
       border-block-end: var(--hairline) solid var(--border);
     }
 
+    /* A titled block's file icon, the file tree's own (title-icon.ts). */
+    .header .title[data-kind]::before {
+      content: "";
+      display: inline-block;
+      inline-size: 0.875rem;
+      block-size: 0.875rem;
+      margin-inline-end: 0.5rem;
+      vertical-align: -0.125em;
+      background-color: var(--neutral-9);
+      mask: var(--file-icon) center / contain no-repeat;
+    }
+
     .expand {
       margin-block-end: 0.1em;
     }

@@ -5,6 +5,7 @@ import {
   type SatteriExpressiveCodeOptions,
 } from "satteri-expressive-code"
 import { radixTheme } from "./radix-theme"
+import { pluginTitleIcon } from "./title-icon"
 
 const ecOptions: SatteriExpressiveCodeOptions = {
   themes: ["vitesse-light", "vitesse-dark"],
@@ -15,7 +16,11 @@ const ecOptions: SatteriExpressiveCodeOptions = {
   minSyntaxHighlightingColorContrast: 0,
   useDarkModeMediaQuery: true,
   themeCssSelector: (theme) => `[data-theme="${theme.type}"]`,
-  plugins: [pluginCollapsibleSections(), pluginLineNumbers()],
+  plugins: [
+    pluginCollapsibleSections(),
+    pluginLineNumbers(),
+    pluginTitleIcon(),
+  ],
   defaultProps: {
     wrap: true,
     // A wrapped line's rest sits two columns in, so it never reads as a
