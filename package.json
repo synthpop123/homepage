@@ -14,6 +14,8 @@
     "astro": "astro",
     "test": "bun test",
     "check:links": "bun scripts/check-links.ts",
+    "check:contract": "bun scripts/check-contract.ts",
+    "lint": "biome lint",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "format:staged": "biome format --staged --write --files-ignore-unknown=true --no-errors-on-unmatched",

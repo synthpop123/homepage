@@ -21,13 +21,13 @@ import {
   providerLabel,
   modelLabel,
 } from "./labels"
-import {
-  type DaySlice,
-  type Site,
-  type SiteDay,
-  type SiteRange,
-  type Usage,
-  type MetricKey,
+import type {
+  DaySlice,
+  Site,
+  SiteDay,
+  SiteRange,
+  Usage,
+  MetricKey,
 } from "./schema"
 
 /* Aggregation --------------------------------------------------------- */

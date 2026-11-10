@@ -15,7 +15,9 @@ function dice(values: number[], total: number, rect: Rect, out: Rect[]) {
   const k = total ? (rect.x1 - rect.x0) / total : 0
   let x = rect.x0
   for (const value of values) {
-    out.push({ x0: x, y0: rect.y0, x1: (x += value * k), y1: rect.y1 })
+    const x0 = x
+    x += value * k
+    out.push({ x0, y0: rect.y0, x1: x, y1: rect.y1 })
   }
 }
 
@@ -24,7 +26,9 @@ function slice(values: number[], total: number, rect: Rect, out: Rect[]) {
   const k = total ? (rect.y1 - rect.y0) / total : 0
   let y = rect.y0
   for (const value of values) {
-    out.push({ x0: rect.x0, y0: y, x1: rect.x1, y1: (y += value * k) })
+    const y0 = y
+    y += value * k
+    out.push({ x0: rect.x0, y0, x1: rect.x1, y1: y })
   }
 }
 

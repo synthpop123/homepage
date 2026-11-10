@@ -18,7 +18,7 @@ import {
   weekdayProfile,
   windowTotals,
 } from "./aggregate"
-import { type Site, type SiteDay } from "./schema"
+import type { Site, SiteDay } from "./schema"
 import {
   day,
   dayClient,

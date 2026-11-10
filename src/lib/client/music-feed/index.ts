@@ -27,9 +27,9 @@ export function mountMusic(feed: HTMLElement) {
     fillStats(feed, site.stats)
     buildHeatmap(feed, site.activity)
     const fragment = document.createDocumentFragment()
-    site.listens
-      .slice(0, limit)
-      .forEach((listen, i) => fragment.append(buildRow(listen, i === 0)))
+    site.listens.slice(0, limit).forEach((listen, i) => {
+      fragment.append(buildRow(listen, i === 0))
+    })
     list.replaceChildren(fragment)
     settle(feed, body, fallback, true)
   })

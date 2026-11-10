@@ -39,7 +39,12 @@
     }
   },
   "linter": {
-    "enabled": false
+    "enabled": true,
+    "includes": ["**/*.ts"],
+    "rules": {
+      "recommended": true,
+      "style": { "noNonNullAssertion": "off" }
+    }
   },
   "assist": {
     "enabled": false

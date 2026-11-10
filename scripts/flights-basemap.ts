@@ -153,7 +153,7 @@ const nearAirport = ([lon, lat]: number[]) =>
  * coordinate, so raising it to Infinity is how a point is kept.
  */
 /** The plain topology topojson-simplify types its arguments as. */
-type Plain = Topology<Objects<{}>>
+type Plain = Topology<Objects<Record<string, never>>>
 
 const slim = (topo: Plain) => {
   const weighted = presimplify(topo)

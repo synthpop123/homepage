@@ -9,8 +9,8 @@ on:
     paths-ignore: &docs
       - README.md
       - LICENSE
-      - CLAUDE.md
-      - AGENTS.md
+      - "**/CLAUDE.md"
+      - "**/AGENTS.md"
       - .claude/**
   pull_request:
     paths-ignore: *docs
@@ -26,7 +26,8 @@ concurrency:
 permissions:
   contents: read
 
-# Two parallel jobs: `astro check` (~20s) and the site build (~15s) were
+# Three parallel jobs: `contract` asks the Worker itself, so the network
+# it needs cannot fail the other two. The other two: `astro check` (~20s) and the site build (~15s) were
 # the bulk of one serial job, and neither needs the other's output.
 jobs:
   check:
@@ -55,6 +56,8 @@ jobs:
       - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
         run: bun run format:check
       - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
+        run: bun run lint
+      - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
         run: bun test
       - if: ${{ !cancelled() && steps.install.conclusion == 'success' }}
         run: bun run astro check
@@ -79,3 +82,16 @@ jobs:
       - run: bun run prebuild:assets
       - run: bun run astro build --force
       - run: bun run check:links
+
+  # The decoders against cf-workers-api as it is: its published schema
+  # versions, and the body each view serves in production.
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bun run check:contract

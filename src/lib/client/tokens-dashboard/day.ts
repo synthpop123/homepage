@@ -135,9 +135,9 @@ export function createDayPanel(q: Query, icons: Icons, onBack: () => void) {
     const lit = arcOf(id)
     for (const [key, arc] of arcs)
       arc.toggleAttribute("data-focus", key === lit)
-    legend
-      ?.querySelectorAll<HTMLElement>(".tk-group")
-      .forEach((group) => setExpanded(group, group.dataset.client === id))
+    legend?.querySelectorAll<HTMLElement>(".tk-group").forEach((group) => {
+      setExpanded(group, group.dataset.client === id)
+    })
     showCenter(id)
   }
 

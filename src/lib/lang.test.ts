@@ -31,7 +31,7 @@ describe("detectLang", () => {
   })
 
   it("does not count code toward either side", () => {
-    const code = "```py\n" + "word ".repeat(200) + "\n```\n"
+    const code = `\`\`\`py\n${"word ".repeat(200)}\n\`\`\`\n`
     expect(detectLang(`${code}中文说明文字`, "en-US")).toBe("zh-CN")
   })
 
