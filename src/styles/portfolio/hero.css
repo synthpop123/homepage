@@ -164,6 +164,10 @@ portfolio-feed {
     line-height: 1.2;
   }
 
+  .portfolio-figure[data-dir="down"] {
+    color: var(--muted-foreground);
+  }
+
   .portfolio-note {
     min-block-size: 1lh;
     font-size: var(--step--1);

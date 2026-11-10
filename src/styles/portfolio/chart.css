@@ -5,6 +5,14 @@
    the readout (portfolio-feed/chart.ts, render.ts). */
 
 portfolio-feed {
+  /* The key over the chart, at its far end. */
+  .chart-keys {
+    justify-content: flex-end;
+    margin: 0;
+    font-size: var(--step--2);
+    color: var(--muted-foreground);
+  }
+
   /* The chart. Its slider role makes it a tab stop; the ring shows on
      keyboard focus only. */
   .portfolio-chart {
@@ -39,19 +47,11 @@ portfolio-feed {
     stroke-dasharray: var(--chart-dash);
   }
 
-  :is(.chart-ghost-label, .chart-scrub text) {
+  .chart-scrub text {
     font-family: var(--font-mono);
     font-size: var(--step--2);
     font-feature-settings: normal;
     fill: var(--muted-foreground);
-  }
-
-  /* The ghost's label sits on lines; a halo of the page keeps it read. */
-  .chart-ghost-label {
-    paint-order: stroke;
-    stroke: var(--background);
-    stroke-width: 3px;
-    stroke-linejoin: round;
   }
 
   /* A holding's line against its cost: the dashed level, the gap washed

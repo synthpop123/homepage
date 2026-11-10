@@ -167,6 +167,29 @@
   border-radius: var(--radius-sm);
 }
 
+/* A chart's key (the Portfolio chart, the home tile): a solid stroke for
+   the series, a dashed one for what it is read against. */
+.chart-keys {
+  display: flex;
+  gap: var(--space-s);
+}
+
+.chart-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  &::before {
+    content: "";
+    inline-size: 0.9rem;
+    border-block-start: 1.5px solid var(--foreground);
+  }
+}
+
+.chart-key-ghost::before {
+  border-block-start: 1px dashed var(--chart-ghost);
+}
+
 /* Vinyl: a sleeve with the record half out of it, for the newest listen
    (the Music lead on /misc, the listen tile on the home page). The markup
    is `.sleeve > .disc > .disc-label > img` beside `.sleeve > .cover > img`;

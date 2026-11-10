@@ -209,10 +209,10 @@ export function renderPortfolio(tile: HTMLElement, site: Site) {
       return cell
     }),
   )
-  const keys = el("span", "now-keys")
+  const keys = el("span", "chart-keys")
   keys.append(
-    el("span", "now-key", "Portfolio"),
-    el("span", "now-key now-key-ghost", "S&P 500"),
+    el("span", "chart-key", "Portfolio"),
+    el("span", "chart-key chart-key-ghost", "S&P 500"),
   )
   tile
     .querySelector(".now-axis")

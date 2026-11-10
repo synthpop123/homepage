@@ -51,6 +51,7 @@ export function mountPortfolio(feed: HTMLElement) {
   const figure = feed.querySelector<HTMLElement>(".portfolio-figure")
   const note = feed.querySelector<HTMLElement>(".portfolio-note")
   const svg = feed.querySelector<SVGSVGElement>(".portfolio-chart")
+  const ghostKey = feed.querySelector<HTMLElement>(".chart-key-ghost")
   const list = feed.querySelector<HTMLOListElement>(".portfolio-list")
   if (
     !endpoint ||
@@ -160,7 +161,10 @@ export function mountPortfolio(feed: HTMLElement) {
     fillKicker(kicker, current, resolved.account.id)
     const hero = (at: number | null) => {
       const end = at === null ? values.length - 1 : at
-      figure.textContent = formatReturn(change(values, 0, end) ?? 0)
+      const moved = change(values, 0, end) ?? 0
+      figure.textContent = formatReturn(moved)
+      // A fall is muted here as in the readout and on the home tile.
+      figure.dataset.dir = moved < 0 ? "down" : "up"
       note.textContent = heroNote(
         current,
         start,
@@ -179,10 +183,13 @@ export function mountPortfolio(feed: HTMLElement) {
       light(index)
     })
     svg.setAttribute("aria-label", `${resolved.account.name}, ${label}`)
+    if (ghostKey) {
+      ghostKey.textContent = current.benchmark.label
+      ghostKey.hidden = !ghost
+    }
     chart = drawChart(svg, {
       values,
       ghost,
-      ghostLabel: current.benchmark.label,
       describe: (i) =>
         `${monthDay.format(dayInstant(current.days[start + i]))}: ${formatReturn(change(values, 0, i) ?? 0)}`,
       dateOf: (i) => monthDay.format(dayInstant(current.days[start + i])),

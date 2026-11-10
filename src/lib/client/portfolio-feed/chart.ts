@@ -28,9 +28,9 @@ const svgEl = <K extends keyof SVGElementTagNameMap>(
 export type ChartSpec = {
   /** The line, one value per point; leading nulls are skipped. */
   values: (number | null)[]
-  /** Same length as `values`, already on the line's scale. */
+  /** Same length as `values`, already on the line's scale; keyed by the
+   *  caller, outside the chart, where no label can sit on a line. */
   ghost?: (number | null)[]
-  ghostLabel?: string
   /** A level drawn dashed across, the line's gap to it washed by side;
    *  unlabelled, since the caller keys it outside the chart. */
   cost?: number | null
@@ -140,20 +140,6 @@ export function drawChart(svg: SVGSVGElement, spec: ChartSpec): Chart {
     const ghost = path(spec.ghost)
     if (ghost) {
       nodes.push(svgEl("path", { class: "chart-ghost", d: ghost }))
-      const end = spec.ghost[n - 1]
-      const own = spec.values[n - 1]
-      if (end !== null && own !== null && spec.ghostLabel) {
-        const gy = y(end)
-        const label = svgEl("text", {
-          class: "chart-ghost-label",
-          x: width - PAD_X,
-          // Beside its own line, on the side away from the portfolio's.
-          y: gy > y(own) ? Math.min(height - 2, gy + 14) : Math.max(10, gy - 7),
-          "text-anchor": "end",
-        })
-        label.textContent = spec.ghostLabel
-        nodes.push(label)
-      }
     }
   }
   const stroke = svgEl("path", { class: "chart-line", d: line })

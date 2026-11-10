@@ -669,29 +669,6 @@ const { endpoint = NOW.endpoint } = Astro.props
       font-variant-numeric: tabular-nums;
     }
 
-    /* The key sits between the two dates: a solid stroke for the
-       portfolio, a dashed one for the benchmark. */
-    .now-key {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-
-      &::before {
-        content: "";
-        inline-size: 0.9rem;
-        border-block-start: 1.5px solid var(--foreground);
-      }
-    }
-
-    .now-keys {
-      display: flex;
-      gap: var(--space-s);
-    }
-
-    .now-key-ghost::before {
-      border-block-start: 1px dashed var(--neutral-9);
-    }
-
     @container (width >= 34rem) {
       [data-tile="tokens"] .now-link,
       [data-tile="portfolio"] .now-link {
