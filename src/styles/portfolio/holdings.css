@@ -1,0 +1,492 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
+/* The holdings table and the panel a row opens
+   (portfolio-feed/render.ts). */
+
+portfolio-feed {
+  /* Holdings: a table of ticker and name, the range's line, price,
+     average cost, weight and the position's return. */
+  .feed-label {
+    margin-block-start: var(--space-l);
+  }
+
+  .portfolio-list {
+    display: grid;
+  }
+
+  .portfolio-head {
+    padding-block: var(--space-3xs);
+    border-block-end: var(--hairline) solid var(--border-strong);
+    font-size: var(--step--2);
+    letter-spacing: 0.02em;
+    color: var(--muted-foreground);
+  }
+
+  .portfolio-head .holding-spark {
+    block-size: auto;
+    text-align: center;
+  }
+
+  .holding {
+    border-block-end: var(--hairline) solid var(--border);
+  }
+
+  .holding-row {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr) 4.5rem 4.75rem 4.75rem 3.5rem 4rem;
+    align-items: center;
+    gap: var(--space-xs);
+    inline-size: 100%;
+    padding: var(--space-2xs) var(--space-2xs);
+    text-align: start;
+  }
+
+  button.holding-row {
+    cursor: pointer;
+  }
+
+  @media (hover: hover) {
+    button.holding-row:hover {
+      background-color: var(--muted);
+    }
+  }
+
+  .holding[data-open] .holding-row {
+    background-color: var(--muted);
+  }
+
+  .holding-row:focus-visible {
+    outline-offset: -2px;
+  }
+
+  /* A logo is a tile: the brand's own mark in a rounded square, with a
+     monogram for the ones that don't load. */
+  .holding-logo {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background-color: var(--muted);
+    outline: var(--hairline) solid var(--neutral-a6);
+    outline-offset: calc(-1 * var(--hairline));
+  }
+
+  /* The monogram only where there is no logo; a logo sits on white (Gray
+     1, light), the ground brand marks are drawn for, in either scheme. */
+  .holding-logo:has(img) {
+    background-color: var(--logo-ground);
+  }
+
+  .holding-logo:not(:has(img, svg))::before {
+    content: attr(data-monogram);
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    font-weight: var(--font-weight-medium);
+    font-feature-settings: normal;
+    color: var(--muted-foreground);
+  }
+
+  .holding-logo-cash svg {
+    inline-size: 1rem;
+    block-size: 1rem;
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .holding-logo img {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .holding-name {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .holding-ticker {
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-display);
+    letter-spacing: -0.005em;
+    line-height: 1.35;
+  }
+
+  :is(.holding-sub, .holding-ticker) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .holding-sub {
+    min-block-size: 1lh;
+    font-size: var(--step--2);
+    color: var(--muted-foreground);
+  }
+
+  .holding-spark {
+    display: block;
+    inline-size: 100%;
+    block-size: 1.5rem;
+  }
+
+  .holding-spark polyline {
+    stroke: var(--muted-foreground);
+    stroke-width: var(--chart-stroke-thin);
+    stroke-linejoin: round;
+  }
+
+  .holding-spark[data-dir="up"] polyline {
+    stroke: var(--accent-fill);
+  }
+
+  :is(.holding-price, .holding-cost, .holding-weight, .holding-change)
+     {
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  /* Figures only in the rows: the head keeps its label size. */
+  .holding
+      :is(.holding-price, .holding-cost, .holding-weight, .holding-change)
+   {
+    font-size: var(--step--1);
+  }
+
+  :is(.holding-cost, .holding-weight) {
+    color: var(--muted-foreground);
+  }
+
+  .holding-cost-under {
+    display: none;
+    font-size: var(--step--2);
+    color: var(--muted-foreground);
+  }
+
+  .holding .holding-change {
+    font-weight: var(--font-weight-medium);
+  }
+
+  :is(.holding-change, .panel-delta)[data-dir="up"] {
+    color: var(--accent);
+  }
+
+  :is(.holding-change, .panel-delta)[data-dir="down"] {
+    color: var(--muted-foreground);
+  }
+
+  .holding-cash .holding-row {
+    color: var(--muted-foreground);
+  }
+
+  [data-skeleton]
+        :is(
+          .holding-ticker,
+          .holding-sub,
+          .holding-price,
+          .holding-cost,
+          .holding-weight,
+          .holding-change
+        )
+     {
+    display: grid;
+    align-content: center;
+    justify-items: end;
+    min-block-size: 1lh;
+  }
+
+  [data-skeleton] :is(.holding-ticker, .holding-sub) {
+    justify-items: start;
+  }
+
+  .sk-ticker {
+    inline-size: 3em;
+  }
+
+  .sk-num {
+    inline-size: 2.5em;
+  }
+
+  /* An opened row: the price and its move, what the company is under
+     them, the line against the cost, the facts, and the year's band. */
+  .holding-panel {
+    display: grid;
+    gap: var(--space-xs);
+    padding: var(--space-s) var(--space-xs) var(--space-xs);
+    background-color: var(--neutral-a2);
+  }
+
+  /* The head: the price set large with its move as a tinted figure and
+     when it ran from, then what the company is as quiet tags. */
+  .panel-head {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .panel-figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3xs) var(--space-2xs);
+  }
+
+  .panel-price {
+    margin-inline-end: var(--space-3xs);
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-display);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-tight);
+    line-height: 1.1;
+  }
+
+  .panel-delta {
+    padding: 0.125rem 0.45rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--step--1);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background-color: var(--muted);
+  }
+
+  .panel-delta[data-dir="up"] {
+    background-color: var(--grass-a3);
+  }
+
+  .panel-when {
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  .panel-about {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--step--2);
+    color: var(--muted-foreground);
+  }
+
+  .panel-tag {
+    padding: 0.0625rem 0.4rem;
+    border: var(--hairline) solid var(--border-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  /* The site: a plain name with the external arrow, no rule under it. */
+  .panel-site {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    padding-inline: 0.3rem;
+    color: inherit;
+    text-decoration-line: none;
+  }
+
+  .panel-site::after {
+    content: "";
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    background-color: var(--neutral-9);
+    mask: url("../assets/icons/sites/external.svg") center / contain no-repeat;
+  }
+
+  @media (hover: hover) {
+    .panel-site:hover {
+      color: var(--foreground);
+    }
+  }
+
+  .panel-chart {
+    display: block;
+    inline-size: 100%;
+    block-size: 9rem;
+    overflow: visible;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+
+  /* The tabs, and the key to the cost level and the first buy: kept
+     off the line, where a label would cross it. */
+  .panel-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3xs) var(--space-s);
+  }
+
+  .panel-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs) var(--space-s);
+    margin: 0;
+    font-size: var(--step--2);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  .panel-key span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+
+  .key-cost::before {
+    content: "";
+    inline-size: 1rem;
+    border-block-start: 1px dashed var(--neutral-9);
+  }
+
+  .key-buy::before {
+    content: "";
+    inline-size: 0.5rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background-color: var(--accent-fill);
+  }
+
+  /* On the panel's tint the pill is the page itself. */
+  .panel-ranges button[aria-pressed="true"] {
+    background-color: var(--background);
+  }
+
+  .panel-readout .value {
+    font-size: var(--step-0);
+  }
+
+  .panel-readout .value[data-dir="down"] {
+    color: var(--muted-foreground);
+  }
+
+  .panel-band {
+    display: grid;
+    gap: var(--space-3xs);
+    font-size: var(--step--2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  :is(.band-head, .band-ends) {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  .band-head {
+    color: var(--muted-foreground);
+  }
+
+  .band-ends {
+    color: var(--muted-foreground);
+  }
+
+  .band-legend {
+    display: inline-flex;
+    gap: var(--space-xs);
+  }
+
+  .band-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+
+  .band-key::before {
+    content: "";
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--foreground);
+  }
+
+  .band-key-cost::before {
+    inline-size: 0;
+    block-size: 0.625rem;
+    border-radius: 0;
+    border-inline-start: 1px dashed var(--neutral-9);
+    background: none;
+  }
+
+  .band-track {
+    position: relative;
+    block-size: 0.375rem;
+    margin-block: 0.25rem;
+    border-radius: var(--radius-full);
+    background-color: var(--heat-0);
+  }
+
+  .band-fill {
+    position: absolute;
+    inset-block: 0;
+    border-radius: var(--radius-full);
+    background-color: var(--heat-2);
+  }
+
+  .band-fill[data-dir="down"] {
+    background-color: var(--down-2);
+  }
+
+  .band-cost {
+    position: absolute;
+    inset-block: -0.25rem;
+    border-inline-start: 1px dashed var(--neutral-9);
+  }
+
+  .band-pin {
+    position: absolute;
+    inset-block-start: 50%;
+    inline-size: 0.75rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background-color: var(--foreground);
+    outline: 2px solid var(--background);
+    translate: -50% -50%;
+  }
+
+  /* Narrow columns: the sparkline gives way first, then the cost folds
+     under the price. */
+  @container (width < 38rem) {
+    .holding-row {
+      grid-template-columns: 1.75rem minmax(0, 1fr) 4.75rem 4.75rem 3.25rem 3.75rem;
+    }
+
+    .holding-spark {
+      display: none;
+    }
+  }
+
+  @container (width < 28rem) {
+    .holding-row {
+      grid-template-columns: 1.75rem minmax(0, 1fr) 4.5rem 3rem 3.5rem;
+      gap: var(--space-2xs);
+    }
+
+    .holding-cost {
+      display: none;
+    }
+
+    .holding-cost-under {
+      display: block;
+    }
+  }
+
+  @media (width < 32rem) {
+    .range-tabs button {
+      padding-inline: 0.45rem;
+    }
+  }
+}
+}

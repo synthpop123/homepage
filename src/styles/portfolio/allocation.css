@@ -1,0 +1,326 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
+/* The allocation treemap and its hover card
+   (portfolio-feed/allocation.ts). */
+
+@keyframes alloc-in {
+  from {
+    opacity: 0;
+  }
+}
+
+portfolio-feed {
+  /* Allocation: a treemap of the holdings, area by weight, graded by the
+     last session or the position's return like the strip (gains in the
+     heatmap's greens, losses in ink), cash hatched. It opens on the
+     invested block; the expand button widens it to the cash-like one. */
+  /* One row at every width, so zooming never moves the map. */
+  .alloc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2xs) var(--space-s);
+    margin-block: var(--space-l) var(--space-xs);
+  }
+
+  .alloc-head .alloc-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    min-inline-size: 0;
+    min-block-size: 1.75rem;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .alloc-tools {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-3xs);
+  }
+
+  .alloc-head .alloc-modes {
+    min-block-size: 0;
+  }
+
+  .alloc-modes .chip-skeleton {
+    inline-size: 3.5rem;
+  }
+
+  /* Expand / restore: a square of the segmented control's track. Its
+     four corners point out (widen to the whole account) and, pressed,
+     each turns half a turn about its own middle to point in. */
+  .alloc-zoom {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.875rem;
+    block-size: 1.875rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+    cursor: pointer;
+  }
+
+  .alloc-zoom:disabled {
+    cursor: default;
+  }
+
+  @media (hover: hover) {
+    .alloc-zoom:enabled:hover {
+      background-color: var(--muted-hover);
+      color: var(--foreground);
+    }
+  }
+
+  .alloc-zoom:enabled:active {
+    background-color: var(--muted-active);
+  }
+
+  .alloc-zoom svg {
+    inline-size: 1rem;
+    block-size: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .alloc-zoom path {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform var(--duration) var(--ease);
+  }
+
+  .alloc-zoom[aria-pressed="true"] path {
+    transform: rotate(180deg);
+  }
+
+  /* Zoomed, the heading says how much of the account the map is. */
+  .alloc-sep {
+    color: var(--border-strong);
+  }
+
+  .alloc-here {
+    animation: alloc-in var(--duration) var(--ease);
+  }
+
+  .alloc-here b {
+    font-family: var(--font-mono);
+    font-weight: var(--font-weight-medium);
+    font-feature-settings: normal;
+    color: var(--foreground);
+  }
+
+  /* The map's height comes from the column's width, never its content. */
+  .alloc-map {
+    position: relative;
+    block-size: clamp(15rem, 50cqi, 25rem);
+  }
+
+  .alloc-map:not(:has(svg)) {
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+  }
+
+  @container (width < 30rem) {
+    .alloc-map {
+      block-size: 90cqi;
+    }
+
+    /* The heading keeps one line beside the tools: the share alone. */
+    .alloc-word {
+      display: none;
+    }
+  }
+
+  .alloc-svg {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  .alloc-tile rect {
+    fill: var(--heat-0);
+  }
+
+  .alloc-tile[data-dir="up"][data-level="1"] rect {
+    fill: var(--heat-1);
+  }
+  .alloc-tile[data-dir="up"][data-level="2"] rect {
+    fill: var(--heat-2);
+  }
+  .alloc-tile[data-dir="up"][data-level="3"] rect {
+    fill: var(--heat-3);
+  }
+  .alloc-tile[data-dir="up"][data-level="4"] rect {
+    fill: var(--heat-4);
+  }
+  .alloc-tile[data-dir="down"][data-level="1"] rect {
+    fill: var(--down-1);
+  }
+  .alloc-tile[data-dir="down"][data-level="2"] rect {
+    fill: var(--down-2);
+  }
+  .alloc-tile[data-dir="down"][data-level="3"] rect {
+    fill: var(--down-3);
+  }
+  .alloc-tile[data-dir="down"][data-level="4"] rect {
+    fill: var(--down-4);
+  }
+
+  .alloc-tile[data-cash] rect {
+    stroke: var(--border-strong);
+    stroke-width: 0.75;
+  }
+
+  .hatch-ground {
+    fill: var(--background);
+  }
+
+  .hatch-line {
+    stroke: var(--neutral-a9);
+    stroke-width: 1;
+  }
+
+  .alloc-tile:is([data-on], [data-hover], [data-point]) rect {
+    stroke: var(--foreground);
+    stroke-width: 1.5;
+  }
+
+  /* Ink on the pale grades, the page's own ground on the strong ones. */
+  .alloc-tile text {
+    font-family: var(--font-mono);
+    font-feature-settings: normal;
+    fill: var(--foreground);
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  .alloc-tile:is([data-level="3"], [data-level="4"]) text {
+    fill: var(--background);
+  }
+
+  .alloc-tick {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .alloc-figure {
+    opacity: 0.85;
+  }
+
+  .alloc-svg [data-size="16"] {
+    font-size: var(--step-0);
+  }
+  .alloc-svg [data-size="14"] {
+    font-size: var(--step--1);
+  }
+  .alloc-svg [data-size="12"] {
+    font-size: var(--step--2);
+  }
+
+  .alloc-ring {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-width: 1.5;
+    stroke-dasharray: var(--chart-dash-level);
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  /* What the restore keeps: the invested block ringed, the rest stepped
+     back. */
+  .alloc-map[data-lens]:not([data-zoomed]) .alloc-ring {
+    visibility: visible;
+  }
+
+  .alloc-map[data-lens]:not([data-zoomed]) .alloc-tile[data-aside] {
+    opacity: 0.4;
+  }
+
+  /* A holding's tile opens its row; cash has none. */
+  .alloc-tile:not([data-cash]) {
+    cursor: pointer;
+  }
+
+  /* The card a hovered tile shows: its mark, name and figures. */
+  .alloc-card {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    gap: var(--space-2xs);
+    inline-size: max-content;
+    min-inline-size: 12rem;
+    max-inline-size: min(17rem, 100%);
+    padding: var(--space-xs) var(--space-s);
+    border: var(--hairline) solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    background-color: var(--background);
+    font-size: var(--step--1);
+    pointer-events: none;
+  }
+
+  .alloc-card-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  .alloc-card-names {
+    display: grid;
+    min-inline-size: 0;
+    line-height: 1.3;
+  }
+
+  .alloc-card-title {
+    font-weight: var(--font-weight-display);
+  }
+
+  :is(.alloc-card-name, .alloc-card-when) {
+    overflow: hidden;
+    font-size: var(--step--2);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+  }
+
+  .alloc-card-when {
+    align-self: start;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .alloc-card-rows {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    gap: 0 var(--space-s);
+    margin: 0;
+    padding-block-start: var(--space-2xs);
+    border-block-start: var(--hairline) solid var(--border);
+  }
+
+  .alloc-card-rows dt {
+    color: var(--muted-foreground);
+  }
+
+  .alloc-card-rows dd {
+    margin: 0;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .alloc-card-rows dd[data-dir="up"] {
+    color: var(--accent);
+  }
+
+  .alloc-card-rows dd[data-dir="down"] {
+    color: var(--muted-foreground);
+  }
+}
+}

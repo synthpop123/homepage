@@ -1,0 +1,204 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
+/* The return chart, the strip of day cells under it, the range tabs and
+   the readout (portfolio-feed/chart.ts, render.ts). */
+
+portfolio-feed {
+  /* The chart. Its slider role makes it a tab stop; the ring shows on
+     keyboard focus only. */
+  .portfolio-chart {
+    inline-size: 100%;
+    block-size: 13rem;
+    margin-block-start: var(--space-2xs);
+    overflow: visible;
+    cursor: crosshair;
+    touch-action: pan-y;
+  }
+
+  :is(.portfolio-chart, .panel-chart):focus-visible {
+    outline-offset: 0.25rem;
+  }
+
+  .chart-line {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-width: var(--chart-stroke);
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .chart-area {
+    fill: var(--neutral-a2);
+  }
+
+  .chart-ghost {
+    fill: none;
+    stroke: var(--chart-ghost);
+    stroke-width: var(--chart-stroke-thin);
+    stroke-dasharray: var(--chart-dash);
+  }
+
+  :is(.chart-ghost-label, .chart-scrub text) {
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    font-feature-settings: normal;
+    fill: var(--muted-foreground);
+  }
+
+  /* The ghost's label sits on lines; a halo of the page keeps it read. */
+  .chart-ghost-label {
+    paint-order: stroke;
+    stroke: var(--background);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  /* A holding's line against its cost: the dashed level, the gap washed
+     green above it and grey below, the first buy a dot. */
+  .chart-gain {
+    fill: var(--grass-a4);
+  }
+
+  .chart-loss {
+    fill: var(--neutral-a3);
+  }
+
+  .chart-cost {
+    stroke: var(--chart-ghost);
+    stroke-width: var(--chart-stroke-thin);
+    stroke-dasharray: var(--chart-dash-level);
+  }
+
+  .chart-mark {
+    fill: var(--accent-fill);
+    stroke: var(--background);
+    stroke-width: var(--chart-halo);
+  }
+
+  .chart-scrub {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .chart-scrub[data-on] {
+    opacity: 1;
+  }
+
+  .chart-scrub line {
+    stroke: var(--border-strong);
+    stroke-width: var(--hairline);
+  }
+
+  .chart-scrub circle {
+    fill: var(--accent-fill);
+    stroke: var(--background);
+    stroke-width: var(--chart-halo);
+  }
+
+  /* The strip: the line again, as a row of graded cells. */
+  .portfolio-strip {
+    margin-block-start: var(--space-2xs);
+  }
+
+  .strip-cells {
+    display: flex;
+    gap: 2px;
+    block-size: 0.625rem;
+  }
+
+  .strip-cell {
+    flex: 1;
+    border-radius: var(--radius-xs);
+    background-color: var(--heat-0);
+  }
+
+  .strip-cell[data-dir="up"][data-level="1"] {
+    background-color: var(--heat-1);
+  }
+  .strip-cell[data-dir="up"][data-level="2"] {
+    background-color: var(--heat-2);
+  }
+  .strip-cell[data-dir="up"][data-level="3"] {
+    background-color: var(--heat-3);
+  }
+  .strip-cell[data-dir="up"][data-level="4"] {
+    background-color: var(--heat-4);
+  }
+  .strip-cell[data-dir="down"][data-level="1"] {
+    background-color: var(--down-1);
+  }
+  .strip-cell[data-dir="down"][data-level="2"] {
+    background-color: var(--down-2);
+  }
+  .strip-cell[data-dir="down"][data-level="3"] {
+    background-color: var(--down-3);
+  }
+  .strip-cell[data-dir="down"][data-level="4"] {
+    background-color: var(--down-4);
+  }
+
+  .strip-cell[data-on] {
+    outline: 1.5px solid var(--foreground);
+    outline-offset: 1px;
+  }
+
+  /* Range tabs: mono labels, the picked one on a neutral 3 fill. */
+  .range-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    min-block-size: 1.75rem;
+  }
+
+  .range-tabs button,
+  .tab-skeleton {
+    block-size: 1.625rem;
+    padding-inline: 0.6rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    font-weight: var(--font-weight-medium);
+    font-feature-settings: normal;
+    letter-spacing: 0.04em;
+    color: var(--muted-foreground);
+  }
+
+  .tab-skeleton {
+    display: grid;
+    align-content: center;
+    inline-size: 2.5rem;
+  }
+
+  @media (hover: hover) {
+    .range-tabs button:hover {
+      color: var(--foreground);
+    }
+  }
+
+  .range-tabs button[aria-pressed="true"] {
+    color: var(--foreground);
+    background-color: var(--muted);
+  }
+
+  /* Readout: a sign is part of the figure, not a unit beside it. */
+  .portfolio-readout {
+    margin-block: var(--space-m);
+  }
+
+  .portfolio-readout .value .unit:first-child {
+    margin-inline: 0 0.04em;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  .portfolio-readout .value[data-dir="down"] {
+    color: var(--muted-foreground);
+  }
+
+  .sk-sub {
+    inline-size: 6em;
+  }
+}
+}

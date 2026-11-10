@@ -1,0 +1,192 @@
+@layer reset, tokens, prose, layout, primitives, feeds, feeds.sections, feeds.states;
+
+@layer feeds.sections {
+/* The toolbar (accounts, ranges) and the hero figure with its broker
+   deck. */
+
+portfolio-feed {
+  display: block;
+  /* The column's width is not the viewport's (the sidebar takes its
+     cut, and the TOC from 76rem): the table reads its own width. */
+  container-type: inline-size;
+
+  .portfolio-body {
+    display: grid;
+  }
+
+  /* One toolbar: whose portfolio on the left, over what range on the
+     right. Accounts (and the allocation map's Day / Return) are a
+     segmented control, each broker with its mark:
+     an 8px track with 2px of padding, so each segment's corner is 6px. */
+  .portfolio-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2xs) var(--space-s);
+    margin-block-end: var(--space-s);
+  }
+
+  .portfolio-accounts,
+  .alloc-modes {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    min-block-size: 1.875rem;
+    padding: 2px;
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+  }
+
+  :is(.portfolio-accounts, .alloc-modes) button,
+  .chip-skeleton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    block-size: 1.625rem;
+    padding-inline: 0.65rem;
+    border-radius: var(--radius-md);
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .chip-skeleton {
+    display: grid;
+    align-content: center;
+    inline-size: 4rem;
+  }
+
+  .chip-skeleton .sk-line {
+    inline-size: 100%;
+  }
+
+  .portfolio-accounts button img {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+    border-radius: var(--radius-xs);
+    /* Brand marks are drawn for a white ground: Gray 1 (light), in
+       either scheme. */
+    background-color: var(--logo-ground);
+  }
+
+  @media (hover: hover) {
+    :is(.portfolio-accounts, .alloc-modes) button:hover {
+      color: var(--foreground);
+    }
+  }
+
+  :is(.portfolio-accounts, .alloc-modes) button[aria-pressed="true"]
+     {
+    color: var(--foreground);
+    background-color: var(--background);
+    outline: var(--hairline) solid var(--neutral-a6);
+    outline-offset: calc(-1 * var(--hairline));
+  }
+
+  /* Hero: what the account did over the range, set large. */
+  .portfolio-hero p {
+    margin: 0;
+  }
+
+  .portfolio-kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    min-block-size: 1lh;
+    font-size: var(--step--1);
+    color: var(--muted-foreground);
+  }
+
+  .kicker-name:empty {
+    display: none;
+  }
+
+  /* The brokers' marks: small rounded tiles, overlapped like a fanned
+     deck, each cut out of the page by a ring of the background. Picking
+     an account folds the others away over 250ms. */
+  .broker-deck {
+    display: inline-flex;
+    padding-inline-start: 0.3rem;
+  }
+
+  .broker {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.5rem;
+    aspect-ratio: 1;
+    margin-inline-start: -0.3rem;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background-color: var(--logo-ground);
+    outline: 2px solid var(--background);
+    transition:
+      inline-size var(--duration) var(--ease),
+      margin var(--duration) var(--ease),
+      opacity var(--duration) var(--ease);
+  }
+
+  .broker:not(:has(img))::before {
+    content: attr(data-monogram);
+    font-size: var(--step--2);
+    font-weight: var(--font-weight-medium);
+    color: var(--logo-ink);
+  }
+
+  .broker img {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .broker[data-folded] {
+    inline-size: 0;
+    margin-inline-start: 0;
+    opacity: 0;
+    outline: none;
+  }
+
+  /* The brokers' tiles stand taller than the kicker's line, so the
+     figure keeps a clear step below them. */
+  .portfolio-hero .portfolio-figure {
+    margin-block-start: var(--space-xs);
+  }
+
+  .portfolio-figure {
+    min-block-size: 1lh;
+    font-size: var(--step-1);
+    font-weight: var(--font-weight-display);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-display);
+    line-height: 1.2;
+  }
+
+  .portfolio-note {
+    min-block-size: 1lh;
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+  }
+
+  .portfolio-hero .sk-line {
+    display: block;
+    block-size: 0.75em;
+  }
+
+  .sk-kicker {
+    inline-size: 9rem;
+  }
+
+  .sk-figure {
+    inline-size: 9rem;
+    margin-block-start: 0.2em;
+  }
+
+  .sk-note {
+    inline-size: 14rem;
+  }
+}
+}
