@@ -39,7 +39,7 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
 <uses-list>
   {USES.map(({ group, items }) => (
     <uses-group>
-      <h3 class="uses-label">{group}</h3>
+      <h3 class="feed-label">{group}</h3>
       <dl>
         {items.map(({ name, note, icon }) => {
           const Mark = MARKS[icon]
@@ -77,7 +77,7 @@ const MARKS: Record<UsesIcon, typeof LaptopIcon> = {
   /* The feeds' uppercase label, bare: the cards under it already say
      where the group starts and ends, so a rule or a count would only
      repeat them. */
-  .uses-label {
+  .feed-label {
     margin: 0;
   }
 

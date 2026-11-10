@@ -26,30 +26,20 @@
   }
 }
 
-.music-fallback,
-.movies-fallback,
-.portfolio-fallback,
-.switch-fallback,
-.flights-fallback {
+/* What a section shows when nothing could be loaded (and Memos when
+   there is nothing to show): one muted line, its link in ink. */
+.feed-fallback {
   margin-block-end: 0;
   color: var(--muted-foreground);
+
+  a {
+    color: var(--foreground);
+    text-decoration: underline;
+  }
 }
 
-.music-fallback a,
-.movies-fallback a,
-.memos-empty a,
-.memos-fallback a,
-.switch-fallback a {
-  color: var(--foreground);
-  text-decoration: underline;
-}
-
-.music-label,
-.portfolio-label,
-.switch-label,
-.flights-label,
-.tk-label,
-.uses-label {
+/* The small uppercase label over a block inside a section. */
+.feed-label {
   margin-block: var(--space-m) var(--space-2xs);
   font-size: var(--step--2);
   font-weight: var(--font-weight-medium);
@@ -59,8 +49,8 @@
   color: var(--muted-foreground);
 }
 
-.music-label:first-child,
-.switch-label:first-child {
+/* Music and Switch open on their label. */
+:is(music-feed, switch-feed) .feed-label:first-child {
   margin-block-start: 0;
 }
 
@@ -160,39 +150,21 @@
   block-size: 1em;
 }
 
-tokens-dashboard .sk-stat {
+:where(tokens-dashboard) .sk-stat {
   inline-size: 4.5em;
   block-size: 1.1em;
 }
 
-memos-feed .sk-line,
-tokens-dashboard .sk-line,
-music-feed [data-skeleton] .cover,
-music-feed .sk-line,
-movies-feed [data-skeleton] .poster,
-movies-feed .sk-line,
-switch-feed [data-skeleton] .cover,
-switch-feed .sk-line,
-portfolio-feed .sk-line,
-flights-feed .sk-line {
+/* A skeleton's bar, and the artwork it stands beside. */
+.sk-line,
+[data-skeleton] :is(.cover, .poster) {
   background-color: var(--neutral-4);
 }
 
-music-feed .sk-line,
-memos-feed .sk-line,
-tokens-dashboard .sk-line,
-movies-feed .sk-line,
-switch-feed .sk-line,
-portfolio-feed .sk-line,
-flights-feed .sk-line {
+.sk-line {
   display: block;
   block-size: 0.85em;
   border-radius: var(--radius-sm);
-}
-
-.memos-empty,
-.memos-fallback {
-  color: var(--muted-foreground);
 }
 
 /* Vinyl: a sleeve with the record half out of it, for the newest listen

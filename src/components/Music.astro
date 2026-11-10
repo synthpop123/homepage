@@ -22,7 +22,7 @@ const stats: { key: keyof SiteStats; label: string }[] = [
 
 <music-feed data-endpoint={endpoint} data-limit={limit} aria-busy="true">
   <div class="music-body">
-    <h3 class="music-label">All-time stats</h3>
+    <h3 class="feed-label">All-time stats</h3>
     <dl class="readout">
       {stats.map(({ key, label }) => (
         <div class="stat" data-key={key}>
@@ -31,9 +31,9 @@ const stats: { key: keyof SiteStats; label: string }[] = [
         </div>
       ))}
     </dl>
-    <h3 class="music-label">Activity</h3>
+    <h3 class="feed-label">Activity</h3>
     <Heatmap />
-    <h3 class="music-label">Last played</h3>
+    <h3 class="feed-label">Last played</h3>
     <ol class="music-list">
       {Array.from({ length: limit }).map((_, i) => (
         <li
@@ -53,7 +53,7 @@ const stats: { key: keyof SiteStats; label: string }[] = [
       ))}
     </ol>
   </div>
-  <p class="music-fallback" hidden>
+  <p class="feed-fallback" hidden>
     Couldn’t load right now — see what I’ve been listening to on
     <a href={instance} target="_blank" rel="noopener noreferrer">Koito</a>.
   </p>

@@ -20,7 +20,7 @@ tokens-dashboard {
     gap: var(--space-s);
   }
 
-  .tk-day-head .tk-label {
+  .tk-day-head .feed-label {
     margin-block: 0;
   }
 

@@ -217,7 +217,7 @@ const LEGEND_CHIPS = 4
       <Heatmap selectable />
       <div class="tk-day">
         <div class="tk-day-head">
-          <h3 class="tk-label tk-day-label">Today</h3>
+          <h3 class="feed-label tk-day-label">Today</h3>
           <button type="button" class="tk-day-back section-link" data-latest>
             Back to today
           </button>
@@ -290,7 +290,7 @@ const LEGEND_CHIPS = 4
           </div>
         ))}
       </dl>
-      <h3 class="tk-label">Token composition</h3>
+      <h3 class="feed-label">Token composition</h3>
       <div class="tk-mix">
         <div class="tk-mix-bar tk-mix-composition" data-skeleton></div>
         <ul class="tk-mix-legend">
@@ -349,7 +349,7 @@ const LEGEND_CHIPS = 4
           ))}
         </ul>
       </div>
-      <h3 class="tk-label">Weekly rhythm</h3>
+      <h3 class="feed-label">Weekly rhythm</h3>
       <div class="tk-chart-head">
         <p class="tk-rhythm-scope">Weekday tokens</p>
         <p class="tk-rhythm-peak"></p>
@@ -370,7 +370,7 @@ const LEGEND_CHIPS = 4
     </section>
     <section>
       <h2 id="breakdown">Breakdown</h2>
-      <h3 class="tk-label">Models</h3>
+      <h3 class="feed-label">Models</h3>
       <ol class="tk-rows" data-list="model">
         {skeletonRows(TOP_ROWS).map(() => (
           <li class="tk-row" data-skeleton aria-hidden="true">
@@ -383,7 +383,7 @@ const LEGEND_CHIPS = 4
       </ol>
       <div class="tk-split">
         <div>
-          <h3 class="tk-label">Clients</h3>
+          <h3 class="feed-label">Clients</h3>
           <ol class="tk-rows" data-list="client">
             {skeletonRows(SPLIT_ROWS).map(() => (
               <li class="tk-row" data-skeleton aria-hidden="true">
@@ -396,7 +396,7 @@ const LEGEND_CHIPS = 4
           </ol>
         </div>
         <div>
-          <h3 class="tk-label">Providers</h3>
+          <h3 class="feed-label">Providers</h3>
           <ol class="tk-rows" data-list="provider">
             {skeletonRows(SPLIT_ROWS).map(() => (
               <li class="tk-row" data-skeleton aria-hidden="true">

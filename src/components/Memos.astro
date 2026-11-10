@@ -24,11 +24,11 @@ const profileUrl = `${MASTODON.instance}/@${MASTODON.username}`
         </li>
       ))}
   </ol>
-  <p class="memos-empty" hidden>
+  <p class="memos-empty feed-fallback" hidden>
     No notes here yet — say hi on
     <a href={profileUrl} target="_blank" rel="noopener noreferrer">Mastodon</a>.
   </p>
-  <p class="memos-fallback" hidden>
+  <p class="feed-fallback" hidden>
     Couldn’t load memos right now — read them on
     <a href={profileUrl} target="_blank" rel="noopener noreferrer">Mastodon</a>.
   </p>

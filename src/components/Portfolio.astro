@@ -79,7 +79,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     </dl>
 
     <div class="alloc-head">
-      <h3 class="portfolio-label alloc-title">Allocation</h3>
+      <h3 class="feed-label alloc-title">Allocation</h3>
       <div class="alloc-tools">
         <div
           class="alloc-modes"
@@ -101,7 +101,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
     </div>
     <div class="alloc-map"></div>
 
-    <h3 class="portfolio-label">Holdings</h3>
+    <h3 class="feed-label">Holdings</h3>
     <div class="portfolio-head holding-row" aria-hidden="true">
       <span></span>
       <span>Holding</span>
@@ -130,9 +130,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
       ))}
     </ol>
   </div>
-  <p class="portfolio-fallback" hidden>
-    Couldn't load the portfolio right now.
-  </p>
+  <p class="feed-fallback" hidden>Couldn't load the portfolio right now.</p>
 </portfolio-feed>
 
 <script>
@@ -852,7 +850,7 @@ const stats = ["Return", "Last session", "vs S&P 500", "Max drawdown"]
 
   /* Holdings: a table of ticker and name, the range's line, price,
      average cost, weight and the position's return. */
-  .portfolio-label {
+  .feed-label {
     margin-block-start: var(--space-l);
   }
 

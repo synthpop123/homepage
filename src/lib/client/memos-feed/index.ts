@@ -8,14 +8,16 @@
  * answer both go through `render`, which rebuilds the list whole.
  */
 
-import { keepFresh } from "../feed"
+import { live } from "../feed"
 import { loadSite, type Site, toMemo } from "../memos"
 import { memoYear, renderMemo, renderYear } from "./render"
 
 export function mountMemos(root: HTMLElement) {
   const list = root.querySelector<HTMLOListElement>(".memos-list")
   const empty = root.querySelector<HTMLElement>(".memos-empty")
-  const fallback = root.querySelector<HTMLElement>(".memos-fallback")
+  const fallback = root.querySelector<HTMLElement>(
+    ".feed-fallback:not(.memos-empty)",
+  )
   const { endpoint } = root.dataset
   if (!endpoint || !list) return
 
@@ -51,9 +53,5 @@ export function mountMemos(root: HTMLElement) {
     shown = text
   }
 
-  loadSite(endpoint, render).catch(() => show(fallback))
-
-  // A failed reload keeps what is on screen; one after a failed first
-  // load is what brings the thread back.
-  keepFresh({ reload: () => loadSite(endpoint, render).catch(() => {}) })
+  live(() => loadSite(endpoint, render), { failed: () => show(fallback) })
 }

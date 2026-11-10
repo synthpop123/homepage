@@ -72,7 +72,7 @@ const tallies = [
     </div>
     <div class="flights-lists">
       <section class="flights-routes">
-        <h3 class="flights-label">Routes <span>flights</span></h3>
+        <h3 class="feed-label">Routes <span>flights</span></h3>
         <ol>
           {Array.from({ length: FLIGHTS.routes + 1 }).map(() => (
               <li class="route" aria-hidden="true">
@@ -88,7 +88,7 @@ const tallies = [
       <div class="flights-tallies">
         {tallies.map(({ key, label }) => (
             <section class="flights-tally" data-tally={key}>
-              <h3 class="flights-label">
+              <h3 class="feed-label">
                 {label} <span class="comp-count" />
               </h3>
               <div class="comp-bar" role="img">
@@ -108,9 +108,7 @@ const tallies = [
       </div>
     </div>
   </div>
-  <p class="flights-fallback" hidden>
-    The flight map is out of reach right now.
-  </p>
+  <p class="feed-fallback" hidden>The flight map is out of reach right now.</p>
 </flights-feed>
 
 <script>
@@ -377,7 +375,7 @@ const tallies = [
       gap: var(--space-s) var(--space-l);
     }
 
-    & .flights-label {
+    & .feed-label {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
@@ -457,7 +455,7 @@ const tallies = [
       padding-inline: var(--space-2xs);
     }
 
-    & .flights-tally + .flights-tally .flights-label {
+    & .flights-tally + .flights-tally .feed-label {
       margin-block-start: var(--space-m);
     }
 

@@ -171,7 +171,7 @@ tokens-dashboard {
     grid-template-columns: 1fr;
     gap: var(--space-s);
     /* The models list (and its expand button) sits right above; keep the
-       same rhythm a .tk-label would bring. */
+       same rhythm a .feed-label would bring. */
     margin-block-start: var(--space-m);
 
     @media (width >= 40rem) {
@@ -180,7 +180,7 @@ tokens-dashboard {
     }
   }
 
-  .tk-split .tk-label:first-child {
+  .tk-split .feed-label:first-child {
     margin-block-start: 0;
   }
 }
