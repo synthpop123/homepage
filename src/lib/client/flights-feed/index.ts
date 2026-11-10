@@ -14,7 +14,7 @@ import {
   type Site,
   statCards,
 } from "@/lib/client/flights"
-import { keepFresh, settle, whenChanged } from "@/lib/client/feed"
+import { live, settle, whenChanged } from "@/lib/client/feed"
 import { setReadout } from "@/lib/client/readout"
 import { markRoute, renderComposition, renderRoutes } from "./lists"
 import { createRouteMap } from "./map"
@@ -29,7 +29,7 @@ function mount(feed: HTMLElement) {
   const airlines = feed.querySelector<HTMLElement>('[data-tally="airlines"]')
   const aircraft = feed.querySelector<HTMLElement>('[data-tally="aircraft"]')
   const body = feed.querySelector<HTMLElement>(".flights-body")
-  const fallback = feed.querySelector<HTMLElement>(".flights-fallback")
+  const fallback = feed.querySelector<HTMLElement>(".feed-fallback")
   const region = feed.dataset.basemap
   const world = feed.dataset.world
   if (
@@ -175,13 +175,9 @@ function mount(feed: HTMLElement) {
     draw()
   })
 
-  loadSite(endpoint, render).catch(() => settle(feed, body, fallback, false))
-
-  // A failed reload keeps what is on screen; one after a failed first
-  // load is what brings the map back.
-  keepFresh({
+  live(() => loadSite(endpoint, render), {
+    failed: () => settle(feed, body, fallback, false),
     tick: retry,
-    reload: () => loadSite(endpoint, render).catch(() => {}),
   })
 }
 

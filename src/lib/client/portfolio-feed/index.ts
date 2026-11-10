@@ -13,7 +13,7 @@
 
 import {
   dayInstant,
-  keepFresh,
+  live,
   monthDay,
   settle,
   whenChanged,
@@ -44,7 +44,7 @@ import {
 export function mountPortfolio(feed: HTMLElement) {
   const endpoint = feed.dataset.endpoint
   const body = feed.querySelector<HTMLElement>(".portfolio-body")
-  const fallback = feed.querySelector<HTMLElement>(".portfolio-fallback")
+  const fallback = feed.querySelector<HTMLElement>(".feed-fallback")
   const accounts = feed.querySelector<HTMLElement>(".portfolio-accounts")
   const ranges = feed.querySelector<HTMLElement>(".portfolio-ranges")
   const kicker = feed.querySelector<HTMLElement>(".portfolio-kicker")
@@ -255,9 +255,7 @@ export function mountPortfolio(feed: HTMLElement) {
     if (site) draw()
   }).observe(svg)
 
-  loadSite(endpoint, render).catch(() => settle(feed, body, fallback, false))
-
-  keepFresh({
-    reload: () => loadSite(endpoint, render).catch(() => {}),
+  live(() => loadSite(endpoint, render), {
+    failed: () => settle(feed, body, fallback, false),
   })
 }

@@ -7,7 +7,7 @@
  * loads, and reload it when it may have gone stale.
  */
 
-import { keepFresh, settle, whenChanged } from "@/lib/client/feed"
+import { live, settle, whenChanged } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/music"
 import { buildHeatmap, buildRow, fillStats, refreshTimes } from "./render"
 
@@ -15,7 +15,7 @@ export function mountMusic(feed: HTMLElement) {
   const endpoint = feed.dataset.endpoint
   const body = feed.querySelector<HTMLElement>(".music-body")
   const list = feed.querySelector<HTMLOListElement>(".music-list")
-  const fallback = feed.querySelector<HTMLElement>(".music-fallback")
+  const fallback = feed.querySelector<HTMLElement>(".feed-fallback")
   if (!endpoint || !body || !list) return
 
   const limit = Number(feed.dataset.limit) || 10
@@ -34,13 +34,10 @@ export function mountMusic(feed: HTMLElement) {
     settle(feed, body, fallback, true)
   })
 
-  loadSite(endpoint, render).catch(() => settle(feed, body, fallback, false))
-
   // "just now" is only true for a minute; the list only until the next
-  // listen. A failed reload keeps what is on screen; one after a failed
-  // first load is what brings the section back.
-  keepFresh({
+  // listen.
+  live(() => loadSite(endpoint, render), {
+    failed: () => settle(feed, body, fallback, false),
     tick: () => refreshTimes(list),
-    reload: () => loadSite(endpoint, render).catch(() => {}),
   })
 }

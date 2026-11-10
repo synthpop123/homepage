@@ -7,13 +7,13 @@
  * reload it when it may have gone stale.
  */
 
-import { keepFresh, settle, whenChanged } from "@/lib/client/feed"
+import { live, settle, whenChanged } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/movies"
 import { buildCard } from "./render"
 
 export function mountMovies(feed: HTMLElement) {
   const grid = feed.querySelector<HTMLOListElement>(".movies-grid")
-  const fallback = feed.querySelector<HTMLElement>(".movies-fallback")
+  const fallback = feed.querySelector<HTMLElement>(".feed-fallback")
   const endpoint = feed.dataset.endpoint
   if (!grid || !endpoint) return
 
@@ -28,9 +28,7 @@ export function mountMovies(feed: HTMLElement) {
     settle(feed, grid, fallback, true)
   })
 
-  loadSite(endpoint, render).catch(() => settle(feed, grid, fallback, false))
-
-  // A failed reload keeps what is on screen; one after a failed first
-  // load is what brings the wall back.
-  keepFresh({ reload: () => loadSite(endpoint, render).catch(() => {}) })
+  live(() => loadSite(endpoint, render), {
+    failed: () => settle(feed, grid, fallback, false),
+  })
 }

@@ -356,3 +356,18 @@ export function keepFresh({
   setInterval(run, 60_000)
   document.addEventListener("visibilitychange", run)
 }
+
+/**
+ * A live section's whole life: load it now, then keep it fresh. `load`
+ * delivers to the section's renderer and rejects only when nothing could
+ * be painted; `failed` then shows the fallback (or steps the section
+ * aside). A failed reload keeps what is on screen, and one after a failed
+ * first load is what brings the section back. `tick` is `keepFresh`'s.
+ */
+export function live(
+  load: () => Promise<void>,
+  { failed, tick }: { failed: () => void; tick?: () => void },
+) {
+  load().catch(failed)
+  keepFresh({ tick, reload: () => load().catch(() => {}) })
+}

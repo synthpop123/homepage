@@ -8,7 +8,7 @@
  * A payload identical to the one on screen is not rendered again.
  */
 
-import { calendarDay, keepFresh, settle, whenChanged } from "@/lib/client/feed"
+import { calendarDay, live, settle, whenChanged } from "@/lib/client/feed"
 import { loadSite, type Site } from "@/lib/client/switch"
 import { buildHeatmap, buildRow, fillStats } from "./render"
 
@@ -16,7 +16,7 @@ export function mountSwitch(feed: HTMLElement) {
   const endpoint = feed.dataset.endpoint
   const body = feed.querySelector<HTMLElement>(".switch-body")
   const list = feed.querySelector<HTMLOListElement>(".switch-list")
-  const fallback = feed.querySelector<HTMLElement>(".switch-fallback")
+  const fallback = feed.querySelector<HTMLElement>(".feed-fallback")
   if (!endpoint || !body || !list) return
 
   const limit = Number(feed.dataset.limit) || 8
@@ -48,14 +48,10 @@ export function mountSwitch(feed: HTMLElement) {
   )
   const draw = (site: Site) => render({ site, today: calendarDay() })
 
-  loadSite(endpoint, draw).catch(() => settle(feed, body, fallback, false))
-
-  // A failed reload keeps what is on screen; one after a failed first
-  // load is what brings the section back.
-  keepFresh({
+  live(() => loadSite(endpoint, draw), {
+    failed: () => settle(feed, body, fallback, false),
     tick: () => {
       if (last) draw(last)
     },
-    reload: () => loadSite(endpoint, draw).catch(() => {}),
   })
 }
