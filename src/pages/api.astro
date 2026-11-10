@@ -1,0 +1,449 @@
+---
+/**
+ * The service page of cf-workers-api (api.lkwplus.com, whose `/`
+ * redirects here): what it serves, how, and whether each view is as fresh
+ * as its schedule promises, read live from its /health. It lives with the
+ * site so it is drawn in the site's own design system, not a copy of it.
+ * When the Worker's routes or semantics change, this page changes with
+ * its README.
+ */
+import MetaPage from "@/components/MetaPage.astro"
+import PageTitle from "@/components/PageTitle.astro"
+import SectionHead from "@/components/SectionHead.astro"
+import TableOfContents from "@/components/TableOfContents.astro"
+import { API } from "@/consts"
+import Layout from "@/layouts/Layout.astro"
+
+const host = new URL(API).host
+
+const services = [
+  [
+    "tokens",
+    "tokens CLI on each machine, quota collectors",
+    "D1, R2 archive",
+    "On every submission",
+  ],
+  [
+    "switch",
+    "Nintendo Parental Controls, eShop",
+    "D1, R2 covers",
+    "Daily at 09:00",
+  ],
+  ["flights", "AirTrail", "Snapshot only", "Hourly"],
+  ["music", "Koito", "Snapshot only", "Every 5 min"],
+  ["movies", "Letterboxd RSS", "R2 posters", "Every 3 hours"],
+  ["memos", "Mastodon", "R2 photos", "Every 5 min"],
+  [
+    "portfolio",
+    "Wealthfolio, Ghostfolio, logo.dev",
+    "R2 logos",
+    "Hourly at :05",
+  ],
+  [
+    "now",
+    "The music, movies, tokens and portfolio snapshots",
+    "Snapshot only",
+    "Right after music",
+  ],
+] as const
+
+const reads = [
+  [
+    "/misc",
+    "The five snapshots /misc draws in one response: flights, movies, music, portfolio and switch. A section with nothing stored is null.",
+  ],
+  [
+    "/tokens/site",
+    "Token usage for every range, the daily series by provider, client and model, devices and subscription quota.",
+  ],
+  [
+    "/switch/site",
+    "Switch play time: all-time stats, a year of daily minutes and the catalog ranked by play time.",
+  ],
+  [
+    "/flights/site",
+    "The flight map: airports, routes, airline and aircraft tallies and totals. No flight number, time or seat.",
+  ],
+  [
+    "/music/site",
+    "Listening history: all-time stats, a year of daily plays and the latest listens.",
+  ],
+  [
+    "/movies/site",
+    "The latest Letterboxd diary entries with mirrored posters.",
+  ],
+  [
+    "/memos/site",
+    "The latest public Mastodon statuses, photos mirrored as WebP.",
+  ],
+  [
+    "/portfolio/site",
+    "The portfolio as returns only: per account its value and the money put in as ratios, holdings by weight, and daily closes of each holding and of the S&P 500. No amount, quantity or trade.",
+  ],
+  [
+    "/now/site",
+    "The home page’s Now tiles: the latest listen and film, the week’s tokens and the portfolio’s three months.",
+  ],
+  [
+    "/health",
+    "Liveness, and each view’s stored day and last change: 503 when a scheduled view is overdue.",
+  ],
+] as const
+
+const writes = [
+  [
+    "POST",
+    "/tokens/api/submit",
+    "A tokens CLI submission, on the official server’s contract. Recomposes the tokens snapshot and exports the usage tables to R2 once a day.",
+  ],
+  [
+    "GET",
+    "/tokens/api/auth/token",
+    "The token check behind tokens login --token.",
+  ],
+  [
+    "DELETE",
+    "/tokens/api/settings/submitted-data",
+    "Deletes all submitted data: D1 rows, R2 objects, quota plans and the snapshot.",
+  ],
+  [
+    "POST",
+    "/tokens/quota/<plan>",
+    "A quota report for codex, claude or opencode. Each plan is its own D1 row with its own capturedAt.",
+  ],
+  ["POST", "/switch/sync", "Runs the daily Switch sync now."],
+] as const
+
+const lanes = [
+  {
+    name: "Write",
+    flow: ["tokens CLI, collectors", "POST /tokens/…", "D1", "KV snapshot"],
+    note: "The snapshot is recomposed as the last step of each write.",
+  },
+  {
+    name: "Poll",
+    flow: ["cron", "upstream APIs", "KV snapshot + R2 artwork"],
+    note: "A five-minute heartbeat runs each poller on its own cadence; the Switch sync has a daily trigger of its own. A snapshot whose bytes did not change is not written again. Artwork is copied to R2 once, keyed by content.",
+  },
+  {
+    name: "Read",
+    flow: ["GET /<service>/site", "KV", "200 or 304", "lkwplus.com"],
+    note: "A request reads one KV entry. A copy of an earlier day (Asia/Shanghai) is served at once and recomposed behind the response; only a missing copy, or one of another schema version, is composed on the request.",
+  },
+]
+
+const sections = [
+  { id: "status", label: "Status" },
+  { id: "services", label: "Services" },
+  { id: "read-api", label: "Read API" },
+  { id: "write-api", label: "Write API" },
+  { id: "architecture", label: "Architecture" },
+  { id: "operations", label: "Operations" },
+]
+const toc = [
+  {
+    label: "API",
+    headings: sections.map(({ id, label }) => ({
+      depth: 2,
+      slug: id,
+      text: label,
+    })),
+  },
+]
+const head = Object.fromEntries(
+  sections.map((section) => [section.id, section]),
+)
+---
+
+<Layout>
+  <MetaPage
+    slot="head"
+    title="API"
+    description="The Cloudflare Worker behind the live sections of lkwplus.com: its views, their freshness, and how it is built."
+  />
+  <link rel="preconnect" href={API} crossorigin slot="head">
+  <TableOfContents slot="toc" title="API" sections={toc} />
+  <PageTitle>
+    API
+    <a
+      slot="aside"
+      href="https://github.com/synthpop123/cf-workers-api"
+      target="_blank"
+      rel="noopener noreferrer"
+      >cf-workers-api ↗</a
+    >
+  </PageTitle>
+  <prose-content>
+    <p>
+      <code>{host}</code>
+      is the Cloudflare Worker behind every live section of this site. Each view
+      is a precomposed snapshot, so a page load never waits on an upstream.
+    </p>
+  </prose-content>
+
+  <section>
+    <SectionHead {...head.status} />
+    <prose-content>
+      <api-status data-endpoint={`${API}/health`} aria-busy="true">
+        <table-scroll
+          ><table>
+            <thead>
+              <tr>
+                <th scope="col">View</th>
+                <th scope="col">Composed for</th>
+                <th scope="col">Last changed</th>
+                <th scope="col">State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {services.map(([name]) => (
+              <tr data-view={name}>
+                <td><code>/{name}</code></td>
+                <td data-cell="day">–</td>
+                <td data-cell="changed">–</td>
+                <td data-cell="state">–</td>
+              </tr>
+            ))}
+            </tbody>
+          </table></table-scroll
+        >
+      </api-status>
+    </prose-content>
+  </section>
+
+  <section>
+    <SectionHead {...head.services} />
+    <prose-content>
+      <table-scroll
+        ><table>
+          <thead>
+            <tr>
+              <th scope="col">Service</th>
+              <th scope="col">Source</th>
+              <th scope="col">Storage</th>
+              <th scope="col">Refreshed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {services.map(([name, source, storage, cadence]) => (
+            <tr>
+              <td><code>/{name}</code></td>
+              <td>{source}</td>
+              <td>{storage}</td>
+              <td>{cadence}</td>
+            </tr>
+          ))}
+          </tbody>
+        </table></table-scroll
+      >
+    </prose-content>
+  </section>
+
+  <section>
+    <SectionHead {...head["read-api"]} />
+    <prose-content>
+      <p>
+        Public, with open CORS. Every response carries
+        <code>Cache-Control: no-cache</code>
+        and an ETag, so an unchanged view revalidates as an empty
+        <code>304</code>.
+      </p>
+      <dl class="endpoints">
+        {reads.map(([path, text]) => (
+          <div>
+            <dt>
+              <span>GET</span>
+              <a href={`${API}${path}`} target="_blank" rel="noopener noreferrer">{path}</a>
+            </dt>
+            <dd>{text}</dd>
+          </div>
+        ))}
+      </dl>
+    </prose-content>
+  </section>
+
+  <section>
+    <SectionHead {...head["write-api"]} />
+    <prose-content>
+      <p>
+        Every write takes a bearer token: <code>TOKENS_API_TOKEN</code> under
+        <code>/tokens</code>, <code>SWITCH_API_TOKEN</code> for the sync. The
+        <code>tokens</code>
+        CLI runs with
+        <code>TOKENS_API_URL={API}/tokens</code>.
+      </p>
+      <dl class="endpoints">
+        {writes.map(([method, path, text]) => (
+          <div>
+            <dt><span>{method}</span>{path}</dt>
+            <dd>{text}</dd>
+          </div>
+        ))}
+      </dl>
+    </prose-content>
+  </section>
+
+  <section>
+    <SectionHead {...head.architecture} />
+    <prose-content>
+      <p>Writes and upstream reads happen off the request path.</p>
+      <dl class="lanes">
+        {lanes.map(({ name, flow, note }) => (
+          <div>
+            <dt>{name}</dt>
+            <dd>
+              <p class="flow">
+                {flow.map((node, i) => (
+                  <>
+                    {i > 0 && <span aria-hidden="true">→</span>}
+                    <code>{node}</code>
+                  </>
+                ))}
+              </p>
+              <p>{note}</p>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p>
+        Every body carries <code>schemaVersion</code>, which this site checks
+        before rendering. A shape change bumps it on both sides, and the Worker
+        ships first.
+      </p>
+    </prose-content>
+  </section>
+
+  <section>
+    <SectionHead {...head.operations} />
+    <prose-content>
+      <ul>
+        <li>
+          Every push to <code>main</code> deploys through Workers Builds, gated
+          by the type check and the test suite. There is no manual deploy.
+        </li>
+        <li>
+          Secrets are set on the Worker and never committed. Quota collectors
+          report finished percentages, so no vendor credential is stored here.
+        </li>
+        <li>
+          D1 Time Travel keeps 30 days of each database. The tokens service also
+          exports its tables to R2 daily.
+        </li>
+      </ul>
+    </prose-content>
+  </section>
+</Layout>
+
+<style>
+  section {
+    margin-block-start: var(--space-l);
+  }
+
+  api-status {
+    display: block;
+
+    [data-cell] {
+      font-variant-numeric: tabular-nums;
+      color: var(--muted-foreground);
+    }
+
+    [data-cell="state"][data-overdue] {
+      font-weight: var(--font-weight-medium);
+      color: var(--foreground);
+    }
+  }
+
+  /* An endpoint: its method and path in mono on one line, what it answers
+     under it, each on a hairline. */
+  .endpoints,
+  .lanes {
+    margin-block: 0 1em;
+
+    > div {
+      padding-block: var(--space-xs);
+      border-block-start: var(--hairline) solid var(--border);
+    }
+
+    dt {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      font-family: var(--font-mono);
+      font-feature-settings: normal;
+      font-size: var(--step--1);
+
+      span {
+        color: var(--muted-foreground);
+      }
+    }
+
+    dd {
+      margin: 0;
+      font-size: var(--step--1);
+      color: var(--muted-foreground);
+    }
+  }
+
+  .lanes {
+    dt {
+      font-family: inherit;
+      font-feature-settings: inherit;
+      font-weight: var(--font-weight-medium);
+    }
+
+    p {
+      margin: 0;
+      color: inherit;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-3xs) var(--space-2xs);
+      margin-block: var(--space-3xs);
+    }
+  }
+</style>
+
+<script>
+  import { isRecord, relativeTime } from "@/lib/client/feed"
+
+  /**
+   * The status table, from the Worker's own /health: each view's stored
+   * day and when its bytes last changed. A 503 still carries the body
+   * (that is what says which view is overdue), so the status is read
+   * past the response's code.
+   */
+  const root = document.querySelector<HTMLElement>("api-status")
+  const endpoint = root?.dataset.endpoint
+  if (root && endpoint) {
+    const cell = (view: string, name: string) =>
+      root.querySelector<HTMLElement>(
+        `[data-view="${view}"] [data-cell="${name}"]`,
+      )
+    const draw = (views: Record<string, unknown>) => {
+      for (const [name, view] of Object.entries(views)) {
+        if (!isRecord(view)) continue
+        const day = cell(name, "day")
+        const changed = cell(name, "changed")
+        const state = cell(name, "state")
+        if (!day || !changed || !state) continue
+        day.textContent = typeof view.day === "string" ? view.day : "–"
+        changed.textContent =
+          typeof view.changedAt === "string"
+            ? relativeTime(view.changedAt)
+            : "–"
+        state.textContent = view.overdue === true ? "Overdue" : "Fresh"
+        state.toggleAttribute("data-overdue", view.overdue === true)
+      }
+    }
+    fetch(endpoint, { signal: AbortSignal.timeout(10_000) })
+      .then((response) => response.json())
+      .then((body: unknown) => {
+        if (isRecord(body) && isRecord(body.views)) draw(body.views)
+      })
+      .catch(() => {})
+      .finally(() => root.setAttribute("aria-busy", "false"))
+  }
+</script>

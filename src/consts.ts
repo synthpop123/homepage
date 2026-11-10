@@ -25,7 +25,7 @@ export const NAVIGATION: { href: string; label: string; also?: string[] }[] = [
   { href: "/memos", label: "Memos" },
   { href: "/tokens", label: "Tokens" },
   { href: "/misc", label: "Misc" },
-  { href: "/about", label: "About" },
+  { href: "/about", label: "About", also: ["/api"] },
 ]
 
 /** What the writing here may be used under: About and every post's end. */
