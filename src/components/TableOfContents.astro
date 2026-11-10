@@ -1,4 +1,5 @@
 ---
+import ArrowUp from "@/assets/icons/arrow-up.svg"
 import ChevronIcon from "@/assets/icons/callouts/alt-arrow-down.svg"
 import type { MarkdownHeading } from "astro"
 
@@ -21,15 +22,20 @@ const { title, sections } = Astro.props
     </svg>
     <span>0%</span>
   </toc-progress>
-  <label data-bar>
-    <input type="checkbox" aria-label="Toggle table of contents">
-    <svg viewBox="0 0 16 16" aria-hidden="true">
-      <circle cx="8" cy="8" r="6.5" />
-      <circle cx="8" cy="8" r="6.5" transform="rotate(-90 8 8)" />
-    </svg>
-    <toc-current>{title}</toc-current>
-    <ChevronIcon aria-hidden="true" />
-  </label>
+  <toc-bar data-bar>
+    <button type="button" data-toc-top aria-label="Scroll to top">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="6.5" />
+        <circle cx="8" cy="8" r="6.5" transform="rotate(-90 8 8)" />
+      </svg>
+      <ArrowUp aria-hidden="true" />
+    </button>
+    <label>
+      <input type="checkbox" aria-label="Toggle table of contents">
+      <toc-current>{title}</toc-current>
+      <ChevronIcon aria-hidden="true" />
+    </label>
+  </toc-bar>
   <ul data-bar>
     {sections.map(({ id, label, open, headings }) =>
         id ? (
@@ -155,59 +161,95 @@ const { title, sections } = Astro.props
     }
   }
 
-  label {
+  /* The bar the TOC is below 76rem: the progress ring, then the current
+     section, which opens the list. The ring is the way back to the top:
+     once the page has scrolled an arrow shows inside it. */
+  toc-bar {
     display: none;
 
     @media (width < 76rem) {
       display: flex;
       align-items: center;
       gap: var(--space-2xs);
-      cursor: pointer;
+    }
+  }
 
-      input {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-      }
+  button {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    /* A 24px target around a ring the size of the text's line. */
+    margin: -0.125rem;
+    padding: 0.125rem;
+    border-radius: var(--radius-full);
+    cursor: pointer;
 
-      > svg:first-of-type {
-        flex-shrink: 0;
-        inline-size: 1em;
-        block-size: 1em;
+    > * {
+      grid-area: 1 / 1;
+    }
 
-        circle {
-          fill: none;
-          stroke: var(--border);
-          stroke-width: 2;
+    > svg:first-child {
+      inline-size: 1.25rem;
+      block-size: 1.25rem;
 
-          &:last-child {
-            --circumference: calc(2 * pi * 6.5px);
+      circle {
+        fill: none;
+        stroke: var(--border);
+        stroke-width: 1.75;
 
-            stroke: var(--accent-fill);
-            stroke-dasharray: var(--circumference);
-            stroke-dashoffset: calc(
-              var(--circumference) *
-              (1 - var(--progress, 0))
-            );
-          }
+        &:last-child {
+          --circumference: calc(2 * pi * 6.5px);
+
+          stroke: var(--accent-fill);
+          stroke-dasharray: var(--circumference);
+          stroke-dashoffset: calc(
+            var(--circumference) *
+            (1 - var(--progress, 0))
+          );
         }
       }
+    }
 
-      toc-current {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: var(--muted-foreground);
-      }
+    > svg:last-child {
+      inline-size: 0.625rem;
+      block-size: 0.625rem;
+      color: var(--foreground);
+      visibility: hidden;
+    }
 
-      > svg:last-of-type {
-        flex-shrink: 0;
-        inline-size: 1em;
-        block-size: 1em;
-        color: var(--muted-foreground);
-      }
+    &[data-past] > svg:last-child {
+      visibility: visible;
+    }
+  }
+
+  label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-width: 0;
+    cursor: pointer;
+
+    input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    toc-current {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted-foreground);
+    }
+
+    > svg {
+      flex-shrink: 0;
+      inline-size: 1em;
+      block-size: 1em;
+      color: var(--muted-foreground);
     }
   }
 
@@ -218,7 +260,7 @@ const { title, sections } = Astro.props
     }
   }
 
-  nav:has(input:checked) label > svg:last-of-type {
+  nav:has(input:checked) label > svg {
     @media (width < 76rem) {
       rotate: 180deg;
     }
@@ -353,9 +395,17 @@ const { title, sections } = Astro.props
       if (!driven) nav.style.setProperty("--progress", String(read))
       if (percent) percent.textContent = `${Math.round(read * 100)}%`
     }
+    // The bar's ring goes back to the top, and says so with an arrow
+    // once there is a way to go.
+    const top = nav.querySelector<HTMLElement>("[data-toc-top]")
+    top?.addEventListener("click", () => window.scrollTo({ top: 0 }))
+    const past = () =>
+      top?.toggleAttribute("data-past", scrollY > innerHeight * 0.5)
     addEventListener("scroll", progress, { passive: true })
+    addEventListener("scroll", past, { passive: true })
     addEventListener("resize", progress, { passive: true })
     progress()
+    past()
 
     const seen = new Map<string, number>()
     const links = new Map<Element, HTMLAnchorElement>()

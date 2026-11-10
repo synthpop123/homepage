@@ -3,7 +3,6 @@ import MetaPage from "@/components/MetaPage.astro"
 import Now from "@/components/Now.astro"
 import PostList from "@/components/PostList.astro"
 import PostStrip from "@/components/PostStrip.astro"
-import TableOfContents from "@/components/TableOfContents.astro"
 import Layout from "@/layouts/Layout.astro"
 import { API, NOW } from "@/consts"
 import { getSeries, timeline } from "@/lib/content"
@@ -20,24 +19,12 @@ const cells = timeline(
   posts.map((post) => post.id),
   { related: false },
 )
-
-const toc = [
-  {
-    label: "Home",
-    headings: [
-      { depth: 2, slug: "profile", text: "Profile" },
-      { depth: 2, slug: "writing", text: "Writing" },
-      { depth: 2, slug: "now", text: "Now" },
-    ],
-  },
-]
 ---
 
 <Layout strip={false}>
   <MetaPage slot="head" />
   <link rel="preconnect" href={API} crossorigin slot="head">
   <link rel="preload" as="fetch" href={NOW.endpoint} crossorigin slot="head">
-  <TableOfContents slot="toc" title="Home" sections={toc} />
   <section aria-labelledby="profile">
     <dictionary-entry>
       <h1 id="profile">lkw123</h1>

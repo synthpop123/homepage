@@ -19,6 +19,7 @@ import { isSubpost, subpostSlug } from "@/lib/utils"
 import { Image } from "astro:assets"
 import { getEntries, render, type CollectionEntry } from "astro:content"
 // MathML styles: only posts render maths.
+import "@/styles/site-icons.css"
 import "@/styles/typography-math.css"
 // Expressive Code's shared styles, one cached file for every post.
 import "virtual:expressive-code.css"
@@ -86,7 +87,7 @@ const chromeLang = lang === SITE.locale ? undefined : SITE.locale
       />
     )}
   <PostActions slot="actions" prev={prev} next={next} />
-  <ScrollToTop floating />
+  {!hasToc && <ScrollToTop floating />}
   {rendered.map(({ entry, Content, authors }, i) => (
       <article
         id={i === 0 ? undefined : subpostSlug(entry.id)}
