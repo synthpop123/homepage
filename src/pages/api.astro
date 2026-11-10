@@ -342,6 +342,12 @@ const head = Object.fromEntries(
   api-status {
     display: block;
 
+    /* Four short columns: they fit a phone without the prose table's
+       minimum column width. */
+    :is(th, td) {
+      min-width: 0;
+    }
+
     [data-cell] {
       font-variant-numeric: tabular-nums;
       color: var(--muted-foreground);

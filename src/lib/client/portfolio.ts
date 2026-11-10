@@ -763,7 +763,7 @@ export function view(site: Site, accountId: string, wanted: Range): View {
     change: total,
     benchmark: bench,
     line: returns.map((value) => 1 + value),
-    ghost: same?.map((value) => 1 + value),
+    ghost: same ? same.map((value) => 1 + value) : null,
     growth: daily,
     cards,
     rows,
