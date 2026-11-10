@@ -61,7 +61,7 @@ const { endpoint = NOW.endpoint } = Astro.props
       <a class="now-link" href="/tokens">
         <span class="now-mark" aria-hidden="true"><Claude /></span>
         <span class="now-side">
-          <span class="now-label">Tokens today</span>
+          <span class="now-label">Tokens · 7 days</span>
           <span class="now-bars" aria-hidden="true">
             {Array.from({ length: 14 }, () => <i />)}
           </span>
@@ -529,6 +529,11 @@ const { endpoint = NOW.endpoint } = Astro.props
         block-size: max(2px, calc(var(--bar, 0.08) * 100%));
         border-radius: var(--radius-xs) var(--radius-xs) 0 0;
         background-color: var(--neutral-6);
+      }
+
+      /* The seven days the figure sums stand out of the two weeks. */
+      i:nth-last-child(-n + 7) {
+        background-color: var(--neutral-8);
       }
 
       i:last-child {

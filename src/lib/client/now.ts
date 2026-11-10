@@ -29,7 +29,7 @@ import {
   type StripCell,
   stripCells,
 } from "./portfolio"
-import { formatCost, formatCount, formatTokens } from "./tokens/format"
+import { formatCost, formatTokens } from "./tokens/format"
 import { modelLabel } from "./tokens/labels"
 
 type TokensToday = {
@@ -39,6 +39,9 @@ type TokensToday = {
   /** Token totals of the last two weeks, oldest first, the payload's day
    *  last (`tokens`); a day with nothing reported is 0. */
   recent: number[]
+  /** Tokens and cost over the seven days ending on the payload's day:
+   *  the tile's figure, which a quiet morning does not empty. */
+  week: { tokens: number; cost: number }
   /** The model with the most tokens over the last seven days and its
    *  share of them, 0–1 (the worker sends it unrounded, so above 0, but a
    *  tiny one is still a valid answer, not a reason to drop the whole
@@ -68,7 +71,7 @@ export type Site = {
 }
 
 /** Lockstep with cf-workers-api's SITE_VERSION in src/services/now/index.ts. */
-export const SITE_SCHEMA_VERSION = 5
+export const SITE_SCHEMA_VERSION = 6
 
 const isTop = (value: unknown): value is TokensToday["top"] =>
   value === null ||
@@ -87,6 +90,9 @@ const isTokens = (value: unknown): value is TokensToday =>
   Array.isArray(value.recent) &&
   value.recent.length > 0 &&
   value.recent.every(isCount) &&
+  isRecord(value.week) &&
+  isCount(value.week.tokens) &&
+  isCount(value.week.cost) &&
   isTop(value.top)
 
 const isLevel = (value: unknown): value is number =>
@@ -150,26 +156,27 @@ export function watchedLabel(watched: string, today: string): string {
 }
 
 /**
- * The tokens tile's label. The figure is the payload's day, which is
- * today only while the payload is: a cached copy painted after a failed
- * refresh, or a page left open past midnight, names its day instead of
- * passing yesterday's total off as today's.
+ * The tokens tile's label. The figure is the seven days ending on the
+ * payload's day, which is today only while the payload is: a cached copy
+ * painted after a failed refresh, or a page left open past midnight,
+ * names the day its week ends on instead of passing it off as this one.
  */
 export function tokensLabel(day: string, today: string): string {
-  if (day >= today) return "Tokens today"
-  return daysBetween(day, today) === 1
-    ? "Tokens yesterday"
-    : `Tokens on ${monthDay.format(dayInstant(day))}`
+  return day >= today
+    ? "Tokens · 7 days"
+    : `Tokens · 7 days to ${monthDay.format(dayInstant(day))}`
 }
 
-/** ["$14.48", "155 messages"]: two runs, so a narrow tile can put the
- *  second on a line of its own instead of cutting it off. */
-export const tokensFoot = ({
-  cost,
-  messages,
-}: Pick<TokensToday, "tokens" | "cost" | "messages">) => [
-  formatCost(cost),
-  `${formatCount(messages)} ${messages === 1 ? "message" : "messages"}`,
+/** ["$61.40", "today 15.6M"]: the week's cost, then the payload's day on
+ *  its own — two runs, so a narrow tile can put the second on a line of
+ *  its own instead of cutting it off. */
+export const tokensFoot = (
+  { tokens, week }: Pick<TokensToday, "tokens" | "week">,
+  day: string,
+  today: string,
+) => [
+  formatCost(week.cost),
+  `${day >= today ? "today" : monthDay.format(dayInstant(day))} ${formatTokens(tokens)}`,
 ]
 
 /** "98% Claude Opus 5.5": the week's busiest model, its share first; a

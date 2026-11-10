@@ -143,8 +143,8 @@ export function renderTokens(tile: HTMLElement, site: Site, today: string) {
   delete tile.dataset.empty
   tile.querySelector("a")?.setAttribute("href", "/tokens")
   const figure = tile.querySelector<HTMLElement>(".now-figure")
-  if (figure) setReadout(figure, formatTokens(tokens.tokens))
-  runs(tile, tokensFoot(tokens))
+  if (figure) setReadout(figure, formatTokens(tokens.week.tokens))
+  runs(tile, tokensFoot(tokens, site.today, today))
   const model = tile.querySelector<HTMLElement>(".now-model")
   if (model) {
     model.replaceChildren(tokens.top ? topModelText(tokens.top) : "")

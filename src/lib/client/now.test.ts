@@ -67,23 +67,24 @@ describe("watchedLabel", () => {
 })
 
 describe("tokensLabel", () => {
-  it("claims today only for today's payload", () => {
-    expect(tokensLabel("2026-09-27", "2026-09-27")).toBe("Tokens today")
-    expect(tokensLabel("2026-09-26", "2026-09-27")).toBe("Tokens yesterday")
-    expect(tokensLabel("2026-09-20", "2026-09-27")).toBe("Tokens on Sep 20")
+  it("names the day its week ends on unless that is today", () => {
+    expect(tokensLabel("2026-09-27", "2026-09-27")).toBe("Tokens · 7 days")
+    expect(tokensLabel("2026-09-26", "2026-09-27")).toBe(
+      "Tokens · 7 days to Sep 26",
+    )
   })
 })
 
 describe("tile text", () => {
-  it("sums up today's tokens under the figure", () => {
-    expect(tokensFoot({ tokens: 1, cost: 14.482494, messages: 155 })).toEqual([
-      "$14.48",
-      "155 messages",
+  it("puts the week's cost and the day's own tokens under the figure", () => {
+    const tokens = { tokens: 15_600_000, week: { tokens: 1, cost: 61.4024 } }
+    expect(tokensFoot(tokens, "2026-09-27", "2026-09-27")).toEqual([
+      "$61.40",
+      "today 15.6M",
     ])
-    expect(tokensFoot({ tokens: 0, cost: 0, messages: 1 })).toEqual([
-      "$0.00",
-      "1 message",
-    ])
+    expect(
+      tokensFoot({ ...tokens, tokens: 0 }, "2026-09-26", "2026-09-27"),
+    ).toEqual(["$61.40", "Sep 26 0"])
   })
 
   it("puts the week's busiest model after its share", () => {
