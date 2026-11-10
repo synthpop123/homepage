@@ -84,7 +84,8 @@ jobs:
       - run: bun run check:links
 
   # The decoders against cf-workers-api as it is: its published schema
-  # versions, and the body each view serves in production.
+  # versions, and the body each view serves in production where the API
+  # answers the runner (Cloudflare turns GitHub's away, which only warns).
   contract:
     runs-on: ubuntu-latest
     timeout-minutes: 5
