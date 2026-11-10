@@ -37,6 +37,11 @@ export const formatCompact = (value: number) => compact.format(value)
 /** The home cat's caption serial: four random digits, per cat. */
 export const catSerial = () => String(1000 + Math.floor(Math.random() * 9000))
 
+/** JSON for an inline `<script>`: `<` escaped, so no string in it can
+ *  close the element (`</script>`) or open a comment. */
+export const jsonForScript = (value: unknown) =>
+  JSON.stringify(value).replaceAll("<", "\\u003c")
+
 export const isSubpost = (id: string) => id.includes("/")
 
 export const subpostSlug = (id: string) => id.split("/")[1]

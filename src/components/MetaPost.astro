@@ -2,6 +2,7 @@
 import { getEntries, type CollectionEntry } from "astro:content"
 import MetaOpenGraph from "@/components/MetaOpenGraph.astro"
 import { pageTitle, postLang } from "@/lib/content"
+import { jsonForScript } from "@/lib/utils"
 
 type Props = {
   post: CollectionEntry<"blog">
@@ -68,8 +69,4 @@ const jsonLd = {
   )}
 {authorNames.map((name) => <meta property="article:author" content={name} />)}
 
-<script
-  is:inline
-  type="application/ld+json"
-  set:html={JSON.stringify(jsonLd)}
-/>
+<script is:inline type="application/ld+json" set:html={jsonForScript(jsonLd)} />

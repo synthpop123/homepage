@@ -11,7 +11,7 @@
 
 import { getSeries, postWords, titleLang } from "@/lib/content"
 import { postLinks } from "@/lib/site-links"
-import { formatCompact, formatDate } from "@/lib/utils"
+import { formatCompact, formatDate, jsonForScript } from "@/lib/utils"
 
 /** The Markdown of every body on the page. */
 type Props = { bodies: string[] }
@@ -46,7 +46,7 @@ const previews = Object.fromEntries(
       <script
         is:inline
         type="application/json"
-        set:html={JSON.stringify(previews).replaceAll("<", "\\u003c")}
+        set:html={jsonForScript(previews)}
       />
     </link-preview>
   )}
