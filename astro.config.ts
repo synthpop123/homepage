@@ -8,11 +8,41 @@ import {
 } from "./src/lib/markdown"
 import { SITE_ORIGIN } from "./src/lib/site-links"
 
+/** The hosts a page talks to: the live sections' Worker, the tracker's
+ *  collector, and the home cat's refresh. */
+const CONNECT = [
+  "https://api.lkwplus.com",
+  "https://umami.lkwplus.com",
+  "https://cataas.com",
+]
+
 export default defineConfig({
   site: SITE_ORIGIN,
   trailingSlash: "never",
   compressHTML: true,
   prefetch: { prefetchAll: true },
+  // Each page carries a CSP <meta>: scripts run only from this origin or
+  // by the hash of an inline one Astro emitted, so markup that reaches
+  // the DOM some other way (/memos draws Mastodon's HTML through a
+  // sanitizer) cannot run script even if the sanitizer misses. Styles
+  // stay open to inline ones: `style` attributes carry the charts'
+  // custom properties, and Mermaid and Expressive Code write their own.
+  // What the pages fetch is listed; images may come from any https host
+  // (covers, posters, avatars and the cat). public/_headers adds what a
+  // <meta> cannot say (frame-ancestors).
+  security: {
+    csp: {
+      styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self'",
+        `connect-src 'self' ${CONNECT.join(" ")}`,
+        "object-src 'none'",
+        "base-uri 'self'",
+      ],
+    },
+  },
   vite: {
     plugins: [expressiveCodeAssets()],
     // Only Mermaid's lazy chunks pass 500 kB: its langium parsers (~630 kB)
