@@ -48,7 +48,8 @@ const { endpoint = NOW.endpoint } = Astro.props
     <li class="now-tile" data-tile="film">
       <a class="now-link" target="_blank" rel="noopener noreferrer">
         <span class="now-art"
-          ><img alt="" width="320" height="480" hidden></span
+          ><img class="now-ground" alt="" width="320" height="480" hidden>
+          <img alt="" width="320" height="480" hidden></span
         >
         <span class="now-body">
           <span class="now-label">Watched</span>
@@ -306,9 +307,11 @@ const { endpoint = NOW.endpoint } = Astro.props
     /* Film: the poster is the tile, 2:3, with the words laid over its foot
        on a scrim, so the words cost the poster no height. */
     [data-tile="film"] {
-      /* The poster sets the tile's height (2:3 of its width, held open by
-         a spacer, since aspect-ratio on a stretched item would widen it
-         instead) and fills whatever taller row the tile is stretched into. */
+      /* The poster sets the tile's least height (2:3 of its width, held
+         open by a spacer, since aspect-ratio on a stretched item would
+         widen it instead). Stretched taller by the row, the poster keeps
+         its 2:3 at the top, whole, and a blurred copy of it fills the
+         rest, where the words then mostly sit. */
       .now-link {
         padding: 0;
         background-color: var(--muted);
@@ -327,9 +330,19 @@ const { endpoint = NOW.endpoint } = Astro.props
         background-color: var(--muted);
 
         img {
+          position: absolute;
+          inset: 0;
           inline-size: 100%;
           block-size: 100%;
+          object-fit: contain;
+          object-position: top;
+        }
+
+        /* Scaled past the blur's soft edge, so no rim of the tile shows. */
+        .now-ground {
           object-fit: cover;
+          filter: blur(1.5rem);
+          scale: 1.25;
         }
 
         /* Keep the poster's original colours on a light page. Only the

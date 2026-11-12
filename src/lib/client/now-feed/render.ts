@@ -104,7 +104,8 @@ export function renderFilm(tile: HTMLElement, site: Site, today: string) {
   if (!film) return empty(tile, "Nothing yet", "Watched")
   delete tile.dataset.empty
   tile.querySelector("a")!.href = film.url
-  setImage(tile.querySelector("img"), film.poster)
+  // The poster and the blurred copy that fills the tile around it.
+  for (const img of tile.querySelectorAll("img")) setImage(img, film.poster)
   text(tile, ".now-label", film.rewatch ? "Rewatched" : "Watched")
   const title = el("span", undefined, film.title)
   if (film.year) title.append(" ", el("span", "now-year", String(film.year)))
