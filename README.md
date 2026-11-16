@@ -8,7 +8,7 @@ Source of my homepage and blog, [lkwplus.com](https://lkwplus.com). Built with [
 
 ## Development
 
-Needs [bun](https://bun.sh/) and Node ≥ 22.12.
+Needs [bun](https://bun.sh/) and Node ≥ 22.23.4 (`.node-version` names 24).
 
 ```bash
 bun install
