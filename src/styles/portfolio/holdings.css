@@ -301,7 +301,7 @@ portfolio-feed {
     inline-size: 0.7em;
     block-size: 0.7em;
     background-color: var(--neutral-9);
-    mask: url("../assets/icons/sites/external.svg") center / contain no-repeat;
+    mask: url("../../assets/icons/sites/external.svg") center / contain no-repeat;
   }
 
   @media (hover: hover) {

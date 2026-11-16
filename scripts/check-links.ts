@@ -12,6 +12,9 @@
  * shallower than the sources they are built from, so a `./assets/…`
  * that survives into one is a broken picture no HTML page would show.
  *
+ * Built stylesheets are read for their `url()`s, which must each name a
+ * file in dist/: Vite leaves one it cannot resolve as written.
+ *
  * A link to the old blog host (`blog.lkwplus.com`) fails too: those
  * URLs redirect or 404, and they read as external, so the internal
  * rewrite, the link preview and this check would all pass over them.
@@ -129,6 +132,27 @@ for (const page of pages) {
   }
 }
 
+/* Stylesheets: every `url()` a built stylesheet names must be a file the
+   build wrote. Vite inlines or hashes the ones it can resolve and leaves
+   the rest as written, with only a warning in the build log — a path
+   that is wrong from the stylesheet's own directory ships as a 404 (a
+   mask that never draws). */
+const CSS_URL = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]+))\s*\)/g
+const sheets = [...new Glob("**/*.css").scanSync({ cwd: dist })].sort()
+
+for (const sheet of sheets) {
+  const css = readFileSync(path.join(dist, sheet), "utf8")
+  for (const match of css.matchAll(CSS_URL)) {
+    const link = match[1] ?? match[2] ?? match[3]
+    if (!link || link.startsWith("#") || EXTERNAL.test(link)) continue
+    checked++
+    const url = new URL(link, `https://site.invalid/${sheet}`)
+    if (!resolveTarget(url.pathname)) {
+      broken.push({ page: sheet, link, reason: "no such asset" })
+    }
+  }
+}
+
 /* Markdown artifacts: `[text](target)`, images included. Targets are
    written absolute against the configured site, so anything on that
    origin is ours to resolve; anything relative is a leftover source
@@ -178,5 +202,5 @@ if (broken.length > 0) {
 }
 
 console.log(
-  `[check-links] ok — ${checked} internal links across ${pages.length} pages and ${artifacts.length} markdown artifacts`,
+  `[check-links] ok — ${checked} internal links across ${pages.length} pages, ${sheets.length} stylesheets and ${artifacts.length} markdown artifacts`,
 )
