@@ -14,6 +14,7 @@ import { headingAnchors } from "./heading-anchors"
 import { headingNamespace } from "./heading-namespace"
 import { temmlMath } from "./math"
 import { mermaidDiagram } from "./mermaid"
+import { remoteImages } from "./remote-images"
 import { stepsDirective } from "./steps"
 import { tableScroll } from "./table-scroll"
 import { unhandledDirectives } from "./unhandled-directives"
@@ -33,6 +34,7 @@ export const mdastPlugins = [
 
 export const hastPlugins = [
   externalLinks,
+  remoteImages,
   asides,
   blockExpressiveCode,
   tableScroll,

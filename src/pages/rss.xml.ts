@@ -54,10 +54,15 @@ export async function GET(context: APIContext) {
       }
     }),
   )
+  // The feed names its own address (`atom:link rel="self"`), which is
+  // what lets a reader that was handed a copy find the original.
+  const self = new URL("rss.xml", site).href
   return rss({
     title: SITE.title,
     description: SITE.description,
     site,
     items,
+    xmlns: { atom: "http://www.w3.org/2005/Atom" },
+    customData: `<atom:link href="${self}" rel="self" type="application/rss+xml"/>`,
   })
 }

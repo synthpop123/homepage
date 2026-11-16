@@ -88,7 +88,11 @@ const toc = [
 ---
 
 <Layout>
-  <MetaPage slot="head" title="Misc" />
+  <MetaPage
+    slot="head"
+    title="Misc"
+    description="Friends, a portfolio, films, music, Switch playtime and flights, live from my own services, and the hardware I use."
+  />
   <link rel="preconnect" href={API} crossorigin slot="head">
   <link rel="preload" as="fetch" href={MISC.endpoint} crossorigin slot="head">
   <TableOfContents slot="toc" title="Misc" sections={toc} />

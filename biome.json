@@ -42,7 +42,7 @@
     "enabled": true,
     "includes": ["**/*.ts"],
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "style": { "noNonNullAssertion": "off" }
     }
   },

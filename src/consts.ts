@@ -100,12 +100,6 @@ export const SWITCH = {
 } as const
 
 /**
- * Flights on /misc: how many routes the route list, and how many airlines
- * and aircraft types each composition bar, shows before folding the rest
- * behind "Show N more". The route skeleton reserves `routes` rows plus the
- * fold row.
- */
-/**
  * /misc Portfolio: the funds counted as cash in the allocation map — with
  * cash itself they form the block its lens zooms past (BOXX is a box-spread
  * fund, T-bill money in all but name).
@@ -114,6 +108,12 @@ export const PORTFOLIO = {
   cashLike: ["BOXX"],
 } as const
 
+/**
+ * Flights on /misc: how many routes the route list, and how many airlines
+ * and aircraft types each composition bar, shows before folding the rest
+ * behind "Show N more". The route skeleton reserves `routes` rows plus the
+ * fold row.
+ */
 export const FLIGHTS = {
   named: 4,
   routes: 10,

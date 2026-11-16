@@ -22,7 +22,11 @@ const years = Map.groupBy(entries, ({ post }) =>
 ---
 
 <Layout>
-  <MetaPage slot="head" title="Blog" />
+  <MetaPage
+    slot="head"
+    title="Blog"
+    description="Every post, newest first: self-hosting, GitOps, tooling and the odd paper note."
+  />
   <PageTitle>
     Blog
     <a slot="aside" href="/tags">Tags</a>
