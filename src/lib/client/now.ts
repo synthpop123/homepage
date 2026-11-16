@@ -28,7 +28,7 @@ import {
   moneyReturns,
   type StripCell,
   stripCells,
-} from "./portfolio"
+} from "./portfolio-returns"
 import { formatCost, formatTokens } from "./tokens/format"
 import { modelLabel } from "./tokens/labels"
 
