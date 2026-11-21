@@ -1,13 +1,15 @@
 /**
  * One poster in the Movies wall. The artwork carries the card, the title
- * and its year sit under it, and the line under that pairs the rating
- * with the day it was watched. A rewatch is a tag on the poster's corner,
- * since it qualifies the film rather than the date.
+ * sits under it (a long one as its head and, a size down, its subtitle),
+ * and the line under that pairs the rating with the day it was watched.
+ * A rewatch and the year are tags on the poster's corners, since they
+ * qualify the film rather than the viewing, and so leave the title's
+ * lines to the title.
  */
 
 import { el } from "@/lib/client/dom"
 import { dateFormatter, dayInstant, monthDay } from "@/lib/client/feed"
-import type { SiteFilm } from "@/lib/client/movies"
+import { type SiteFilm, splitTitle } from "@/lib/client/movies"
 
 export const buildCard = (film: SiteFilm) => {
   const card = el("li", "movie-card")
@@ -15,6 +17,8 @@ export const buildCard = (film: SiteFilm) => {
   link.href = film.url
   link.target = "_blank"
   link.rel = "noopener noreferrer"
+  // The whole name on hover, for a title the card had to cut.
+  link.title = film.year ? `${film.title} (${film.year})` : film.title
 
   const poster = el("span", "poster")
   if (film.poster) {
@@ -27,11 +31,15 @@ export const buildCard = (film: SiteFilm) => {
     img.height = 225
     poster.append(img)
   }
-  if (film.rewatch) poster.append(el("span", "rewatch", "Rewatch"))
+  if (film.rewatch) poster.append(el("span", "tag rewatch", "Rewatch"))
+  if (film.year) poster.append(el("span", "tag year", String(film.year)))
   link.append(poster)
 
-  const title = el("span", "title", film.title)
-  if (film.year) title.append(" ", el("span", "year", String(film.year)))
+  const { head, sub } = splitTitle(film.title)
+  const title = el("span", "title", head)
+  // The colon is read, not shown: the line break says it on screen.
+  if (sub)
+    title.append(el("span", "sr", ": "), el("br"), el("span", "sub", sub))
 
   const foot = el("span", "foot")
   if (film.rating !== null) {

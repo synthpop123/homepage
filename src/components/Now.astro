@@ -375,13 +375,27 @@ const { endpoint = NOW.endpoint } = Astro.props
       }
 
       .now-label,
-      .now-foot,
-      .now-year {
+      .now-foot {
         color: var(--white-a10);
       }
 
       .now-year {
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Up to three lines of title, shared by the head and, after a
+         break and a size down, its subtitle: the clamp counts both, so
+         the subtitle has what the head leaves. The scrim grows up the
+         poster with them, so the tile never grows. */
+      .now-title {
+        -webkit-line-clamp: 3;
+        text-wrap: balance;
+      }
+
+      .now-subtitle {
+        font-size: var(--step--1);
         font-weight: var(--font-weight-normal);
+        color: var(--white-a10);
       }
 
       .sk-line {

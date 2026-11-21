@@ -22,6 +22,7 @@ import {
   tokensLabel,
   watchedLabel,
 } from "@/lib/client/now"
+import { splitTitle } from "@/lib/client/movies"
 import { setReadout } from "@/lib/client/readout"
 import { formatTokens } from "@/lib/client/tokens/format"
 
@@ -103,13 +104,29 @@ export function renderFilm(tile: HTMLElement, site: Site, today: string) {
   const film = site.film
   if (!film) return empty(tile, "Nothing yet", "Watched")
   delete tile.dataset.empty
-  tile.querySelector("a")!.href = film.url
+  const link = tile.querySelector("a")!
+  link.href = film.url
+  // The whole name on hover, for a title the tile had to cut.
+  link.title = film.year ? `${film.title} (${film.year})` : film.title
   // The poster and the blurred copy that fills the tile around it.
   for (const img of tile.querySelectorAll("img")) setImage(img, film.poster)
-  text(tile, ".now-label", film.rewatch ? "Rewatched" : "Watched")
-  const title = el("span", undefined, film.title)
-  if (film.year) title.append(" ", el("span", "now-year", String(film.year)))
-  tile.querySelector(".now-title")?.replaceChildren(title)
+  // The year rides the label's far end, so the title's lines are the
+  // title's alone.
+  const label: Node[] = [
+    el("span", undefined, film.rewatch ? "Rewatched" : "Watched"),
+  ]
+  if (film.year) label.push(el("span", "now-year", String(film.year)))
+  tile.querySelector(".now-label")?.replaceChildren(...label)
+  const { head, sub } = splitTitle(film.title)
+  const title: (Node | string)[] = [head]
+  // The colon is read, not shown: the line break says it on screen.
+  if (sub)
+    title.push(
+      el("span", "sr", ": "),
+      el("br"),
+      el("span", "now-subtitle", sub),
+    )
+  tile.querySelector(".now-title")?.replaceChildren(...title)
 
   const foot: Node[] = []
   if (film.rating !== null) {

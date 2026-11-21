@@ -45,6 +45,29 @@ export const isFilm = (value: unknown): value is SiteFilm =>
   typeof value.rewatch === "boolean" &&
   (value.poster === null || safeHttpUrl(value.poster) !== null)
 
+/** Below this a title fits its card whole, so it is never split. */
+const SPLIT_FROM = 21
+
+/**
+ * A long title as its head and subtitle, cut at the first colon
+ * ("The Hunger Games: Sunrise on the Reaping"), so the card can always
+ * show the head whole and let only the subtitle run out of room. A
+ * short title, or one with no colon or nothing on one side of it, stays
+ * whole: "Mission: Impossible" is a name, not a head and a subtitle.
+ */
+export function splitTitle(title: string): {
+  head: string
+  sub: string | null
+} {
+  const whole = { head: title, sub: null }
+  if (title.length < SPLIT_FROM) return whole
+  const match = /\s*[:：]\s*/.exec(title)
+  if (!match) return whole
+  const head = title.slice(0, match.index).trim()
+  const sub = title.slice(match.index + match[0].length).trim()
+  return head && sub ? { head, sub } : whole
+}
+
 export function isSite(data: unknown): data is Site {
   if (!isRecord(data)) return false
   return (
