@@ -20,7 +20,7 @@ const CLIENT_LABELS = new Map<string, string>([
   ["opencode", "OpenCode"],
   ["gemini", "Gemini CLI"],
   ["antigravity", "Antigravity"],
-  ["antigravity-cli", "Antigravity CLI"],
+  ["antigravity-cli", "Antigravity"],
   ["grok", "Grok Build"],
   ["hermes", "Hermes Agent"],
   ["craft-agent", "Craft Agents"],

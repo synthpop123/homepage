@@ -31,7 +31,7 @@ describe("labels and icons", () => {
     expect(clientLabel("dsh")).toBe("DeepSeek Harness")
     expect(aiIcon("client", "dsh")).toBe("deepseek")
     expect(clientLabel("antigravity")).toBe("Antigravity")
-    expect(clientLabel("antigravity-cli")).toBe("Antigravity CLI")
+    expect(clientLabel("antigravity-cli")).toBe("Antigravity")
     expect(aiIcon("client", "antigravity")).toBe("antigravity")
     expect(aiIcon("client", "antigravity-cli")).toBe("antigravity")
     expect(aiIcon("provider", "moonshotai")).toBe("moonshot")
