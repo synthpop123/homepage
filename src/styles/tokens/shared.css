@@ -81,7 +81,9 @@ tokens-dashboard {
   }
 
   [data-p="google"],
-  [data-p="gemini"] {
+  [data-p="gemini"],
+  [data-p="antigravity"],
+  [data-p="antigravity-cli"] {
     --p: var(--tk-p-google);
   }
 
